@@ -83,46 +83,7 @@ namespace SeraphLeveling
         /// Default excludes starting class outfits only (not Nadiyan or other variants).
         /// Uses substring matching - items containing any blacklisted string are excluded.
         /// </summary>
-        public string[] ClothierBlacklistedItems { get; set; } = new string[]
-        {
-            // Hunter starting outfit (8 items)
-            "clothes-upperbody-hunter-shirt",
-            "clothes-upperbodyover-hunter-coat",
-            "clothes-shoulder-hunter-poncho",
-            "clothes-lowerbody-hunter-leggings",
-            "clothes-foot-hunter-boots",
-            "clothes-hand-hunter-gloves",
-            "clothes-head-hunter-hood",
-            "clothes-face-hunter-mask",
-            // Tailor starting outfit (5 items)
-            "clothes-upperbody-tailor-blouse",
-            "clothes-foot-tailor-shoes",
-            "clothes-hand-tailor-gloves",
-            "clothes-waist-tailor-belt",
-            "clothes-shoulder-tailor-jacket",
-            // Malefactor starting outfit (5 items)
-            "clothes-shoulder-malefactor-cloak",
-            "clothes-foot-malefactor-boots",
-            "clothes-hand-malefactor-gloves",
-            "clothes-lowerbody-malefactor-trousers",
-            "clothes-neck-malefactor-pendant",
-            // Blackguard starting outfit (4 items)
-            "clothes-foot-blackguard-shoes",
-            "clothes-lowerbody-blackguard-leggings",
-            "clothes-upperbody-blackguard-shirt",
-            "clothes-waist-blackguard-belt",
-            // Clockmaker starting outfit (4 items)
-            "clothes-hand-clockmaker-wristguard",
-            "clothes-foot-clockmaker-shoes",
-            "clothes-upperbody-clockmaker-shirt",
-            "clothes-shoulder-clockmaker-apron",
-            // Commoner starting outfit (5 items)
-            "clothes-upperbody-commoner-shirt",
-            "clothes-upperbodyover-commoner-coat",
-            "clothes-lowerbody-commoner-trousers",
-            "clothes-foot-commoner-boots",
-            "clothes-hand-commoner-gloves"
-        };
+        public string[] ClothierBlacklistedItems { get; set; } = null;
 
         // Mender progression
         public int MenderBaseRepairsPerIncrement { get; set; } = 5;

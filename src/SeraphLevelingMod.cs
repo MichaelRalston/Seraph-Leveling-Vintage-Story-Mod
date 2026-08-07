@@ -255,28 +255,63 @@ namespace SeraphLeveling
 
         // Clothier progression configuration
         public static int ClothierRequiredUniqueClothes = 20; // Number of unique clothes to unlock sewing kit
-        public static string[] ClothierBlacklistedItems = new string[] {
-            // Hunter
-            "clothes-upperbody-hunter-shirt", "clothes-upperbodyover-hunter-coat", "clothes-shoulder-hunter-poncho",
-            "clothes-lowerbody-hunter-leggings", "clothes-foot-hunter-boots", "clothes-hand-hunter-gloves",
-            "clothes-head-hunter-hood", "clothes-face-hunter-mask",
-            // Tailor
-            "clothes-upperbody-tailor-blouse", "clothes-foot-tailor-shoes", "clothes-hand-tailor-gloves",
-            "clothes-waist-tailor-belt", "clothes-shoulder-tailor-jacket",
-            // Malefactor
-            "clothes-shoulder-malefactor-cloak", "clothes-foot-malefactor-boots", "clothes-hand-malefactor-gloves",
-            "clothes-lowerbody-malefactor-trousers", "clothes-neck-malefactor-pendant",
-            // Blackguard
-            "clothes-foot-blackguard-shoes", "clothes-lowerbody-blackguard-leggings",
-            "clothes-upperbody-blackguard-shirt", "clothes-waist-blackguard-belt",
-            // Clockmaker
-            "clothes-hand-clockmaker-wristguard", "clothes-foot-clockmaker-shoes",
-            "clothes-upperbody-clockmaker-shirt", "clothes-shoulder-clockmaker-apron",
-            // Commoner
-            "clothes-upperbody-commoner-shirt", "clothes-upperbodyover-commoner-coat",
-            "clothes-lowerbody-commoner-trousers", "clothes-foot-commoner-boots", "clothes-hand-commoner-gloves"
-        };
+        public static string[] ClothierBlacklistedItems = null;
+        public static void initializeClothierBlacklistedItems(ICoreAPI api)
+        {
+            bool hasSacredLib = SeraphLevelingModSystem.DetectAnySacredLib(api.ModLoader);
+            api.Logger.Notification($"[SeraphLeveling] Initializing Clothier Blacklisted Items. Sacred Classes compatibility enabled: {hasSacredLib}");
+            ClothierBlacklistedItems = hasSacredLib ? 
+            new string[]
+            {
+                // Woodsman
+                "clothes-neck-acorn-amulet", "clothes-waist-sturdy-leather-belt", "clothes-shoulder-patchwork", "clothes-upperbody-survivor", "clothes-foot-high-leather-boots", "clothes-lowerbody-workmans-gown",
+                // Craftsman
+                "clothes-nadiya-neck-flint-amulet", "clothes-shoulder-clockmaker-apron", "clothes-upperbody-chemiseshoulderlong", "clothes-lowerbody-centurion", "clothes-foot-tigh-high-boots",
+                // Witch
+                "clothes-arm-fortuneteller", "clothes-foot-fortuneteller", "clothes-lowerbody-skirt", "clothes-upperbody-fortuneteller", "clothes-upperbodyover-fortuneteller","clothes-head-fortune-tellers-scarf",
+                // Blacksmith
+                "clothes-nadiya-face-blacksmith", "clothes-nadiya-shoulder-blacksmith", "clothes-nadiya-upperbody-blacksmith", "clothes-nadiya-lowerbody-blacksmith", "clothes-nadiya-foot-blacksmith", "sacredlib:blacksmithgloves-plain",
+                // Artificer
+                "clothes-face-glasses-clockmaker", "clothes-waist-clockmaker-belt", "clothes-upperbody-clockmaker-shirt", "clothes-lowerbody-clockmaker-pants", "clothes-foot-metalcap-boots",
+                // Miner
+                "clothes-face-miner", "clothes-upperbody-miner", "clothes-lowerbody-miner", "clothes-shoulder-miner", "clothes-upperbodyover-miner", "clothes-foot-miner",
+                // Homesteader
+                "clothes-nadiya-face-grain", "clothes-head-straw-hat", "clothes-neck-ruralfarmer", "clothes-arm-ruralfarmer", "clothes-upperbody-ruralfarmer", "clothes-lowerbody-raw-hide-trousers", "clothes-waist-ruralfarmer", "clothes-foot-ruralfarmer",
+                // Huntsman
+                "clothes-face-hunter-mask", "clothes-waist-ruralhunter", "clothes-shoulder-ruralhunter", "clothes-upperbody-hunters-green", "clothes-lowerbody-arctichunter", "clothes-foot-ruralhunter",
+                // Guardsman
+                "clothes-face-leather-reinforced-mask", "clothes-emblem-silver-pin", "clothes-upperbody-hunter-shirt", "clothes-upperbodyover-forgotten", "clothes-lowerbody-commoner-trousers", "clothes-hand-heavy-leather-gloves", "clothes-foot-survivor",
+                // Hearthmaster
+                "clothes-upperbody-commoner-shirt", "clothes-face-headbandfabric", "clothes-waist-peasantapron", "clothes-lowerbody-workmans-gown", "clothes-foot-soldier-boots",
+                // Haberdasher
+                "clothes-waist-merchant-belt", "clothes-upperbody-midsummer", "clothes-shoulder-woolen-scarf", "clothes-neck-pomander", "clothes-lowerbody-arcticfisher", "clothes-head-lackey-hat", "clothes-foot-hobnailboots", "clothes-hand-cuffsred", "clothes-arm-tailor-needlepuff",
+                // Zealot
+                "clothes-face-blindfold", "clothes-shoulder-rotwalker", "clothes-upperbody-woolen-shirt", "clothes-lowerbody-rotwalker", "clothes-foot-rusty-ankle-manacles", "clothes-arm-rusty-wrist-manacles"
+            }
+            :
+            new string[] {
+                // Hunter
+                "clothes-upperbody-hunter-shirt", "clothes-upperbodyover-hunter-coat", "clothes-shoulder-hunter-poncho",
+                "clothes-lowerbody-hunter-leggings", "clothes-foot-hunter-boots", "clothes-hand-hunter-gloves",
+                "clothes-head-hunter-hood", "clothes-face-hunter-mask",
+                // Tailor
+                "clothes-upperbody-tailor-blouse", "clothes-foot-tailor-shoes", "clothes-hand-tailor-gloves",
+                "clothes-waist-tailor-belt", "clothes-shoulder-tailor-jacket",
+                // Malefactor
+                "clothes-shoulder-malefactor-cloak", "clothes-foot-malefactor-boots", "clothes-hand-malefactor-gloves",
+                "clothes-lowerbody-malefactor-trousers", "clothes-neck-malefactor-pendant",
+                // Blackguard
+                "clothes-foot-blackguard-shoes", "clothes-lowerbody-blackguard-leggings",
+                "clothes-upperbody-blackguard-shirt", "clothes-waist-blackguard-belt",
+                // Clockmaker
+                "clothes-hand-clockmaker-wristguard", "clothes-foot-clockmaker-shoes",
+                "clothes-upperbody-clockmaker-shirt", "clothes-shoulder-clockmaker-apron",
+                // Commoner
+                "clothes-upperbody-commoner-shirt", "clothes-upperbodyover-commoner-coat",
+                "clothes-lowerbody-commoner-trousers", "clothes-foot-commoner-boots", "clothes-hand-commoner-gloves"
+            };
 
+        }
         // Vanilla Clothier trait (Tailor exclusive)
         public const int VANILLA_CLOTHIER_BONUS = 0; // No vanilla bonus, this is unlock-based
 
@@ -646,10 +681,40 @@ namespace SeraphLeveling
         // SACRED CLASSES COMPATIBILITY
         // =========================================================================
 
+        /// <summary>Whether Sacred Classes mod is loaded.</summary>
+        public static bool IsSacredLibLoaded { get; internal set; } = false;
+
+        public static bool IsSacredLibCompatEnabled => IsSacredLibLoaded && SacredLibEnableCompat;
+
+        public static bool SacredLibEnableCompat = true;
+
         public static bool DetectAnySacredLib(IModLoader modLoader)
         {
             if (modLoader == null) return false;
             return modLoader.IsModEnabled("sacredlib");
+        }
+
+        /// <summary>
+        /// Detect if Sacred Classes mod is loaded and log the result.
+        /// </summary>
+        private void DetectSacredLib(ICoreServerAPI api)
+        {
+            SeraphLevelingModSystem.IsSacredLibLoaded = SeraphLevelingModSystem.DetectAnySacredLib(api.ModLoader);
+            if (SeraphLevelingModSystem.IsSacredLibLoaded)
+            {
+                if (SacredLibEnableCompat)
+                {
+                    api.Logger.Notification($"[SeraphLeveling] Sacred Classes mod detected. Compatibility enabled.");
+                }
+                else
+                {
+                    api.Logger.Notification($"[SeraphLeveling] Sacred Classes mod detected, but compatibility is disabled in config.");
+                }
+            }
+            else
+            {
+                api.Logger.Notification($"[SeraphLeveling]Sacred Classes mod not detected. Compatibility disabled.");
+            }
         }
 
         // =========================================================================
@@ -926,6 +991,7 @@ namespace SeraphLeveling
 
             // Detect Combat Overhaul mod
             DetectCombatOverhaul(api);
+            DetectSacredLib(api);
 
             // Register /trait command with subcommands
             api.ChatCommands.Create("trait")
@@ -8398,7 +8464,9 @@ namespace SeraphLeveling
                 {
                     // A brand new install has no old world settings to fold in, so
                     // stamp it as already migrated.
+                    initializeClothierBlacklistedItems(api);
                     config = new SeraphLevelingConfig { ConfigVersion = CURRENT_CONFIG_VERSION };
+                    config.ClothierBlacklistedItems = ClothierBlacklistedItems;
                     api.StoreModConfig(config, CONFIG_FILE_NAME);
                     api.Logger.Notification("[SeraphLeveling] Created default config file: ModConfig/" + CONFIG_FILE_NAME);
                 }
@@ -15245,27 +15313,7 @@ namespace SeraphLeveling
 
             // Clothier defaults
             ClothierRequiredUniqueClothes = 20;
-            ClothierBlacklistedItems = new string[] {
-                // Hunter
-                "clothes-upperbody-hunter-shirt", "clothes-upperbodyover-hunter-coat", "clothes-shoulder-hunter-poncho",
-                "clothes-lowerbody-hunter-leggings", "clothes-foot-hunter-boots", "clothes-hand-hunter-gloves",
-                "clothes-head-hunter-hood", "clothes-face-hunter-mask",
-                // Tailor
-                "clothes-upperbody-tailor-blouse", "clothes-foot-tailor-shoes", "clothes-hand-tailor-gloves",
-                "clothes-waist-tailor-belt", "clothes-shoulder-tailor-jacket",
-                // Malefactor
-                "clothes-shoulder-malefactor-cloak", "clothes-foot-malefactor-boots", "clothes-hand-malefactor-gloves",
-                "clothes-lowerbody-malefactor-trousers", "clothes-neck-malefactor-pendant",
-                // Blackguard
-                "clothes-foot-blackguard-shoes", "clothes-lowerbody-blackguard-leggings",
-                "clothes-upperbody-blackguard-shirt", "clothes-waist-blackguard-belt",
-                // Clockmaker
-                "clothes-hand-clockmaker-wristguard", "clothes-foot-clockmaker-shoes",
-                "clothes-upperbody-clockmaker-shirt", "clothes-shoulder-clockmaker-apron",
-                // Commoner
-                "clothes-upperbody-commoner-shirt", "clothes-upperbodyover-commoner-coat",
-                "clothes-lowerbody-commoner-trousers", "clothes-foot-commoner-boots", "clothes-hand-commoner-gloves"
-            };
+            initializeClothierBlacklistedItems(api: ServerApi);
 
             // Mender defaults
             BaseMenderRepairsPerIncrement = 5;
@@ -17977,6 +18025,8 @@ namespace SeraphLeveling
             SeraphLevelingModSystem.IsCombatOverhaulLoaded =
                 SeraphLevelingModSystem.DetectAnyCombatOverhaul(api.ModLoader);
             SeraphLevelingModSystem.IsCombatOverhaulForkLoaded = api.ModLoader.IsModEnabled("combatoverhaulfork");
+
+            SeraphLevelingModSystem.IsSacredLibLoaded = SeraphLevelingModSystem.DetectAnySacredLib(api.ModLoader);
 
             // Register network channel for receiving level-up sounds from server
             api.Network.RegisterChannel("seraphleveling")
