@@ -12592,8 +12592,7 @@ namespace SeraphLeveling
         {
             if (player?.Entity == null) return;
 
-            // Only applies to Hunter class
-            if (!PlayerIsHunterStatic(player.Entity)) return;
+            if (!PlayerHasVanillaClaustrophobic(player.Entity)) return; // Ensure vanilla Claustrophobic is present
 
             string playerUid = player.PlayerUID;
             var progress = ClaustrophobicRemovalProgress.GetOrAdd(playerUid, _ => new ClaustrophobicRemovalProgressData());
