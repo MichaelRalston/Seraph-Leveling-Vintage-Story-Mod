@@ -1,18 +1,19 @@
+using System;
+using System.IO;
+
 namespace SeraphLeveling
 {
-    public class RemovalProgressData:ProgressData
+    public class RemovalProgressData<T> : ProgressData<T> where T : ProgressData<T>, IProgressDataContract<T>
     {
         public bool IsRemoved { get; set; }
         public RemovalProgressData()
         {
             IsRemoved = false;
         }
-        public RemovalProgressData Clone()
+
+        public override void WriteOut(BinaryWriter writer)
         {
-            return new RemovalProgressData
-            {
-                IsRemoved = this.IsRemoved
-            };
+            writer.Write(IsRemoved);
         }
     }
 }

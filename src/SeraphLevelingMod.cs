@@ -1766,6 +1766,7 @@ namespace SeraphLeveling
             api.Event.SaveGameLoaded += LoadTinkererProgress;
             api.Event.SaveGameLoaded += LoadMercilessProgress;
             api.Event.SaveGameLoaded += LoadClaustrophobicRemovalProgress;
+            api.Event.SaveGameLoaded += LoadHeavyFootedRemovalProgress;
             api.Event.SaveGameLoaded += LoadCOProgress;
             api.Event.SaveGameLoaded += LoadSleepBuffData;
 
@@ -7124,6 +7125,7 @@ namespace SeraphLeveling
                 ServerApi.Event.SaveGameLoaded -= LoadTinkererProgress;
                 ServerApi.Event.SaveGameLoaded -= LoadMercilessProgress;
                 ServerApi.Event.SaveGameLoaded -= LoadClaustrophobicRemovalProgress;
+                ServerApi.Event.SaveGameLoaded -= LoadHeavyFootedRemovalProgress;
                 ServerApi.Event.SaveGameLoaded -= LoadCOProgress;
                 ServerApi.Event.SaveGameLoaded -= LoadSleepBuffData;
             }
@@ -17100,46 +17102,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistClaustrophobicRemovalProgress()
         {
-            if (ServerApi == null) return;
-
-            lock (persistLock)
-            {
-                if (ClaustrophobicRemovalProgress.IsEmpty)
-                {
-                    return;
-                }
-
-                try
-                {
-                    var snapshot = ClaustrophobicRemovalProgress.ToArray();
-                    byte[] data;
-                    using (var ms = new MemoryStream())
-                    {
-                        using (var writer = new BinaryWriter(ms))
-                        {
-                            writer.Write((byte)0x43); // 'C'
-                            writer.Write((byte)0x4C); // 'L'
-                            writer.Write((byte)0x52); // 'R'
-                            writer.Write((byte)1);    // Version 1
-
-                            writer.Write(snapshot.Length);
-                            foreach (var playerKvp in snapshot)
-                            {
-                                writer.Write(playerKvp.Key);
-                                var progress = playerKvp.Value;
-                                writer.Write(progress.IsRemoved);
-                            }
-                        }
-                        data = ms.ToArray();
-                    }
-
-                    ServerApi.WorldManager.SaveGame.StoreData(CLAUSTROPHOBIC_REMOVAL_PROGRESS_SAVE_KEY, data);
-                }
-                catch (Exception ex)
-                {
-                    ServerApi.Logger.Error($"[SeraphLeveling] Failed to persist claustrophobic removal progress: {ex.Message}");
-                }
-            }
+            PersistProgress<ClaustrophobicRemovalProgressData>(ClaustrophobicRemovalProgress);
         }
 
         // =========================================================================
@@ -17151,46 +17114,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistHeavyFootedRemovalProgress()
         {
-            if (ServerApi == null) return;
-
-            lock (persistLock)
-            {
-                if (HeavyFootedRemovalProgress.IsEmpty)
-                {
-                    return;
-                }
-
-                try
-                {
-                    var snapshot = HeavyFootedRemovalProgress.ToArray();
-                    byte[] data;
-                    using (var ms = new MemoryStream())
-                    {
-                        using (var writer = new BinaryWriter(ms))
-                        {
-                            writer.Write((byte)0x48); // 'H'
-                            writer.Write((byte)0x56); // 'V'
-                            writer.Write((byte)0x46); // 'F'
-                            writer.Write((byte)1);    // Version 1
-
-                            writer.Write(snapshot.Length);
-                            foreach (var playerKvp in snapshot)
-                            {
-                                writer.Write(playerKvp.Key);
-                                var progress = playerKvp.Value;
-                                writer.Write(progress.IsRemoved);
-                            }
-                        }
-                        data = ms.ToArray();
-                    }
-
-                    ServerApi.WorldManager.SaveGame.StoreData(HEAVYFOOTED_REMOVAL_PROGRESS_SAVE_KEY, data);
-                }
-                catch (Exception ex)
-                {
-                    ServerApi.Logger.Error($"[SeraphLeveling] Failed to persist heavyfooted removal progress: {ex.Message}");
-                }
-            }
+            PersistProgress<HeavyFootedRemovalProgressData>(HeavyFootedRemovalProgress);
         }
 
 
@@ -17553,59 +17477,12 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadClaustrophobicRemovalProgress()
         {
-            ClaustrophobicRemovalProgress.Clear();
+            LoadProgress<ClaustrophobicRemovalProgressData>(ref ClaustrophobicRemovalProgress, ref pendingClaustrophobicRemovalProgressSave);
+        }
 
-            try
-            {
-                byte[] data = ServerApi.WorldManager.SaveGame.GetData(CLAUSTROPHOBIC_REMOVAL_PROGRESS_SAVE_KEY);
-                if (data == null || data.Length == 0)
-                {
-                    ServerApi.Logger.Debug("[SeraphLeveling] No claustrophobic removal progress data found");
-                    return;
-                }
-
-                using (var ms = new MemoryStream(data))
-                {
-                    using (var reader = new BinaryReader(ms))
-                    {
-                        byte magic1 = reader.ReadByte();
-                        byte magic2 = reader.ReadByte();
-                        byte magic3 = reader.ReadByte();
-                        byte version = reader.ReadByte();
-
-                        if (magic1 != 0x43 || magic2 != 0x4C || magic3 != 0x52)
-                        {
-                            ServerApi.Logger.Warning("[SeraphLeveling] Invalid claustrophobic removal progress magic bytes");
-                            return;
-                        }
-
-                        int playerCount = reader.ReadInt32();
-                        for (int i = 0; i < playerCount; i++)
-                        {
-                            try
-                            {
-                                string playerUid = reader.ReadString();
-                                var progress = new ClaustrophobicRemovalProgressData
-                                {
-                                    IsRemoved = reader.ReadBoolean()
-                                };
-                                ClaustrophobicRemovalProgress[playerUid] = progress;
-                            }
-                            catch (Exception innerEx)
-                            {
-                                ServerApi.Logger.Warning($"[SeraphLeveling] Skipping corrupt player entry {i+1}/{playerCount} in claustrophobic removal data: {innerEx.Message}");
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                ServerApi.Logger.Notification($"[SeraphLeveling] Loaded claustrophobic removal progress for {ClaustrophobicRemovalProgress.Count} players");
-            }
-            catch (Exception ex)
-            {
-                ServerApi.Logger.Error($"[SeraphLeveling] Failed to load claustrophobic removal progress: {ex.Message}");
-            }
+        private void LoadHeavyFootedRemovalProgress()
+        {
+            LoadProgress<HeavyFootedRemovalProgressData>(ref HeavyFootedRemovalProgress, ref pendingHeavyFootedRemovalProgressSave);
         }
     }
 
