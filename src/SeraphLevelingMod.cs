@@ -591,6 +591,8 @@ namespace SeraphLeveling
         public static int HeavyFootedFurtiveThreshold = 50;
         public static int HeavyFootedWalkingThreshold = 10;
 
+        private const string HEAVYFOOTED_REMOVAL_PROGRESS_SAVE_KEY = "sitHeavyFootedRemovalProgress";
+
         public const string WATCHED_HEAVYFOOTED_REMOVED = "sitHeavyFootedRemoved";
         public const string HEAVYFOOTED_REMOVED_TRAIT_CODE = "sitheavyfootedremoved";
 
@@ -7079,6 +7081,10 @@ namespace SeraphLeveling
                 if (pendingClaustrophobicRemovalProgressSave || !ClaustrophobicRemovalProgress.IsEmpty)
                 {
                     PersistClaustrophobicRemovalProgress();
+                }
+                if (pendingHeavyFootedRemovalProgressSave || !HeavyFootedRemovalProgress.IsEmpty)
+                {
+                    PersistHeavyFootedRemovalProgress();
                 }
 
                 // These two are newer than the rest and were never added to the shutdown
@@ -17704,6 +17710,58 @@ namespace SeraphLeveling
                 }
             }
         }
+
+        // =========================================================================
+        // HEAVYFOOTED REMOVAL TRAIT PERSISTENCE
+        // =========================================================================
+
+        /// <summary>
+        /// Persist heavyfooted removal progress to world save data.
+        /// </summary>
+        public static void PersistHeavyFootedRemovalProgress()
+        {
+            if (ServerApi == null) return;
+
+            lock (persistLock)
+            {
+                if (HeavyFootedRemovalProgress.IsEmpty)
+                {
+                    return;
+                }
+
+                try
+                {
+                    var snapshot = HeavyFootedRemovalProgress.ToArray();
+                    byte[] data;
+                    using (var ms = new MemoryStream())
+                    {
+                        using (var writer = new BinaryWriter(ms))
+                        {
+                            writer.Write((byte)0x48); // 'H'
+                            writer.Write((byte)0x56); // 'V'
+                            writer.Write((byte)0x46); // 'F'
+                            writer.Write((byte)1);    // Version 1
+
+                            writer.Write(snapshot.Length);
+                            foreach (var playerKvp in snapshot)
+                            {
+                                writer.Write(playerKvp.Key);
+                                var progress = playerKvp.Value;
+                                writer.Write(progress.IsRemoved);
+                            }
+                        }
+                        data = ms.ToArray();
+                    }
+
+                    ServerApi.WorldManager.SaveGame.StoreData(HEAVYFOOTED_REMOVAL_PROGRESS_SAVE_KEY, data);
+                }
+                catch (Exception ex)
+                {
+                    ServerApi.Logger.Error($"[SeraphLeveling] Failed to persist heavyfooted removal progress: {ex.Message}");
+                }
+            }
+        }
+
 
         // =========================================================================
         // COMBAT OVERHAUL PERSISTENCE
