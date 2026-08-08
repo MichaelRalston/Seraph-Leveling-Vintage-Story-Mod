@@ -125,7 +125,7 @@ namespace SeraphLeveling
         public static ConcurrentDictionary<string, WalkingProgressData> WalkingProgress = new ConcurrentDictionary<string, WalkingProgressData>();
 
         // Flag to indicate pending walking progress save
-        private static volatile bool pendingWalkingProgressSave = false;
+        public static volatile bool pendingWalkingProgressSave = false;
 
         // Tracking last known positions for walking distance calculation (using Position2D to avoid Vec3d allocations)
         private static ConcurrentDictionary<string, Position2D> lastPlayerPositions = new ConcurrentDictionary<string, Position2D>();
@@ -3246,7 +3246,7 @@ namespace SeraphLeveling
             var sb = new StringBuilder();
             sb.AppendLine($"Walking progression: {currentCredits}% / {MaxWalkingSpeedPercent}%");
             sb.AppendLine($"Current bonus: +{bonusPercent}% walk speed");
-            sb.AppendLine($"Progress: {progress.BlocksInIncrement:F1}/{progress.CurrentIncrementSize} blocks");
+            sb.AppendLine($"Progress: {progress.PartialCredit:F1}/{progress.CurrentIncrementSize} blocks");
 
             if (currentCredits >= MaxWalkingSpeedPercent)
             {
@@ -3347,7 +3347,7 @@ namespace SeraphLeveling
 
             // Set the player's progress
             progress.TotalCredits = newCredits.Value;
-            progress.BlocksInIncrement = 0;
+            progress.PartialCredit = 0;
             // Calculate what the increment size should be at this level
             progress.CurrentIncrementSize = BaseBlocksWalkedPerIncrement + (newCredits.Value * WalkingIncrementStep);
 
@@ -5095,43 +5095,7 @@ namespace SeraphLeveling
                     CurrentIncrementSize = BaseBlocksWalkedPerIncrement
                 });
 
-                // Skip all processing if already at max - completely invisible
-                if (playerProgress.TotalCredits >= MaxWalkingSpeedPercent) continue;
-
-                int oldCredits = playerProgress.TotalCredits;
-
-                // Apply sleep buff multiplier to distance
-                float modifiedDistance = ApplyXPMultiplier(playerUid, distance);
-
-                // Add distance to progress
-                playerProgress.BlocksInIncrement += modifiedDistance;
-
-                // Check if we've earned any new credits
-                while (playerProgress.BlocksInIncrement >= playerProgress.CurrentIncrementSize && playerProgress.TotalCredits < MaxWalkingSpeedPercent)
-                {
-                    // Earn a credit
-                    playerProgress.TotalCredits++;
-                    playerProgress.BlocksInIncrement -= playerProgress.CurrentIncrementSize;
-                    playerProgress.CurrentIncrementSize += WalkingIncrementStep;
-
-                    ServerApi.Logger.Debug($"[SeraphLeveling] Player {player.PlayerName} earned walking credit {playerProgress.TotalCredits}, next requires {playerProgress.CurrentIncrementSize} blocks");
-                }
-
-                // Mark for saving if any progress was made
-                if (playerProgress.BlocksInIncrement > 0 || playerProgress.TotalCredits > oldCredits)
-                {
-                    pendingWalkingProgressSave = true;
-                }
-
-                // If credits increased, update the stat and notify player
-                if (playerProgress.TotalCredits > oldCredits)
-                {
-                    ApplyWalkingBonusStatic(player, playerProgress.TotalCredits);
-
-                    // Notify player of level up with raw improvement (shows progress even when capped)
-                    NotifyLevelUp(player,
-                        Lang.Get("seraphleveling:message-walking-level-up", playerProgress.TotalCredits, playerProgress.TotalCredits));
-                }
+                playerProgress.DoEvent(player, distance);
             }
         }
 
@@ -5570,7 +5534,7 @@ namespace SeraphLeveling
         /// Sends a level-up notification to the player (chat message and/or sound),
         /// respecting the EnableLevelUpMessages and EnableLevelUpSound config options.
         /// </summary>
-        private static void NotifyLevelUp(IServerPlayer player, string message)
+        public static void NotifyLevelUp(IServerPlayer player, string message)
         {
             if (EnableLevelUpMessages)
             {
@@ -8207,19 +8171,19 @@ namespace SeraphLeveling
             // Walking
             if (!DecayExemptSkills.Contains("walking") && !DisabledSkills.Contains("walking"))
             {
-                if (WalkingProgress.TryGetValue(playerUid, out var wProg) && (wProg.TotalCredits > 0 || wProg.BlocksInIncrement > 0))
+                if (WalkingProgress.TryGetValue(playerUid, out var wProg) && (wProg.TotalCredits > 0 || wProg.PartialCredit > 0))
                 {
                     var (grace, basePoints, maxPoints) = GetDecayParams("walking");
                     int decayCredits = CalculateDecayPoints(wProg.LastActivityDay, currentDay, grace, basePoints, maxPoints);
                     if (decayCredits > 0)
                     {
                         int oldCredits = wProg.TotalCredits;
-                        float oldAcc = wProg.BlocksInIncrement; int oldInc = wProg.CurrentIncrementSize;
+                        float oldAcc = wProg.PartialCredit; int oldInc = wProg.CurrentIncrementSize;
                         double rawPenalty = (double)decayCredits;
                         var (newCr, newAcc, newInc, lost) = ApplySingleAccumulatorDecay(
                             oldAcc, oldInc, oldCredits,
                             rawPenalty, BaseBlocksWalkedPerIncrement, WalkingIncrementStep, verboseSb, "Walking");
-                        wProg.TotalCredits = newCr; wProg.BlocksInIncrement = (float)newAcc; wProg.CurrentIncrementSize = newInc;
+                        wProg.TotalCredits = newCr; wProg.PartialCredit = (float)newAcc; wProg.CurrentIncrementSize = newInc;
                         if (lost > 0) totalDecayApplied += lost;
                         sb.AppendLine($"  Walking: {oldCredits} \u2192 {newCr} (-{lost} credits, {rawPenalty:F0} pts), {oldAcc:F0}/{oldInc} \u2192 {(int)newAcc}/{newInc}");
                         pendingWalkingProgressSave = true;
@@ -9091,14 +9055,14 @@ namespace SeraphLeveling
             // Walking
             if (!DeathPenaltyExemptSkills.Contains("walking") && !DisabledSkills.Contains("walking"))
             {
-                if (WalkingProgress.TryGetValue(playerUid, out var walkingProg) && (walkingProg.TotalCredits > 0 || walkingProg.BlocksInIncrement > 0))
+                if (WalkingProgress.TryGetValue(playerUid, out var walkingProg) && (walkingProg.TotalCredits > 0 || walkingProg.PartialCredit > 0))
                 {
                     int oldCredits = walkingProg.TotalCredits;
-                    float oldAcc = walkingProg.BlocksInIncrement; int oldInc = walkingProg.CurrentIncrementSize;
+                    float oldAcc = walkingProg.PartialCredit; int oldInc = walkingProg.CurrentIncrementSize;
                     double rawPenalty = BaseBlocksWalkedPerIncrement * DeathPenaltyFraction * Math.Sqrt(Math.Max(1, oldCredits));
                     var (newCr, newAcc, newInc, lost) = ApplySingleAccumulatorDecay(
                         oldAcc, oldInc, oldCredits, rawPenalty, BaseBlocksWalkedPerIncrement, WalkingIncrementStep, null, "Walking");
-                    walkingProg.TotalCredits = newCr; walkingProg.BlocksInIncrement = (float)newAcc; walkingProg.CurrentIncrementSize = newInc;
+                    walkingProg.TotalCredits = newCr; walkingProg.PartialCredit = (float)newAcc; walkingProg.CurrentIncrementSize = newInc;
                     if (lost > 0) totalCreditsLost += lost;
                     pendingWalkingProgressSave = true;
                     sb.AppendLine($"  Walking: {oldCredits} \u2192 {newCr} (-{lost} credits, {rawPenalty:F0} pts), {oldAcc:F0}/{oldInc} \u2192 {(int)newAcc}/{newInc}");
@@ -13613,7 +13577,7 @@ namespace SeraphLeveling
             if (WalkingProgress.TryGetValue(playerUid, out var walkingProg))
             {
                 walkingProg.TotalCredits = 0;
-                walkingProg.BlocksInIncrement = 0;
+                walkingProg.PartialCredit = 0;
                 walkingProg.CurrentIncrementSize = 1000; // Default base
                 pendingWalkingProgressSave = true;
             }
@@ -14004,7 +13968,7 @@ namespace SeraphLeveling
             int maxWalkingCredits = MaxWalkingSpeedPercent;
             var walkingProg = WalkingProgress.GetOrAdd(playerUid, _ => new WalkingProgressData());
             walkingProg.TotalCredits = maxWalkingCredits;
-            walkingProg.BlocksInIncrement = 0;
+            walkingProg.PartialCredit = 0;
             walkingProg.CurrentIncrementSize = BaseBlocksWalkedPerIncrement;
             pendingWalkingProgressSave = true;
             ApplyWalkingBonusStatic(player, maxWalkingCredits);
@@ -14184,7 +14148,7 @@ namespace SeraphLeveling
             // Walking
             var walkingProg = WalkingProgress.GetOrAdd(playerUid, _ => new WalkingProgressData());
             walkingProg.TotalCredits = CREDITS;
-            walkingProg.BlocksInIncrement = 0;
+            walkingProg.PartialCredit = 0;
             walkingProg.CurrentIncrementSize = BaseBlocksWalkedPerIncrement;
             pendingWalkingProgressSave = true;
             ApplyWalkingBonusStatic(player, CREDITS);
