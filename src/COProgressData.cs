@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.IO;
+using System;
 
 namespace SeraphLeveling
 {
@@ -10,7 +12,7 @@ namespace SeraphLeveling
     /// Tracks progress for a specific CO weapon (for proficiency progression).
     /// Each weapon has its own increment counter that persists.
     /// </summary>
-    public class COWeaponProgressData:ProgressData
+    public class COWeaponProgressData
     {
         /// <summary>Damage accumulated toward the next credit with this weapon.</summary>
         public float DamageInIncrement { get; set; }
@@ -38,7 +40,7 @@ namespace SeraphLeveling
     /// Data structure for tracking a single Combat Overhaul proficiency progression.
     /// Each proficiency type (bows, crossbows, one-handed swords, etc.) has its own instance.
     /// </summary>
-    public class COProficiencyProgressData:ProgressData
+    public class COProficiencyProgressData
     {
         /// <summary>Total credits earned (each credit = 0.01 proficiency bonus).</summary>
         public int TotalCredits { get; set; }
@@ -88,7 +90,7 @@ namespace SeraphLeveling
     /// Master data structure for all Combat Overhaul proficiency progressions for a player.
     /// Contains one COProficiencyProgressData per proficiency type.
     /// </summary>
-    public class COPlayerProgressData:ProgressData
+    public class COPlayerProgressData:ProgressData<COPlayerProgressData>, IProgressDataContract<COPlayerProgressData>
     {
         /// <summary>Progress for each proficiency stat. Key is stat name (e.g., "bowsProficiency").</summary>
         public Dictionary<string, COProficiencyProgressData> Proficiencies { get; set; }
@@ -133,5 +135,111 @@ namespace SeraphLeveling
             }
             return clone;
         }
+
+        public static string GetHeaderString()
+        {
+            return "COB";
+        }
+
+        public static byte GetVersion() {
+            return (byte)2;
+        }
+        public override void WriteOut(BinaryWriter writer) {
+            // Write Steady Aim credits
+            writer.Write(SteadyAimCredits);
+            writer.Write(LastActivityDay);
+
+            // Write proficiency count and each proficiency
+            var profSnapshot = Proficiencies.ToArray();
+            writer.Write(profSnapshot.Length);
+            foreach (var profKvp in profSnapshot)
+            {
+                writer.Write(profKvp.Key); // Proficiency stat name
+                var profProgress = profKvp.Value;
+                writer.Write(profProgress.TotalCredits);
+
+                // Write weapon progress
+                var weaponSnapshot = profProgress.WeaponProgress.ToArray();
+                writer.Write(weaponSnapshot.Length);
+                foreach (var weaponKvp in weaponSnapshot)
+                {
+                    writer.Write(weaponKvp.Key); // Weapon code
+                    writer.Write(weaponKvp.Value.DamageInIncrement);
+                    writer.Write(weaponKvp.Value.CurrentIncrementSize);
+                }
+            }
+        }
+
+        public static COPlayerProgressData ReadVersion(byte version, BinaryReader reader) {
+            switch (version) {
+                case 1:
+                    var playerProgress = new COPlayerProgressData();
+
+                    // Read Steady Aim credits
+                    playerProgress.SteadyAimCredits = reader.ReadInt32();
+
+                    // Read proficiencies
+                    int proficiencyCount = reader.ReadInt32();
+                    for (int j = 0; j < proficiencyCount; j++)
+                    {
+                        string proficiencyStat = reader.ReadString();
+                        var profProgress = new COProficiencyProgressData();
+                        profProgress.TotalCredits = reader.ReadInt32();
+
+                        // Read weapon progress
+                        int weaponCount = reader.ReadInt32();
+                        for (int k = 0; k < weaponCount; k++)
+                        {
+                            string weaponCode = reader.ReadString();
+                            var weaponProgress = new COWeaponProgressData
+                            {
+                                DamageInIncrement = reader.ReadSingle(),
+                                CurrentIncrementSize = reader.ReadInt32()
+                            };
+                            profProgress.WeaponProgress[weaponCode] = weaponProgress;
+                        }
+
+                        playerProgress.Proficiencies[proficiencyStat] = profProgress;
+                    }
+                    return playerProgress;
+                case 2:
+                    var playerProgress = new COPlayerProgressData();
+
+                    // Read Steady Aim credits
+                    playerProgress.SteadyAimCredits = reader.ReadInt32();
+                    playerProgress.LastActivityDay = reader.ReadDouble();
+
+                    // Read proficiencies
+                    int proficiencyCount = reader.ReadInt32();
+                    for (int j = 0; j < proficiencyCount; j++)
+                    {
+                        string proficiencyStat = reader.ReadString();
+                        var profProgress = new COProficiencyProgressData();
+                        profProgress.TotalCredits = reader.ReadInt32();
+
+                        // Read weapon progress
+                        int weaponCount = reader.ReadInt32();
+                        for (int k = 0; k < weaponCount; k++)
+                        {
+                            string weaponCode = reader.ReadString();
+                            var weaponProgress = new COWeaponProgressData
+                            {
+                                DamageInIncrement = reader.ReadSingle(),
+                                CurrentIncrementSize = reader.ReadInt32()
+                            };
+                            profProgress.WeaponProgress[weaponCode] = weaponProgress;
+                        }
+
+                        playerProgress.Proficiencies[proficiencyStat] = profProgress;
+                    }
+                    return playerProgress;
+                default:
+                    throw new NotSupportedException($"Version {version} is not supported");
+            }
+        }
+
+        public static string SAVE_KEY => "sitCOProgress";
+        public static string Description => "CO";
+
     }
 }
