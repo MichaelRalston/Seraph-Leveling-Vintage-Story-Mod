@@ -16836,47 +16836,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistBowyerProgress()
         {
-            if (ServerApi == null) return;
-
-            lock (persistLock)
-            {
-                if (BowyerProgress.IsEmpty)
-                {
-                    return;
-                }
-
-                try
-                {
-                    var snapshot = BowyerProgress.ToArray();
-                    byte[] data;
-                    using (var ms = new MemoryStream())
-                    {
-                        using (var writer = new BinaryWriter(ms))
-                        {
-                            writer.Write((byte)0x42); // 'B'
-                            writer.Write((byte)0x57); // 'W'
-                            writer.Write((byte)0x59); // 'Y'
-                            writer.Write((byte)1);    // Version 1
-
-                            writer.Write(snapshot.Length);
-                            foreach (var playerKvp in snapshot)
-                            {
-                                writer.Write(playerKvp.Key);
-                                var progress = playerKvp.Value;
-                                writer.Write(progress.TotalBowDamage);
-                                writer.Write(progress.IsUnlocked);
-                            }
-                        }
-                        data = ms.ToArray();
-                    }
-
-                    ServerApi.WorldManager.SaveGame.StoreData(BOWYER_PROGRESS_SAVE_KEY, data);
-                }
-                catch (Exception ex)
-                {
-                    ServerApi.Logger.Error($"[SeraphLeveling] Failed to persist bowyer progress: {ex.Message}");
-                }
-            }
+            PersistProgress<BowyerProgressData>(BowyerProgress);
         }
 
         /// <summary>
@@ -16884,60 +16844,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadBowyerProgress()
         {
-            BowyerProgress.Clear();
-
-            try
-            {
-                byte[] data = ServerApi.WorldManager.SaveGame.GetData(BOWYER_PROGRESS_SAVE_KEY);
-                if (data == null || data.Length == 0)
-                {
-                    ServerApi.Logger.Debug("[SeraphLeveling] No bowyer progress data found");
-                    return;
-                }
-
-                using (var ms = new MemoryStream(data))
-                {
-                    using (var reader = new BinaryReader(ms))
-                    {
-                        byte magic1 = reader.ReadByte();
-                        byte magic2 = reader.ReadByte();
-                        byte magic3 = reader.ReadByte();
-                        byte version = reader.ReadByte();
-
-                        if (magic1 != 0x42 || magic2 != 0x57 || magic3 != 0x59)
-                        {
-                            ServerApi.Logger.Warning("[SeraphLeveling] Invalid bowyer progress magic bytes");
-                            return;
-                        }
-
-                        int playerCount = reader.ReadInt32();
-                        for (int i = 0; i < playerCount; i++)
-                        {
-                            try
-                            {
-                                string playerUid = reader.ReadString();
-                                var progress = new BowyerProgressData
-                                {
-                                    TotalBowDamage = reader.ReadSingle(),
-                                    IsUnlocked = reader.ReadBoolean()
-                                };
-                                BowyerProgress[playerUid] = progress;
-                            }
-                            catch (Exception innerEx)
-                            {
-                                ServerApi.Logger.Warning($"[SeraphLeveling] Skipping corrupt player entry {i+1}/{playerCount} in bowyer data: {innerEx.Message}");
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                ServerApi.Logger.Notification($"[SeraphLeveling] Loaded bowyer progress for {BowyerProgress.Count} players");
-            }
-            catch (Exception ex)
-            {
-                ServerApi.Logger.Error($"[SeraphLeveling] Failed to load bowyer progress: {ex.Message}");
-            }
+            LoadProgress<BowyerProgressData>(ref BowyerProgress, ref pendingBowyerProgressSave);
         }
 
         // =========================================================================

@@ -1,10 +1,13 @@
+using System;
+using System.IO;
+
 namespace SeraphLeveling
 {
     /// <summary>
     /// Data structure for tracking Bowyer unlock progression.
     /// Tracks bow damage with simple bow and longbow for unlock.
     /// </summary>
-    public class BowyerProgressData:ProgressData
+    public class BowyerProgressData : ProgressData<BowyerProgressData>, IProgressDataContract<BowyerProgressData>
     {
         /// <summary>Total damage dealt with simple bow or longbow.</summary>
         public float TotalBowDamage { get; set; }
@@ -25,6 +28,35 @@ namespace SeraphLeveling
                 TotalBowDamage = this.TotalBowDamage,
                 IsUnlocked = this.IsUnlocked
             };
+        }
+
+        public static byte[] GetHeader()
+        {
+            return [(byte)0x42, (byte)0x57, (byte)0x59]; // BWY
+        }
+
+        public static byte GetVersion()
+        {
+            return (byte)1;
+        }
+
+        public static BowyerProgressData ReadVersion(byte version, BinaryReader reader)
+        {
+            return version switch
+            {
+                1 => new BowyerProgressData
+                {
+                    TotalBowDamage = reader.ReadSingle(),
+                    IsUnlocked = reader.ReadBoolean()
+                },
+                _ => throw new NotSupportedException($"Version {version} is not supported"),
+            };
+        }
+
+        public override void WriteOut(BinaryWriter writer)
+        {
+            writer.Write(TotalBowDamage);
+            writer.Write(IsUnlocked);
         }
     }
 }
