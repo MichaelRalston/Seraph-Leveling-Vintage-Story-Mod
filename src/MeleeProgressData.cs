@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.IO;
+using System;
 
 namespace SeraphLeveling
 {
@@ -6,7 +8,7 @@ namespace SeraphLeveling
     /// Tracks progress for a specific weapon type (for melee damage progression).
     /// Each weapon type has its own increment counter that persists.
     /// </summary>
-    public class WeaponProgressData:ProgressData
+    public class WeaponProgressData
     {
         /// <summary>Damage accumulated toward the next credit with this weapon type.</summary>
         public float DamageInIncrement { get; set; }
@@ -34,7 +36,7 @@ namespace SeraphLeveling
     /// Data structure for tracking melee damage progression with per-weapon progress.
     /// Each weapon type remembers its own increment counter, encouraging use of many weapon types.
     /// </summary>
-    public class MeleeProgressData:ProgressData
+    public class MeleeProgressData:ProgressData<MeleeProgressData>, IProgressDataContract<MeleeProgressData>
     {
         /// <summary>Total credits earned (each credit = 1% bonus). Max 150.</summary>
         public int TotalCredits { get; set; }
@@ -86,6 +88,76 @@ namespace SeraphLeveling
                 clone.WeaponProgress[kvp.Key] = kvp.Value.Clone();
             }
             return clone;
+        }
+        public static string GetHeaderString()
+        {
+            return "SIM";
+        }
+        public static byte GetVersion()
+        {
+            return (byte)2;
+        }
+        public override void WriteOut(BinaryWriter writer)
+        {
+            writer.Write(TotalCredits);
+            writer.Write(LastActivityDay);
+
+            // Write per-weapon progress dictionary
+            var weaponSnapshot = WeaponProgress.ToArray();
+            writer.Write(weaponSnapshot.Length);
+            foreach (var weaponKvp in weaponSnapshot)
+            {
+                writer.Write(weaponKvp.Key); // Weapon type
+                writer.Write(weaponKvp.Value.DamageInIncrement);
+                writer.Write(weaponKvp.Value.CurrentIncrementSize);
+            }
+        }
+        public static string SAVE_KEY => "sitMeleeProgress";
+        public static string Description => "melee";
+        public static MeleeProgressData ReadVersion(byte version, BinaryReader reader)
+        {
+            switch (version)
+            {
+                case 1:
+                    var progress = new MeleeProgressData
+                    {
+                        TotalCredits = reader.ReadInt32()
+                    };
+
+                    int weaponCount = reader.ReadInt32();
+                    for (int j = 0; j < weaponCount; j++)
+                    {
+                        string weaponType = reader.ReadString();
+                        var weaponProgress = new WeaponProgressData
+                        {
+                            DamageInIncrement = reader.ReadSingle(),
+                            CurrentIncrementSize = reader.ReadInt32()
+                        };
+                        progress.WeaponProgress[weaponType] = weaponProgress;
+                    }
+                    return progress;
+                case 2:
+                    var progress = new MeleeProgressData
+                    {
+                        TotalCredits = reader.ReadInt32(),
+                        LastActivityDay = reader.ReadDouble()
+                    };
+
+                    int weaponCount = reader.ReadInt32();
+                    for (int j = 0; j < weaponCount; j++)
+                    {
+                        string weaponType = reader.ReadString();
+                        var weaponProgress = new WeaponProgressData
+                        {
+                            DamageInIncrement = reader.ReadSingle(),
+                            CurrentIncrementSize = reader.ReadInt32()
+                        };
+                        progress.WeaponProgress[weaponType] = weaponProgress;
+                    }
+                    return progress;
+                default:
+                    throw new NotSupportedException($"Version {version} is not supported");
+            }
         }
     }
 }
