@@ -438,7 +438,6 @@ namespace SeraphLeveling
         // FURTIVE TRAIT - Tracks sneaking blocks for animal detection range reduction
         // =========================================================================
         public const string FURTIVE_STAT_CODE = "sitFurtiveBonus";
-        private const string FURTIVE_PROGRESS_SAVE_KEY = "sitFurtiveProgress";
         public const string WATCHED_FURTIVE_LEVEL = "sitFurtiveLevel";
         public const string WATCHED_FURTIVE_BONUS = "sitFurtiveBonusPercent";
         public const string FURTIVE_TRAIT_CODE = "sitfurtivemastery";
@@ -533,7 +532,6 @@ namespace SeraphLeveling
         // IMPROVISER TRAIT - Unlocks sling after thrown rock damage
         // =========================================================================
         public const string IMPROVISER_STAT_CODE = "sitImproviserBonus";
-        private const string IMPROVISER_PROGRESS_SAVE_KEY = "sitImproviserProgress";
         public const string WATCHED_IMPROVISER_UNLOCKED = "sitImproviserUnlocked";
         public const string WATCHED_IMPROVISER_ROCK_DAMAGE = "sitImproviserRockDamage";
         public const string IMPROVISER_TRAIT_CODE = "sitimprovisermastery";
@@ -15679,49 +15677,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistFurtiveProgress()
         {
-            if (ServerApi == null) return;
-
-            lock (persistLock)
-            {
-                if (FurtiveProgress.IsEmpty)
-                {
-                    return;
-                }
-
-                try
-                {
-                    var snapshot = FurtiveProgress.ToArray();
-                    byte[] data;
-                    using (var ms = new MemoryStream())
-                    {
-                        using (var writer = new BinaryWriter(ms))
-                        {
-                            writer.Write((byte)0x46); // 'F'
-                            writer.Write((byte)0x55); // 'U'
-                            writer.Write((byte)0x52); // 'R'
-                            writer.Write((byte)2);    // Version 2
-
-                            writer.Write(snapshot.Length);
-                            foreach (var playerKvp in snapshot)
-                            {
-                                writer.Write(playerKvp.Key);
-                                var progress = playerKvp.Value;
-                                writer.Write(progress.TotalCredits);
-                                writer.Write(progress.BlocksInIncrement);
-                                writer.Write(progress.CurrentIncrementSize);
-                                writer.Write(progress.LastActivityDay);
-                            }
-                        }
-                        data = ms.ToArray();
-                    }
-
-                    ServerApi.WorldManager.SaveGame.StoreData(FURTIVE_PROGRESS_SAVE_KEY, data);
-                }
-                catch (Exception ex)
-                {
-                    ServerApi.Logger.Error($"[SeraphLeveling] Failed to persist furtive progress: {ex.Message}");
-                }
-            }
+            PersistProgress<FurtiveProgressData>(FurtiveProgress);
         }
 
         /// <summary>
@@ -15729,93 +15685,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadFurtiveProgress()
         {
-            FurtiveProgress.Clear();
-            try
-            {
-                byte[] data = ServerApi.WorldManager.SaveGame.GetData(FURTIVE_PROGRESS_SAVE_KEY);
-                if (data == null || data.Length == 0)
-                {
-                    ServerApi.Logger.Debug("[SeraphLeveling] No furtive progress data found");
-                    return;
-                }
-
-                using (var ms = new MemoryStream(data))
-                {
-                    using (var reader = new BinaryReader(ms))
-                    {
-                        byte magic1 = reader.ReadByte();
-                        byte magic2 = reader.ReadByte();
-                        byte magic3 = reader.ReadByte();
-                        byte version = reader.ReadByte();
-
-                        if (magic1 != 0x46 || magic2 != 0x55 || magic3 != 0x52)
-                        {
-                            ServerApi.Logger.Warning("[SeraphLeveling] Invalid furtive progress magic bytes");
-                            return;
-                        }
-
-                        int playerCount = reader.ReadInt32();
-                        if (version == 1)
-                        {
-                            for (int i = 0; i < playerCount; i++)
-                            {
-                                try
-                                {
-                                    string playerUid = reader.ReadString();
-                                    var progress = new FurtiveProgressData
-                                    {
-                                        TotalCredits = reader.ReadInt32(),
-                                        BlocksInIncrement = reader.ReadSingle(),
-                                        CurrentIncrementSize = reader.ReadInt32()
-                                    };
-                                    FurtiveProgress[playerUid] = progress;
-                                }
-                                catch (Exception innerEx)
-                                {
-                                    ServerApi.Logger.Warning($"[SeraphLeveling] Skipping corrupt player entry {i+1}/{playerCount} in furtive data: {innerEx.Message}");
-                                    break;
-                                }
-                            }
-                            pendingFurtiveProgressSave = true;
-                        }
-                        else if (version == 2)
-                        {
-                            // Current format: per-player progress + LastActivityDay
-                            for (int i = 0; i < playerCount; i++)
-                            {
-                                try
-                                {
-                                    string playerUid = reader.ReadString();
-                                    var progress = new FurtiveProgressData
-                                    {
-                                        TotalCredits = reader.ReadInt32(),
-                                        BlocksInIncrement = reader.ReadSingle(),
-                                        CurrentIncrementSize = reader.ReadInt32(),
-                                        LastActivityDay = reader.ReadDouble()
-                                    };
-                                    FurtiveProgress[playerUid] = progress;
-                                }
-                                catch (Exception innerEx)
-                                {
-                                    ServerApi.Logger.Warning($"[SeraphLeveling] Skipping corrupt player entry {i+1}/{playerCount} in furtive data: {innerEx.Message}");
-                                    break;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            ServerApi.Logger.Warning($"[SeraphLeveling] Unknown furtive save format version {version}");
-                            return;
-                        }
-                    }
-                }
-
-                ServerApi.Logger.Notification($"[SeraphLeveling] Loaded furtive progress for {FurtiveProgress.Count} players");
-            }
-            catch (Exception ex)
-            {
-                ServerApi.Logger.Error($"[SeraphLeveling] Failed to load furtive progress: {ex.Message}");
-            }
+            LoadProgress<FurtiveProgressData>(ref FurtiveProgress, ref pendingFurtiveProgressSave);
         }
 
         // =========================================================================
@@ -16157,47 +16027,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistImproviserProgress()
         {
-            if (ServerApi == null) return;
-
-            lock (persistLock)
-            {
-                if (ImproviserProgress.IsEmpty)
-                {
-                    return;
-                }
-
-                try
-                {
-                    var snapshot = ImproviserProgress.ToArray();
-                    byte[] data;
-                    using (var ms = new MemoryStream())
-                    {
-                        using (var writer = new BinaryWriter(ms))
-                        {
-                            writer.Write((byte)0x49); // 'I'
-                            writer.Write((byte)0x4D); // 'M'
-                            writer.Write((byte)0x50); // 'P'
-                            writer.Write((byte)1);    // Version 1
-
-                            writer.Write(snapshot.Length);
-                            foreach (var playerKvp in snapshot)
-                            {
-                                writer.Write(playerKvp.Key);
-                                var progress = playerKvp.Value;
-                                writer.Write(progress.TotalRockDamage);
-                                writer.Write(progress.IsUnlocked);
-                            }
-                        }
-                        data = ms.ToArray();
-                    }
-
-                    ServerApi.WorldManager.SaveGame.StoreData(IMPROVISER_PROGRESS_SAVE_KEY, data);
-                }
-                catch (Exception ex)
-                {
-                    ServerApi.Logger.Error($"[SeraphLeveling] Failed to persist improviser progress: {ex.Message}");
-                }
-            }
+            PersistProgress<ImproviserProgressData>(ImproviserProgress);
         }
 
         /// <summary>
@@ -16205,60 +16035,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadImproviserProgress()
         {
-            ImproviserProgress.Clear();
-
-            try
-            {
-                byte[] data = ServerApi.WorldManager.SaveGame.GetData(IMPROVISER_PROGRESS_SAVE_KEY);
-                if (data == null || data.Length == 0)
-                {
-                    ServerApi.Logger.Debug("[SeraphLeveling] No improviser progress data found");
-                    return;
-                }
-
-                using (var ms = new MemoryStream(data))
-                {
-                    using (var reader = new BinaryReader(ms))
-                    {
-                        byte magic1 = reader.ReadByte();
-                        byte magic2 = reader.ReadByte();
-                        byte magic3 = reader.ReadByte();
-                        byte version = reader.ReadByte();
-
-                        if (magic1 != 0x49 || magic2 != 0x4D || magic3 != 0x50)
-                        {
-                            ServerApi.Logger.Warning("[SeraphLeveling] Invalid improviser progress magic bytes");
-                            return;
-                        }
-
-                        int playerCount = reader.ReadInt32();
-                        for (int i = 0; i < playerCount; i++)
-                        {
-                            try
-                            {
-                                string playerUid = reader.ReadString();
-                                var progress = new ImproviserProgressData
-                                {
-                                    TotalRockDamage = reader.ReadSingle(),
-                                    IsUnlocked = reader.ReadBoolean()
-                                };
-                                ImproviserProgress[playerUid] = progress;
-                            }
-                            catch (Exception innerEx)
-                            {
-                                ServerApi.Logger.Warning($"[SeraphLeveling] Skipping corrupt player entry {i+1}/{playerCount} in improviser data: {innerEx.Message}");
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                ServerApi.Logger.Notification($"[SeraphLeveling] Loaded improviser progress for {ImproviserProgress.Count} players");
-            }
-            catch (Exception ex)
-            {
-                ServerApi.Logger.Error($"[SeraphLeveling] Failed to load improviser progress: {ex.Message}");
-            }
+            LoadProgress<ImproviserProgressData>(ref ImproviserProgress, ref pendingImproviserProgressSave);
         }
 
         // =========================================================================
