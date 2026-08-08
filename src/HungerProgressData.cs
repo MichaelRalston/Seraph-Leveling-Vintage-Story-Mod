@@ -1,19 +1,5 @@
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using HarmonyLib;
-using ProtoBuf;
-using Vintagestory.API.Client;
-using Vintagestory.GameContent;
-using Vintagestory.API.Common;
-using Vintagestory.API.Common.Entities;
-using Vintagestory.API.Config;
-using Vintagestory.API.Datastructures;
-using Vintagestory.API.MathTools;
-using Vintagestory.API.Server;
 
 namespace SeraphLeveling
 {

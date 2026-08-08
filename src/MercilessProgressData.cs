@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 
 namespace SeraphLeveling
@@ -41,6 +42,18 @@ namespace SeraphLeveling
         public override void WriteOut(BinaryWriter writer)
         {
             writer.Write(this.IsUnlocked);
+        }
+
+        public static MercilessProgressData ReadVersion(byte version, BinaryReader reader)
+        {
+            return version switch
+            {
+                1 => new MercilessProgressData
+                {
+                    IsUnlocked = reader.ReadBoolean()
+                },
+                _ => throw new NotSupportedException($"Version {version} is not supported"),
+            };
         }
     }
 }
