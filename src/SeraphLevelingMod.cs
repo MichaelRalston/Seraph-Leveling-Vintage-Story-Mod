@@ -2599,7 +2599,7 @@ namespace SeraphLeveling
 
                 if (level == 0)
                 {
-                    progress.ArmorProgress.Remove(toolName);
+                    progress.ArmorProgress.TryRemove(toolName, out var _);
                 }
                 else
                 {
