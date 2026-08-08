@@ -4,7 +4,7 @@ namespace SeraphLeveling
     /// Data structure for tracking Mender progression.
     /// Tracks repairs done with sewing kit to earn armor/clothing durability bonuses.
     /// </summary>
-    public class MenderProgressData
+    public class MenderProgressData:ProgressData
     {
         /// <summary>Total credits earned (each credit = 1% bonus). Max 20.</summary>
         public int TotalCredits { get; set; }

@@ -4,7 +4,7 @@ namespace SeraphLeveling
     /// Data structure for tracking Merciless unlock progression.
     /// Unlocks after reaching armor durability and melee damage thresholds.
     /// </summary>
-    public class MercilessProgressData
+    public class MercilessProgressData:ProgressData
     {
         /// <summary>Whether the Merciless trait has been unlocked.</summary>
         public bool IsUnlocked { get; set; }

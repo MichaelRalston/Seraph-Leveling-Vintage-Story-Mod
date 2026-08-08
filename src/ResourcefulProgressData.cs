@@ -4,7 +4,7 @@ namespace SeraphLeveling
     /// Data structure for tracking Resourceful progression.
     /// Tracks animal harvesting for loot and speed bonuses.
     /// </summary>
-    public class ResourcefulProgressData
+    public class ResourcefulProgressData:ProgressData
     {
         /// <summary>Total credits earned (each credit = 1% bonus). Max 20.</summary>
         public int TotalCredits { get; set; }

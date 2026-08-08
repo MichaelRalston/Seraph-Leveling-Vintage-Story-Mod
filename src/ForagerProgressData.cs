@@ -4,7 +4,7 @@ namespace SeraphLeveling
     /// Data structure for tracking Forager progression.
     /// Tracks wild crop breaking for foraging loot bonuses.
     /// </summary>
-    public class ForagerProgressData
+    public class ForagerProgressData:ProgressData
     {
         /// <summary>Total credits earned (each credit = 1% bonus). Max 20.</summary>
         public int TotalCredits { get; set; }

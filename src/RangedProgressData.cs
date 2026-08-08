@@ -6,7 +6,7 @@ namespace SeraphLeveling
     /// Tracks progress for a specific ranged weapon combination (for ranged damage progression).
     /// Each weapon combination (bow+arrow) has its own increment counter that persists.
     /// </summary>
-    public class RangedWeaponProgressData
+    public class RangedWeaponProgressData:ProgressData
     {
         /// <summary>Damage accumulated toward the next credit with this weapon combination.</summary>
         public float DamageInIncrement { get; set; }
@@ -34,7 +34,7 @@ namespace SeraphLeveling
     /// Data structure for tracking ranged damage progression with per-weapon progress.
     /// Each weapon combination remembers its own increment counter, encouraging use of many weapon types.
     /// </summary>
-    public class RangedProgressData
+    public class RangedProgressData:ProgressData
     {
         /// <summary>Total credits earned (each credit = 1% bonus to damage/accuracy/distance). Max 130.</summary>
         public int TotalCredits { get; set; }

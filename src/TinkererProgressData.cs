@@ -4,7 +4,7 @@ namespace SeraphLeveling
     /// Data structure for tracking Tinkerer unlock progression.
     /// Unlocks after obtaining Technical trait and reaching Precise damage threshold.
     /// </summary>
-    public class TinkererProgressData
+    public class TinkererProgressData:ProgressData
     {
         /// <summary>Whether the Tinkerer trait has been unlocked.</summary>
         public bool IsUnlocked { get; set; }

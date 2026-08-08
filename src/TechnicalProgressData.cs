@@ -4,7 +4,7 @@ namespace SeraphLeveling
     /// Data structure for tracking Technical progression.
     /// Binary unlock after repairing translocators.
     /// </summary>
-    public class TechnicalProgressData
+    public class TechnicalProgressData:ProgressData
     {
         /// <summary>Number of translocators repaired.</summary>
         public int TranslocatorsRepaired { get; set; }

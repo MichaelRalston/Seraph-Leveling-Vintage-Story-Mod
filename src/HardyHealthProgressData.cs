@@ -4,7 +4,7 @@ namespace SeraphLeveling
     /// Data structure for tracking Hardy health unlock progression.
     /// One-time burst unlock when reaching mining and armor durability thresholds.
     /// </summary>
-    public class HardyHealthProgressData
+    public class HardyHealthProgressData:ProgressData
     {
         /// <summary>Whether the Hardy health bonus has been unlocked.</summary>
         public bool IsUnlocked { get; set; }

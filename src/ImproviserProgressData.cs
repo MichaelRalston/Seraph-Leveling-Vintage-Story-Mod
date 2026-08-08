@@ -4,7 +4,7 @@ namespace SeraphLeveling
     /// Data structure for tracking Improviser unlock progression.
     /// Tracks damage dealt with thrown rocks for sling unlock.
     /// </summary>
-    public class ImproviserProgressData
+    public class ImproviserProgressData:ProgressData
     {
         /// <summary>Total damage dealt with thrown rocks.</summary>
         public float TotalRockDamage { get; set; }

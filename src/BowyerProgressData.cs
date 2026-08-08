@@ -4,7 +4,7 @@ namespace SeraphLeveling
     /// Data structure for tracking Bowyer unlock progression.
     /// Tracks bow damage with simple bow and longbow for unlock.
     /// </summary>
-    public class BowyerProgressData
+    public class BowyerProgressData:ProgressData
     {
         /// <summary>Total damage dealt with simple bow or longbow.</summary>
         public float TotalBowDamage { get; set; }

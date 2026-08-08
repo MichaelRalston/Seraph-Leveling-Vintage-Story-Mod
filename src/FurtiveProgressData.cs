@@ -4,7 +4,7 @@ namespace SeraphLeveling
     /// Data structure for tracking Furtive progression.
     /// Tracks blocks of sneaking for animal detection range reduction.
     /// </summary>
-    public class FurtiveProgressData
+    public class FurtiveProgressData:ProgressData
     {
         /// <summary>Total credits earned (each credit = -1% animal detection range). Max 35.</summary>
         public int TotalCredits { get; set; }

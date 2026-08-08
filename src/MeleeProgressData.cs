@@ -6,7 +6,7 @@ namespace SeraphLeveling
     /// Tracks progress for a specific weapon type (for melee damage progression).
     /// Each weapon type has its own increment counter that persists.
     /// </summary>
-    public class WeaponProgressData
+    public class WeaponProgressData:ProgressData
     {
         /// <summary>Damage accumulated toward the next credit with this weapon type.</summary>
         public float DamageInIncrement { get; set; }
@@ -34,7 +34,7 @@ namespace SeraphLeveling
     /// Data structure for tracking melee damage progression with per-weapon progress.
     /// Each weapon type remembers its own increment counter, encouraging use of many weapon types.
     /// </summary>
-    public class MeleeProgressData
+    public class MeleeProgressData:ProgressData
     {
         /// <summary>Total credits earned (each credit = 1% bonus). Max 150.</summary>
         public int TotalCredits { get; set; }

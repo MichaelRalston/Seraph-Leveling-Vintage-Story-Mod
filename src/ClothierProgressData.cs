@@ -6,7 +6,7 @@ namespace SeraphLeveling
     /// Data structure for tracking Clothier progression.
     /// Tracks unique clothing items worn to unlock sewing kit crafting.
     /// </summary>
-    public class ClothierProgressData
+    public class ClothierProgressData:ProgressData
     {
         /// <summary>Set of unique clothing item codes that have been worn.</summary>
         public HashSet<string> UniqueClothesWorn { get; set; }

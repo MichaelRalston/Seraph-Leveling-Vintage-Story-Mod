@@ -10,7 +10,7 @@ namespace SeraphLeveling
     /// Tracks progress for a specific CO weapon (for proficiency progression).
     /// Each weapon has its own increment counter that persists.
     /// </summary>
-    public class COWeaponProgressData
+    public class COWeaponProgressData:ProgressData
     {
         /// <summary>Damage accumulated toward the next credit with this weapon.</summary>
         public float DamageInIncrement { get; set; }
@@ -38,7 +38,7 @@ namespace SeraphLeveling
     /// Data structure for tracking a single Combat Overhaul proficiency progression.
     /// Each proficiency type (bows, crossbows, one-handed swords, etc.) has its own instance.
     /// </summary>
-    public class COProficiencyProgressData
+    public class COProficiencyProgressData:ProgressData
     {
         /// <summary>Total credits earned (each credit = 0.01 proficiency bonus).</summary>
         public int TotalCredits { get; set; }
@@ -88,7 +88,7 @@ namespace SeraphLeveling
     /// Master data structure for all Combat Overhaul proficiency progressions for a player.
     /// Contains one COProficiencyProgressData per proficiency type.
     /// </summary>
-    public class COPlayerProgressData
+    public class COPlayerProgressData:ProgressData
     {
         /// <summary>Progress for each proficiency stat. Key is stat name (e.g., "bowsProficiency").</summary>
         public Dictionary<string, COProficiencyProgressData> Proficiencies { get; set; }

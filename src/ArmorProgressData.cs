@@ -6,7 +6,7 @@ namespace SeraphLeveling
     /// Tracks progress for a specific armor piece (for armor progression).
     /// Each armor piece tracks time worn, damage blocked, repairs, and first-equip bonus.
     /// </summary>
-    public class ArmorPieceProgressData
+    public class ArmorPieceProgressData:ProgressData
     {
         /// <summary>Seconds worn in this armor piece toward next time credit.</summary>
         public float SecondsWornInIncrement { get; set; }
@@ -74,7 +74,7 @@ namespace SeraphLeveling
     /// Data structure for tracking armor progression with per-piece progress.
     /// Armor XP comes from: first-equip bonus, time worn, damage blocked, and repairs.
     /// </summary>
-    public class ArmorProgressData
+    public class ArmorProgressData:ProgressData
     {
         /// <summary>Total durability credits earned (each = 1% armor durability bonus).</summary>
         public int TotalDurabilityCredits { get; set; }

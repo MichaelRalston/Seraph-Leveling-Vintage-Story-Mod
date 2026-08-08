@@ -6,7 +6,7 @@ namespace SeraphLeveling
     /// Tracks progress for a specific pickaxe type.
     /// Each pickaxe type has its own increment counter that persists.
     /// </summary>
-    public class PickaxeProgressData
+    public class PickaxeProgressData:ProgressData
     {
         /// <summary>Points accumulated toward the next credit with this pickaxe.</summary>
         public int BlocksInIncrement { get; set; }

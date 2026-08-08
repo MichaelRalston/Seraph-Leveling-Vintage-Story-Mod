@@ -22,7 +22,7 @@ namespace SeraphLeveling
     /// Simpler than other progression systems since hunger has no "tools".
     /// Tracks time spent at full saturation.
     /// </summary>
-    public class HungerProgressData
+    public class HungerProgressData:ProgressData
     {
         /// <summary>Total credits earned (each credit = 1% hunger rate reduction). Max 25.</summary>
         public int TotalCredits { get; set; }
