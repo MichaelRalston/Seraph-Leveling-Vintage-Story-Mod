@@ -8,7 +8,7 @@ namespace SeraphLeveling
     /// Tracks progress for a specific ranged weapon combination (for ranged damage progression).
     /// Each weapon combination (bow+arrow) has its own increment counter that persists.
     /// </summary>
-    public class RangedWeaponProgressData : ProgressData<RangedWeaponProgressData>, IProgressDataContract<RangedWeaponProgressData>
+    public class RangedWeaponProgressData
     {
         /// <summary>Damage accumulated toward the next credit with this weapon combination.</summary>
         public float DamageInIncrement { get; set; }
@@ -92,6 +92,68 @@ namespace SeraphLeveling
                 clone.WeaponProgress[kvp.Key] = kvp.Value.Clone();
             }
             return clone;
+        }
+        public static string GetHeaderString() {
+            return "SIR";
+        }
+        public static byte GetVersion() {
+            return (byte)2;
+        }
+        public static string SAVE_KEY => "sitRangedProgress";
+        public static string Description => "ranged";
+        public static RangedProgressData ReadVersion(byte version, BinaryReader reader)
+        {
+            switch (version) {
+                case 1:
+                    var progress = new RangedProgressData
+                    {
+                        TotalCredits = reader.ReadInt32()
+                    };
+
+                    int weaponCount = reader.ReadInt32();
+                    for (int j = 0; j < weaponCount; j++)
+                    {
+                        string weaponCombo = reader.ReadString();
+                        var weaponProgress = new RangedWeaponProgressData(reader);
+                        progress.WeaponProgress[weaponCombo] = weaponProgress;
+                    }
+                    return progress;
+                case 2:
+                    var progress = new RangedProgressData
+                    {
+                        TotalCredits = reader.ReadInt32(),
+                        LastActivityDay = reader.ReadDouble()
+                    };
+
+                    int weaponCount = reader.ReadInt32();
+                    for (int j = 0; j < weaponCount; j++)
+                    {
+                        string weaponCombo = reader.ReadString();
+                        var weaponProgress = new RangedWeaponProgressData
+                        {
+                            DamageInIncrement = reader.ReadSingle(),
+                            CurrentIncrementSize = reader.ReadInt32()
+                        };
+                        progress.WeaponProgress[weaponCombo] = weaponProgress;
+                    }
+                    return progress;
+                default:
+                    throw new NotSupportedException($"Version {version} is not supported");
+            }
+        }
+        public override void WriteOut(BinaryWriter writer) {
+            writer.Write(TotalCredits);
+            writer.Write(LastActivityDay);
+
+            // Write per-weapon progress dictionary
+            var weaponSnapshot = WeaponProgress.ToArray();
+            writer.Write(weaponSnapshot.Length);
+            foreach (var weaponKvp in weaponSnapshot)
+            {
+                writer.Write(weaponKvp.Key); // Weapon combo
+                writer.Write(weaponKvp.Value.DamageInIncrement);
+                writer.Write(weaponKvp.Value.CurrentIncrementSize);
+            }
         }
     }
 }
