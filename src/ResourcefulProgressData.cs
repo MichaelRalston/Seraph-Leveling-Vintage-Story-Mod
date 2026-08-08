@@ -1,10 +1,13 @@
+using System;
+using System.IO;
+
 namespace SeraphLeveling
 {
     /// <summary>
     /// Data structure for tracking Resourceful progression.
     /// Tracks animal harvesting for loot and speed bonuses.
     /// </summary>
-    public class ResourcefulProgressData:ProgressData
+    public class ResourcefulProgressData: ProgressData<ResourcefulProgressData>, IProgressDataContract<ResourcefulProgressData>
     {
         /// <summary>Total credits earned (each credit = 1% bonus). Max 20.</summary>
         public int TotalCredits { get; set; }
@@ -35,6 +38,43 @@ namespace SeraphLeveling
                 CurrentIncrementSize = this.CurrentIncrementSize,
                 LastActivityDay = this.LastActivityDay
             };
+        }
+        public static string GetHeaderString()
+        {
+            return "RSF";
+        }
+
+        public static byte GetVersion() {
+            return (byte)2;
+        }
+        public override void WriteOut(BinaryWriter writer) {
+            writer.Write(TotalCredits);
+            writer.Write(AnimalsInIncrement);
+            writer.Write(CurrentIncrementSize);
+            writer.Write(LastActivityDay);
+        }
+
+        public static string SAVE_KEY => "sitResourcefulProgress";
+        public static string Description => "resourceful";
+
+        public static ResourcefulProgressData ReadVersion(byte version, BinaryReader reader) {
+            switch (version) {
+                case 1:
+                    return new ResourcefulProgressData {
+                        TotalCredits = reader.ReadInt32(),
+                        AnimalsInIncrement = reader.ReadInt32(),
+                        CurrentIncrementSize = reader.ReadInt32()
+                    };
+                case 2:
+                    return new ResourcefulProgressData {
+                        TotalCredits = reader.ReadInt32(),
+                        AnimalsInIncrement = reader.ReadInt32(),
+                        CurrentIncrementSize = reader.ReadInt32(),
+                        LastActivityDay = reader.ReadDouble()
+                    };
+                default:
+                    throw new NotSupportedException($"Version {version} is not supported");
+            }
         }
     }
 }

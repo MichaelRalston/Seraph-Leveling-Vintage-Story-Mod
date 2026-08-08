@@ -1,10 +1,13 @@
+using System;
+using System.IO;
+
 namespace SeraphLeveling
 {
     /// <summary>
     /// Data structure for tracking Pilferer progression.
     /// Tracks loot vessels broken for loot bonuses.
     /// </summary>
-    public class PilfererProgressData
+    public class PilfererProgressData: ProgressData<WalkingProgressData>, IProgressDataContract<WalkingProgressData>
     {
         /// <summary>Total credits earned (each credit = 1% bonus). Max 20.</summary>
         public int TotalCredits { get; set; }
@@ -36,5 +39,58 @@ namespace SeraphLeveling
                 LastActivityDay = this.LastActivityDay
             };
         }
-    }
+         public static string GetHeaderString()
+        {
+            return "PLF";
+        }
+
+        public static byte GetVersion() {
+            return (byte)3;
+        }
+        public override void WriteOut(BinaryWriter writer) {
+            writer.Write(TotalCredits);
+            writer.Write(PointsInIncrement);
+            writer.Write(CurrentIncrementSize);
+            writer.Write(LastActivityDay);
+        }
+
+        public static string SAVE_KEY => "sitPilfererProgress";
+        public static string Description => "pilferer";
+
+        public static WalkingProgressData ReadVersion(byte version, BinaryReader reader) {
+            switch (version) {
+                case 1:
+                    var progress = new PilfererProgressData
+                    {
+                        TotalCredits = reader.ReadInt32(),
+                        PointsInIncrement = reader.ReadInt32(),
+                        CurrentIncrementSize = reader.ReadInt32()
+                    };
+                    // Version 1 had chest positions - skip them
+                    int chestCount = reader.ReadInt32();
+                    for (int j = 0; j < chestCount; j++)
+                    {
+                        reader.ReadString(); // Skip old chest position data
+                    }
+                    return progress;
+                case 2:
+                    return new PilfererProgressData
+                        {
+                            TotalCredits = reader.ReadInt32(),
+                            PointsInIncrement = reader.ReadInt32(),
+                            CurrentIncrementSize = reader.ReadInt32()
+                        };
+                case 3:
+                    return new PilfererProgressData
+                        {
+                            TotalCredits = reader.ReadInt32(),
+                            PointsInIncrement = reader.ReadInt32(),
+                            CurrentIncrementSize = reader.ReadInt32(),
+                            LastActivityDay = reader.ReadDouble()
+                        };
+                default:
+                    throw new NotSupportedException($"Version {version} is not supported");
+            }
+        }
+   }
 }

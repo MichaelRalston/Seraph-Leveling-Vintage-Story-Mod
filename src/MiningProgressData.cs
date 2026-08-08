@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System;
+using System.IO;
 
 namespace SeraphLeveling
 {
@@ -6,7 +8,7 @@ namespace SeraphLeveling
     /// Tracks progress for a specific pickaxe type.
     /// Each pickaxe type has its own increment counter that persists.
     /// </summary>
-    public class PickaxeProgressData:ProgressData
+    public class PickaxeProgressData
     {
         /// <summary>Points accumulated toward the next credit with this pickaxe.</summary>
         public int BlocksInIncrement { get; set; }
@@ -34,7 +36,7 @@ namespace SeraphLeveling
     /// Data structure for tracking mining progression with per-pickaxe progress.
     /// Each pickaxe type remembers its own increment counter, encouraging use of many pickaxe types.
     /// </summary>
-    public class MiningProgressData
+    public class MiningProgressData: ProgressData<MiningProgressData>, IProgressDataContract<MiningProgressData>
     {
         /// <summary>Total credits earned (each credit = 1% bonus). Max 150.</summary>
         public int TotalCredits { get; set; }
@@ -86,6 +88,111 @@ namespace SeraphLeveling
                 clone.PickaxeProgress[kvp.Key] = kvp.Value.Clone();
             }
             return clone;
+        }
+        public static string GetHeaderString()
+        {
+            return "SIT";
+        }
+
+        public static byte GetVersion() {
+            return (byte)4;
+        }
+        public override void WriteOut(BinaryWriter writer) {
+            writer.Write(TotalCredits);
+            writer.Write(LastActivityDay);
+
+            // Snapshot inner dictionary to avoid concurrent modification
+            var pickaxeSnapshot = PickaxeProgress.ToArray();
+            writer.Write(pickaxeSnapshot.Length);
+            foreach (var pickaxeKvp in pickaxeSnapshot)
+            {
+                writer.Write(pickaxeKvp.Key); // Pickaxe code
+                writer.Write(pickaxeKvp.Value.BlocksInIncrement);
+                writer.Write(pickaxeKvp.Value.CurrentIncrementSize);
+            }
+        }
+
+        public static string SAVE_KEY => "sitMiningProgress";
+        public static string Description => "mining";
+
+        public static MiningProgressData ReadVersion(byte version, BinaryReader reader) {
+            switch (version) {
+                case 1:
+                    long blocksMined = reader.ReadInt64();
+
+                    // Convert old blocks to credits using legacy formula
+                    int legacyLevel = 0;
+                    if (blocksMined >= 100)
+                    {
+                        double discriminant = 1.0 + (8.0 * blocksMined / 100);
+                        legacyLevel = (int)((-1.0 + Math.Sqrt(discriminant)) / 2.0);
+                    }
+
+                    return new MiningProgressData
+                    {
+                        TotalCredits = Math.Min(legacyLevel, MaxMiningSpeedPercent)
+                    };
+                case 2:
+                    int totalCredits = reader.ReadInt32();
+                    string currentPickaxeCode = reader.ReadString();
+                    int blocksInIncrement = reader.ReadInt32();
+                    int currentIncrementSize = reader.ReadInt32();
+
+                    var progress = new MiningProgressData
+                    {
+                        TotalCredits = totalCredits
+                    };
+
+                    // Migrate single pickaxe progress if it exists
+                    if (!string.IsNullOrEmpty(currentPickaxeCode))
+                    {
+                        progress.PickaxeProgress[currentPickaxeCode] = new PickaxeProgressData
+                        {
+                            BlocksInIncrement = blocksInIncrement,
+                            CurrentIncrementSize = currentIncrementSize
+                        };
+                    }
+                    return progress;
+                case 3:
+                    var progress = new MiningProgressData
+                    {
+                        TotalCredits = reader.ReadInt32()
+                    };
+
+                    int pickaxeCount = reader.ReadInt32();
+                    for (int j = 0; j < pickaxeCount; j++)
+                    {
+                        string pickaxeCode = reader.ReadString();
+                        var pickaxeProgress = new PickaxeProgressData
+                        {
+                            BlocksInIncrement = reader.ReadInt32(),
+                            CurrentIncrementSize = reader.ReadInt32()
+                        };
+                        progress.PickaxeProgress[pickaxeCode] = pickaxeProgress;
+                    }
+                    return progress;
+                case 4:
+                    var progress = new MiningProgressData
+                    {
+                        TotalCredits = reader.ReadInt32(),
+                        LastActivityDay = reader.ReadDouble()
+                    };
+
+                    int pickaxeCount = reader.ReadInt32();
+                    for (int j = 0; j < pickaxeCount; j++)
+                    {
+                        string pickaxeCode = reader.ReadString();
+                        var pickaxeProgress = new PickaxeProgressData
+                        {
+                            BlocksInIncrement = reader.ReadInt32(),
+                            CurrentIncrementSize = reader.ReadInt32()
+                        };
+                        progress.PickaxeProgress[pickaxeCode] = pickaxeProgress;
+                    }
+                    return progress;
+                default:
+                    throw new NotSupportedException($"Version {version} is not supported");
+            }
         }
     }
 }

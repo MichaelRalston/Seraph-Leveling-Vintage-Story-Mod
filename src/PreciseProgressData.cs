@@ -1,3 +1,5 @@
+using System.IO;
+using System;
 using System.Collections.Generic;
 
 namespace SeraphLeveling
@@ -34,7 +36,7 @@ namespace SeraphLeveling
     /// Data structure for tracking Precise progression.
     /// Tracks damage dealt to mechanical creatures for damage bonus.
     /// </summary>
-    public class PreciseProgressData
+    public class PreciseProgressData: ProgressData<PreciseProgressData>, IProgressDataContract<PreciseProgressData>
     {
         /// <summary>Total credits earned (each credit = +1% damage to mechanicals). Max 30.</summary>
         public int TotalCredits { get; set; }
@@ -82,6 +84,75 @@ namespace SeraphLeveling
                 clone.WeaponProgress[kvp.Key] = kvp.Value.Clone();
             }
             return clone;
+        }
+        public static string GetHeaderString()
+        {
+            return "PRC";
+        }
+
+        public static byte GetVersion() {
+            return (byte)2;
+        }
+        public override void WriteOut(BinaryWriter writer) {
+            writer.Write(TotalCredits);
+            writer.Write(LastActivityDay);
+
+            // Write weapon progress
+            var weaponSnapshot = WeaponProgress.ToArray();
+            writer.Write(weaponSnapshot.Length);
+            foreach (var weaponKvp in weaponSnapshot)
+            {
+                writer.Write(weaponKvp.Key);
+                writer.Write(weaponKvp.Value.DamageInIncrement);
+                writer.Write(weaponKvp.Value.CurrentIncrementSize);
+            }
+        }
+
+        public static string SAVE_KEY => "sitPreciseProgress";
+        public static string Description => "precise";
+
+        public static PreciseProgressData ReadVersion(byte version, BinaryReader reader) {
+            switch (version) {
+                case 1:
+                    var progress = new PreciseProgressData
+                    {
+                        TotalCredits = reader.ReadInt32()
+                    };
+
+                    int weaponCount = reader.ReadInt32();
+                    for (int j = 0; j < weaponCount; j++)
+                    {
+                        string weaponKey = reader.ReadString();
+                        var weaponProgress = new PreciseWeaponProgressData
+                        {
+                            DamageInIncrement = reader.ReadSingle(),
+                            CurrentIncrementSize = reader.ReadInt32()
+                        };
+                        progress.WeaponProgress[weaponKey] = weaponProgress;
+                    }
+                    return progress;
+                case 2:
+                    var progress = new PreciseProgressData
+                    {
+                        TotalCredits = reader.ReadInt32(),
+                        LastActivityDay = reader.ReadDouble()
+                    };
+
+                    int weaponCount = reader.ReadInt32();
+                    for (int j = 0; j < weaponCount; j++)
+                    {
+                        string weaponKey = reader.ReadString();
+                        var weaponProgress = new PreciseWeaponProgressData
+                        {
+                            DamageInIncrement = reader.ReadSingle(),
+                            CurrentIncrementSize = reader.ReadInt32()
+                        };
+                        progress.WeaponProgress[weaponKey] = weaponProgress;
+                    }
+                    return progress;
+                default:
+                    throw new NotSupportedException($"Version {version} is not supported");
+            }
         }
     }
 }
