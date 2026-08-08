@@ -1,10 +1,13 @@
+using System.IO;
+using System;
+
 namespace SeraphLeveling
 {
     /// <summary>
     /// Data structure for tracking Mender progression.
     /// Tracks repairs done with sewing kit to earn armor/clothing durability bonuses.
     /// </summary>
-    public class MenderProgressData:ProgressData
+    public class MenderProgressData: ProgressData<MenderProgressData>, IProgressDataContract<MenderProgressData>
     {
         /// <summary>Total credits earned (each credit = 1% bonus). Max 20.</summary>
         public int TotalCredits { get; set; }
@@ -36,5 +39,46 @@ namespace SeraphLeveling
                 LastActivityDay = this.LastActivityDay
             };
         }
+
+        public static string GetHeaderString()
+        {
+            return "MND";
+        }
+
+        public static byte GetVersion() {
+            return (byte)2;
+        }
+        public override void WriteOut(BinaryWriter writer) {
+            writer.Write(TotalCredits);
+            writer.Write(RepairsInIncrement);
+            writer.Write(CurrentIncrementSize);
+            writer.Write(LastActivityDay);
+        }
+
+        public static string SAVE_KEY => "sitMenderProgress";
+        public static string Description => "mending";
+
+        public static MenderProgressData ReadVersion(byte version, BinaryReader reader) {
+            switch (version) {
+                case 1:
+                    return new MenderProgressData
+                    {
+                        TotalCredits = reader.ReadInt32(),
+                        RepairsInIncrement = reader.ReadInt32(),
+                        CurrentIncrementSize = reader.ReadInt32()
+                    };
+                case 2:
+                    return new MenderProgressData
+                    {
+                        TotalCredits = reader.ReadInt32(),
+                        RepairsInIncrement = reader.ReadInt32(),
+                        CurrentIncrementSize = reader.ReadInt32(),
+                        LastActivityDay = reader.ReadDouble()
+                    };
+                default:
+                    throw new NotSupportedException($"Version {version} is not supported");
+            }
+        }
+
     }
 }

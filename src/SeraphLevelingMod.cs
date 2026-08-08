@@ -326,7 +326,6 @@ namespace SeraphLeveling
         // MENDER TRAIT - Tracks sewing kit repairs for durability bonus
         // =========================================================================
         public const string MENDER_STAT_CODE = "sitMenderBonus";
-        private const string MENDER_PROGRESS_SAVE_KEY = "sitMenderProgress";
         public const string WATCHED_MENDER_LEVEL = "sitMenderLevel";
         public const string WATCHED_MENDER_BONUS = "sitMenderBonusPercent";
         public const string MENDER_TRAIT_CODE = "sitmendermastery";
@@ -416,7 +415,6 @@ namespace SeraphLeveling
         // =========================================================================
         public const string FORAGER_LOOT_STAT_CODE = "sitForagerLoot";
         public const string FORAGER_WILD_CROP_STAT_CODE = "sitForagerWildCrop";
-        private const string FORAGER_PROGRESS_SAVE_KEY = "sitForagerProgress";
         public const string WATCHED_FORAGER_LEVEL = "sitForagerLevel";
         public const string WATCHED_FORAGER_LOOT_BONUS = "sitForagerLootBonusPercent";
         public const string WATCHED_FORAGER_WILD_CROP_BONUS = "sitForagerWildCropBonusPercent";
@@ -7725,7 +7723,9 @@ namespace SeraphLeveling
                                 break;
                             }
                         }
-                        pendingProgressSave = true;
+                        if (version != T.GetVersion()) {
+                            pendingProgressSave = true;
+                        }
                     }
                 }
 
@@ -15332,49 +15332,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistMenderProgress()
         {
-            if (ServerApi == null) return;
-
-            lock (persistLock)
-            {
-                if (MenderProgress.IsEmpty)
-                {
-                    return;
-                }
-
-                try
-                {
-                    var snapshot = MenderProgress.ToArray();
-                    byte[] data;
-                    using (var ms = new MemoryStream())
-                    {
-                        using (var writer = new BinaryWriter(ms))
-                        {
-                            writer.Write((byte)0x4D); // 'M'
-                            writer.Write((byte)0x4E); // 'N'
-                            writer.Write((byte)0x44); // 'D'
-                            writer.Write((byte)2);    // Version 2 - added LastActivityDay
-
-                            writer.Write(snapshot.Length);
-                            foreach (var playerKvp in snapshot)
-                            {
-                                writer.Write(playerKvp.Key);
-                                var progress = playerKvp.Value;
-                                writer.Write(progress.TotalCredits);
-                                writer.Write(progress.RepairsInIncrement);
-                                writer.Write(progress.CurrentIncrementSize);
-                                writer.Write(progress.LastActivityDay);
-                            }
-                        }
-                        data = ms.ToArray();
-                    }
-
-                    ServerApi.WorldManager.SaveGame.StoreData(MENDER_PROGRESS_SAVE_KEY, data);
-                }
-                catch (Exception ex)
-                {
-                    ServerApi.Logger.Error($"[SeraphLeveling] Failed to persist mender progress: {ex.Message}");
-                }
-            }
+            PersistProgress<MenderProgressData>(MenderProgress);
         }
 
         /// <summary>
@@ -15382,75 +15340,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadMenderProgress()
         {
-            MenderProgress.Clear();
-            try
-            {
-                byte[] data = ServerApi.WorldManager.SaveGame.GetData(MENDER_PROGRESS_SAVE_KEY);
-                if (data == null || data.Length == 0)
-                {
-                    ServerApi.Logger.Debug("[SeraphLeveling] No mender progress data found");
-                    return;
-                }
-
-                using (var ms = new MemoryStream(data))
-                {
-                    using (var reader = new BinaryReader(ms))
-                    {
-                        byte magic1 = reader.ReadByte();
-                        byte magic2 = reader.ReadByte();
-                        byte magic3 = reader.ReadByte();
-                        byte version = reader.ReadByte();
-
-                        if (magic1 != 0x4D || magic2 != 0x4E || magic3 != 0x44)
-                        {
-                            ServerApi.Logger.Warning("[SeraphLeveling] Invalid mender progress magic bytes");
-                            return;
-                        }
-
-                        int playerCount = reader.ReadInt32();
-                        for (int i = 0; i < playerCount; i++)
-                        {
-                            try
-                            {
-                                string playerUid = reader.ReadString();
-                                if (version == 1)
-                                {
-                                    var progress = new MenderProgressData
-                                    {
-                                        TotalCredits = reader.ReadInt32(),
-                                        RepairsInIncrement = reader.ReadInt32(),
-                                        CurrentIncrementSize = reader.ReadInt32()
-                                    };
-                                    MenderProgress[playerUid] = progress;
-                                    pendingMenderProgressSave = true;
-                                }
-                                else if (version == 2)
-                                {
-                                    var progress = new MenderProgressData
-                                    {
-                                        TotalCredits = reader.ReadInt32(),
-                                        RepairsInIncrement = reader.ReadInt32(),
-                                        CurrentIncrementSize = reader.ReadInt32(),
-                                        LastActivityDay = reader.ReadDouble()
-                                    };
-                                    MenderProgress[playerUid] = progress;
-                                }
-                            }
-                            catch (Exception innerEx)
-                            {
-                                ServerApi.Logger.Warning($"[SeraphLeveling] Skipping corrupt player entry {i+1}/{playerCount} in mender data: {innerEx.Message}");
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                ServerApi.Logger.Notification($"[SeraphLeveling] Loaded mender progress for {MenderProgress.Count} players");
-            }
-            catch (Exception ex)
-            {
-                ServerApi.Logger.Error($"[SeraphLeveling] Failed to load mender progress: {ex.Message}");
-            }
+            LoadProgress<MenderProgressData>(ref MenderProgress, ref pendingMenderProgressSave);
         }
 
         /// <summary>
@@ -15777,75 +15667,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadForagerProgress()
         {
-            ForagerProgress.Clear();
-            try
-            {
-                byte[] data = ServerApi.WorldManager.SaveGame.GetData(FORAGER_PROGRESS_SAVE_KEY);
-                if (data == null || data.Length == 0)
-                {
-                    ServerApi.Logger.Debug("[SeraphLeveling] No forager progress data found");
-                    return;
-                }
-
-                using (var ms = new MemoryStream(data))
-                {
-                    using (var reader = new BinaryReader(ms))
-                    {
-                        byte magic1 = reader.ReadByte();
-                        byte magic2 = reader.ReadByte();
-                        byte magic3 = reader.ReadByte();
-                        byte version = reader.ReadByte();
-
-                        if (magic1 != 0x46 || magic2 != 0x52 || magic3 != 0x47)
-                        {
-                            ServerApi.Logger.Warning("[SeraphLeveling] Invalid forager progress magic bytes");
-                            return;
-                        }
-
-                        int playerCount = reader.ReadInt32();
-                        for (int i = 0; i < playerCount; i++)
-                        {
-                            try
-                            {
-                                string playerUid = reader.ReadString();
-                                if (version == 1)
-                                {
-                                    var progress = new ForagerProgressData
-                                    {
-                                        TotalCredits = reader.ReadInt32(),
-                                        CropsInIncrement = reader.ReadInt32(),
-                                        CurrentIncrementSize = reader.ReadInt32()
-                                    };
-                                    ForagerProgress[playerUid] = progress;
-                                    pendingForagerProgressSave = true;
-                                }
-                                else if (version == 2)
-                                {
-                                    var progress = new ForagerProgressData
-                                    {
-                                        TotalCredits = reader.ReadInt32(),
-                                        CropsInIncrement = reader.ReadInt32(),
-                                        CurrentIncrementSize = reader.ReadInt32(),
-                                        LastActivityDay = reader.ReadDouble()
-                                    };
-                                    ForagerProgress[playerUid] = progress;
-                                }
-                            }
-                            catch (Exception innerEx)
-                            {
-                                ServerApi.Logger.Warning($"[SeraphLeveling] Skipping corrupt player entry {i+1}/{playerCount} in forager data: {innerEx.Message}");
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                ServerApi.Logger.Notification($"[SeraphLeveling] Loaded forager progress for {ForagerProgress.Count} players");
-            }
-            catch (Exception ex)
-            {
-                ServerApi.Logger.Error($"[SeraphLeveling] Failed to load forager progress: {ex.Message}");
-            }
+            LoadProgress<ForagerProgressData>(ref ForagerProgress, ref pendingForagerProgressSave);
         }
 
         // =========================================================================
