@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 
 namespace SeraphLeveling
@@ -6,7 +7,7 @@ namespace SeraphLeveling
     /// Data structure for tracking walking speed progression.
     /// Simpler than other progression systems since walking has no "tools".
     /// </summary>
-    public class WalkingProgressData:ProgressData<WalkingProgressData>,IProgressDataContract
+    public class WalkingProgressData : ProgressData<WalkingProgressData>, IProgressDataContract<WalkingProgressData>
     {
         /// <summary>Total credits earned (each credit = 1% bonus). Max 15.</summary>
         public int TotalCredits { get; set; }

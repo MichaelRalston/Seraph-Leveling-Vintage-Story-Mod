@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.IO;
 
 namespace SeraphLeveling
@@ -75,7 +76,7 @@ namespace SeraphLeveling
     /// Data structure for tracking armor progression with per-piece progress.
     /// Armor XP comes from: first-equip bonus, time worn, damage blocked, and repairs.
     /// </summary>
-    public class ArmorProgressData:ProgressData<ArmorProgressData>,IProgressDataContract
+    public class ArmorProgressData : ProgressData<ArmorProgressData>, IProgressDataContract<ArmorProgressData>
     {
         /// <summary>Total durability credits earned (each = 1% armor durability bonus).</summary>
         public int TotalDurabilityCredits { get; set; }
@@ -90,7 +91,7 @@ namespace SeraphLeveling
         public int TotalHealingCredits { get; set; }
 
         /// <summary>Per-armor piece progress tracking. Key is armor code (e.g., "game:armor-body-plate-iron").</summary>
-        public Dictionary<string, ArmorPieceProgressData> ArmorProgress { get; set; }
+        public ConcurrentDictionary<string, ArmorPieceProgressData> ArmorProgress { get; set; }
 
         /// <summary>Last in-game day when this skill was used. Used for skill decay.</summary>
         public double LastActivityDay { get; set; }
@@ -101,7 +102,7 @@ namespace SeraphLeveling
             TotalWalkSpeedCredits = 0;
             TotalHungerReductionCredits = 0;
             TotalHealingCredits = 0;
-            ArmorProgress = new Dictionary<string, ArmorPieceProgressData>();
+            ArmorProgress = new ConcurrentDictionary<string, ArmorPieceProgressData>();
             LastActivityDay = 0;
         }
 
@@ -135,7 +136,7 @@ namespace SeraphLeveling
                 TotalHungerReductionCredits = this.TotalHungerReductionCredits,
                 TotalHealingCredits = this.TotalHealingCredits,
                 LastActivityDay = this.LastActivityDay,
-                ArmorProgress = new Dictionary<string, ArmorPieceProgressData>()
+                ArmorProgress = new ConcurrentDictionary<string, ArmorPieceProgressData>()
             };
             foreach (var kvp in this.ArmorProgress)
             {
@@ -154,8 +155,7 @@ namespace SeraphLeveling
                         TotalDurabilityCredits = reader.ReadInt32(),
                         TotalWalkSpeedCredits = reader.ReadInt32(),
                     };
-                    int armorCount = reader.ReadInt32();
-                    for (int i = 0; i < armorCount; i++)
+                    for (int i = 0; i < reader.ReadInt32(); i++)
                     {
                         string armorCode = reader.ReadString();
                         var armorProgress = new ArmorPieceProgressData
@@ -183,8 +183,7 @@ namespace SeraphLeveling
                     };
 
                     // Read per-armor progress
-                    int armorCount = reader.ReadInt32();
-                    for (int j = 0; j < armorCount; j++)
+                    for (int j = 0; j < reader.ReadInt32(); j++)
                     {
                         string armorCode = reader.ReadString();
                         var armorProg = new ArmorPieceProgressData
@@ -214,7 +213,7 @@ namespace SeraphLeveling
             writer.Write(TotalWalkSpeedCredits);
             writer.Write(LastActivityDay);
             var armorSnapshot = ArmorProgress.ToArray();
-            writer.Write(armorSnapshot.Count);
+            writer.Write(armorSnapshot.Length);
             foreach (var kvp in armorSnapshot)
             {
                 writer.Write(kvp.Key);

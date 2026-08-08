@@ -7962,7 +7962,7 @@ namespace SeraphLeveling
             }
         }
 
-        public static void PersistProgress<T>(ConcurrentDictionary<string, T> progress) where T:ProgressData<T>,IProgressDataContract
+        public static void PersistProgress<T>(ConcurrentDictionary<string, T> progress) where T:ProgressData<T>,IProgressDataContract<T>
         {
             if (ServerApi == null) return;
 
@@ -7982,7 +7982,7 @@ namespace SeraphLeveling
                     {
                         using (var writer = new BinaryWriter(ms))
                         {
-                            T.WriteHeader(writer);
+                            ProgressData<T>.WriteHeader(writer);
 
                             // Write number of players
                             writer.Write(snapshot.Length);
@@ -8017,7 +8017,7 @@ namespace SeraphLeveling
             PersistProgress<WalkingProgressData>(WalkingProgress);
         }
 
-        private void LoadProgress<T>(ref ConcurrentDictionary<string, T> progress, ref bool pendingProgressSave) where T:ProgressData<T>,IProgressDataContract
+        private void LoadProgress<T>(ref ConcurrentDictionary<string, T> progress, ref bool pendingProgressSave) where T:ProgressData<T>,IProgressDataContract<T>
         {
             if (ServerApi == null) return;
 
@@ -8037,7 +8037,7 @@ namespace SeraphLeveling
                 {
                     using (var reader = new BinaryReader(ms))
                     {
-                        if (!T.ReadHeader(reader)) {
+                        if (!ProgressData<T>.ReadHeader(reader)) {
                             ServerApi.Logger.Warning("[SeraphLeveling] Invalid {description} progress data format");
                             return;
                         }
