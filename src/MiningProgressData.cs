@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System;
 using System.IO;
+using System.Linq;
 
 namespace SeraphLeveling
 {
@@ -116,6 +117,8 @@ namespace SeraphLeveling
         public static string Description => "mining";
 
         public static MiningProgressData ReadVersion(byte version, BinaryReader reader) {
+            MiningProgressData progress;
+            int pickaxeCount;
             switch (version) {
                 case 1:
                     long blocksMined = reader.ReadInt64();
@@ -130,7 +133,7 @@ namespace SeraphLeveling
 
                     return new MiningProgressData
                     {
-                        TotalCredits = Math.Min(legacyLevel, MaxMiningSpeedPercent)
+                        TotalCredits = Math.Min(legacyLevel, SeraphLevelingModSystem.MaxMiningSpeedPercent)
                     };
                 case 2:
                     int totalCredits = reader.ReadInt32();
@@ -138,7 +141,7 @@ namespace SeraphLeveling
                     int blocksInIncrement = reader.ReadInt32();
                     int currentIncrementSize = reader.ReadInt32();
 
-                    var progress = new MiningProgressData
+                    progress = new MiningProgressData
                     {
                         TotalCredits = totalCredits
                     };
@@ -154,12 +157,12 @@ namespace SeraphLeveling
                     }
                     return progress;
                 case 3:
-                    var progress = new MiningProgressData
+                    progress = new MiningProgressData
                     {
                         TotalCredits = reader.ReadInt32()
                     };
 
-                    int pickaxeCount = reader.ReadInt32();
+                    pickaxeCount = reader.ReadInt32();
                     for (int j = 0; j < pickaxeCount; j++)
                     {
                         string pickaxeCode = reader.ReadString();
@@ -172,13 +175,13 @@ namespace SeraphLeveling
                     }
                     return progress;
                 case 4:
-                    var progress = new MiningProgressData
+                    progress = new MiningProgressData
                     {
                         TotalCredits = reader.ReadInt32(),
                         LastActivityDay = reader.ReadDouble()
                     };
 
-                    int pickaxeCount = reader.ReadInt32();
+                    pickaxeCount = reader.ReadInt32();
                     for (int j = 0; j < pickaxeCount; j++)
                     {
                         string pickaxeCode = reader.ReadString();

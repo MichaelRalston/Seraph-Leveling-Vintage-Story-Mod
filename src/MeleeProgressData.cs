@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System;
+using System.Linq;
 
 namespace SeraphLeveling
 {
@@ -116,15 +117,17 @@ namespace SeraphLeveling
         public static string Description => "melee";
         public static MeleeProgressData ReadVersion(byte version, BinaryReader reader)
         {
+            MeleeProgressData progress;
+            int weaponCount;
             switch (version)
             {
                 case 1:
-                    var progress = new MeleeProgressData
+                    progress = new MeleeProgressData
                     {
                         TotalCredits = reader.ReadInt32()
                     };
 
-                    int weaponCount = reader.ReadInt32();
+                    weaponCount = reader.ReadInt32();
                     for (int j = 0; j < weaponCount; j++)
                     {
                         string weaponType = reader.ReadString();
@@ -137,13 +140,13 @@ namespace SeraphLeveling
                     }
                     return progress;
                 case 2:
-                    var progress = new MeleeProgressData
+                    progress = new MeleeProgressData
                     {
                         TotalCredits = reader.ReadInt32(),
                         LastActivityDay = reader.ReadDouble()
                     };
 
-                    int weaponCount = reader.ReadInt32();
+                    weaponCount = reader.ReadInt32();
                     for (int j = 0; j < weaponCount; j++)
                     {
                         string weaponType = reader.ReadString();

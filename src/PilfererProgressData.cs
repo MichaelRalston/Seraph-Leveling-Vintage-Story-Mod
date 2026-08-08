@@ -7,7 +7,7 @@ namespace SeraphLeveling
     /// Data structure for tracking Pilferer progression.
     /// Tracks loot vessels broken for loot bonuses.
     /// </summary>
-    public class PilfererProgressData: ProgressData<WalkingProgressData>, IProgressDataContract<WalkingProgressData>
+    public class PilfererProgressData: ProgressData<PilfererProgressData>, IProgressDataContract<PilfererProgressData>
     {
         /// <summary>Total credits earned (each credit = 1% bonus). Max 20.</summary>
         public int TotalCredits { get; set; }
@@ -57,7 +57,7 @@ namespace SeraphLeveling
         public static string SAVE_KEY => "sitPilfererProgress";
         public static string Description => "pilferer";
 
-        public static WalkingProgressData ReadVersion(byte version, BinaryReader reader) {
+        public static PilfererProgressData ReadVersion(byte version, BinaryReader reader) {
             switch (version) {
                 case 1:
                     var progress = new PilfererProgressData

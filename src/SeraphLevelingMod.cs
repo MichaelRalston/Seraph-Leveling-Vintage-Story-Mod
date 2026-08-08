@@ -15211,7 +15211,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistHardyHealthProgress()
         {
-            PersistProgress<HardyHealthProgressData>(ref HardyHealthProgress, ref pendingHardyHealthProgressSave);
+            PersistProgress<HardyHealthProgressData>(HardyHealthProgress);
         }
 
         /// <summary>
@@ -15219,7 +15219,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadHardyHealthProgress()
         {
-            LoadProgress<HardyHealthProgressData>(HardyHealthProgress);
+            LoadProgress<HardyHealthProgressData>(ref HardyHealthProgress, ref pendingHardyHealthProgressSave);
         }
 
         // =========================================================================
@@ -15336,7 +15336,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistCOProgress()
         {
-            PersistProgress<COProgressData>(COProgress);
+            PersistProgress<COPlayerProgressData>(COProgress);
         }
 
         /// <summary>
@@ -15344,7 +15344,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadCOProgress()
         {
-            LoadProgress<COProgressData>(ref COProgress, ref pendingCOProgressSave);
+            LoadProgress<COPlayerProgressData>(ref COProgress, ref pendingCOProgressSave);
         }
 
         // =========================================================================

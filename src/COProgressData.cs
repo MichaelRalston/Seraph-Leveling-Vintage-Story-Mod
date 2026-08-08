@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System;
+using System.Linq;
 
 namespace SeraphLeveling
 {
@@ -171,15 +172,17 @@ namespace SeraphLeveling
         }
 
         public static COPlayerProgressData ReadVersion(byte version, BinaryReader reader) {
+            COPlayerProgressData playerProgress;
+            int proficiencyCount;
             switch (version) {
                 case 1:
-                    var playerProgress = new COPlayerProgressData();
+                    playerProgress = new COPlayerProgressData();
 
                     // Read Steady Aim credits
                     playerProgress.SteadyAimCredits = reader.ReadInt32();
 
                     // Read proficiencies
-                    int proficiencyCount = reader.ReadInt32();
+                    proficiencyCount = reader.ReadInt32();
                     for (int j = 0; j < proficiencyCount; j++)
                     {
                         string proficiencyStat = reader.ReadString();
@@ -203,14 +206,14 @@ namespace SeraphLeveling
                     }
                     return playerProgress;
                 case 2:
-                    var playerProgress = new COPlayerProgressData();
+                    playerProgress = new COPlayerProgressData();
 
                     // Read Steady Aim credits
                     playerProgress.SteadyAimCredits = reader.ReadInt32();
                     playerProgress.LastActivityDay = reader.ReadDouble();
 
                     // Read proficiencies
-                    int proficiencyCount = reader.ReadInt32();
+                    proficiencyCount = reader.ReadInt32();
                     for (int j = 0; j < proficiencyCount; j++)
                     {
                         string proficiencyStat = reader.ReadString();
