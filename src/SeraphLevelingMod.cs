@@ -17173,43 +17173,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistMercilessProgress()
         {
-            if (ServerApi == null) return;
-
-            lock (persistLock)
-            {
-                if (MercilessProgress.IsEmpty)
-                {
-                    return;
-                }
-
-                try
-                {
-                    var snapshot = MercilessProgress.ToArray();
-                    byte[] data;
-                    using (var ms = new MemoryStream())
-                    {
-                        using (var writer = new BinaryWriter(ms))
-                        {
-                            MercilessProgressData.WriteHeader(writer);
-
-                            writer.Write(snapshot.Length);
-                            foreach (var playerKvp in snapshot)
-                            {
-                                writer.Write(playerKvp.Key);
-                                var progress = playerKvp.Value;
-                                progress.WriteOut(writer);                                
-                            }
-                        }
-                        data = ms.ToArray();
-                    }
-
-                    ServerApi.WorldManager.SaveGame.StoreData(MercilessProgressData.SAVE_KEY, data);
-                }
-                catch (Exception ex)
-                {
-                    ServerApi.Logger.Error($"[SeraphLeveling] Failed to persist merciless progress: {ex.Message}");
-                }
-            }
+            PersistProgress<MercilessProgressData>(MercilessProgress);
         }
 
         /// <summary>
@@ -17217,47 +17181,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadMercilessProgress()
         {
-            MercilessProgress.Clear();
-
-            try
-            {
-                byte[] data = ServerApi.WorldManager.SaveGame.GetData(MercilessProgressData.SAVE_KEY);
-                if (data == null || data.Length == 0)
-                {
-                    ServerApi.Logger.Debug("[SeraphLeveling] No merciless progress data found");
-                    return;
-                }
-
-                using (var ms = new MemoryStream(data))
-                {
-                    using (var reader = new BinaryReader(ms))
-                    {
-                        MercilessProgressData.readHeader(reader);
-
-                        int playerCount = reader.ReadInt32();
-                        for (int i = 0; i < playerCount; i++)
-                        {
-                            try
-                            {
-                                string playerUid = reader.ReadString();
-                                var progress = new MercilessProgressData(reader);
-                                MercilessProgress[playerUid] = progress;
-                            }
-                            catch (Exception innerEx)
-                            {
-                                ServerApi.Logger.Warning($"[SeraphLeveling] Skipping corrupt player entry {i+1}/{playerCount} in merciless data: {innerEx.Message}");
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                ServerApi.Logger.Notification($"[SeraphLeveling] Loaded merciless progress for {MercilessProgress.Count} players");
-            }
-            catch (Exception ex)
-            {
-                ServerApi.Logger.Error($"[SeraphLeveling] Failed to load merciless progress: {ex.Message}");
-            }
+            LoadProgress<MercilessProgressData>(ref MercilessProgress, ref pendingMercilessProgressSave);
         }
 
         // =========================================================================
