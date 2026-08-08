@@ -9,9 +9,9 @@ namespace SeraphLeveling
     /// </summary>
     public class ClaustrophobicRemovalProgressData : RemovalProgressData<ClaustrophobicRemovalProgressData>, IProgressDataContract<ClaustrophobicRemovalProgressData>
     {
-        public static byte[] GetHeader()
+        public static string GetHeaderString()
         {
-            return [(byte)0x43, (byte)0x4C, (byte)0x52]; // CLR
+            return "CLR";
         }
 
         public static byte GetVersion()

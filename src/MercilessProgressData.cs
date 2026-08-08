@@ -26,8 +26,9 @@ namespace SeraphLeveling
             };
         }
 
-        public static byte[] GetHeader() {
-            return [(byte)0x4D, (byte)0x52, (byte)0x43]; // MRC
+        public static string GetHeaderString()
+        {
+            return "MRC";
         }
 
         public static byte GetVersion() {

@@ -231,9 +231,9 @@ namespace SeraphLeveling
             }
         }
 
-        public static byte[] GetHeader()
+        public static string GetHeaderString()
         {
-            return [0x53, 0x49, 0x41];
+            return "SIA";
         }
 
         public static byte GetVersion() {

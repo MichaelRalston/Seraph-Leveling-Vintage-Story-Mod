@@ -1,11 +1,17 @@
 using System;
 using System.IO;
+using System.Text;
 
 namespace SeraphLeveling
 {
     public interface IProgressDataContract<T> where T: IProgressDataContract<T>
     {
-        public abstract static byte[] GetHeader();
+        public virtual static byte[] GetHeader()
+        {
+            return Encoding.ASCII.GetBytes(T.GetHeaderString());
+        }
+        
+        public abstract static string GetHeaderString();
         public abstract static byte GetVersion();
         public static virtual string SAVE_KEY { get; }
         public static virtual string Description { get; }

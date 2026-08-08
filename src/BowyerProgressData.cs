@@ -30,9 +30,9 @@ namespace SeraphLeveling
             };
         }
 
-        public static byte[] GetHeader()
+        public static string GetHeaderString()
         {
-            return [(byte)0x42, (byte)0x57, (byte)0x59]; // BWY
+            return "BWY";
         }
 
         public static byte GetVersion()

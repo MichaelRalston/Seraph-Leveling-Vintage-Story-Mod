@@ -9,9 +9,9 @@ namespace SeraphLeveling
     /// </summary>
     public class HeavyFootedRemovalProgressData : RemovalProgressData<HeavyFootedRemovalProgressData>, IProgressDataContract<HeavyFootedRemovalProgressData>
     {
-        public static byte[] GetHeader()
+        public static string GetHeaderString()
         {
-            return [(byte)0x48, (byte)0x56, (byte)0x46]; // HVF
+            return "HVF";
         }
 
         public static byte GetVersion()

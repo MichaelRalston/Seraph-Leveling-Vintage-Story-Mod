@@ -43,9 +43,10 @@ namespace SeraphLeveling
                 LastActivityDay = this.LastActivityDay
             };
         }
-        public static byte[] GetHeader()
+        
+        public static string GetHeaderString()
         {
-            return [(byte)0x53, (byte)0x49, (byte)0x48]; // SIH
+            return "SIH";
         }
 
         public static byte GetVersion()
