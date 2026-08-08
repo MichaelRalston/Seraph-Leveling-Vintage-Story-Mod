@@ -42,8 +42,6 @@ namespace SeraphLeveling
         // Keys for melee damage progression system
         public const string MELEE_DAMAGE_KEY = "sitMeleeDamage";
         public const string MELEE_STAT_CODE = "sitMeleeBonus";
-        private const string MELEE_PROGRESS_SAVE_KEY = "sitMeleeProgress";
-
         // WatchedAttributes keys for client sync (melee)
         public const string WATCHED_MELEE_LEVEL = "sitMeleeLevel";
         public const string WATCHED_MELEE_BONUS = "sitMeleeBonusPercent";
@@ -73,8 +71,6 @@ namespace SeraphLeveling
         public const string RANGED_DAMAGE_STAT_CODE = "sitRangedDamageBonus";
         public const string RANGED_ACCURACY_STAT_CODE = "sitRangedAccuracyBonus";
         public const string RANGED_DISTANCE_STAT_CODE = "sitRangedDistanceBonus";
-        private const string RANGED_PROGRESS_SAVE_KEY = "sitRangedProgress";
-
         // WatchedAttributes keys for client sync (ranged)
         public const string WATCHED_RANGED_LEVEL = "sitRangedLevel";
         public const string WATCHED_RANGED_DAMAGE_BONUS = "sitRangedDamageBonusPercent";
@@ -107,7 +103,6 @@ namespace SeraphLeveling
 
         // Keys for walking speed progression system
         public const string WALKING_STAT_CODE = "sitWalkingBonus";
-        private const string WALKING_PROGRESS_SAVE_KEY = "sitWalkingProgress";
 
         // WatchedAttributes keys for client sync (walking)
         public const string WATCHED_WALKING_LEVEL = "sitWalkingLevel";
@@ -143,8 +138,6 @@ namespace SeraphLeveling
 
         // Keys for hunger rate progression system
         public const string HUNGER_STAT_CODE = "sitHungerBonus";
-        private const string HUNGER_PROGRESS_SAVE_KEY = "sitHungerProgress";
-
         // WatchedAttributes keys for client sync (hunger)
         public const string WATCHED_HUNGER_LEVEL = "sitHungerLevel";
         public const string WATCHED_HUNGER_BONUS = "sitHungerBonusPercent";
@@ -173,8 +166,6 @@ namespace SeraphLeveling
         // Keys for armor progression system
         public const string ARMOR_DURABILITY_STAT_CODE = "sitArmorDurabilityBonus";
         public const string ARMOR_WALKSPEED_STAT_CODE = "sitArmorWalkSpeedBonus";
-        private const string ARMOR_PROGRESS_SAVE_KEY = "sitArmorProgress";
-
         // WatchedAttributes keys for client sync (armor)
         public const string WATCHED_ARMOR_DURABILITY_LEVEL = "sitArmorDurabilityLevel";
         public const string WATCHED_ARMOR_DURABILITY_BONUS = "sitArmorDurabilityBonusPercent";
@@ -246,7 +237,6 @@ namespace SeraphLeveling
         // CLOTHIER TRAIT - Tracks unique clothing worn to unlock sewing kit crafting
         // =========================================================================
         public const string CLOTHIER_STAT_CODE = "sitClothierBonus";
-        private const string CLOTHIER_PROGRESS_SAVE_KEY = "sitClothierProgress";
         public const string WATCHED_CLOTHIER_COUNT = "sitClothierCount";
         public const string WATCHED_CLOTHIER_UNLOCKED = "sitClothierUnlocked";
         public const string CLOTHIER_TRAIT_CODE = "sitclothiermastery";
@@ -477,7 +467,6 @@ namespace SeraphLeveling
         // TECHNICAL TRAIT - Unlocks after repairing translocators
         // =========================================================================
         public const string TECHNICAL_STAT_CODE = "sitTechnicalBonus";
-        private const string TECHNICAL_PROGRESS_SAVE_KEY = "sitTechnicalProgress";
         public const string WATCHED_TECHNICAL_UNLOCKED = "sitTechnicalUnlocked";
         public const string WATCHED_TECHNICAL_REPAIRS = "sitTechnicalRepairs";
         public const string TECHNICAL_TRAIT_CODE = "sittechnicalmastery";
@@ -493,7 +482,6 @@ namespace SeraphLeveling
         // HARDY HEALTH TRAIT - Unlocks +5 HP after reaching mining and armor thresholds
         // =========================================================================
         public const string HARDY_HEALTH_STAT_CODE = "sitHardyHealthBonus";
-        private const string HARDY_HEALTH_PROGRESS_SAVE_KEY = "sitHardyHealthProgress";
         public const string WATCHED_HARDY_HEALTH_UNLOCKED = "sitHardyHealthUnlocked";
         public const string HARDY_HEALTH_TRAIT_CODE = "sithardyhealthmastery";
 
@@ -510,7 +498,6 @@ namespace SeraphLeveling
         // BOWYER TRAIT - Unlocks crude bow/arrows after ranged damage + bow damage
         // =========================================================================
         public const string BOWYER_STAT_CODE = "sitBowyerBonus";
-        private const string BOWYER_PROGRESS_SAVE_KEY = "sitBowyerProgress";
         public const string WATCHED_BOWYER_UNLOCKED = "sitBowyerUnlocked";
         public const string WATCHED_BOWYER_BOW_DAMAGE = "sitBowyerBowDamage";
         public const string BOWYER_TRAIT_CODE = "sitbowyermastery";
@@ -542,7 +529,6 @@ namespace SeraphLeveling
         // TINKERER TRAIT - Unlocks tuning spear after Technical + Precise threshold
         // =========================================================================
         public const string TINKERER_STAT_CODE = "sitTinkererBonus";
-        private const string TINKERER_PROGRESS_SAVE_KEY = "sitTinkererProgress";
         public const string WATCHED_TINKERER_UNLOCKED = "sitTinkererUnlocked";
         public const string TINKERER_TRAIT_CODE = "sittinkerermastery";
 
@@ -571,7 +557,6 @@ namespace SeraphLeveling
         // =========================================================================
         // CLAUSTROPHOBIC REMOVAL - Removes trait after reaching mining threshold (Hunter)
         // =========================================================================
-        private const string CLAUSTROPHOBIC_REMOVAL_PROGRESS_SAVE_KEY = "sitClaustrophobicRemovalProgress";
         public const string WATCHED_CLAUSTROPHOBIC_REMOVED = "sitClaustrophobicRemoved";
         public const string CLAUSTROPHOBIC_REMOVED_TRAIT_CODE = "sitclaustrophobicremoved";
 
@@ -580,8 +565,6 @@ namespace SeraphLeveling
 
         public static int HeavyFootedFurtiveThreshold = 50;
         public static int HeavyFootedWalkingThreshold = 10;
-
-        private const string HEAVYFOOTED_REMOVAL_PROGRESS_SAVE_KEY = "sitHeavyFootedRemovalProgress";
 
         public const string WATCHED_HEAVYFOOTED_REMOVED = "sitHeavyFootedRemoved";
         public const string HEAVYFOOTED_REMOVED_TRAIT_CODE = "sitheavyfootedremoved";
@@ -941,8 +924,6 @@ namespace SeraphLeveling
         }
 
         // CO persistence
-        private const string CO_PROGRESS_SAVE_KEY = "sitCOProgress";
-
         // Storage for CO progress - keyed by player UID
         public static ConcurrentDictionary<string, COPlayerProgressData> COProgress = new ConcurrentDictionary<string, COPlayerProgressData>();
 
