@@ -16464,46 +16464,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistHardyHealthProgress()
         {
-            if (ServerApi == null) return;
-
-            lock (persistLock)
-            {
-                if (HardyHealthProgress.IsEmpty)
-                {
-                    return;
-                }
-
-                try
-                {
-                    var snapshot = HardyHealthProgress.ToArray();
-                    byte[] data;
-                    using (var ms = new MemoryStream())
-                    {
-                        using (var writer = new BinaryWriter(ms))
-                        {
-                            writer.Write((byte)0x48); // 'H'
-                            writer.Write((byte)0x44); // 'D'
-                            writer.Write((byte)0x48); // 'H'
-                            writer.Write((byte)1);    // Version 1
-
-                            writer.Write(snapshot.Length);
-                            foreach (var playerKvp in snapshot)
-                            {
-                                writer.Write(playerKvp.Key);
-                                var progress = playerKvp.Value;
-                                writer.Write(progress.IsUnlocked);
-                            }
-                        }
-                        data = ms.ToArray();
-                    }
-
-                    ServerApi.WorldManager.SaveGame.StoreData(HARDY_HEALTH_PROGRESS_SAVE_KEY, data);
-                }
-                catch (Exception ex)
-                {
-                    ServerApi.Logger.Error($"[SeraphLeveling] Failed to persist hardy health progress: {ex.Message}");
-                }
-            }
+            PersistProgress<HardyHealthProgressData>(ref HardyHealthProgress, ref pendingHardyHealthProgressSave);
         }
 
         /// <summary>
@@ -16511,58 +16472,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadHardyHealthProgress()
         {
-            HardyHealthProgress.Clear();
-            try
-            {
-                byte[] data = ServerApi.WorldManager.SaveGame.GetData(HARDY_HEALTH_PROGRESS_SAVE_KEY);
-                if (data == null || data.Length == 0)
-                {
-                    ServerApi.Logger.Debug("[SeraphLeveling] No hardy health progress data found");
-                    return;
-                }
-
-                using (var ms = new MemoryStream(data))
-                {
-                    using (var reader = new BinaryReader(ms))
-                    {
-                        byte magic1 = reader.ReadByte();
-                        byte magic2 = reader.ReadByte();
-                        byte magic3 = reader.ReadByte();
-                        byte version = reader.ReadByte();
-
-                        if (magic1 != 0x48 || magic2 != 0x44 || magic3 != 0x48)
-                        {
-                            ServerApi.Logger.Warning("[SeraphLeveling] Invalid hardy health progress magic bytes");
-                            return;
-                        }
-
-                        int playerCount = reader.ReadInt32();
-                        for (int i = 0; i < playerCount; i++)
-                        {
-                            try
-                            {
-                                string playerUid = reader.ReadString();
-                                var progress = new HardyHealthProgressData
-                                {
-                                    IsUnlocked = reader.ReadBoolean()
-                                };
-                                HardyHealthProgress[playerUid] = progress;
-                            }
-                            catch (Exception innerEx)
-                            {
-                                ServerApi.Logger.Warning($"[SeraphLeveling] Skipping corrupt player entry {i+1}/{playerCount} in hardy health data: {innerEx.Message}");
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                ServerApi.Logger.Notification($"[SeraphLeveling] Loaded hardy health progress for {HardyHealthProgress.Count} players");
-            }
-            catch (Exception ex)
-            {
-                ServerApi.Logger.Error($"[SeraphLeveling] Failed to load hardy health progress: {ex.Message}");
-            }
+            LoadProgress<HardyHealthProgressData>(HardyHealthProgress);
         }
 
         // =========================================================================
@@ -16707,46 +16617,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistTinkererProgress()
         {
-            if (ServerApi == null) return;
-
-            lock (persistLock)
-            {
-                if (TinkererProgress.IsEmpty)
-                {
-                    return;
-                }
-
-                try
-                {
-                    var snapshot = TinkererProgress.ToArray();
-                    byte[] data;
-                    using (var ms = new MemoryStream())
-                    {
-                        using (var writer = new BinaryWriter(ms))
-                        {
-                            writer.Write((byte)0x54); // 'T'
-                            writer.Write((byte)0x4E); // 'N'
-                            writer.Write((byte)0x4B); // 'K'
-                            writer.Write((byte)1);    // Version 1
-
-                            writer.Write(snapshot.Length);
-                            foreach (var playerKvp in snapshot)
-                            {
-                                writer.Write(playerKvp.Key);
-                                var progress = playerKvp.Value;
-                                writer.Write(progress.IsUnlocked);
-                            }
-                        }
-                        data = ms.ToArray();
-                    }
-
-                    ServerApi.WorldManager.SaveGame.StoreData(TINKERER_PROGRESS_SAVE_KEY, data);
-                }
-                catch (Exception ex)
-                {
-                    ServerApi.Logger.Error($"[SeraphLeveling] Failed to persist tinkerer progress: {ex.Message}");
-                }
-            }
+            PersistProgress<TinkererProgressData>(TinkererProgress);
         }
 
         /// <summary>
@@ -16754,59 +16625,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadTinkererProgress()
         {
-            TinkererProgress.Clear();
-
-            try
-            {
-                byte[] data = ServerApi.WorldManager.SaveGame.GetData(TINKERER_PROGRESS_SAVE_KEY);
-                if (data == null || data.Length == 0)
-                {
-                    ServerApi.Logger.Debug("[SeraphLeveling] No tinkerer progress data found");
-                    return;
-                }
-
-                using (var ms = new MemoryStream(data))
-                {
-                    using (var reader = new BinaryReader(ms))
-                    {
-                        byte magic1 = reader.ReadByte();
-                        byte magic2 = reader.ReadByte();
-                        byte magic3 = reader.ReadByte();
-                        byte version = reader.ReadByte();
-
-                        if (magic1 != 0x54 || magic2 != 0x4E || magic3 != 0x4B)
-                        {
-                            ServerApi.Logger.Warning("[SeraphLeveling] Invalid tinkerer progress magic bytes");
-                            return;
-                        }
-
-                        int playerCount = reader.ReadInt32();
-                        for (int i = 0; i < playerCount; i++)
-                        {
-                            try
-                            {
-                                string playerUid = reader.ReadString();
-                                var progress = new TinkererProgressData
-                                {
-                                    IsUnlocked = reader.ReadBoolean()
-                                };
-                                TinkererProgress[playerUid] = progress;
-                            }
-                            catch (Exception innerEx)
-                            {
-                                ServerApi.Logger.Warning($"[SeraphLeveling] Skipping corrupt player entry {i+1}/{playerCount} in tinkerer data: {innerEx.Message}");
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                ServerApi.Logger.Notification($"[SeraphLeveling] Loaded tinkerer progress for {TinkererProgress.Count} players");
-            }
-            catch (Exception ex)
-            {
-                ServerApi.Logger.Error($"[SeraphLeveling] Failed to load tinkerer progress: {ex.Message}");
-            }
+            LoadProgress<TinkererProgressData>(ref TinkererProgress, ref pendingTinkererProgressSave);
         }
 
         // =========================================================================
