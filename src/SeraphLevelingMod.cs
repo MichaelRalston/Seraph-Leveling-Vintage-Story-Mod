@@ -7342,7 +7342,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadMiningProgress()
         {
-            LoadProgress<MiningProgressData>(ref MiningProgress, ref pendingMiningProgressSave);
+            pendingMiningProgressSave |= LoadProgress<MiningProgressData>(ref MiningProgress);
         }
 
         /// <summary>
@@ -7359,7 +7359,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadMeleeProgress()
         {
-            LoadProgress<MeleeProgressData>(ref MeleeProgress, ref pendingMeleeProgressSave);
+            pendingMeleeProgressSave |= LoadProgress<MeleeProgressData>(ref MeleeProgress);
         }
 
         /// <summary>
@@ -7376,7 +7376,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadRangedProgress()
         {
-            LoadProgress<RangedProgressData>(ref RangedProgress, ref pendingRangedProgressSave);
+            pendingRangedProgressSave |= LoadProgress<RangedProgressData>(ref RangedProgress);
         }
 
         public static void PersistProgress<T>(ConcurrentDictionary<string, T> progress) where T:ProgressData<T>,IProgressDataContract<T>
@@ -7434,9 +7434,10 @@ namespace SeraphLeveling
             PersistProgress<WalkingProgressData>(WalkingProgress);
         }
 
-        private void LoadProgress<T>(ref ConcurrentDictionary<string, T> progress, ref bool pendingProgressSave) where T:ProgressData<T>,IProgressDataContract<T>
+        private bool LoadProgress<T>(ref ConcurrentDictionary<string, T> progress) where T:ProgressData<T>,IProgressDataContract<T>
         {
-            if (ServerApi == null) return;
+            bool pendingProgressSave = false;
+            if (ServerApi == null) return false;
 
             progress.Clear();
             var description = T.Description;
@@ -7447,7 +7448,7 @@ namespace SeraphLeveling
                 if (data == null || data.Length == 0)
                 {
                     ServerApi.Logger.Debug("[SeraphLeveling] No {description} progress data found in world save");
-                    return;
+                    return false;
                 }
 
                 using (var ms = new MemoryStream(data))
@@ -7456,7 +7457,7 @@ namespace SeraphLeveling
                     {
                         if (!ProgressData<T>.ReadHeader(reader)) {
                             ServerApi.Logger.Warning("[SeraphLeveling] Invalid {description} progress data format");
-                            return;
+                            return false;
                         }
 
                         byte version = reader.ReadByte();
@@ -7486,6 +7487,7 @@ namespace SeraphLeveling
             {
                 ServerApi.Logger.Error($"[SeraphLeveling] Failed to load {description} progress: {ex.Message}");
             }
+            return pendingProgressSave;
         }
 
         /// <summary>
@@ -7493,7 +7495,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadWalkingProgress()
         {
-            LoadProgress<WalkingProgressData>(ref WalkingProgress, ref pendingWalkingProgressSave);
+            pendingWalkingProgressSave |= LoadProgress<WalkingProgressData>(ref WalkingProgress);
         }
 
         /// <summary>
@@ -7510,7 +7512,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadHungerProgress()
         {
-            LoadProgress<HungerProgressData>(ref HungerProgress, ref pendingHungerProgressSave);
+            pendingHungerProgressSave |= LoadProgress<HungerProgressData>(ref HungerProgress);
         }
 
         /// <summary>
@@ -7527,7 +7529,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadArmorProgress()
         {
-            LoadProgress<ArmorProgressData>(ref ArmorProgress, ref pendingArmorProgressSave);
+            pendingArmorProgressSave |= LoadProgress<ArmorProgressData>(ref ArmorProgress);
         }
 
         /// <summary>
@@ -15075,7 +15077,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadClothierProgress()
         {
-            LoadProgress<ClothierProgressData>(ref ClothierProgress, ref pendingClothierProgressSave);
+            pendingClothierProgressSave |= LoadProgress<ClothierProgressData>(ref ClothierProgress);
         }
 
         /// <summary>
@@ -15091,7 +15093,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadMenderProgress()
         {
-            LoadProgress<MenderProgressData>(ref MenderProgress, ref pendingMenderProgressSave);
+            pendingMenderProgressSave |= LoadProgress<MenderProgressData>(ref MenderProgress);
         }
 
         /// <summary>
@@ -15107,7 +15109,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadPilfererProgress()
         {
-            LoadProgress<PilfererProgressData>(ref PilfererProgress, ref pendingPilfererProgressSave);
+            pendingPilfererProgressSave |= LoadProgress<PilfererProgressData>(ref PilfererProgress);
         }
 
         /// <summary>
@@ -15123,7 +15125,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadResourcefulProgress()
         {
-            LoadProgress<ResourcefulProgressData>(ref ResourcefulProgress, ref pendingResourcefulProgressSave);
+            pendingResourcefulProgressSave |= LoadProgress<ResourcefulProgressData>(ref ResourcefulProgress);
         }
 
         /// <summary>
@@ -15139,7 +15141,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadForagerProgress()
         {
-            LoadProgress<ForagerProgressData>(ref ForagerProgress, ref pendingForagerProgressSave);
+            pendingForagerProgressSave |= LoadProgress<ForagerProgressData>(ref ForagerProgress);
         }
 
         // =========================================================================
@@ -15159,7 +15161,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadFurtiveProgress()
         {
-            LoadProgress<FurtiveProgressData>(ref FurtiveProgress, ref pendingFurtiveProgressSave);
+            pendingFurtiveProgressSave |= LoadProgress<FurtiveProgressData>(ref FurtiveProgress);
         }
 
         // =========================================================================
@@ -15179,7 +15181,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadPreciseProgress()
         {
-            LoadProgress<PreciseProgressData>(ref PreciseProgress, ref pendingPreciseProgressSave);
+            pendingPreciseProgressSave |= LoadProgress<PreciseProgressData>(ref PreciseProgress);
         }
 
         // =========================================================================
@@ -15199,7 +15201,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadTechnicalProgress()
         {
-            LoadProgress<TechnicalProgressData>(ref TechnicalProgress, ref pendingTechnicalProgressSave);
+            pendingTechnicalProgressSave |= LoadProgress<TechnicalProgressData>(ref TechnicalProgress);
         }
 
         // =========================================================================
@@ -15219,7 +15221,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadHardyHealthProgress()
         {
-            LoadProgress<HardyHealthProgressData>(ref HardyHealthProgress, ref pendingHardyHealthProgressSave);
+            pendingHardyHealthProgressSave |= LoadProgress<HardyHealthProgressData>(ref HardyHealthProgress);
         }
 
         // =========================================================================
@@ -15239,7 +15241,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadBowyerProgress()
         {
-            LoadProgress<BowyerProgressData>(ref BowyerProgress, ref pendingBowyerProgressSave);
+            pendingBowyerProgressSave |= LoadProgress<BowyerProgressData>(ref BowyerProgress);
         }
 
         // =========================================================================
@@ -15259,7 +15261,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadImproviserProgress()
         {
-            LoadProgress<ImproviserProgressData>(ref ImproviserProgress, ref pendingImproviserProgressSave);
+            pendingImproviserProgressSave |= LoadProgress<ImproviserProgressData>(ref ImproviserProgress);
         }
 
         // =========================================================================
@@ -15279,7 +15281,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadTinkererProgress()
         {
-            LoadProgress<TinkererProgressData>(ref TinkererProgress, ref pendingTinkererProgressSave);
+            pendingTinkererProgressSave |= LoadProgress<TinkererProgressData>(ref TinkererProgress);
         }
 
         // =========================================================================
@@ -15299,7 +15301,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadMercilessProgress()
         {
-            LoadProgress<MercilessProgressData>(ref MercilessProgress, ref pendingMercilessProgressSave);
+            pendingMercilessProgressSave |= LoadProgress<MercilessProgressData>(ref MercilessProgress);
         }
 
         // =========================================================================
@@ -15344,7 +15346,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadCOProgress()
         {
-            LoadProgress<COPlayerProgressData>(ref COProgress, ref pendingCOProgressSave);
+            pendingCOProgressSave |= LoadProgress<COPlayerProgressData>(ref COProgress);
         }
 
         // =========================================================================
@@ -15489,12 +15491,12 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadClaustrophobicRemovalProgress()
         {
-            LoadProgress<ClaustrophobicRemovalProgressData>(ref ClaustrophobicRemovalProgress, ref pendingClaustrophobicRemovalProgressSave);
+            pendingClaustrophobicRemovalProgressSave |= LoadProgress<ClaustrophobicRemovalProgressData>(ref ClaustrophobicRemovalProgress);
         }
 
         private void LoadHeavyFootedRemovalProgress()
         {
-            LoadProgress<HeavyFootedRemovalProgressData>(ref HeavyFootedRemovalProgress, ref pendingHeavyFootedRemovalProgressSave);
+            pendingHeavyFootedRemovalProgressSave |= LoadProgress<HeavyFootedRemovalProgressData>(ref HeavyFootedRemovalProgress);
         }
     }
 
