@@ -19,7 +19,11 @@ namespace SeraphLeveling
             DamageInIncrement = 0;
             CurrentIncrementSize = 100; // Base increment size
         }
-
+        public RangedWeaponProgressData(BinaryReader reader)
+        {
+            DamageInIncrement = reader.ReadSingle();
+            CurrentIncrementSize = reader.ReadInt32();
+        }
         public RangedWeaponProgressData Clone()
         {
             return new RangedWeaponProgressData

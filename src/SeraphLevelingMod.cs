@@ -566,7 +566,6 @@ namespace SeraphLeveling
         // MERCILESS TRAIT - Unlocks shortsword/shield after armor + melee thresholds
         // =========================================================================
         public const string MERCILESS_STAT_CODE = "sitMercilessBonus";
-        private const string MERCILESS_PROGRESS_SAVE_KEY = "sitMercilessProgress";
         public const string WATCHED_MERCILESS_UNLOCKED = "sitMercilessUnlocked";
         public const string MERCILESS_TRAIT_CODE = "sitmercilessmastery";
 
@@ -7898,11 +7897,7 @@ namespace SeraphLeveling
                                     for (int j = 0; j < weaponCount; j++)
                                     {
                                         string weaponCombo = reader.ReadString();
-                                        var weaponProgress = new RangedWeaponProgressData
-                                        {
-                                            DamageInIncrement = reader.ReadSingle(),
-                                            CurrentIncrementSize = reader.ReadInt32()
-                                        };
+                                        var weaponProgress = new RangedWeaponProgressData(reader);                                        
                                         progress.WeaponProgress[weaponCombo] = weaponProgress;
                                     }
 
@@ -7967,35 +7962,27 @@ namespace SeraphLeveling
             }
         }
 
-        /// <summary>
-        /// Persist walking progress to world save data.
-        /// Version 1 format: simple progress tracking (no per-tool).
-        /// </summary>
-        public static void PersistWalkingProgress()
+        public static void PersistProgress<T>(ConcurrentDictionary<string, T> progress) where T:ProgressData<T>,IProgressDataContract
         {
             if (ServerApi == null) return;
 
             lock (persistLock)
             {
-                if (WalkingProgress.IsEmpty)
+                if (progress.IsEmpty)
                 {
                     return;
                 }
 
                 try
                 {
-                    var snapshot = WalkingProgress.ToArray();
+                    var snapshot = progress.ToArray();
 
                     byte[] data;
                     using (var ms = new MemoryStream())
                     {
                         using (var writer = new BinaryWriter(ms))
                         {
-                            // Write magic bytes and version
-                            writer.Write((byte)0x53); // 'S'
-                            writer.Write((byte)0x49); // 'I'
-                            writer.Write((byte)0x57); // 'W' (for Walking)
-                            writer.Write((byte)2);    // Version 2
+                            T.WriteHeader(writer);
 
                             // Write number of players
                             writer.Write(snapshot.Length);
@@ -8003,23 +7990,82 @@ namespace SeraphLeveling
                             foreach (var playerKvp in snapshot)
                             {
                                 writer.Write(playerKvp.Key);   // Player UID
-                                var progress = playerKvp.Value;
-                                writer.Write(progress.TotalCredits);
-                                writer.Write(progress.BlocksInIncrement);
-                                writer.Write(progress.CurrentIncrementSize);
-                                writer.Write(progress.LastActivityDay);
+                                var p = playerKvp.Value;
+                                p.WriteOut(writer);
                             }
                         }
                         data = ms.ToArray();
                     }
 
-                    ServerApi.WorldManager.SaveGame.StoreData(WALKING_PROGRESS_SAVE_KEY, data);
-                    ServerApi.Logger.Debug($"[SeraphLeveling] Persisted walking progress v2 for {snapshot.Length} players");
+                    ServerApi.WorldManager.SaveGame.StoreData(T.SAVE_KEY, data);
+                    var description = T.Description;
+                    ServerApi.Logger.Debug($"[SeraphLeveling] Persisted {description} progress for {snapshot.Length} players");
                 }
                 catch (Exception ex)
                 {
-                    ServerApi.Logger.Error($"[SeraphLeveling] Failed to persist walking progress: {ex.Message}");
+                    var description = T.Description;
+                    ServerApi.Logger.Error($"[SeraphLeveling] Failed to persist {description} progress: {ex.Message}");
                 }
+            }
+        }
+        /// <summary>
+        /// Persist walking progress to world save data.
+        /// Version 1 format: simple progress tracking (no per-tool).
+        /// </summary>
+        public static void PersistWalkingProgress()
+        {
+            PersistProgress<WalkingProgressData>(WalkingProgress);
+        }
+
+        private void LoadProgress<T>(ref ConcurrentDictionary<string, T> progress, ref bool pendingProgressSave) where T:ProgressData<T>,IProgressDataContract
+        {
+            if (ServerApi == null) return;
+
+            progress.Clear();
+            var description = T.Description;
+
+            try
+            {
+                byte[] data = ServerApi.WorldManager.SaveGame.GetData(T.SAVE_KEY);
+                if (data == null || data.Length == 0)
+                {
+                    ServerApi.Logger.Debug("[SeraphLeveling] No {description} progress data found in world save");
+                    return;
+                }
+
+                using (var ms = new MemoryStream(data))
+                {
+                    using (var reader = new BinaryReader(ms))
+                    {
+                        if (!T.ReadHeader(reader)) {
+                            ServerApi.Logger.Warning("[SeraphLeveling] Invalid {description} progress data format");
+                            return;
+                        }
+
+                        byte version = reader.ReadByte();
+                        int playerCount = reader.ReadInt32();
+                        for (int i = 0; i < playerCount; i++)
+                        {
+                            try
+                            {
+                                string playerUid = reader.ReadString();
+                                progress[playerUid] = T.ReadVersion(version, reader);
+                            }
+                            catch (Exception innerEx)
+                            {
+                                ServerApi.Logger.Warning($"[SeraphLeveling] Skipping corrupt player entry {i+1}/{playerCount} in {description} data: {innerEx.Message}");
+                                break;
+                            }
+                        }
+                        pendingProgressSave = true;
+                    }
+                }
+
+                ServerApi.Logger.Notification($"[SeraphLeveling] Loaded {description} progress for {progress.Count} players");
+            }
+            catch (Exception ex)
+            {
+                ServerApi.Logger.Error($"[SeraphLeveling] Failed to load {description} progress: {ex.Message}");
             }
         }
 
@@ -8028,99 +8074,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadWalkingProgress()
         {
-            if (ServerApi == null) return;
-
-            WalkingProgress.Clear();
-
-            try
-            {
-                byte[] data = ServerApi.WorldManager.SaveGame.GetData(WALKING_PROGRESS_SAVE_KEY);
-                if (data == null || data.Length == 0)
-                {
-                    ServerApi.Logger.Debug("[SeraphLeveling] No walking progress data found in world save");
-                    return;
-                }
-
-                using (var ms = new MemoryStream(data))
-                {
-                    using (var reader = new BinaryReader(ms))
-                    {
-                        // Check magic bytes
-                        byte b1 = reader.ReadByte();
-                        byte b2 = reader.ReadByte();
-                        byte b3 = reader.ReadByte();
-
-                        if (b1 != 0x53 || b2 != 0x49 || b3 != 0x57) // "SIW"
-                        {
-                            ServerApi.Logger.Warning("[SeraphLeveling] Invalid walking progress data format");
-                            return;
-                        }
-
-                        byte version = reader.ReadByte();
-                        int playerCount = reader.ReadInt32();
-
-                        if (version == 1)
-                        {
-                            for (int i = 0; i < playerCount; i++)
-                            {
-                                try
-                                {
-                                    string playerUid = reader.ReadString();
-                                    var progress = new WalkingProgressData
-                                    {
-                                        TotalCredits = reader.ReadInt32(),
-                                        BlocksInIncrement = reader.ReadSingle(),
-                                        CurrentIncrementSize = reader.ReadInt32()
-                                    };
-
-                                    WalkingProgress[playerUid] = progress;
-                                }
-                                catch (Exception innerEx)
-                                {
-                                    ServerApi.Logger.Warning($"[SeraphLeveling] Skipping corrupt player entry {i+1}/{playerCount} in walking data: {innerEx.Message}");
-                                    break;
-                                }
-                            }
-                            pendingWalkingProgressSave = true;
-                        }
-                        else if (version == 2)
-                        {
-                            for (int i = 0; i < playerCount; i++)
-                            {
-                                try
-                                {
-                                    string playerUid = reader.ReadString();
-                                    var progress = new WalkingProgressData
-                                    {
-                                        TotalCredits = reader.ReadInt32(),
-                                        BlocksInIncrement = reader.ReadSingle(),
-                                        CurrentIncrementSize = reader.ReadInt32(),
-                                        LastActivityDay = reader.ReadDouble()
-                                    };
-
-                                    WalkingProgress[playerUid] = progress;
-                                }
-                                catch (Exception innerEx)
-                                {
-                                    ServerApi.Logger.Warning($"[SeraphLeveling] Skipping corrupt player entry {i+1}/{playerCount} in walking data: {innerEx.Message}");
-                                    break;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            ServerApi.Logger.Warning($"[SeraphLeveling] Unknown walking save format version {version}");
-                            return;
-                        }
-                    }
-                }
-
-                ServerApi.Logger.Notification($"[SeraphLeveling] Loaded walking progress for {WalkingProgress.Count} players");
-            }
-            catch (Exception ex)
-            {
-                ServerApi.Logger.Error($"[SeraphLeveling] Failed to load walking progress: {ex.Message}");
-            }
+            LoadProgress<WalkingProgressData>(ref WalkingProgress, ref pendingWalkingProgressSave);
         }
 
         /// <summary>
@@ -8129,54 +8083,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistHungerProgress()
         {
-            if (ServerApi == null) return;
-
-            lock (persistLock)
-            {
-                if (HungerProgress.IsEmpty)
-                {
-                    return;
-                }
-
-                try
-                {
-                    var snapshot = HungerProgress.ToArray();
-
-                    byte[] data;
-                    using (var ms = new MemoryStream())
-                    {
-                        using (var writer = new BinaryWriter(ms))
-                        {
-                            // Write magic bytes and version
-                            writer.Write((byte)0x53); // 'S'
-                            writer.Write((byte)0x49); // 'I'
-                            writer.Write((byte)0x48); // 'H' (for Hunger)
-                            writer.Write((byte)2);    // Version 2
-
-                            // Write number of players
-                            writer.Write(snapshot.Length);
-
-                            foreach (var playerKvp in snapshot)
-                            {
-                                writer.Write(playerKvp.Key);   // Player UID
-                                var progress = playerKvp.Value;
-                                writer.Write(progress.TotalCredits);
-                                writer.Write(progress.SecondsInIncrement);
-                                writer.Write(progress.CurrentIncrementSize);
-                                writer.Write(progress.LastActivityDay);
-                            }
-                        }
-                        data = ms.ToArray();
-                    }
-
-                    ServerApi.WorldManager.SaveGame.StoreData(HUNGER_PROGRESS_SAVE_KEY, data);
-                    ServerApi.Logger.Debug($"[SeraphLeveling] Persisted hunger progress v2 for {snapshot.Length} players");
-                }
-                catch (Exception ex)
-                {
-                    ServerApi.Logger.Error($"[SeraphLeveling] Failed to persist hunger progress: {ex.Message}");
-                }
-            }
+            PersistProgress<HungerProgressData>(HungerProgress);
         }
 
         /// <summary>
@@ -8184,99 +8091,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadHungerProgress()
         {
-            if (ServerApi == null) return;
-
-            HungerProgress.Clear();
-
-            try
-            {
-                byte[] data = ServerApi.WorldManager.SaveGame.GetData(HUNGER_PROGRESS_SAVE_KEY);
-                if (data == null || data.Length == 0)
-                {
-                    ServerApi.Logger.Debug("[SeraphLeveling] No hunger progress data found in world save");
-                    return;
-                }
-
-                using (var ms = new MemoryStream(data))
-                {
-                    using (var reader = new BinaryReader(ms))
-                    {
-                        // Check magic bytes
-                        byte b1 = reader.ReadByte();
-                        byte b2 = reader.ReadByte();
-                        byte b3 = reader.ReadByte();
-
-                        if (b1 != 0x53 || b2 != 0x49 || b3 != 0x48) // "SIH"
-                        {
-                            ServerApi.Logger.Warning("[SeraphLeveling] Invalid hunger progress data format");
-                            return;
-                        }
-
-                        byte version = reader.ReadByte();
-                        int playerCount = reader.ReadInt32();
-
-                        if (version == 1)
-                        {
-                            for (int i = 0; i < playerCount; i++)
-                            {
-                                try
-                                {
-                                    string playerUid = reader.ReadString();
-                                    var progress = new HungerProgressData
-                                    {
-                                        TotalCredits = reader.ReadInt32(),
-                                        SecondsInIncrement = reader.ReadSingle(),
-                                        CurrentIncrementSize = reader.ReadInt32()
-                                    };
-
-                                    HungerProgress[playerUid] = progress;
-                                }
-                                catch (Exception innerEx)
-                                {
-                                    ServerApi.Logger.Warning($"[SeraphLeveling] Skipping corrupt player entry {i+1}/{playerCount} in hunger data: {innerEx.Message}");
-                                    break;
-                                }
-                            }
-                            pendingHungerProgressSave = true;
-                        }
-                        else if (version == 2)
-                        {
-                            for (int i = 0; i < playerCount; i++)
-                            {
-                                try
-                                {
-                                    string playerUid = reader.ReadString();
-                                    var progress = new HungerProgressData
-                                    {
-                                        TotalCredits = reader.ReadInt32(),
-                                        SecondsInIncrement = reader.ReadSingle(),
-                                        CurrentIncrementSize = reader.ReadInt32(),
-                                        LastActivityDay = reader.ReadDouble()
-                                    };
-
-                                    HungerProgress[playerUid] = progress;
-                                }
-                                catch (Exception innerEx)
-                                {
-                                    ServerApi.Logger.Warning($"[SeraphLeveling] Skipping corrupt player entry {i+1}/{playerCount} in hunger data: {innerEx.Message}");
-                                    break;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            ServerApi.Logger.Warning($"[SeraphLeveling] Unknown hunger save format version {version}");
-                            return;
-                        }
-                    }
-                }
-
-                ServerApi.Logger.Notification($"[SeraphLeveling] Loaded hunger progress for {HungerProgress.Count} players");
-            }
-            catch (Exception ex)
-            {
-                ServerApi.Logger.Error($"[SeraphLeveling] Failed to load hunger progress: {ex.Message}");
-            }
+            LoadProgress<HungerProgressData>(ref HungerProgress, ref pendingHungerProgressSave);
         }
 
         /// <summary>
@@ -8285,75 +8100,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistArmorProgress()
         {
-            if (ServerApi == null) return;
-
-            lock (persistLock)
-            {
-                if (ArmorProgress.IsEmpty)
-                {
-                    return;
-                }
-
-                try
-                {
-                    var snapshot = ArmorProgress.ToArray();
-                    byte[] data;
-                    using (var ms = new MemoryStream())
-                    {
-                        using (var writer = new BinaryWriter(ms))
-                        {
-                            // Header: "SIA" + version
-                            writer.Write((byte)0x53); // 'S'
-                            writer.Write((byte)0x49); // 'I'
-                            writer.Write((byte)0x41); // 'A' for Armor
-                            writer.Write((byte)2);    // Version 2
-
-                            // Number of players
-                            writer.Write(snapshot.Length);
-
-                            foreach (var kvp in snapshot)
-                            {
-                                string playerUid = kvp.Key;
-                                var progress = kvp.Value;
-
-                                writer.Write(playerUid);
-                                writer.Write(progress.TotalDurabilityCredits);
-                                writer.Write(progress.TotalWalkSpeedCredits);
-                                writer.Write(progress.LastActivityDay);
-
-                                // Snapshot inner dictionary to avoid concurrent modification
-                                var armorSnapshot = progress.ArmorProgress.ToArray();
-                                writer.Write(armorSnapshot.Length);
-                                foreach (var armorKvp in armorSnapshot)
-                                {
-                                    string armorCode = armorKvp.Key;
-                                    var armorProg = armorKvp.Value;
-
-                                    writer.Write(armorCode);
-                                    writer.Write(armorProg.SecondsWornInIncrement);
-                                    writer.Write(armorProg.CurrentTimeIncrementSize);
-                                    writer.Write(armorProg.TimeCredits);
-                                    writer.Write(armorProg.DamageBlockedInIncrement);
-                                    writer.Write(armorProg.CurrentDamageIncrementSize);
-                                    writer.Write(armorProg.DamageCredits);
-                                    writer.Write(armorProg.RepairsInIncrement);
-                                    writer.Write(armorProg.CurrentRepairIncrementSize);
-                                    writer.Write(armorProg.RepairCredits);
-                                    writer.Write(armorProg.HasBeenEquipped);
-                                }
-                            }
-                        }
-                        data = ms.ToArray();
-                    }
-
-                    ServerApi.WorldManager.SaveGame.StoreData(ARMOR_PROGRESS_SAVE_KEY, data);
-                    ServerApi.Logger.Debug($"[SeraphLeveling] Saved armor progress for {snapshot.Length} players");
-                }
-                catch (Exception ex)
-                {
-                    ServerApi.Logger.Error($"[SeraphLeveling] Failed to persist armor progress: {ex.Message}");
-                }
-            }
+            PersistProgress<ArmorProgressData>(ArmorProgress);
         }
 
         /// <summary>
@@ -8361,139 +8108,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadArmorProgress()
         {
-            if (ServerApi == null) return;
-
-            ArmorProgress.Clear();
-
-            try
-            {
-                byte[] data = ServerApi.WorldManager.SaveGame.GetData(ARMOR_PROGRESS_SAVE_KEY);
-                if (data == null || data.Length == 0)
-                {
-                    ServerApi.Logger.Debug("[SeraphLeveling] No armor progress data found in world save");
-                    return;
-                }
-
-                using (var ms = new MemoryStream(data))
-                {
-                    using (var reader = new BinaryReader(ms))
-                    {
-                        // Check magic bytes
-                        byte b1 = reader.ReadByte();
-                        byte b2 = reader.ReadByte();
-                        byte b3 = reader.ReadByte();
-
-                        if (b1 != 0x53 || b2 != 0x49 || b3 != 0x41) // "SIA"
-                        {
-                            ServerApi.Logger.Warning("[SeraphLeveling] Invalid armor progress data format");
-                            return;
-                        }
-
-                        byte version = reader.ReadByte();
-                        int playerCount = reader.ReadInt32();
-
-                        if (version == 1)
-                        {
-                            for (int i = 0; i < playerCount; i++)
-                            {
-                                try
-                                {
-                                    string playerUid = reader.ReadString();
-                                    var progress = new ArmorProgressData
-                                    {
-                                        TotalDurabilityCredits = reader.ReadInt32(),
-                                        TotalWalkSpeedCredits = reader.ReadInt32()
-                                    };
-
-                                    // Read per-armor progress
-                                    int armorCount = reader.ReadInt32();
-                                    for (int j = 0; j < armorCount; j++)
-                                    {
-                                        string armorCode = reader.ReadString();
-                                        var armorProg = new ArmorPieceProgressData
-                                        {
-                                            SecondsWornInIncrement = reader.ReadSingle(),
-                                            CurrentTimeIncrementSize = reader.ReadInt32(),
-                                            TimeCredits = reader.ReadInt32(),
-                                            DamageBlockedInIncrement = reader.ReadSingle(),
-                                            CurrentDamageIncrementSize = reader.ReadInt32(),
-                                            DamageCredits = reader.ReadInt32(),
-                                            RepairsInIncrement = reader.ReadInt32(),
-                                            CurrentRepairIncrementSize = reader.ReadInt32(),
-                                            RepairCredits = reader.ReadInt32(),
-                                            HasBeenEquipped = reader.ReadBoolean()
-                                        };
-                                        progress.ArmorProgress[armorCode] = armorProg;
-                                    }
-
-                                    ArmorProgress[playerUid] = progress;
-                                }
-                                catch (Exception innerEx)
-                                {
-                                    ServerApi.Logger.Warning($"[SeraphLeveling] Skipping corrupt player entry {i+1}/{playerCount} in armor data: {innerEx.Message}");
-                                    break;
-                                }
-                            }
-                            pendingArmorProgressSave = true;
-                        }
-                        else if (version == 2)
-                        {
-                            for (int i = 0; i < playerCount; i++)
-                            {
-                                try
-                                {
-                                    string playerUid = reader.ReadString();
-                                    var progress = new ArmorProgressData
-                                    {
-                                        TotalDurabilityCredits = reader.ReadInt32(),
-                                        TotalWalkSpeedCredits = reader.ReadInt32(),
-                                        LastActivityDay = reader.ReadDouble()
-                                    };
-
-                                    // Read per-armor progress
-                                    int armorCount = reader.ReadInt32();
-                                    for (int j = 0; j < armorCount; j++)
-                                    {
-                                        string armorCode = reader.ReadString();
-                                        var armorProg = new ArmorPieceProgressData
-                                        {
-                                            SecondsWornInIncrement = reader.ReadSingle(),
-                                            CurrentTimeIncrementSize = reader.ReadInt32(),
-                                            TimeCredits = reader.ReadInt32(),
-                                            DamageBlockedInIncrement = reader.ReadSingle(),
-                                            CurrentDamageIncrementSize = reader.ReadInt32(),
-                                            DamageCredits = reader.ReadInt32(),
-                                            RepairsInIncrement = reader.ReadInt32(),
-                                            CurrentRepairIncrementSize = reader.ReadInt32(),
-                                            RepairCredits = reader.ReadInt32(),
-                                            HasBeenEquipped = reader.ReadBoolean()
-                                        };
-                                        progress.ArmorProgress[armorCode] = armorProg;
-                                    }
-
-                                    ArmorProgress[playerUid] = progress;
-                                }
-                                catch (Exception innerEx)
-                                {
-                                    ServerApi.Logger.Warning($"[SeraphLeveling] Skipping corrupt player entry {i+1}/{playerCount} in armor data: {innerEx.Message}");
-                                    break;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            ServerApi.Logger.Warning($"[SeraphLeveling] Unknown armor save format version {version}");
-                            return;
-                        }
-                    }
-                }
-
-                ServerApi.Logger.Notification($"[SeraphLeveling] Loaded armor progress for {ArmorProgress.Count} players");
-            }
-            catch (Exception ex)
-            {
-                ServerApi.Logger.Error($"[SeraphLeveling] Failed to load armor progress: {ex.Message}");
-            }
+            LoadProgress<ArmorProgressData>(ref ArmorProgress, ref pendingArmorProgressSave);
         }
 
         /// <summary>
@@ -17575,23 +17190,20 @@ namespace SeraphLeveling
                     {
                         using (var writer = new BinaryWriter(ms))
                         {
-                            writer.Write((byte)0x4D); // 'M'
-                            writer.Write((byte)0x52); // 'R'
-                            writer.Write((byte)0x43); // 'C'
-                            writer.Write((byte)1);    // Version 1
+                            MercilessProgressData.WriteHeader(writer);
 
                             writer.Write(snapshot.Length);
                             foreach (var playerKvp in snapshot)
                             {
                                 writer.Write(playerKvp.Key);
                                 var progress = playerKvp.Value;
-                                writer.Write(progress.IsUnlocked);
+                                progress.WriteOut(writer);                                
                             }
                         }
                         data = ms.ToArray();
                     }
 
-                    ServerApi.WorldManager.SaveGame.StoreData(MERCILESS_PROGRESS_SAVE_KEY, data);
+                    ServerApi.WorldManager.SaveGame.StoreData(MercilessProgressData.SAVE_KEY, data);
                 }
                 catch (Exception ex)
                 {
@@ -17609,7 +17221,7 @@ namespace SeraphLeveling
 
             try
             {
-                byte[] data = ServerApi.WorldManager.SaveGame.GetData(MERCILESS_PROGRESS_SAVE_KEY);
+                byte[] data = ServerApi.WorldManager.SaveGame.GetData(MercilessProgressData.SAVE_KEY);
                 if (data == null || data.Length == 0)
                 {
                     ServerApi.Logger.Debug("[SeraphLeveling] No merciless progress data found");
@@ -17620,16 +17232,7 @@ namespace SeraphLeveling
                 {
                     using (var reader = new BinaryReader(ms))
                     {
-                        byte magic1 = reader.ReadByte();
-                        byte magic2 = reader.ReadByte();
-                        byte magic3 = reader.ReadByte();
-                        byte version = reader.ReadByte();
-
-                        if (magic1 != 0x4D || magic2 != 0x52 || magic3 != 0x43)
-                        {
-                            ServerApi.Logger.Warning("[SeraphLeveling] Invalid merciless progress magic bytes");
-                            return;
-                        }
+                        MercilessProgressData.readHeader(reader);
 
                         int playerCount = reader.ReadInt32();
                         for (int i = 0; i < playerCount; i++)
@@ -17637,10 +17240,7 @@ namespace SeraphLeveling
                             try
                             {
                                 string playerUid = reader.ReadString();
-                                var progress = new MercilessProgressData
-                                {
-                                    IsUnlocked = reader.ReadBoolean()
-                                };
+                                var progress = new MercilessProgressData(reader);
                                 MercilessProgress[playerUid] = progress;
                             }
                             catch (Exception innerEx)

@@ -1,3 +1,5 @@
+using System.IO;
+
 namespace SeraphLeveling
 {
     /// <summary>
@@ -8,6 +10,7 @@ namespace SeraphLeveling
     {
         /// <summary>Whether the Merciless trait has been unlocked.</summary>
         public bool IsUnlocked { get; set; }
+        public override string SAVE_KEY { get { return "sitMercilessProgress"; } }
 
         public MercilessProgressData()
         {
@@ -20,6 +23,20 @@ namespace SeraphLeveling
             {
                 IsUnlocked = this.IsUnlocked
             };
+        }
+
+        public override byte[] GetHeader() {
+            return [(byte)0x4D, (byte)0x52, (byte)0x43, (byte)1]; // MRC version 1.
+        }
+
+        public MercilessProgressData(BinaryReader reader)
+        {
+            IsUnlocked = reader.ReadBoolean();
+        }
+
+        public override void WriteOut(BinaryWriter writer)
+        {
+            writer.Write(this.IsUnlocked);
         }
     }
 }

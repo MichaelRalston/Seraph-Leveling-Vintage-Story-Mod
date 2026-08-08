@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 
 namespace SeraphLeveling
 {
@@ -6,7 +7,7 @@ namespace SeraphLeveling
     /// Tracks progress for a specific armor piece (for armor progression).
     /// Each armor piece tracks time worn, damage blocked, repairs, and first-equip bonus.
     /// </summary>
-    public class ArmorPieceProgressData:ProgressData
+    public class ArmorPieceProgressData
     {
         /// <summary>Seconds worn in this armor piece toward next time credit.</summary>
         public float SecondsWornInIncrement { get; set; }
@@ -74,7 +75,7 @@ namespace SeraphLeveling
     /// Data structure for tracking armor progression with per-piece progress.
     /// Armor XP comes from: first-equip bonus, time worn, damage blocked, and repairs.
     /// </summary>
-    public class ArmorProgressData:ProgressData
+    public class ArmorProgressData:ProgressData<ArmorProgressData>,IProgressDataContract
     {
         /// <summary>Total durability credits earned (each = 1% armor durability bonus).</summary>
         public int TotalDurabilityCredits { get; set; }
@@ -142,5 +143,105 @@ namespace SeraphLeveling
             }
             return clone;
         }
+
+        public static ArmorProgressData ReadVersion(byte version, BinaryReader reader)
+        {
+            switch (version)
+            {
+                case 1:
+                    var data = new ArmorProgressData
+                    {
+                        TotalDurabilityCredits = reader.ReadInt32(),
+                        TotalWalkSpeedCredits = reader.ReadInt32(),
+                    };
+                    int armorCount = reader.ReadInt32();
+                    for (int i = 0; i < armorCount; i++)
+                    {
+                        string armorCode = reader.ReadString();
+                        var armorProgress = new ArmorPieceProgressData
+                        {
+                            SecondsWornInIncrement = reader.ReadSingle(),
+                            CurrentTimeIncrementSize = reader.ReadInt32(),
+                            TimeCredits = reader.ReadInt32(),
+                            DamageBlockedInIncrement = reader.ReadSingle(),
+                            CurrentDamageIncrementSize = reader.ReadInt32(),
+                            DamageCredits = reader.ReadInt32(),
+                            RepairsInIncrement = reader.ReadInt32(),
+                            CurrentRepairIncrementSize = reader.ReadInt32(),
+                            RepairCredits = reader.ReadInt32(),
+                            HasBeenEquipped = reader.ReadBoolean()
+                        };
+                        data.ArmorProgress[armorCode] = armorProgress;
+                    }
+                    return data;
+                case 2:
+                    var progress = new ArmorProgressData
+                    {
+                        TotalDurabilityCredits = reader.ReadInt32(),
+                        TotalWalkSpeedCredits = reader.ReadInt32(),
+                        LastActivityDay = reader.ReadDouble()
+                    };
+
+                    // Read per-armor progress
+                    int armorCount = reader.ReadInt32();
+                    for (int j = 0; j < armorCount; j++)
+                    {
+                        string armorCode = reader.ReadString();
+                        var armorProg = new ArmorPieceProgressData
+                        {
+                            SecondsWornInIncrement = reader.ReadSingle(),
+                            CurrentTimeIncrementSize = reader.ReadInt32(),
+                            TimeCredits = reader.ReadInt32(),
+                            DamageBlockedInIncrement = reader.ReadSingle(),
+                            CurrentDamageIncrementSize = reader.ReadInt32(),
+                            DamageCredits = reader.ReadInt32(),
+                            RepairsInIncrement = reader.ReadInt32(),
+                            CurrentRepairIncrementSize = reader.ReadInt32(),
+                            RepairCredits = reader.ReadInt32(),
+                            HasBeenEquipped = reader.ReadBoolean()
+                        };
+                        progress.ArmorProgress[armorCode] = armorProg;
+                    }
+                    return progress;
+                default:
+                    throw new System.Exception($"Unsupported ArmorProgressData version: {version}");
+            }
+        }
+
+        public override void WriteOut(BinaryWriter writer)
+        {
+            writer.Write(TotalDurabilityCredits);
+            writer.Write(TotalWalkSpeedCredits);
+            writer.Write(LastActivityDay);
+            var armorSnapshot = ArmorProgress.ToArray();
+            writer.Write(armorSnapshot.Count);
+            foreach (var kvp in armorSnapshot)
+            {
+                writer.Write(kvp.Key);
+                var progress = kvp.Value;
+                writer.Write(progress.SecondsWornInIncrement);
+                writer.Write(progress.CurrentTimeIncrementSize);
+                writer.Write(progress.TimeCredits);
+                writer.Write(progress.DamageBlockedInIncrement);
+                writer.Write(progress.CurrentDamageIncrementSize);
+                writer.Write(progress.DamageCredits);
+                writer.Write(progress.RepairsInIncrement);
+                writer.Write(progress.CurrentRepairIncrementSize);
+                writer.Write(progress.RepairCredits);
+                writer.Write(progress.HasBeenEquipped);
+            }
+        }
+
+        public static byte[] GetHeader()
+        {
+            return [0x53, 0x49, 0x41];
+        }
+
+        public static byte GetVersion() {
+            return 2;
+        }
+
+        public static string SAVE_KEY => "sitArmorProgress";
+        public static string Description => "armor";
     }
 }
