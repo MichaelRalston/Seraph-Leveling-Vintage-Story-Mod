@@ -10,26 +10,32 @@
     <!-- Reference the Vintage Story DLLs (uses APPDATA env var for portability) -->
     <Reference Include="VintagestoryAPI">
       <HintPath>$(APPDATA)\Vintagestory\VintagestoryAPI.dll</HintPath>
+      <HintPath>$(APPDATA)/vintagestory/VintagestoryAPI.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="VintagestoryLib">
       <HintPath>$(APPDATA)\Vintagestory\VintagestoryLib.dll</HintPath>
+      <HintPath>$(APPDATA)/vintagestory/VintagestoryLib.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="VSSurvivalMod">
       <HintPath>$(APPDATA)\Vintagestory\Mods\VSSurvivalMod.dll</HintPath>
+      <HintPath>$(APPDATA)/vintagestory/Mods/VSSurvivalMod.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>$(APPDATA)\Vintagestory\Lib\Newtonsoft.Json.dll</HintPath>
+      <HintPath>$(APPDATA)/vintagestory/Lib/Newtonsoft.Json.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="0Harmony">
       <HintPath>$(APPDATA)\Vintagestory\Lib\0Harmony.dll</HintPath>
+      <HintPath>$(APPDATA)/vintagestory/Lib/0Harmony.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="protobuf-net">
       <HintPath>$(APPDATA)\Vintagestory\Lib\protobuf-net.dll</HintPath>
+      <HintPath>$(APPDATA)/vintagestory/Lib/protobuf-net.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
