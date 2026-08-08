@@ -15650,52 +15650,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistClothierProgress()
         {
-            if (ServerApi == null) return;
-
-            lock (persistLock)
-            {
-                if (ClothierProgress.IsEmpty)
-                {
-                    return;
-                }
-
-                try
-                {
-                    var snapshot = ClothierProgress.ToArray();
-                    byte[] data;
-                    using (var ms = new MemoryStream())
-                    {
-                        using (var writer = new BinaryWriter(ms))
-                        {
-                            writer.Write((byte)0x43); // 'C'
-                            writer.Write((byte)0x4C); // 'L'
-                            writer.Write((byte)0x54); // 'T'
-                            writer.Write((byte)1);    // Version 1
-
-                            writer.Write(snapshot.Length);
-                            foreach (var playerKvp in snapshot)
-                            {
-                                writer.Write(playerKvp.Key);
-                                var progress = playerKvp.Value;
-                                writer.Write(progress.SewingKitUnlocked);
-                                var clothesSnapshot = progress.UniqueClothesWorn.ToArray();
-                                writer.Write(clothesSnapshot.Length);
-                                foreach (var clothCode in clothesSnapshot)
-                                {
-                                    writer.Write(clothCode);
-                                }
-                            }
-                        }
-                        data = ms.ToArray();
-                    }
-
-                    ServerApi.WorldManager.SaveGame.StoreData(CLOTHIER_PROGRESS_SAVE_KEY, data);
-                }
-                catch (Exception ex)
-                {
-                    ServerApi.Logger.Error($"[SeraphLeveling] Failed to persist clothier progress: {ex.Message}");
-                }
-            }
+            PersistProgress<ClothierProgressData>(ClothierProgress);
         }
 
         /// <summary>
@@ -15703,61 +15658,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadClothierProgress()
         {
-            ClothierProgress.Clear();
-            try
-            {
-                byte[] data = ServerApi.WorldManager.SaveGame.GetData(CLOTHIER_PROGRESS_SAVE_KEY);
-                if (data == null || data.Length == 0)
-                {
-                    ServerApi.Logger.Debug("[SeraphLeveling] No clothier progress data found");
-                    return;
-                }
-
-                using (var ms = new MemoryStream(data))
-                {
-                    using (var reader = new BinaryReader(ms))
-                    {
-                        byte magic1 = reader.ReadByte();
-                        byte magic2 = reader.ReadByte();
-                        byte magic3 = reader.ReadByte();
-                        byte version = reader.ReadByte();
-
-                        if (magic1 != 0x43 || magic2 != 0x4C || magic3 != 0x54)
-                        {
-                            ServerApi.Logger.Warning("[SeraphLeveling] Invalid clothier progress magic bytes");
-                            return;
-                        }
-
-                        int playerCount = reader.ReadInt32();
-                        for (int i = 0; i < playerCount; i++)
-                        {
-                            try
-                            {
-                                string playerUid = reader.ReadString();
-                                var progress = new ClothierProgressData();
-                                progress.SewingKitUnlocked = reader.ReadBoolean();
-                                int clothCount = reader.ReadInt32();
-                                for (int j = 0; j < clothCount; j++)
-                                {
-                                    progress.UniqueClothesWorn.Add(reader.ReadString());
-                                }
-                                ClothierProgress[playerUid] = progress;
-                            }
-                            catch (Exception innerEx)
-                            {
-                                ServerApi.Logger.Warning($"[SeraphLeveling] Skipping corrupt player entry {i+1}/{playerCount} in clothier data: {innerEx.Message}");
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                ServerApi.Logger.Notification($"[SeraphLeveling] Loaded clothier progress for {ClothierProgress.Count} players");
-            }
-            catch (Exception ex)
-            {
-                ServerApi.Logger.Error($"[SeraphLeveling] Failed to load clothier progress: {ex.Message}");
-            }
+            LoadProgress<ClothierProgressData>(ref ClothierProgress, ref pendingClothierProgressSave);
         }
 
         /// <summary>
