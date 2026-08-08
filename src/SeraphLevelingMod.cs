@@ -588,9 +588,18 @@ namespace SeraphLeveling
         // Claustrophobic removal threshold
         public static int ClaustrophobicRemovalMiningThreshold = 100;  // 100% mining speed bonus required
 
+        public static int HeavyFootedFurtiveThreshold = 50;
+        public static int HeavyFootedWalkingThreshold = 10;
+
+        public const string WATCHED_HEAVYFOOTED_REMOVED = "sitHeavyFootedRemoved";
+        public const string HEAVYFOOTED_REMOVED_TRAIT_CODE = "sitheavyfootedremoved";
+
         // Storage for claustrophobic removal progress
         public static ConcurrentDictionary<string, ClaustrophobicRemovalProgressData> ClaustrophobicRemovalProgress = new ConcurrentDictionary<string, ClaustrophobicRemovalProgressData>();
         private static volatile bool pendingClaustrophobicRemovalProgressSave = false;
+        // Storage for heavyfooted removal progress
+        public static ConcurrentDictionary<string, HeavyFootedRemovalProgressData> HeavyFootedRemovalProgress = new ConcurrentDictionary<string, HeavyFootedRemovalProgressData>();
+        private static volatile bool pendingHeavyFootedRemovalProgressSave = false;
 
         // =========================================================================
         // NEGATIVE TRAIT CONSTANTS - Used for cancellation calculations
@@ -1466,12 +1475,25 @@ namespace SeraphLeveling
                     .RequiresPlayer()
                     .HandleWith(OnTraitClaustrophobicCommand)
                 .EndSubCommand()
+                .BeginSubCommand("heavyfooted")
+                    .WithDescription("View your heavyfooted removal progress (Hunter only)")
+                    .RequiresPrivilege(Privilege.chat)
+                    .RequiresPlayer()
+                    .HandleWith(OnTraitHeavyFootedCommand)
+                .EndSubCommand()
                 .BeginSubCommand("claustrophobicunlock")
                     .WithDescription("Manually set claustrophobic removed status (admin only)")
                     .WithArgs(api.ChatCommands.Parsers.Bool("removed"))
                     .RequiresPrivilege(Privilege.controlserver)
                     .RequiresPlayer()
                     .HandleWith(OnTraitClaustrophobicUnlockCommand)
+                .EndSubCommand()
+                .BeginSubCommand("heavyfootedunlock")
+                    .WithDescription("Manually set heavyfooted removed status (admin only)")
+                    .WithArgs(api.ChatCommands.Parsers.Bool("removed"))
+                    .RequiresPrivilege(Privilege.controlserver)
+                    .RequiresPlayer()
+                    .HandleWith(OnTraitHeavyFootedUnlockCommand)
                 .EndSubCommand()
                 // Reset all traits
                 .BeginSubCommand("reset")
@@ -4385,6 +4407,24 @@ namespace SeraphLeveling
             }
             string characterClass = entity.WatchedAttributes.GetString("characterClass", "");
             return characterClass.Equals("hunter", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Checks if the player has the SacredLib HeavyFooted trait
+        /// </summary>
+        public static bool PlayerHasSLHeavyFooted(EntityPlayer entity)
+        {
+            if (entity == null) return false;
+            string[] classTraits = entity.WatchedAttributes.GetStringArray("characterTraits", null);
+            if (classTraits != null)
+            {
+                foreach (string trait in classTraits)
+                {
+                    if (trait.Equals("heavyfooted", StringComparison.OrdinalIgnoreCase))
+                        return true;
+                }
+            }
+            return false;
         }
 
         /// <summary>
@@ -12640,6 +12680,28 @@ namespace SeraphLeveling
         }
 
         /// <summary>
+        /// Apply HeavyFooted removal (negatives Furtive and walk speed penalties)
+        /// </summary>
+        private static void ApplyHeavyFootedRemovalStatic(IServerPlayer player, bool removed)
+        {
+            if (removed)
+            {
+                // Negate HeavyFooted penalties: -15% walk speed, -15% furtive
+                // By adding positive stats to counteract them
+                player.Entity.Stats.Set("walkSpeed", "sitHeavyFootedRemoval", 0.1f, false); // +10% to negate -10%
+                player.Entity.Stats.Set("animalSeekingRange", "sitHeavyFootedRemoval", -0.5f, false); // -50% to negate +50%.
+            }
+            else
+            {
+                player.Entity.Stats.Remove("walkSpeed", "sitHeavyFootedRemoval");
+                player.Entity.Stats.Remove("animalSeekingRange", "sitHeavyFootedRemoval");
+            }
+
+            player.Entity.WatchedAttributes.SetBool(WATCHED_HEAVYFOOTED_REMOVED, removed);
+            UpdateExtraTraitStatic(player.Entity, HEAVYFOOTED_REMOVED_TRAIT_CODE, removed);
+        }
+
+        /// <summary>
         /// Check if player is the Hunter class.
         /// </summary>
         private static bool PlayerIsHunterStatic(EntityPlayer entity)
@@ -14278,9 +14340,9 @@ namespace SeraphLeveling
             if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
 
             // Check if player is Hunter
-            if (!PlayerIsHunterStatic(player.Entity))
+            if (!PlayerHasVanillaClaustrophobic(player.Entity))
             {
-                return TextCommandResult.Success("Claustrophobic removal is only available for the Hunter class.");
+                return TextCommandResult.Success("Claustrophobic removal is only available for classes with that trait.");
             }
 
             string playerUid = player.PlayerUID;
@@ -14294,6 +14356,40 @@ namespace SeraphLeveling
             {
                 int remaining = ClaustrophobicRemovalMiningThreshold - miningProgress.TotalCredits;
                 sb.AppendLine($"Reach {remaining}% more mining level to remove Claustrophobic!");
+            }
+
+            return TextCommandResult.Success(sb.ToString());
+        }
+
+        /// <summary>
+        /// Handler for /trait heavyfooted command.
+        /// </summary>
+        private TextCommandResult OnTraitHeavyFootedCommand(TextCommandCallingArgs args)
+        {
+            IServerPlayer player = args.Caller.Player as IServerPlayer;
+            if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
+
+            if (!PlayerHasSLHeavyFooted(player.Entity))
+            {
+                return TextCommandResult.Success("Heavy-footed removal is only available for classes with that trait.");
+            }
+
+            string playerUid = player.PlayerUID;
+            var progress = HeavyFootedRemovalProgress.GetOrAdd(playerUid, _ => new HeavyFootedRemovalProgressData());
+            var furtiveProgress = FurtiveProgress.GetOrAdd(playerUid, _ => new FurtiveProgressData());
+            var walkingProgress = WalkingProgress.GetOrAdd(playerUid, _ => new WalkingProgressData());
+
+            var sb = new StringBuilder();
+            sb.AppendLine($"Heavy Footed trait: {(progress.IsRemoved ? "REMOVED" : "Active")}");
+            sb.AppendLine($"Requirements:");
+            sb.AppendLine($"  Furtive level: {furtiveProgress.TotalCredits} / {HeavyFootedFurtiveThreshold} ({(furtiveProgress.TotalCredits >= HeavyFootedFurtiveThreshold ? "✓" : "✗")})");
+            sb.AppendLine($"  Walking level: {walkingProgress.TotalCredits} / {HeavyFootedWalkingThreshold} ({(walkingProgress.TotalCredits >= HeavyFootedWalkingThreshold ? "✓" : "✗")})");
+
+            if (!progress.IsRemoved)
+            {
+                int remainingFurtive = HeavyFootedFurtiveThreshold - furtiveProgress.TotalCredits;
+                int remainingWalking = HeavyFootedWalkingThreshold - walkingProgress.TotalCredits;
+                sb.AppendLine($"Reach {remainingFurtive}% more furtive level and {remainingWalking}% more walking level to remove Heavy-footed trait.");
             }
 
             return TextCommandResult.Success(sb.ToString());
@@ -14417,6 +14513,26 @@ namespace SeraphLeveling
             ApplyClaustrophobicRemovalStatic(player, removed);
 
             return TextCommandResult.Success($"Claustrophobic trait {(removed ? "removed" : "restored")}.");
+        }
+
+        /// <summary>
+        /// Handler for /trait heavyfootedunlock command.
+        /// </summary>
+        private TextCommandResult OnTraitHeavyFootedUnlockCommand(TextCommandCallingArgs args)
+        {
+            IServerPlayer player = args.Caller.Player as IServerPlayer;
+            if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
+
+            bool removed = (bool)args[0];
+
+            string playerUid = player.PlayerUID;
+            var progress = HeavyFootedRemovalProgress.GetOrAdd(playerUid, _ => new HeavyFootedRemovalProgressData());
+            progress.IsRemoved = removed;
+
+            pendingHeavyFootedRemovalProgressSave = true;
+            ApplyHeavyFootedRemovalStatic(player, removed);
+
+            return TextCommandResult.Success($"Heavy-footed trait {(removed ? "removed" : "restored")}.");
         }
 
         /// <summary>
@@ -14627,6 +14743,13 @@ namespace SeraphLeveling
             }
             ApplyClaustrophobicRemovalStatic(player, false);
 
+            if (HeavyFootedRemovalProgress.TryGetValue(playerUid, out var heavyFootedProg))
+            {
+                heavyFootedProg.IsRemoved = false;
+                pendingHeavyFootedRemovalProgressSave = true;
+            }
+            ApplyHeavyFootedRemovalStatic(player, false);
+
             // Clear sleep buff
             SleepBuffExpiration.TryRemove(playerUid, out _);
             SleepBuffMultiplier.TryRemove(playerUid, out _);
@@ -14697,6 +14820,7 @@ namespace SeraphLeveling
             if (TinkererProgress.TryGetValue(uid, out var tinkerer)) ex.Tinkerer = tinkerer;
             if (MercilessProgress.TryGetValue(uid, out var merciless)) ex.Merciless = merciless;
             if (ClaustrophobicRemovalProgress.TryGetValue(uid, out var claustro)) ex.ClaustrophobicRemoval = claustro;
+            if (HeavyFootedRemovalProgress.TryGetValue(uid, out var heavyFooted)) ex.HeavyFootedRemoval = heavyFooted;
             if (COProgress.TryGetValue(uid, out var co)) ex.CombatOverhaul = co;
 
             return ex;
@@ -14984,6 +15108,12 @@ namespace SeraphLeveling
             claustrophobicProg.IsRemoved = true;
             pendingClaustrophobicRemovalProgressSave = true;
             ApplyClaustrophobicRemovalStatic(player, true);
+    
+            // Remove Heavy-footed (if applicable)
+            var heavyFootedProg = HeavyFootedRemovalProgress.GetOrAdd(playerUid, _ => new HeavyFootedRemovalProgressData());
+            heavyFootedProg.IsRemoved = true;
+            pendingHeavyFootedRemovalProgressSave = true;
+            ApplyHeavyFootedRemovalStatic(player, true);
 
             return TextCommandResult.Success("All trait progression has been set to maximum for testing.");
         }

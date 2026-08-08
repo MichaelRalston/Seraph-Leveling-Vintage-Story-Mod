@@ -39,6 +39,7 @@ namespace SeraphLeveling
         public TinkererProgressData Tinkerer;
         public MercilessProgressData Merciless;
         public ClaustrophobicRemovalProgressData ClaustrophobicRemoval;
+        public HeavyFootedRemovalProgressData HeavyFootedRemoval;
         public COPlayerProgressData CombatOverhaul;
     }
 }
