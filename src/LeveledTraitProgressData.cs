@@ -137,12 +137,17 @@ namespace SeraphLeveling {
 
         }
 
-        public void ApplyTraitTestSuite1Command(IServerPlayer player) {
-            TotalCredits = 1;
-            PartialCredit = V.Zero;
-            CurrentIncrementSize = GetBaseIncrement();
+        private static ref T GetDict(IPlayer player) {
+            return ref T.ProgressDictionary().GetOrAdd(player.PlayerUID, _ => new T());
+        }
+
+        public static void ApplyTraitTestSuite1Command(IServerPlayer player) {
+            var progress = GetDict(player);
+            progress.TotalCredits = 1;
+            progress.PartialCredit = V.Zero;
+            progress.CurrentIncrementSize = progress.GetBaseIncrement();
             T.MarkForSave();
-            ApplyBonus(player);
+            progress.ApplyBonus(player);
         }
 
         public abstract string GetTraitAllString(IPlayer player);
