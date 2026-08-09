@@ -2159,48 +2159,7 @@ namespace SeraphLeveling
         /// </summary>
         private TextCommandResult OnTraitMiningCommand(TextCommandCallingArgs args)
         {
-            var player = args.Caller.Player;
-            if (player?.Entity == null)
-            {
-                return TextCommandResult.Error("Could not find player entity");
-            }
-
-            string playerUid = player.PlayerUID;
-            var progress = MiningProgress.GetOrAdd(playerUid, _ => new MiningProgressData());
-
-            int currentCredits = progress.TotalCredits;
-            int bonusPercent = CalculateMiningBonusPercent(currentCredits);
-            int maxCredits = GetMaxMiningCredits(player.Entity);
-
-            var sb = new StringBuilder();
-            sb.AppendLine($"Mining progression: {currentCredits}% / {maxCredits}%");
-            sb.AppendLine($"Current bonus: +{bonusPercent}% mining speed");
-
-            if (progress.ToolProgress.Count > 0)
-            {
-                sb.AppendLine("\nPer-pickaxe progress:");
-                foreach (var kvp in progress.ToolProgress.OrderBy(p => p.Value.CurrentIncrementSize))
-                {
-                    string pickaxeName = kvp.Key;
-                    // Simplify the display name (remove "game:" prefix if present)
-                    if (pickaxeName.StartsWith("game:"))
-                        pickaxeName = pickaxeName.Substring(5);
-
-                    var pickProgress = kvp.Value;
-                    sb.AppendLine($"  {pickaxeName}: {pickProgress.BlocksInIncrement}/{pickProgress.CurrentIncrementSize} points");
-                }
-            }
-            else
-            {
-                sb.AppendLine("\nNo pickaxe progress yet. Mine stone or ore with a pickaxe to start!");
-            }
-
-            if (currentCredits >= maxCredits)
-            {
-                sb.Insert(0, "=== MAXED OUT ===\n");
-            }
-
-            return TextCommandResult.Success(sb.ToString().TrimEnd());
+            return MiningProgressData.HandleTraitCommand(args);
         }
 
         /// <summary>
@@ -2315,7 +2274,7 @@ namespace SeraphLeveling
                 {
                     var pickaxeProgress = progress.GetToolProgress(toolName);
                     pickaxeProgress.CurrentIncrementSize = BaseBlocksPerIncrement + (level * IncrementStep);
-                    pickaxeProgress.BlocksInIncrement = 0;
+                    pickaxeProgress.PartialCredit = 0;
                 }
 
                 progress.TotalCredits = RecalculateTotalCreditsFromTools(
@@ -4839,14 +4798,14 @@ namespace SeraphLeveling
             int modifiedPoints = ApplyXPMultiplier(playerUid, points);
 
             // Add points to THIS pickaxe's progress
-            pickaxeProgress.BlocksInIncrement += modifiedPoints;
+            pickaxeProgress.PartialCredit += modifiedPoints;
 
             // Check if we've earned any new credits with this pickaxe
-            while (pickaxeProgress.BlocksInIncrement >= pickaxeProgress.CurrentIncrementSize && playerProgress.TotalCredits < maxCredits)
+            while (pickaxeProgress.PartialCredit >= pickaxeProgress.CurrentIncrementSize && playerProgress.TotalCredits < maxCredits)
             {
                 // Earn a credit
                 playerProgress.TotalCredits++;
-                pickaxeProgress.BlocksInIncrement -= pickaxeProgress.CurrentIncrementSize;
+                pickaxeProgress.PartialCredit -= pickaxeProgress.CurrentIncrementSize;
                 pickaxeProgress.CurrentIncrementSize += IncrementStep;
 
                 ServerApi.Logger.Debug($"[SeraphLeveling] Player {byPlayer.PlayerName} earned credit {playerProgress.TotalCredits} with {pickaxeCode}, next requires {pickaxeProgress.CurrentIncrementSize} points");
@@ -7787,7 +7746,7 @@ namespace SeraphLeveling
                     {
                         int oldCredits = mProg.TotalCredits;
                         var toolEntries = mProg.ToolProgress.Select(kvp =>
-                            (kvp.Key, (double)kvp.Value.BlocksInIncrement, kvp.Value.CurrentIncrementSize)).ToList();
+                            (kvp.Key, (double)kvp.Value.PartialCredit, kvp.Value.CurrentIncrementSize)).ToList();
 
                         if (toolEntries.Count > 0)
                         {
@@ -7796,7 +7755,7 @@ namespace SeraphLeveling
                             var (newCr, lost) = ApplyAbsolutePositionDecay(toolEntries, rawPenalty,
                                 BaseBlocksPerIncrement, IncrementStep, oldCredits,
                                 (k, a, s) => { if (mProg.ToolProgress.TryGetValue(k, out var p)) {
-                                    p.BlocksInIncrement = (int)Math.Floor(a); p.CurrentIncrementSize = s; } },
+                                    p.PartialCredit = (int)Math.Floor(a); p.CurrentIncrementSize = s; } },
                                 k => mProg.ToolProgress.Remove(k), verboseSb, "Mining");
                             mProg.TotalCredits = newCr;
                             if (lost > 0) totalDecayApplied += lost;
@@ -7808,7 +7767,7 @@ namespace SeraphLeveling
                                 {
                                     int newToolCr = IncrementStep > 0 ? (after.CurrentIncrementSize - BaseBlocksPerIncrement) / IncrementStep : 0;
                                     int toolLost = oldToolCr - newToolCr;
-                                    sb.AppendLine($"    {entry.Item1}: {(int)entry.Item2}/{entry.Item3} \u2192 {after.BlocksInIncrement}/{after.CurrentIncrementSize}{(toolLost > 0 ? $" (-{toolLost} cr)" : "")}");
+                                    sb.AppendLine($"    {entry.Item1}: {(int)entry.Item2}/{entry.Item3} \u2192 {after.PartialCredit:F0}/{after.CurrentIncrementSize}{(toolLost > 0 ? $" (-{toolLost} cr)" : "")}");
                                 }
                                 else
                                     sb.AppendLine($"    {entry.Item1}: {(int)entry.Item2}/{entry.Item3} \u2192 removed (-{oldToolCr} cr)");
@@ -8643,7 +8602,7 @@ namespace SeraphLeveling
                     int oldCredits = miningProg.TotalCredits;
 
                     var toolEntries = miningProg.ToolProgress.Select(kvp =>
-                        (kvp.Key, (double)kvp.Value.BlocksInIncrement, kvp.Value.CurrentIncrementSize)).ToList();
+                        (kvp.Key, (double)kvp.Value.PartialCredit, kvp.Value.CurrentIncrementSize)).ToList();
 
                     if (toolEntries.Count > 0)
                     {
@@ -8651,7 +8610,7 @@ namespace SeraphLeveling
                         var (newCr, _) = ApplyAbsolutePositionDecay(toolEntries, rawPenalty,
                             BaseBlocksPerIncrement, IncrementStep, oldCredits,
                             (k, a, s) => { if (miningProg.ToolProgress.TryGetValue(k, out var p)) {
-                                p.BlocksInIncrement = (int)Math.Floor(a); p.CurrentIncrementSize = s; } },
+                                p.PartialCredit = (int)Math.Floor(a); p.CurrentIncrementSize = s; } },
                             k => miningProg.ToolProgress.Remove(k), null, "Mining");
                         miningProg.TotalCredits = newCr;
                         int actualLost = oldCredits - newCr;
@@ -8664,7 +8623,7 @@ namespace SeraphLeveling
                             {
                                 int newToolCr = IncrementStep > 0 ? (after.CurrentIncrementSize - BaseBlocksPerIncrement) / IncrementStep : 0;
                                 int toolLost = oldToolCr - newToolCr;
-                                sb.AppendLine($"    {entry.Item1}: {(int)entry.Item2}/{entry.Item3} \u2192 {after.BlocksInIncrement}/{after.CurrentIncrementSize}{(toolLost > 0 ? $" (-{toolLost} cr)" : "")}");
+                                sb.AppendLine($"    {entry.Item1}: {(int)entry.Item2}/{entry.Item3} \u2192 {after.PartialCredit}/{after.CurrentIncrementSize}{(toolLost > 0 ? $" (-{toolLost} cr)" : "")}");
                             }
                             else
                                 sb.AppendLine($"    {entry.Item1}: {(int)entry.Item2}/{entry.Item3} \u2192 removed (-{oldToolCr} cr)");

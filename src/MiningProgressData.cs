@@ -13,28 +13,29 @@ namespace SeraphLeveling
     /// Tracks progress for a specific pickaxe type.
     /// Each pickaxe type has its own increment counter that persists.
     /// </summary>
-    public class PickaxeProgressData: IDeepCopyable<PickaxeProgressData>
+    public class PickaxeProgressData: LevelableTool<PickaxeProgressData>, IDeepCopyable<PickaxeProgressData>, ILevelableToolContract<PickaxeProgressData>
     {
-        /// <summary>Points accumulated toward the next credit with this pickaxe.</summary>
-        public int BlocksInIncrement { get; set; }
-
-        /// <summary>Points needed for the next credit with this pickaxe (100, 200, 300, etc.).</summary>
-        public int CurrentIncrementSize { get; set; }
-
         public PickaxeProgressData()
         {
-            BlocksInIncrement = 0;
+            PartialCredit = 0;
             CurrentIncrementSize = SeraphLevelingModSystem.BaseBlocksPerIncrement; // Base increment size
+        }
+
+        public override void WriteOut(BinaryWriter writer)
+        {
+            writer.Write(PartialCredit);
+            writer.Write(CurrentIncrementSize);
         }
 
         public PickaxeProgressData Clone()
         {
             return new PickaxeProgressData
             {
-                BlocksInIncrement = this.BlocksInIncrement,
+                PartialCredit = this.PartialCredit,
                 CurrentIncrementSize = this.CurrentIncrementSize
             };
         }
+        public static string Name => "pickaxe";
     }
 
     /// <summary>
@@ -58,23 +59,13 @@ namespace SeraphLeveling
         public new static byte GetVersion() {
             return (byte)4;
         }
-        public override void WriteOut(BinaryWriter writer) {
-            writer.Write(TotalCredits);
-            writer.Write(LastActivityDay);
-
-            // Snapshot inner dictionary to avoid concurrent modification
-            var toolSnapshot = ToolProgress.ToArray();
-            writer.Write(toolSnapshot.Length);
-            foreach (var toolKvp in toolSnapshot)
-            {
-                writer.Write(toolKvp.Key); // Pickaxe code
-                writer.Write(toolKvp.Value.BlocksInIncrement);
-                writer.Write(toolKvp.Value.CurrentIncrementSize);
-            }
-        }
-
         public static string SAVE_KEY => "sitMiningProgress";
         public static string Description => "mining";
+        public static string SkillKey => "mining";
+        public static string Name => "Mining";
+        public static string Stat => "% mining speed";
+        public static string LongDescription => "mining speed";
+
 
         public new static MiningProgressData ReadVersion(byte version, BinaryReader reader) {
             MiningProgressData progress;
@@ -98,7 +89,7 @@ namespace SeraphLeveling
                 case 2:
                     int totalCredits = reader.ReadInt32();
                     string currentPickaxeCode = reader.ReadString();
-                    int blocksInIncrement = reader.ReadInt32();
+                    int partialCredit = reader.ReadInt32();
                     int currentIncrementSize = reader.ReadInt32();
 
                     progress = new MiningProgressData
@@ -111,7 +102,7 @@ namespace SeraphLeveling
                     {
                         progress.ToolProgress[currentPickaxeCode] = new PickaxeProgressData
                         {
-                            BlocksInIncrement = blocksInIncrement,
+                            PartialCredit = partialCredit,
                             CurrentIncrementSize = currentIncrementSize
                         };
                     }
@@ -128,7 +119,7 @@ namespace SeraphLeveling
                         string pickaxeCode = reader.ReadString();
                         var pickaxeProgress = new PickaxeProgressData
                         {
-                            BlocksInIncrement = reader.ReadInt32(),
+                            PartialCredit = reader.ReadInt32(),
                             CurrentIncrementSize = reader.ReadInt32()
                         };
                         progress.ToolProgress[pickaxeCode] = pickaxeProgress;
@@ -147,7 +138,7 @@ namespace SeraphLeveling
                         string pickaxeCode = reader.ReadString();
                         var pickaxeProgress = new PickaxeProgressData
                         {
-                            BlocksInIncrement = reader.ReadInt32(),
+                            PartialCredit = reader.ReadInt32(),
                             CurrentIncrementSize = reader.ReadInt32()
                         };
                         progress.ToolProgress[pickaxeCode] = pickaxeProgress;

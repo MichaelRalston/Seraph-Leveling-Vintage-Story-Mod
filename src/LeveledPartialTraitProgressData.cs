@@ -133,9 +133,9 @@ namespace SeraphLeveling {
             T.MarkForSave();
             progress.ApplyBonus(player);
         }
-        public override string GetIncrementLine()
+        public override void WriteIncrementLine(StringBuilder sb)
         {
-            return $"Progress: {PartialCredit:F1}/{CurrentIncrementSize} {GetIncrementUnits()}";
+            sb.AppendLine($"Progress: {PartialCredit:F1}/{CurrentIncrementSize} {GetIncrementUnits()}");
         }
 
         public override void ZeroPartialCredit() {

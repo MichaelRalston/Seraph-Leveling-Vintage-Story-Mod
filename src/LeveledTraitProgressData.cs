@@ -82,9 +82,9 @@ namespace SeraphLeveling {
             return T.ProgressDictionary().GetOrAdd(player.PlayerUID, _ => new T());
         }
 
-        public virtual string GetIncrementLine()
+        public virtual void WriteIncrementLine(StringBuilder sb)
         {
-            return "";
+            // Empty.
         }
 
         public virtual void ZeroPartialCredit() {
@@ -151,11 +151,7 @@ namespace SeraphLeveling {
             var sb = new StringBuilder();
             sb.AppendLine($"{T.Name} progression: {currentCredits}% / {maxCredits}%");
             sb.AppendLine($"Current bonus: +{bonusPercent}{T.Stat}");
-            var incrementLine = progress.GetIncrementLine();
-            if (!string.IsNullOrEmpty(incrementLine))
-            {
-                sb.AppendLine(incrementLine);
-            }
+            progress.WriteIncrementLine(sb);
 
             if (currentCredits >= maxCredits)
             {
