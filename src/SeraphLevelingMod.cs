@@ -2079,14 +2079,7 @@ namespace SeraphLeveling
             {
                 case "walking":
                 {
-                    if (level > MaxWalkingSpeedPercent) return TextCommandResult.Error($"Level cannot exceed max ({MaxWalkingSpeedPercent}).");
-                    var progress = WalkingProgress.GetOrAdd(targetUid, _ => new WalkingProgressData { CurrentIncrementSize = BaseBlocksWalkedPerIncrement });
-                    progress.TotalCredits = level;
-                    pendingWalkingProgressSave = true;
-                    ApplyWalkingBonusStatic(targetPlayer, level);
-                    UpdateSkillActivityDay(targetUid, "walking");
-                    result = $"Walking level set to {level} (+{level}% speed) for {targetPlayer.PlayerName}.";
-                    break;
+                    return WalkingProgressData.SetLevel(targetPlayer, level);
                 }
                 case "hunger":
                 {

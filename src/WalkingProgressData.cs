@@ -8,7 +8,7 @@ namespace SeraphLeveling
     /// Data structure for tracking walking speed progression.
     /// Simpler than other progression systems since walking has no "tools".
     /// </summary>
-    public class WalkingProgressData : LeveledTraitProgressData<WalkingProgressData, float>, IProgressDataContract<WalkingProgressData>
+    public class WalkingProgressData : LeveledTraitProgressData<WalkingProgressData, float>, IProgressDataContract<WalkingProgressData>, ILeveledTraitContract<WalkingProgressData>
     {
 
         public WalkingProgressData()
@@ -24,6 +24,8 @@ namespace SeraphLeveling
 
         public static string SAVE_KEY => "sitWalkingProgress";
         public static string Description => "walking";
+        public static string Name => "Walking";
+        public static string Stat => "% speed";
         public static void MarkForSave() {
             SeraphLevelingModSystem.pendingWalkingProgressSave = true;
         }
@@ -45,9 +47,6 @@ namespace SeraphLeveling
         }
         public override void ApplyBonus(IServerPlayer player) {
             SeraphLevelingModSystem.ApplyWalkingBonusStatic(player, TotalCredits);
-        }
-        public override string GetTraitAllString(IPlayer player) {
-            return $"Walking: {TotalCredits}/{GetMaxCredits(player.Entity)} (+{TotalCredits}% speed)";
         }
     }
 }

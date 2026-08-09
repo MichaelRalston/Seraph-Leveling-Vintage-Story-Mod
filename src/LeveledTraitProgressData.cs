@@ -13,9 +13,15 @@ using System.Collections.Concurrent;
 using System.Text;
 
 namespace SeraphLeveling {
+    public interface ILeveledTraitContract<T> where T:ILeveledTraitContract<T>
+    {
+        public static virtual string Name { get; }
+        public static virtual string Stat { get; }
+
+    }
     // This class will be very unhappy if V is type anything other than int or float. Fortunately, I don't anticipate that being an issue.
     public abstract class LeveledTraitProgressData<T, V> : ProgressData<T> 
-    where T : LeveledTraitProgressData<T, V>, IProgressDataContract<T>, new() // 'new()' goes at the end
+    where T : LeveledTraitProgressData<T, V>, IProgressDataContract<T>, ILeveledTraitContract<T>, new() // 'new()' goes at the end
     where V : INumber<V>
     {
         protected LeveledTraitProgressData() {
@@ -150,10 +156,9 @@ namespace SeraphLeveling {
             progress.ApplyBonus(player);
         }
 
-        public abstract string GetTraitAllString(IPlayer player);
         public static void GetTraitAllCommandLine(IPlayer player, StringBuilder sb) {
             var progress = GetDict(player);
-            sb.AppendLine(progress.GetTraitAllString(player));
+            sb.AppendLine($"{T.Name}: {progress.TotalCredits}/{progress.GetMaxCredits(player.Entity)} (+{progress.TotalCredits}{T.Stat})");
         }
         public static void ResetProgress(IServerPlayer player) {
             var progress = GetDict(player);
@@ -171,6 +176,24 @@ namespace SeraphLeveling {
             progress.PartialCredit = V.Zero;
             T.MarkForSave();
             progress.ApplyBonus(player);
+        }
+
+        public void UpdateSkillActivityDay() {
+            if (!SeraphLevelingModSystem.EnableSkillDecay) return;
+            if (SeraphLevelingModSystem.ServerApi == null) return;
+
+            LastActivityDay = SeraphLevelingModSystem.ServerApi.World.Calendar.TotalDays;
+        }
+
+        public static TextCommandResult SetLevel(IServerPlayer player, int level) {
+            var progress = GetDict(player);
+            int maxLevel = progress.GetMaxCredits(player.Entity);
+            if (level > maxLevel) return TextCommandResult.Error($"Level cannot exceed max ({maxLevel}).");
+            progress.TotalCredits = level;
+            T.MarkForSave();
+            progress.ApplyBonus(player);
+            progress.UpdateSkillActivityDay();
+            return TextCommandResult.Success($"{T.Name} level set to {level} (+{level}{T.Stat}) for {player.PlayerName}.");
         }
     }
 }
