@@ -665,6 +665,9 @@ namespace SeraphLeveling
         // MULTI-MOD COMPATIBILITY
         // =========================================================================
 
+        public static ConcurrentDictionary<AttributeModifierDefinition, ConcurrentDictionary<string, AttributeModifierProgressData>> ProgressData = [];
+        public static ConcurrentDictionary<AttributeModifierDefinition, bool> PendingSaves = [];
+
         public static HashSet<ModDefinition> LoadedMods { get; internal set; } = [ ModDefinitions.Vanilla ];
         public static HashSet<ModDefinition> DetectLoadedMods(IModLoader modLoader)
         {

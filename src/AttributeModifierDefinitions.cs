@@ -4,14 +4,16 @@ namespace SeraphLeveling
 {
     public static class AttributeModifierDefinitions
     {
-        public static readonly AttributeModifierDefinition WalkingSpeed = new()
+        public static readonly AttributeModifierDefinition WalkingSpeed = new LeveledAttributeModifierDefinition()
         {
             Id = "walkingSpeed",
-            Name = "Walking",
             SaveKey = "sitWalkingProgress",
             Description = "walking",
+            PersistenceHeader = "SIW",
+            Name = "Walking",
+            Stat = "% speed",
             LongDescription = "walking speed",
-            Stat = "% speed"
+            GlobalMaxCredits = SeraphLevelingModSystem.MaxWalkingSpeedPercent
         };
     }
 }
