@@ -8,7 +8,7 @@ namespace SeraphLeveling
         {
             Id = "fleetfooted",
             Attributes = [ 
-                AttributeDefinitions.WalkingSpeed
+                AttributeModifierDefinitions.WalkingSpeed
             ]
         };
     }
