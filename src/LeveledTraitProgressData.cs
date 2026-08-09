@@ -13,6 +13,7 @@ using System.Collections.Concurrent;
 using System.Text;
 
 namespace SeraphLeveling {
+    // This class will be very unhappy if V is type anything other than int or float. Fortunately, I don't anticipate that being an issue.
     public abstract class LeveledTraitProgressData<T, V> : ProgressData<T> 
     where T : LeveledTraitProgressData<T, V>, IProgressDataContract<T>, new() // 'new()' goes at the end
     where V : INumber<V>
@@ -148,6 +149,23 @@ namespace SeraphLeveling {
         public static void GetTraitAllCommandLine(IPlayer player, StringBuilder sb) {
             var progress = T.ProgressDictionary().GetOrAdd(player.PlayerUID, _ => new T());
             sb.AppendLine(progress.GetTraitAllString(player));
+        }
+        public static void ResetProgress(IServerPlayer player) {
+            var progress = T.ProgressDictionary().GetOrAdd(player.PlayerUID, _ => new T());
+            progress.TotalCredits = 0;
+            progress.PartialCredit = V.Zero;
+            progress.CurrentIncrementSize = progress.GetBaseIncrement();
+            progress.LastActivityDay = 0;
+            T.MarkForSave();
+            progress.ApplyBonus(player);
+        }
+        public static void MaxStat(IServerPlayer player) {
+            var progress = T.ProgressDictionary().GetOrAdd(player.PlayerUID, _ => new T());
+            int maxCredits = progress.GetMaxCredits(player.Entity);
+            progress.TotalCredits = maxCredits;
+            progress.PartialCredit = V.Zero;
+            T.MarkForSave();
+            progress.ApplyBonus(player);
         }
     }
 }

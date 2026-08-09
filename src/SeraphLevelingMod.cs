@@ -13573,14 +13573,7 @@ namespace SeraphLeveling
             ApplyRangedBonusStatic(player, 0);
 
             // Reset Walking
-            if (WalkingProgress.TryGetValue(playerUid, out var walkingProg))
-            {
-                walkingProg.TotalCredits = 0;
-                walkingProg.PartialCredit = 0;
-                walkingProg.CurrentIncrementSize = 1000; // Default base
-                pendingWalkingProgressSave = true;
-            }
-            ApplyWalkingBonusStatic(player, 0);
+            WalkingProgressData.ResetProgress(player);
 
             // Reset Hunger
             if (HungerProgress.TryGetValue(playerUid, out var hungerProg))
@@ -13964,13 +13957,7 @@ namespace SeraphLeveling
             ApplyRangedBonusStatic(player, maxRangedCredits);
 
             // Max Walking
-            int maxWalkingCredits = MaxWalkingSpeedPercent;
-            var walkingProg = WalkingProgress.GetOrAdd(playerUid, _ => new WalkingProgressData());
-            walkingProg.TotalCredits = maxWalkingCredits;
-            walkingProg.PartialCredit = 0;
-            walkingProg.CurrentIncrementSize = BaseBlocksWalkedPerIncrement;
-            pendingWalkingProgressSave = true;
-            ApplyWalkingBonusStatic(player, maxWalkingCredits);
+            WalkingProgressData.MaxStat(player);
 
             // Max Hunger
             int maxHungerCredits = CalculateMaxHungerCredits(player.Entity);
