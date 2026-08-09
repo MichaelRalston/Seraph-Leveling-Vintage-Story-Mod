@@ -8850,22 +8850,7 @@ namespace SeraphLeveling
             // --- Single accumulator skills ---
 
             // Walking
-            if (!DeathPenaltyExemptSkills.Contains("walking") && !DisabledSkills.Contains("walking"))
-            {
-                if (WalkingProgress.TryGetValue(playerUid, out var walkingProg) && (walkingProg.TotalCredits > 0 || walkingProg.PartialCredit > 0))
-                {
-                    int oldCredits = walkingProg.TotalCredits;
-                    float oldAcc = walkingProg.PartialCredit; int oldInc = walkingProg.CurrentIncrementSize;
-                    double rawPenalty = BaseBlocksWalkedPerIncrement * DeathPenaltyFraction * Math.Sqrt(Math.Max(1, oldCredits));
-                    var (newCr, newAcc, newInc, lost) = ApplySingleAccumulatorDecay(
-                        oldAcc, oldInc, oldCredits, rawPenalty, BaseBlocksWalkedPerIncrement, WalkingIncrementStep, null, "Walking");
-                    walkingProg.TotalCredits = newCr; walkingProg.PartialCredit = (float)newAcc; walkingProg.CurrentIncrementSize = newInc;
-                    if (lost > 0) totalCreditsLost += lost;
-                    pendingWalkingProgressSave = true;
-                    sb.AppendLine($"  Walking: {oldCredits} \u2192 {newCr} (-{lost} credits, {rawPenalty:F0} pts), {oldAcc:F0}/{oldInc} \u2192 {(int)newAcc}/{newInc}");
-                }
-            }
-
+            totalCreditsLost += WalkingProgressData.ApplyDeathPenalty(player, sb);
             // Hunger
             if (!DeathPenaltyExemptSkills.Contains("hunger") && !DisabledSkills.Contains("hunger"))
             {

@@ -311,6 +311,19 @@ namespace SeraphLeveling {
             progress.ApplyBonus(player);
         }
 
+        private static int ApplyStatPenalty(T progress, double rawPenalty, StringBuilder sb, StringBuilder verboseSb) {
+            int oldCredits = progress.TotalCredits;
+            float oldAcc = float.CreateTruncating(progress.PartialCredit); int oldInc = progress.CurrentIncrementSize;
+            var (newCr, newAcc, newInc, lost) = SeraphLevelingModSystem.ApplySingleAccumulatorDecay(
+                oldAcc, oldInc, oldCredits,
+                rawPenalty, progress.GetBaseIncrement(), progress.GetIncrementStep(), verboseSb, T.SkillKey);
+            progress.TotalCredits = newCr; progress.PartialCredit = V.CreateTruncating(newAcc); progress.CurrentIncrementSize = newInc;
+            sb.AppendLine($"  {T.Name}: {oldCredits} \u2192 {newCr} (-{lost} credits, {rawPenalty:F0} pts), {oldAcc:F0}/{oldInc} \u2192 {(int)newAcc}/{newInc}");
+            T.MarkForSave();
+            if (lost > 0) return lost;
+            return 0;
+        }
+
         public static int ApplyDecay(IServerPlayer player, double currentDay, StringBuilder sb, StringBuilder verboseSb) {
             if (!SeraphLevelingModSystem.DecayExemptSkills.Contains(T.SkillKey) && !SeraphLevelingModSystem.DisabledSkills.Contains(T.SkillKey))
             {
@@ -320,17 +333,20 @@ namespace SeraphLeveling {
                     int decayCredits = SeraphLevelingModSystem.CalculateDecayPoints(progress.LastActivityDay, currentDay, grace, basePoints, maxPoints);
                     if (decayCredits > 0)
                     {
-                        int oldCredits = progress.TotalCredits;
-                        float oldAcc = float.CreateTruncating(progress.PartialCredit); int oldInc = progress.CurrentIncrementSize;
-                        double rawPenalty = (double)decayCredits;
-                        var (newCr, newAcc, newInc, lost) = SeraphLevelingModSystem.ApplySingleAccumulatorDecay(
-                            oldAcc, oldInc, oldCredits,
-                            rawPenalty, progress.GetBaseIncrement(), progress.GetIncrementStep(), verboseSb, T.SkillKey);
-                        progress.TotalCredits = newCr; progress.PartialCredit = V.CreateTruncating(newAcc); progress.CurrentIncrementSize = newInc;
-                        sb.AppendLine($"  {T.Name}: {oldCredits} \u2192 {newCr} (-{lost} credits, {rawPenalty:F0} pts), {oldAcc:F0}/{oldInc} \u2192 {(int)newAcc}/{newInc}");
-                        T.MarkForSave();
-                        if (lost > 0) return lost;
+                        return ApplyStatPenalty(progress, decayCredits, sb, verboseSb);
                     }
+                }
+            }
+            return 0;
+        }
+
+        public static int ApplyDeathPenalty(IServerPlayer player, StringBuilder sb) {
+            if (!SeraphLevelingModSystem.DeathPenaltyExemptSkills.Contains(T.SkillKey) && !SeraphLevelingModSystem.DisabledSkills.Contains(T.SkillKey))
+            {
+                if (T.ProgressDictionary().TryGetValue(player.PlayerUID, out var progress) && (progress.TotalCredits > 0 || progress.PartialCredit > V.Zero))
+                {
+                    double rawPenalty = progress.GetBaseIncrement() * SeraphLevelingModSystem.DeathPenaltyFraction * Math.Sqrt(Math.Max(1, progress.TotalCredits));
+                    return ApplyStatPenalty(progress, rawPenalty, sb, null);
                 }
             }
             return 0;
