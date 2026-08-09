@@ -8287,8 +8287,7 @@ namespace SeraphLeveling
                 ApplyMeleeBonusStatic(player, meleeProg.TotalCredits);
             if (RangedProgress.TryGetValue(playerUid, out var rangedProg))
                 ApplyRangedBonusStatic(player, rangedProg.TotalCredits);
-            if (WalkingProgress.TryGetValue(playerUid, out var walkingProg))
-                ApplyWalkingBonusStatic(player, walkingProg.TotalCredits);
+            WalkingProgressData.ApplyBonusIfExists(player);
             if (HungerProgress.TryGetValue(playerUid, out var hungerProg))
                 ApplyHungerBonusStatic(player, hungerProg.TotalCredits);
             if (ArmorProgress.TryGetValue(playerUid, out var armorProg))

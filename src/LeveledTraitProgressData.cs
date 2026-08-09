@@ -303,7 +303,11 @@ namespace SeraphLeveling {
             {
                 SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Applied {T.Description} bonus {progress.TotalCredits}% to player {player.PlayerName}");
             }
+        }
 
+        public static void ApplyBonusIfExists(IServerPlayer player) {
+            if (T.ProgressDictionary().TryGetValue(player.PlayerUID, out var progress))
+            progress.ApplyBonus(player);
         }
     }
 }
