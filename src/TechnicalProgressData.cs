@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System;
 using System.IO;
 
@@ -56,6 +57,12 @@ namespace SeraphLeveling
                 default:
                     throw new NotSupportedException($"Version {version} is not supported");
             }
+        }
+        public static void MarkForSave() {
+            SeraphLevelingModSystem.pendingTechnicalProgressSave = true;
+        }
+        public static ref ConcurrentDictionary<string, TechnicalProgressData> ProgressDictionary() {
+            return ref SeraphLevelingModSystem.TechnicalProgress;
         }
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Vintagestory.API.Util;
+using System.Collections.Concurrent;
 
 namespace SeraphLeveling
 {
@@ -60,6 +61,12 @@ namespace SeraphLeveling
         {
             writer.Write(SewingKitUnlocked);
             writer.WriteArray(UniqueClothesWorn.ToArray());
+        }
+        public static void MarkForSave() {
+            SeraphLevelingModSystem.pendingClothierProgressSave = true;
+        }
+        public static ref ConcurrentDictionary<string, ClothierProgressData> ProgressDictionary() {
+            return ref SeraphLevelingModSystem.ClothierProgress;
         }
     }
 }

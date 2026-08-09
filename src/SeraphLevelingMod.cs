@@ -64,7 +64,7 @@ namespace SeraphLeveling
         public static ConcurrentDictionary<string, MeleeProgressData> MeleeProgress = new ConcurrentDictionary<string, MeleeProgressData>();
 
         // Flag to indicate pending melee progress save
-        private static volatile bool pendingMeleeProgressSave = false;
+        public static volatile bool pendingMeleeProgressSave = false;
 
         // Keys for ranged damage progression system
         public const string RANGED_DAMAGE_KEY = "sitRangedDamage";
@@ -99,7 +99,7 @@ namespace SeraphLeveling
         public static ConcurrentDictionary<string, RangedProgressData> RangedProgress = new ConcurrentDictionary<string, RangedProgressData>();
 
         // Flag to indicate pending ranged progress save
-        private static volatile bool pendingRangedProgressSave = false;
+        public static volatile bool pendingRangedProgressSave = false;
 
         // Keys for walking speed progression system
         public const string WALKING_STAT_CODE = "sitWalkingBonus";
@@ -161,7 +161,7 @@ namespace SeraphLeveling
         public static ConcurrentDictionary<string, HungerProgressData> HungerProgress = new ConcurrentDictionary<string, HungerProgressData>();
 
         // Flag to indicate pending hunger progress save
-        private static volatile bool pendingHungerProgressSave = false;
+        public static volatile bool pendingHungerProgressSave = false;
 
         // Keys for armor progression system
         public const string ARMOR_DURABILITY_STAT_CODE = "sitArmorDurabilityBonus";
@@ -228,7 +228,7 @@ namespace SeraphLeveling
         public static ConcurrentDictionary<string, ArmorProgressData> ArmorProgress = new ConcurrentDictionary<string, ArmorProgressData>();
 
         // Flag to indicate pending armor progress save
-        private static volatile bool pendingArmorProgressSave = false;
+        public static volatile bool pendingArmorProgressSave = false;
 
         // Tracking currently equipped armor for each player (for time tracking and equip detection)
         private static ConcurrentDictionary<string, Dictionary<string, string>> playerEquippedArmor = new ConcurrentDictionary<string, Dictionary<string, string>>();
@@ -305,7 +305,7 @@ namespace SeraphLeveling
 
         // Storage for clothier progress
         public static ConcurrentDictionary<string, ClothierProgressData> ClothierProgress = new ConcurrentDictionary<string, ClothierProgressData>();
-        private static volatile bool pendingClothierProgressSave = false;
+        public static volatile bool pendingClothierProgressSave = false;
 
         // Tracking currently equipped clothing for each player
         private static ConcurrentDictionary<string, Dictionary<string, string>> playerEquippedClothing = new ConcurrentDictionary<string, Dictionary<string, string>>();
@@ -331,7 +331,7 @@ namespace SeraphLeveling
 
         // Storage for mender progress
         public static ConcurrentDictionary<string, MenderProgressData> MenderProgress = new ConcurrentDictionary<string, MenderProgressData>();
-        private static volatile bool pendingMenderProgressSave = false;
+        public static volatile bool pendingMenderProgressSave = false;
 
         // Durability tracking for repair detection - key is "playerUid_slotId", value is last known durability
         private static ConcurrentDictionary<string, int> TrackedItemDurabilities = new ConcurrentDictionary<string, int>();
@@ -370,7 +370,7 @@ namespace SeraphLeveling
 
         // Storage for pilferer progress
         public static ConcurrentDictionary<string, PilfererProgressData> PilfererProgress = new ConcurrentDictionary<string, PilfererProgressData>();
-        private static volatile bool pendingPilfererProgressSave = false;
+        public static volatile bool pendingPilfererProgressSave = false;
 
         // =========================================================================
         // RESOURCEFUL TRAIT - Tracks animal harvesting for loot/speed bonuses
@@ -394,7 +394,7 @@ namespace SeraphLeveling
 
         // Storage for resourceful progress
         public static ConcurrentDictionary<string, ResourcefulProgressData> ResourcefulProgress = new ConcurrentDictionary<string, ResourcefulProgressData>();
-        private static volatile bool pendingResourcefulProgressSave = false;
+        public static volatile bool pendingResourcefulProgressSave = false;
 
         // =========================================================================
         // FORAGER TRAIT - Tracks wild crop breaking for foraging loot bonuses
@@ -418,7 +418,7 @@ namespace SeraphLeveling
 
         // Storage for forager progress
         public static ConcurrentDictionary<string, ForagerProgressData> ForagerProgress = new ConcurrentDictionary<string, ForagerProgressData>();
-        private static volatile bool pendingForagerProgressSave = false;
+        public static volatile bool pendingForagerProgressSave = false;
 
         // =========================================================================
         // FURTIVE TRAIT - Tracks sneaking blocks for animal detection range reduction
@@ -438,7 +438,7 @@ namespace SeraphLeveling
 
         // Storage for furtive progress
         public static ConcurrentDictionary<string, FurtiveProgressData> FurtiveProgress = new ConcurrentDictionary<string, FurtiveProgressData>();
-        private static volatile bool pendingFurtiveProgressSave = false;
+        public static volatile bool pendingFurtiveProgressSave = false;
 
         // Tracking last known positions for sneaking distance calculation (using Position2D to avoid Vec3d allocations)
         private static ConcurrentDictionary<string, Position2D> lastSneakingPositions = new ConcurrentDictionary<string, Position2D>();
@@ -461,7 +461,7 @@ namespace SeraphLeveling
 
         // Storage for precise progress
         public static ConcurrentDictionary<string, PreciseProgressData> PreciseProgress = new ConcurrentDictionary<string, PreciseProgressData>();
-        private static volatile bool pendingPreciseProgressSave = false;
+        public static volatile bool pendingPreciseProgressSave = false;
 
         // =========================================================================
         // TECHNICAL TRAIT - Unlocks after repairing translocators
@@ -476,7 +476,7 @@ namespace SeraphLeveling
 
         // Storage for technical progress
         public static ConcurrentDictionary<string, TechnicalProgressData> TechnicalProgress = new ConcurrentDictionary<string, TechnicalProgressData>();
-        private static volatile bool pendingTechnicalProgressSave = false;
+        public static volatile bool pendingTechnicalProgressSave = false;
 
         // =========================================================================
         // HARDY HEALTH TRAIT - Unlocks +5 HP after reaching mining and armor thresholds
@@ -492,7 +492,7 @@ namespace SeraphLeveling
 
         // Storage for hardy health progress
         public static ConcurrentDictionary<string, HardyHealthProgressData> HardyHealthProgress = new ConcurrentDictionary<string, HardyHealthProgressData>();
-        private static volatile bool pendingHardyHealthProgressSave = false;
+        public static volatile bool pendingHardyHealthProgressSave = false;
 
         // =========================================================================
         // BOWYER TRAIT - Unlocks crude bow/arrows after ranged damage + bow damage
@@ -508,7 +508,7 @@ namespace SeraphLeveling
 
         // Storage for bowyer progress
         public static ConcurrentDictionary<string, BowyerProgressData> BowyerProgress = new ConcurrentDictionary<string, BowyerProgressData>();
-        private static volatile bool pendingBowyerProgressSave = false;
+        public static volatile bool pendingBowyerProgressSave = false;
 
         // =========================================================================
         // IMPROVISER TRAIT - Unlocks sling after thrown rock damage
@@ -523,7 +523,7 @@ namespace SeraphLeveling
 
         // Storage for improviser progress
         public static ConcurrentDictionary<string, ImproviserProgressData> ImproviserProgress = new ConcurrentDictionary<string, ImproviserProgressData>();
-        private static volatile bool pendingImproviserProgressSave = false;
+        public static volatile bool pendingImproviserProgressSave = false;
 
         // =========================================================================
         // TINKERER TRAIT - Unlocks tuning spear after Technical + Precise threshold
@@ -537,7 +537,7 @@ namespace SeraphLeveling
 
         // Storage for tinkerer progress
         public static ConcurrentDictionary<string, TinkererProgressData> TinkererProgress = new ConcurrentDictionary<string, TinkererProgressData>();
-        private static volatile bool pendingTinkererProgressSave = false;
+        public static volatile bool pendingTinkererProgressSave = false;
 
         // =========================================================================
         // MERCILESS TRAIT - Unlocks shortsword/shield after armor + melee thresholds
@@ -552,7 +552,7 @@ namespace SeraphLeveling
 
         // Storage for merciless progress
         public static ConcurrentDictionary<string, MercilessProgressData> MercilessProgress = new ConcurrentDictionary<string, MercilessProgressData>();
-        private static volatile bool pendingMercilessProgressSave = false;
+        public static volatile bool pendingMercilessProgressSave = false;
 
         // =========================================================================
         // CLAUSTROPHOBIC REMOVAL - Removes trait after reaching mining threshold (Hunter)
@@ -571,10 +571,10 @@ namespace SeraphLeveling
 
         // Storage for claustrophobic removal progress
         public static ConcurrentDictionary<string, ClaustrophobicRemovalProgressData> ClaustrophobicRemovalProgress = new ConcurrentDictionary<string, ClaustrophobicRemovalProgressData>();
-        private static volatile bool pendingClaustrophobicRemovalProgressSave = false;
+        public static volatile bool pendingClaustrophobicRemovalProgressSave = false;
         // Storage for heavyfooted removal progress
         public static ConcurrentDictionary<string, HeavyFootedRemovalProgressData> HeavyFootedRemovalProgress = new ConcurrentDictionary<string, HeavyFootedRemovalProgressData>();
-        private static volatile bool pendingHeavyFootedRemovalProgressSave = false;
+        public static volatile bool pendingHeavyFootedRemovalProgressSave = false;
 
         // =========================================================================
         // NEGATIVE TRAIT CONSTANTS - Used for cancellation calculations
@@ -649,7 +649,7 @@ namespace SeraphLeveling
         private static readonly object persistLock = new object();
 
         // Flag to indicate pending mining progress save
-        private static volatile bool pendingMiningProgressSave = false;
+        public static volatile bool pendingMiningProgressSave = false;
 
         // Flag to indicate pending config save
         private static volatile bool pendingConfigSave = false;
@@ -928,7 +928,7 @@ namespace SeraphLeveling
         public static ConcurrentDictionary<string, COPlayerProgressData> COProgress = new ConcurrentDictionary<string, COPlayerProgressData>();
 
         // Flag to indicate pending CO progress save
-        private static volatile bool pendingCOProgressSave = false;
+        public static volatile bool pendingCOProgressSave = false;
 
         /// <summary>
         /// All CO proficiency stat names for iteration.
@@ -1950,8 +1950,7 @@ namespace SeraphLeveling
             var rangedProg = RangedProgress.GetOrAdd(playerUid, _ => new RangedProgressData());
             sb.AppendLine($"Ranged: {rangedProg.TotalCredits}/{MaxRangedDamagePercent} (+{rangedProg.TotalCredits}% dmg, +{rangedProg.TotalCredits}% acc, +{rangedProg.TotalCredits}% dist)");
 
-            var walkingProg = WalkingProgress.GetOrAdd(playerUid, _ => new WalkingProgressData { CurrentIncrementSize = BaseBlocksWalkedPerIncrement });
-            sb.AppendLine($"Walking: {walkingProg.TotalCredits}/{MaxWalkingSpeedPercent} (+{walkingProg.TotalCredits}% speed)");
+            WalkingProgressData.GetTraitAllCommandLine(player, sb);
 
             var hungerProg = HungerProgress.GetOrAdd(playerUid, _ => new HungerProgressData { CurrentIncrementSize = BaseSecondsPerIncrement });
             sb.AppendLine($"Hunger: {hungerProg.TotalCredits}/{MaxHungerReductionPercent} (-{hungerProg.TotalCredits}% hunger rate)");
@@ -7278,7 +7277,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistMiningProgress()
         {
-            PersistProgress<MiningProgressData>(MiningProgress);
+            PersistProgress<MiningProgressData>();
         }
 
         /// <summary>
@@ -7287,7 +7286,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadMiningProgress()
         {
-            pendingMiningProgressSave |= LoadProgress<MiningProgressData>(ref MiningProgress);
+            LoadProgress<MiningProgressData>();
         }
 
         /// <summary>
@@ -7296,7 +7295,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistMeleeProgress()
         {
-            PersistProgress<MeleeProgressData>(MeleeProgress);
+            PersistProgress<MeleeProgressData>();
         }
 
         /// <summary>
@@ -7304,7 +7303,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadMeleeProgress()
         {
-            pendingMeleeProgressSave |= LoadProgress<MeleeProgressData>(ref MeleeProgress);
+            LoadProgress<MeleeProgressData>();
         }
 
         /// <summary>
@@ -7313,7 +7312,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistRangedProgress()
         {
-            PersistProgress<RangedProgressData>(RangedProgress);
+            PersistProgress<RangedProgressData>();
         }
 
         /// <summary>
@@ -7321,12 +7320,13 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadRangedProgress()
         {
-            pendingRangedProgressSave |= LoadProgress<RangedProgressData>(ref RangedProgress);
+            LoadProgress<RangedProgressData>();
         }
 
-        public static void PersistProgress<T>(ConcurrentDictionary<string, T> progress) where T:ProgressData<T>,IProgressDataContract<T>
+        public static void PersistProgress<T>() where T:ProgressData<T>,IProgressDataContract<T>
         {
             if (ServerApi == null) return;
+            var progress = T.ProgressDictionary();
 
             lock (persistLock)
             {
@@ -7376,13 +7376,13 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistWalkingProgress()
         {
-            PersistProgress<WalkingProgressData>(WalkingProgress);
+            PersistProgress<WalkingProgressData>();
         }
 
-        private bool LoadProgress<T>(ref ConcurrentDictionary<string, T> progress) where T:ProgressData<T>,IProgressDataContract<T>
+        private void LoadProgress<T>() where T:ProgressData<T>,IProgressDataContract<T>
         {
-            bool pendingProgressSave = false;
-            if (ServerApi == null) return false;
+            var progress = T.ProgressDictionary();
+            if (ServerApi == null) return;
 
             progress.Clear();
             var description = T.Description;
@@ -7393,7 +7393,7 @@ namespace SeraphLeveling
                 if (data == null || data.Length == 0)
                 {
                     ServerApi.Logger.Debug("[SeraphLeveling] No {description} progress data found in world save");
-                    return false;
+                    return;
                 }
 
                 using (var ms = new MemoryStream(data))
@@ -7402,7 +7402,7 @@ namespace SeraphLeveling
                     {
                         if (!ProgressData<T>.ReadHeader(reader)) {
                             ServerApi.Logger.Warning("[SeraphLeveling] Invalid {description} progress data format");
-                            return false;
+                            return;
                         }
 
                         byte version = reader.ReadByte();
@@ -7421,7 +7421,7 @@ namespace SeraphLeveling
                             }
                         }
                         if (version != T.GetVersion()) {
-                            pendingProgressSave = true;
+                            T.MarkForSave();
                         }
                     }
                 }
@@ -7432,7 +7432,6 @@ namespace SeraphLeveling
             {
                 ServerApi.Logger.Error($"[SeraphLeveling] Failed to load {description} progress: {ex.Message}");
             }
-            return pendingProgressSave;
         }
 
         /// <summary>
@@ -7440,7 +7439,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadWalkingProgress()
         {
-            pendingWalkingProgressSave |= LoadProgress<WalkingProgressData>(ref WalkingProgress);
+            LoadProgress<WalkingProgressData>();
         }
 
         /// <summary>
@@ -7449,7 +7448,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistHungerProgress()
         {
-            PersistProgress<HungerProgressData>(HungerProgress);
+            PersistProgress<HungerProgressData>();
         }
 
         /// <summary>
@@ -7457,7 +7456,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadHungerProgress()
         {
-            pendingHungerProgressSave |= LoadProgress<HungerProgressData>(ref HungerProgress);
+            LoadProgress<HungerProgressData>();
         }
 
         /// <summary>
@@ -7466,7 +7465,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistArmorProgress()
         {
-            PersistProgress<ArmorProgressData>(ArmorProgress);
+            PersistProgress<ArmorProgressData>();
         }
 
         /// <summary>
@@ -7474,7 +7473,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadArmorProgress()
         {
-            pendingArmorProgressSave |= LoadProgress<ArmorProgressData>(ref ArmorProgress);
+            LoadProgress<ArmorProgressData>();
         }
 
         /// <summary>
@@ -14147,11 +14146,7 @@ namespace SeraphLeveling
 
             // Walking
             var walkingProg = WalkingProgress.GetOrAdd(playerUid, _ => new WalkingProgressData());
-            walkingProg.TotalCredits = CREDITS;
-            walkingProg.PartialCredit = 0;
-            walkingProg.CurrentIncrementSize = BaseBlocksWalkedPerIncrement;
-            pendingWalkingProgressSave = true;
-            ApplyWalkingBonusStatic(player, CREDITS);
+            walkingProg.ApplyTraitTestSuite1Command(player);
 
             // Hunger
             var hungerProg = HungerProgress.GetOrAdd(playerUid, _ => new HungerProgressData());
@@ -15014,7 +15009,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistClothierProgress()
         {
-            PersistProgress<ClothierProgressData>(ClothierProgress);
+            PersistProgress<ClothierProgressData>();
         }
 
         /// <summary>
@@ -15022,7 +15017,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadClothierProgress()
         {
-            pendingClothierProgressSave |= LoadProgress<ClothierProgressData>(ref ClothierProgress);
+            LoadProgress<ClothierProgressData>();
         }
 
         /// <summary>
@@ -15030,7 +15025,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistMenderProgress()
         {
-            PersistProgress<MenderProgressData>(MenderProgress);
+            PersistProgress<MenderProgressData>();
         }
 
         /// <summary>
@@ -15038,7 +15033,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadMenderProgress()
         {
-            pendingMenderProgressSave |= LoadProgress<MenderProgressData>(ref MenderProgress);
+            LoadProgress<MenderProgressData>();
         }
 
         /// <summary>
@@ -15046,7 +15041,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistPilfererProgress()
         {
-            PersistProgress<PilfererProgressData>(PilfererProgress);
+            PersistProgress<PilfererProgressData>();
         }
 
         /// <summary>
@@ -15054,7 +15049,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadPilfererProgress()
         {
-            pendingPilfererProgressSave |= LoadProgress<PilfererProgressData>(ref PilfererProgress);
+            LoadProgress<PilfererProgressData>();
         }
 
         /// <summary>
@@ -15062,7 +15057,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistResourcefulProgress()
         {
-            PersistProgress<ResourcefulProgressData>(ResourcefulProgress);
+            PersistProgress<ResourcefulProgressData>();
         }
 
         /// <summary>
@@ -15070,7 +15065,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadResourcefulProgress()
         {
-            pendingResourcefulProgressSave |= LoadProgress<ResourcefulProgressData>(ref ResourcefulProgress);
+            LoadProgress<ResourcefulProgressData>();
         }
 
         /// <summary>
@@ -15078,7 +15073,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistForagerProgress()
         {
-            PersistProgress<ForagerProgressData>(ForagerProgress);
+            PersistProgress<ForagerProgressData>();
         }
 
         /// <summary>
@@ -15086,7 +15081,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadForagerProgress()
         {
-            pendingForagerProgressSave |= LoadProgress<ForagerProgressData>(ref ForagerProgress);
+            LoadProgress<ForagerProgressData>();
         }
 
         // =========================================================================
@@ -15098,7 +15093,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistFurtiveProgress()
         {
-            PersistProgress<FurtiveProgressData>(FurtiveProgress);
+            PersistProgress<FurtiveProgressData>();
         }
 
         /// <summary>
@@ -15106,7 +15101,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadFurtiveProgress()
         {
-            pendingFurtiveProgressSave |= LoadProgress<FurtiveProgressData>(ref FurtiveProgress);
+            LoadProgress<FurtiveProgressData>();
         }
 
         // =========================================================================
@@ -15118,7 +15113,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistPreciseProgress()
         {
-            PersistProgress<PreciseProgressData>(PreciseProgress);
+            PersistProgress<PreciseProgressData>();
         }
 
         /// <summary>
@@ -15126,7 +15121,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadPreciseProgress()
         {
-            pendingPreciseProgressSave |= LoadProgress<PreciseProgressData>(ref PreciseProgress);
+            LoadProgress<PreciseProgressData>();
         }
 
         // =========================================================================
@@ -15138,7 +15133,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistTechnicalProgress()
         {
-            PersistProgress<TechnicalProgressData>(TechnicalProgress);
+            PersistProgress<TechnicalProgressData>();
         }
 
         /// <summary>
@@ -15146,7 +15141,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadTechnicalProgress()
         {
-            pendingTechnicalProgressSave |= LoadProgress<TechnicalProgressData>(ref TechnicalProgress);
+            LoadProgress<TechnicalProgressData>();
         }
 
         // =========================================================================
@@ -15158,7 +15153,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistHardyHealthProgress()
         {
-            PersistProgress<HardyHealthProgressData>(HardyHealthProgress);
+            PersistProgress<HardyHealthProgressData>();
         }
 
         /// <summary>
@@ -15166,7 +15161,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadHardyHealthProgress()
         {
-            pendingHardyHealthProgressSave |= LoadProgress<HardyHealthProgressData>(ref HardyHealthProgress);
+            LoadProgress<HardyHealthProgressData>();
         }
 
         // =========================================================================
@@ -15178,7 +15173,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistBowyerProgress()
         {
-            PersistProgress<BowyerProgressData>(BowyerProgress);
+            PersistProgress<BowyerProgressData>();
         }
 
         /// <summary>
@@ -15186,7 +15181,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadBowyerProgress()
         {
-            pendingBowyerProgressSave |= LoadProgress<BowyerProgressData>(ref BowyerProgress);
+            LoadProgress<BowyerProgressData>();
         }
 
         // =========================================================================
@@ -15198,7 +15193,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistImproviserProgress()
         {
-            PersistProgress<ImproviserProgressData>(ImproviserProgress);
+            PersistProgress<ImproviserProgressData>();
         }
 
         /// <summary>
@@ -15206,7 +15201,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadImproviserProgress()
         {
-            pendingImproviserProgressSave |= LoadProgress<ImproviserProgressData>(ref ImproviserProgress);
+            LoadProgress<ImproviserProgressData>();
         }
 
         // =========================================================================
@@ -15218,7 +15213,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistTinkererProgress()
         {
-            PersistProgress<TinkererProgressData>(TinkererProgress);
+            PersistProgress<TinkererProgressData>();
         }
 
         /// <summary>
@@ -15226,7 +15221,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadTinkererProgress()
         {
-            pendingTinkererProgressSave |= LoadProgress<TinkererProgressData>(ref TinkererProgress);
+            LoadProgress<TinkererProgressData>();
         }
 
         // =========================================================================
@@ -15238,7 +15233,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistMercilessProgress()
         {
-            PersistProgress<MercilessProgressData>(MercilessProgress);
+            PersistProgress<MercilessProgressData>();
         }
 
         /// <summary>
@@ -15246,7 +15241,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadMercilessProgress()
         {
-            pendingMercilessProgressSave |= LoadProgress<MercilessProgressData>(ref MercilessProgress);
+            LoadProgress<MercilessProgressData>();
         }
 
         // =========================================================================
@@ -15258,7 +15253,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistClaustrophobicRemovalProgress()
         {
-            PersistProgress<ClaustrophobicRemovalProgressData>(ClaustrophobicRemovalProgress);
+            PersistProgress<ClaustrophobicRemovalProgressData>();
         }
 
         // =========================================================================
@@ -15270,7 +15265,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistHeavyFootedRemovalProgress()
         {
-            PersistProgress<HeavyFootedRemovalProgressData>(HeavyFootedRemovalProgress);
+            PersistProgress<HeavyFootedRemovalProgressData>();
         }
 
 
@@ -15283,7 +15278,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistCOProgress()
         {
-            PersistProgress<COPlayerProgressData>(COProgress);
+            PersistProgress<COPlayerProgressData>();
         }
 
         /// <summary>
@@ -15291,7 +15286,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadCOProgress()
         {
-            pendingCOProgressSave |= LoadProgress<COPlayerProgressData>(ref COProgress);
+            LoadProgress<COPlayerProgressData>();
         }
 
         // =========================================================================
@@ -15436,12 +15431,12 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadClaustrophobicRemovalProgress()
         {
-            pendingClaustrophobicRemovalProgressSave |= LoadProgress<ClaustrophobicRemovalProgressData>(ref ClaustrophobicRemovalProgress);
+            LoadProgress<ClaustrophobicRemovalProgressData>();
         }
 
         private void LoadHeavyFootedRemovalProgress()
         {
-            pendingHeavyFootedRemovalProgressSave |= LoadProgress<HeavyFootedRemovalProgressData>(ref HeavyFootedRemovalProgress);
+            LoadProgress<HeavyFootedRemovalProgressData>();
         }
     }
 

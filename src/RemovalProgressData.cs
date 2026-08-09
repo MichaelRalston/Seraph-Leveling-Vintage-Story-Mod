@@ -3,7 +3,7 @@ using System.IO;
 
 namespace SeraphLeveling
 {
-    public class RemovalProgressData<T> : ProgressData<T> where T : ProgressData<T>, IProgressDataContract<T>
+    public abstract class RemovalProgressData<T> : ProgressData<T> where T : ProgressData<T>, IProgressDataContract<T>
     {
         public bool IsRemoved { get; set; }
         public RemovalProgressData()

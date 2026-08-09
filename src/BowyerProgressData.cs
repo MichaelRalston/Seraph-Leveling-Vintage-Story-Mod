@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Collections.Concurrent;
 
 namespace SeraphLeveling
 {
@@ -58,5 +59,12 @@ namespace SeraphLeveling
             writer.Write(TotalBowDamage);
             writer.Write(IsUnlocked);
         }
+        public static void MarkForSave() {
+            SeraphLevelingModSystem.pendingBowyerProgressSave = true;
+        }
+        public static ref ConcurrentDictionary<string, BowyerProgressData> ProgressDictionary() {
+            return ref SeraphLevelingModSystem.BowyerProgress;
+        }
+
     }
 }

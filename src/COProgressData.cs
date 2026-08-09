@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System;
 using System.Linq;
+using System.Collections.Concurrent;
 
 namespace SeraphLeveling
 {
@@ -243,6 +244,12 @@ namespace SeraphLeveling
 
         public static string SAVE_KEY => "sitCOProgress";
         public static string Description => "CO";
+        public static void MarkForSave() {
+            SeraphLevelingModSystem.pendingCOProgressSave = true;
+        }
+        public static ref ConcurrentDictionary<string, COPlayerProgressData> ProgressDictionary() {
+            return ref SeraphLevelingModSystem.COProgress;
+        }
 
     }
 }

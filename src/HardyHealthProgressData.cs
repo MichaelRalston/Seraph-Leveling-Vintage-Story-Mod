@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+
 namespace SeraphLeveling
 {
     /// <summary>
@@ -10,5 +12,11 @@ namespace SeraphLeveling
         public static byte GetVersion() { return 1; }
         public static string SAVE_KEY => "sitHardyHealthProgress";
         public static string Description => "hardy health";
+        public static void MarkForSave() {
+            SeraphLevelingModSystem.pendingHardyHealthProgressSave = true;
+        }
+        public static ref ConcurrentDictionary<string, HardyHealthProgressData> ProgressDictionary() {
+            return ref SeraphLevelingModSystem.HardyHealthProgress;
+        }
     }
 }

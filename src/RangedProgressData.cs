@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
+using System.Collections.Concurrent;
 
 namespace SeraphLeveling
 {
@@ -157,6 +158,12 @@ namespace SeraphLeveling
                 writer.Write(weaponKvp.Value.DamageInIncrement);
                 writer.Write(weaponKvp.Value.CurrentIncrementSize);
             }
+        }
+        public static void MarkForSave() {
+            SeraphLevelingModSystem.pendingRangedProgressSave = true;
+        }
+        public static ref ConcurrentDictionary<string, RangedProgressData> ProgressDictionary() {
+            return ref SeraphLevelingModSystem.RangedProgress;
         }
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Collections.Concurrent;
 
 namespace SeraphLeveling
 {
@@ -38,6 +39,13 @@ namespace SeraphLeveling
                 _ => throw new NotSupportedException($"Version {version} is not supported"),
             };
         }
+        public static void MarkForSave() {
+            SeraphLevelingModSystem.pendingClaustrophobicRemovalProgressSave = true;
+        }
+        public static ref ConcurrentDictionary<string, ClaustrophobicRemovalProgressData> ProgressDictionary() {
+            return ref SeraphLevelingModSystem.ClaustrophobicRemovalProgress;
+        }
+
     }
 
 }

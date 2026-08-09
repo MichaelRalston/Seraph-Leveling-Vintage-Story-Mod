@@ -1,13 +1,6 @@
-using System;
-using System.IO;
-using HarmonyLib;
-using Vintagestory.API.Client;
-using Vintagestory.GameContent;
 using Vintagestory.API.Common;
-using Vintagestory.API.Common.Entities;
-using Vintagestory.API.Config;
-using Vintagestory.API.MathTools;
 using Vintagestory.API.Server;
+using System.Collections.Concurrent;
 
 namespace SeraphLeveling
 {
@@ -20,7 +13,7 @@ namespace SeraphLeveling
 
         public WalkingProgressData()
         {
-            CurrentIncrementSize = 1000; // Base increment size
+            CurrentIncrementSize = SeraphLevelingModSystem.BaseBlocksWalkedPerIncrement;
         }
 
         public static string GetHeaderString()
@@ -31,6 +24,12 @@ namespace SeraphLeveling
 
         public static string SAVE_KEY => "sitWalkingProgress";
         public static string Description => "walking";
+        public static void MarkForSave() {
+            SeraphLevelingModSystem.pendingWalkingProgressSave = true;
+        }
+        public static ref ConcurrentDictionary<string, WalkingProgressData> ProgressDictionary() {
+            return ref SeraphLevelingModSystem.WalkingProgress;
+        }
 
         public override int GetMaxCredits(EntityPlayer _) {
             return SeraphLevelingModSystem.MaxWalkingSpeedPercent;
@@ -38,14 +37,17 @@ namespace SeraphLeveling
         public override int GetIncrementStep() {
             return SeraphLevelingModSystem.WalkingIncrementStep;
         }
+        public override int GetBaseIncrement() {
+            return SeraphLevelingModSystem.BaseBlocksWalkedPerIncrement;
+        }
         public override string GetIncrementUnits() {
             return "blocks";
         }
         public override void ApplyBonus(IServerPlayer player) {
             SeraphLevelingModSystem.ApplyWalkingBonusStatic(player, TotalCredits);
         }
-        public override void MarkForSave() {
-            SeraphLevelingModSystem.pendingWalkingProgressSave = true;
+        public override string GetTraitAllString(IPlayer player) {
+            return $"Walking: {TotalCredits}/{GetMaxCredits(player.Entity)} (+{TotalCredits}% speed)";
         }
     }
 }

@@ -9,6 +9,8 @@ using Vintagestory.API.Server;
 using System;
 using System.IO;
 using System.Numerics;
+using System.Collections.Concurrent;
+using System.Text;
 
 namespace SeraphLeveling {
     public abstract class LeveledTraitProgressData<T, V> : ProgressData<T> 
@@ -88,7 +90,7 @@ namespace SeraphLeveling {
         public abstract int GetIncrementStep();
         public abstract string GetIncrementUnits();
         public abstract void ApplyBonus(IServerPlayer player);
-        public abstract void MarkForSave();
+        public abstract int GetBaseIncrement();
 
         public void DoEvent(IServerPlayer player, V score) {
                 // Skip all processing if already at max - completely invisible
@@ -119,7 +121,7 @@ namespace SeraphLeveling {
                 // Mark for saving if any progress was made
                 if (PartialCredit > V.Zero || TotalCredits > oldCredits)
                 {
-                    MarkForSave();
+                    T.MarkForSave();
                 }
 
                 // If credits increased, update the stat and notify player
@@ -132,6 +134,20 @@ namespace SeraphLeveling {
                         Lang.Get($"seraphleveling:message-{T.Description}-level-up", TotalCredits, TotalCredits));
                 }
 
+        }
+
+        public void ApplyTraitTestSuite1Command(IServerPlayer player) {
+            TotalCredits = 1;
+            PartialCredit = V.Zero;
+            CurrentIncrementSize = GetBaseIncrement();
+            T.MarkForSave();
+            ApplyBonus(player);
+        }
+
+        public abstract string GetTraitAllString(IPlayer player);
+        public static void GetTraitAllCommandLine(IPlayer player, StringBuilder sb) {
+            var progress = T.ProgressDictionary().GetOrAdd(player.PlayerUID, _ => new T());
+            sb.AppendLine(progress.GetTraitAllString(player));
         }
     }
 }

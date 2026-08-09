@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+
 namespace SeraphLeveling
 {
     /// <summary>
@@ -10,5 +12,11 @@ namespace SeraphLeveling
         public static byte GetVersion() { return 1; }
         public static string SAVE_KEY => "sitTinkererProgress";
         public static string Description => "tinkerer";
+        public static void MarkForSave() {
+            SeraphLevelingModSystem.pendingTinkererProgressSave = true;
+        }
+        public static ref ConcurrentDictionary<string, TinkererProgressData> ProgressDictionary() {
+            return ref SeraphLevelingModSystem.TinkererProgress;
+        }
     }
 }

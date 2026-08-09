@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using System;
 using System.IO;
 using System.Linq;
+using System.Collections.Concurrent;
+
 
 namespace SeraphLeveling
 {
@@ -197,5 +199,12 @@ namespace SeraphLeveling
                     throw new NotSupportedException($"Version {version} is not supported");
             }
         }
+        public static void MarkForSave() {
+            SeraphLevelingModSystem.pendingMiningProgressSave = true;
+        }
+        public static ref ConcurrentDictionary<string, MiningProgressData> ProgressDictionary() {
+            return ref SeraphLevelingModSystem.MiningProgress;
+        }
+
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Collections.Concurrent;
 
 namespace SeraphLeveling
 {
@@ -88,5 +89,11 @@ namespace SeraphLeveling
         }
         public static string SAVE_KEY => "sitHungerProgress";
         public static string Description => "hunger";
+        public static void MarkForSave() {
+            SeraphLevelingModSystem.pendingHungerProgressSave = true;
+        }
+        public static ref ConcurrentDictionary<string, HungerProgressData> ProgressDictionary() {
+            return ref SeraphLevelingModSystem.HungerProgress;
+        }
     }
 }
