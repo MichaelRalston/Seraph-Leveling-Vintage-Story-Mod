@@ -707,7 +707,7 @@ namespace SeraphLeveling
             {
                 var miningData = SeraphLevelingModSystem.MiningProgress[playerUid];
                 bool creditsValid = miningData.TotalCredits >= 0;
-                bool pickaxeProgressValid = miningData.PickaxeProgress != null;
+                bool pickaxeProgressValid = miningData.ToolProgress != null;
                 AssertTrue("PERS-014", "Mining data structure valid", creditsValid && pickaxeProgressValid, "valid", "corrupted");
             }
 

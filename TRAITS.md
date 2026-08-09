@@ -69,7 +69,7 @@ Each pickaxe type tracks progress independently, encouraging use of many differe
 
 ### Data Persistence
 - `TotalCredits`: 0-50
-- `PickaxeProgress`: Per-pickaxe `BlocksInIncrement` and `CurrentIncrementSize`
+- `ToolProgress`: Per-pickaxe `BlocksInIncrement` and `CurrentIncrementSize`
 
 ### Commands
 - `/trait mining` - View stats

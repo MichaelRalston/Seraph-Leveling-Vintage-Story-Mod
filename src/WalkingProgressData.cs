@@ -1,16 +1,6 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using HarmonyLib;
-using Vintagestory.API.Client;
-using Vintagestory.GameContent;
 using Vintagestory.API.Common;
-using Vintagestory.API.Common.Entities;
-using Vintagestory.API.Config;
-using Vintagestory.API.MathTools;
 using Vintagestory.API.Server;
 
 namespace SeraphLeveling
@@ -19,7 +9,7 @@ namespace SeraphLeveling
     /// Data structure for tracking walking speed progression.
     /// Simpler than other progression systems since walking has no "tools".
     /// </summary>
-    public class WalkingProgressData : LeveledTraitProgressData<WalkingProgressData, float>, IProgressDataContract<WalkingProgressData>, ILeveledTraitContract<WalkingProgressData>
+    public class WalkingProgressData : LeveledPartialTraitProgressData<WalkingProgressData, float>, IProgressDataContract<WalkingProgressData>, ILeveledTraitContract<WalkingProgressData>
     {
 
         public WalkingProgressData()
@@ -52,7 +42,7 @@ namespace SeraphLeveling
         }
 
         public override int GetMaxCredits(EntityPlayer _) {
-            return SeraphLevelingModSystem.MaxWalkingSpeedPercent;
+            return GlobalMax;
         }
         public override int GetIncrementStep() {
             return SeraphLevelingModSystem.WalkingIncrementStep;
