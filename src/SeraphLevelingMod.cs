@@ -1103,13 +1103,13 @@ namespace SeraphLeveling
                     .WithArgs(api.ChatCommands.Parsers.OptionalInt("level"))
                     .RequiresPrivilege(Privilege.controlserver)
                     .RequiresPlayer()
-                    .HandleWith(OnTraitWalkingLevelCommand)
+                    .HandleWith(WalkingProgressData.HandleLevelCommand)
                 .EndSubCommand()
                 .BeginSubCommand("walkingmax")
                     .WithDescription("Get or set the max walking speed bonus percent (admin only)")
                     .WithArgs(api.ChatCommands.Parsers.OptionalInt("percent"))
                     .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitWalkingMaxCommand)
+                    .HandleWith(WalkingProgressData.HandleMaxCommand)
                 .EndSubCommand()
                 .BeginSubCommand("walkingincrement")
                     .WithDescription("Get or set the walking increment step per credit (admin only)")
@@ -3220,32 +3220,7 @@ namespace SeraphLeveling
         /// </summary>
         private TextCommandResult OnTraitWalkingCommand(TextCommandCallingArgs args)
         {
-            var player = args.Caller.Player;
-            if (player?.Entity == null)
-            {
-                return TextCommandResult.Error("Could not find player entity");
-            }
-
-            string playerUid = player.PlayerUID;
-            var progress = WalkingProgress.GetOrAdd(playerUid, _ => new WalkingProgressData
-            {
-                CurrentIncrementSize = BaseBlocksWalkedPerIncrement
-            });
-
-            int currentCredits = progress.TotalCredits;
-            int bonusPercent = CalculateWalkingBonusPercent(currentCredits, player.Entity as EntityPlayer);
-
-            var sb = new StringBuilder();
-            sb.AppendLine($"Walking progression: {currentCredits}% / {MaxWalkingSpeedPercent}%");
-            sb.AppendLine($"Current bonus: +{bonusPercent}% walk speed");
-            sb.AppendLine($"Progress: {progress.PartialCredit:F1}/{progress.CurrentIncrementSize} blocks");
-
-            if (currentCredits >= MaxWalkingSpeedPercent)
-            {
-                sb.Insert(0, "=== MAXED OUT ===\n");
-            }
-
-            return TextCommandResult.Success(sb.ToString().TrimEnd());
+            return WalkingProgressData.HandleTraitCommand(args);
         }
 
         /// <summary>
@@ -3297,97 +3272,6 @@ namespace SeraphLeveling
             else
             {
                 return TextCommandResult.Success($"Current walking increment step: +{WalkingIncrementStep} per credit\nProgression: {BaseBlocksWalkedPerIncrement}, {BaseBlocksWalkedPerIncrement + WalkingIncrementStep}, {BaseBlocksWalkedPerIncrement + WalkingIncrementStep * 2}...");
-            }
-        }
-
-        /// <summary>
-        /// Handler for /trait walkinglevel command.
-        /// Gets or sets the player's walking credits (level) directly.
-        /// </summary>
-        private TextCommandResult OnTraitWalkingLevelCommand(TextCommandCallingArgs args)
-        {
-            var player = args.Caller.Player as IServerPlayer;
-            if (player?.Entity == null)
-            {
-                return TextCommandResult.Error("Could not find player entity");
-            }
-
-            string playerUid = player.PlayerUID;
-            var progress = WalkingProgress.GetOrAdd(playerUid, _ => new WalkingProgressData
-            {
-                CurrentIncrementSize = BaseBlocksWalkedPerIncrement
-            });
-
-            int? newCredits = (int?)args[0];
-
-            // If no value provided, show current level
-            if (!newCredits.HasValue)
-            {
-                int currentBonus = CalculateWalkingBonusPercent(progress.TotalCredits, player.Entity);
-                return TextCommandResult.Success($"Current walking level: {progress.TotalCredits}/{MaxWalkingSpeedPercent} (+{currentBonus}% walk speed)");
-            }
-
-            if (newCredits.Value < 0)
-            {
-                return TextCommandResult.Error("Credits cannot be negative");
-            }
-
-            if (newCredits.Value > MaxWalkingSpeedPercent)
-            {
-                return TextCommandResult.Error($"Credits cannot exceed max ({MaxWalkingSpeedPercent})");
-            }
-
-            // Set the player's progress
-            progress.TotalCredits = newCredits.Value;
-            progress.PartialCredit = 0;
-            // Calculate what the increment size should be at this level
-            progress.CurrentIncrementSize = BaseBlocksWalkedPerIncrement + (newCredits.Value * WalkingIncrementStep);
-
-            pendingWalkingProgressSave = true;
-
-            // Apply the bonus
-            int bonusPercent = ApplyWalkingBonusStatic(player, newCredits.Value);
-
-            UpdateSkillActivityDay(playerUid, "walking");
-
-            return TextCommandResult.Success($"Walking credits set to {newCredits.Value} (+{bonusPercent}% walk speed).");
-        }
-
-        /// <summary>
-        /// Handler for /trait walkingmax command.
-        /// Gets or sets the maximum walking speed bonus percent.
-        /// </summary>
-        private TextCommandResult OnTraitWalkingMaxCommand(TextCommandCallingArgs args)
-        {
-            int? newValue = (int?)args[0];
-
-            if (newValue.HasValue)
-            {
-                if (newValue.Value < 1)
-                {
-                    return TextCommandResult.Error("Max walking speed percent must be at least 1");
-                }
-
-                MaxWalkingSpeedPercent = newValue.Value;
-                pendingConfigSave = true;
-
-                // Recalculate and reapply bonuses for all online players
-                foreach (IServerPlayer player in ServerApi.World.AllOnlinePlayers)
-                {
-                    if (player?.Entity == null) continue;
-                    string playerUid = player.PlayerUID;
-                    var progress = WalkingProgress.GetOrAdd(playerUid, _ => new WalkingProgressData
-                    {
-                        CurrentIncrementSize = BaseBlocksWalkedPerIncrement
-                    });
-                    ApplyWalkingBonusStatic(player, progress.TotalCredits);
-                }
-
-                return TextCommandResult.Success($"Max walking speed bonus set to +{MaxWalkingSpeedPercent}%. All player bonuses recalculated.");
-            }
-            else
-            {
-                return TextCommandResult.Success($"Current max walking speed bonus: +{MaxWalkingSpeedPercent}%");
             }
         }
 
@@ -4154,7 +4038,7 @@ namespace SeraphLeveling
         /// <summary>
         /// Checks if the player's class has the vanilla Fleetfooted trait.
         /// </summary>
-        private static bool PlayerHasVanillaFleetfootedStatic(EntityPlayer entity)
+        public static bool PlayerHasVanillaFleetfootedStatic(EntityPlayer entity)
         {
             string[] classTraits = entity.WatchedAttributes.GetStringArray("characterTraits", null);
 

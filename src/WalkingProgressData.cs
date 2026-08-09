@@ -1,6 +1,17 @@
-using Vintagestory.API.Common;
-using Vintagestory.API.Server;
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using HarmonyLib;
+using Vintagestory.API.Client;
+using Vintagestory.GameContent;
+using Vintagestory.API.Common;
+using Vintagestory.API.Common.Entities;
+using Vintagestory.API.Config;
+using Vintagestory.API.MathTools;
+using Vintagestory.API.Server;
 
 namespace SeraphLeveling
 {
@@ -26,6 +37,12 @@ namespace SeraphLeveling
         public static string Description => "walking";
         public static string Name => "Walking";
         public static string Stat => "% speed";
+        public static string LongDescription => "walking speed";
+        public static int GlobalMax
+        {
+            get => SeraphLevelingModSystem.MaxWalkingSpeedPercent;
+            set => SeraphLevelingModSystem.MaxWalkingSpeedPercent = value;
+        }
         public static void MarkForSave() {
             SeraphLevelingModSystem.pendingWalkingProgressSave = true;
         }
@@ -45,8 +62,14 @@ namespace SeraphLeveling
         public override string GetIncrementUnits() {
             return "blocks";
         }
-        public override void ApplyBonus(IServerPlayer player) {
-            SeraphLevelingModSystem.ApplyWalkingBonusStatic(player, TotalCredits);
+        public override int CalculateBonus(EntityPlayer entity) {
+            bool hasFleetfooted = entity != null && SeraphLevelingModSystem.PlayerHasVanillaFleetfootedStatic(entity);
+            int vanillaBonus = hasFleetfooted ? SeraphLevelingModSystem.VANILLA_FLEETFOOTED_WALK_BONUS : 0;
+            int earnableBonus = Math.Max(0, GetMaxCredits(entity) - vanillaBonus);
+            return Math.Min(TotalCredits, earnableBonus);
+        }
+        public override int ApplyBonus(IServerPlayer player) {
+            return SeraphLevelingModSystem.ApplyWalkingBonusStatic(player, TotalCredits);
         }
     }
 }

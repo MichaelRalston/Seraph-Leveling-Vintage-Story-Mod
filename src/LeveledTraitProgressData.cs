@@ -17,6 +17,8 @@ namespace SeraphLeveling {
     {
         public static virtual string Name { get; }
         public static virtual string Stat { get; }
+        public static virtual string LongDescription { get; }
+        public static virtual int GlobalMax{get; set;}
 
     }
     // This class will be very unhappy if V is type anything other than int or float. Fortunately, I don't anticipate that being an issue.
@@ -96,8 +98,9 @@ namespace SeraphLeveling {
         public abstract int GetMaxCredits(EntityPlayer player);
         public abstract int GetIncrementStep();
         public abstract string GetIncrementUnits();
-        public abstract void ApplyBonus(IServerPlayer player);
+        public abstract int ApplyBonus(IServerPlayer player);
         public abstract int GetBaseIncrement();
+        public abstract int CalculateBonus(EntityPlayer player);
 
         public void DoEvent(IServerPlayer player, V score) {
                 // Skip all processing if already at max - completely invisible
@@ -194,6 +197,104 @@ namespace SeraphLeveling {
             progress.ApplyBonus(player);
             progress.UpdateSkillActivityDay();
             return TextCommandResult.Success($"{T.Name} level set to {level} (+{level}{T.Stat}) for {player.PlayerName}.");
+        }
+
+        public static TextCommandResult HandleTraitCommand(TextCommandCallingArgs args) {
+            var player = args.Caller.Player;
+            if (player?.Entity == null)
+            {
+                return TextCommandResult.Error("Could not find player entity");
+            }
+
+            var progress = GetDict(player);
+
+            int currentCredits = progress.TotalCredits;
+            int bonusPercent = progress.CalculateBonus(player.Entity as EntityPlayer);
+            int maxCredits = progress.GetMaxCredits(player.Entity);
+
+            var sb = new StringBuilder();
+            sb.AppendLine($"{T.Name} progression: {currentCredits}% / {maxCredits}%");
+            sb.AppendLine($"Current bonus: +{bonusPercent}{T.Stat}");
+            sb.AppendLine($"Progress: {progress.PartialCredit:F1}/{progress.CurrentIncrementSize} {progress.GetIncrementUnits()}");
+
+            if (currentCredits >= maxCredits)
+            {
+                sb.Insert(0, "=== MAXED OUT ===\n");
+            }
+
+            return TextCommandResult.Success(sb.ToString().TrimEnd());
+        }
+
+        public static TextCommandResult HandleLevelCommand(TextCommandCallingArgs args) {
+            var player = args.Caller.Player as IServerPlayer;
+            if (player?.Entity == null)
+            {
+                return TextCommandResult.Error("Could not find player entity");
+            }
+
+            var progress = GetDict(player);
+
+            int? newCredits = (int?)args[0];
+            int maxCredits = progress.GetMaxCredits(player.Entity);
+
+            // If no value provided, show current level
+            if (!newCredits.HasValue)
+            {
+                int currentBonus = progress.CalculateBonus(player.Entity);
+                return TextCommandResult.Success($"Current {T.Description} level: {progress.TotalCredits}/{maxCredits} (+{currentBonus}{T.Stat})");
+            }
+
+            if (newCredits.Value < 0)
+            {
+                return TextCommandResult.Error("Credits cannot be negative");
+            }
+
+            if (newCredits.Value > maxCredits)
+            {
+                return TextCommandResult.Error($"Credits cannot exceed max ({maxCredits})");
+            }
+
+            // Set the player's progress
+            progress.TotalCredits = newCredits.Value;
+            progress.PartialCredit = V.Zero;
+            // Calculate what the increment size should be at this level
+            progress.CurrentIncrementSize = progress.GetBaseIncrement() + (newCredits.Value * progress.GetIncrementStep());
+
+            T.MarkForSave();
+            int bonusPercent = progress.ApplyBonus(player);
+            progress.UpdateSkillActivityDay();
+
+            return TextCommandResult.Success($"{T.Name} credits set to {newCredits.Value} (+{bonusPercent}{T.Stat}).");
+        }
+
+        public static TextCommandResult HandleMaxCommand(TextCommandCallingArgs args) {
+            int? newValue = (int?)args[0];
+
+            if (newValue.HasValue)
+            {
+                if (newValue.Value < 1)
+                {
+                    return TextCommandResult.Error("Max walking speed percent must be at least 1");
+                }
+
+                T.GlobalMax = newValue.Value;
+                T.MarkForSave();
+
+                // Recalculate and reapply bonuses for all online players
+                foreach (IServerPlayer player in SeraphLevelingModSystem.ServerApi.World.AllOnlinePlayers)
+                {
+                    if (player?.Entity == null) continue;
+                    var progress = GetDict(player);
+                    progress.ApplyBonus(player);
+                }
+
+                return TextCommandResult.Success($"Max {T.LongDescription} bonus set to +{T.GlobalMax}%. All player bonuses recalculated.");
+            }
+            else
+            {
+                return TextCommandResult.Success($"Current max {T.LongDescription} bonus: +{T.GlobalMax}%");
+            }
+
         }
     }
 }
