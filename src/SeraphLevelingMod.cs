@@ -4795,55 +4795,6 @@ namespace SeraphLeveling
         }
 
         /// <summary>
-        /// Apply walking speed bonus to a player based on their level.
-        /// Returns the actual applied bonus percentage.
-        /// Stats are always applied (they're not persistent). WatchedAttributes only sync when values change.
-        /// </summary>
-        public static int ApplyWalkingBonusStatic(IServerPlayer player, int level)
-        {
-            if (player?.Entity == null) return 0;
-
-            // Use cached vanilla traits if available, otherwise fall back to direct check
-            var cache = GetCachedTraits(player.PlayerUID);
-            bool hasVanillaFleetfooted = cache?.HasFleetfooted ?? PlayerHasVanillaFleetfootedStatic(player.Entity);
-            int vanillaFleetfootedBonus = hasVanillaFleetfooted ? VANILLA_FLEETFOOTED_WALK_BONUS : 0;
-
-            // Calculate raw bonus from level (1% per level)
-            float rawBonus = level * 0.01f;
-
-            // Cap earned bonus so total (vanilla + earned) doesn't exceed MaxWalkingSpeedPercent
-            float maxEarnableBonus = (MaxWalkingSpeedPercent - vanillaFleetfootedBonus) / 100f;
-            float bonus = Math.Min(rawBonus, Math.Max(0, maxEarnableBonus));
-            int bonusPercent = (int)(bonus * 100);
-
-            // Always apply stats (they're not persistent)
-            player.Entity.Stats.Set("walkspeed", WALKING_STAT_CODE, bonus, false);
-
-            // Check if any values have changed before updating WatchedAttributes
-            var watchedAttrs = player.Entity.WatchedAttributes;
-            int oldLevel = watchedAttrs.GetInt(WATCHED_WALKING_LEVEL, -1);
-            int oldBonus = watchedAttrs.GetInt(WATCHED_WALKING_BONUS, -1);
-
-            bool valuesChanged = (oldLevel != level) || (oldBonus != bonusPercent);
-
-            // Only update WatchedAttributes if values changed
-            if (valuesChanged)
-            {
-                // Sync level and bonus to WatchedAttributes for client-side display
-                watchedAttrs.SetInt(WATCHED_WALKING_LEVEL, level);
-                watchedAttrs.SetInt(WATCHED_WALKING_BONUS, bonusPercent);
-                watchedAttrs.SetBool("sitHasVanillaFleetfooted", hasVanillaFleetfooted);
-
-                // Add our trait to extraTraits only if player doesn't already have Fleetfooted
-                UpdateExtraTraitStatic(player.Entity, WALKING_TRAIT_CODE, level > 0 && !hasVanillaFleetfooted);
-
-                watchedAttrs.MarkPathDirty(WATCHED_WALKING_LEVEL);
-            }
-
-            return bonusPercent;
-        }
-
-        /// <summary>
         /// Called when a player breaks a block. Updates mining progress based on new mechanics:
         /// - Only counts blocks broken with pickaxes
         /// - Only counts stone (1 point) and ore (5 points) blocks
@@ -5166,7 +5117,7 @@ namespace SeraphLeveling
         /// <summary>
         /// Gets the cached vanilla traits for a player. Returns null if not cached.
         /// </summary>
-        private static CachedVanillaTraits GetCachedTraits(string playerUid)
+        public static CachedVanillaTraits GetCachedTraits(string playerUid)
         {
             VanillaTraitsCache.TryGetValue(playerUid, out var cache);
             return cache;
@@ -6123,7 +6074,7 @@ namespace SeraphLeveling
         /// <summary>
         /// Static version of UpdateExtraTrait for use from Harmony patches.
         /// </summary>
-        private static void UpdateExtraTraitStatic(EntityPlayer entity, string traitCode, bool shouldHave)
+        public static void UpdateExtraTraitStatic(EntityPlayer entity, string traitCode, bool shouldHave)
         {
             string[] currentTraits = entity.WatchedAttributes.GetStringArray("extraTraits", null) ?? Array.Empty<string>();
             bool hasTrait = currentTraits.Contains(traitCode);
