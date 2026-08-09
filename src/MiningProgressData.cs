@@ -36,6 +36,16 @@ namespace SeraphLeveling
             };
         }
         public static string Name => "pickaxe";
+        public static int BaseIncrementSize
+        {
+            get => SeraphLevelingModSystem.BaseBlocksPerIncrement;
+            set => SeraphLevelingModSystem.BaseBlocksPerIncrement = value;
+        }
+        public static int IncrementStep
+        {
+            get => SeraphLevelingModSystem.IncrementStep;
+            set => SeraphLevelingModSystem.IncrementStep = value;
+        }
     }
 
     /// <summary>

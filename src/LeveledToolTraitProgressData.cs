@@ -13,6 +13,8 @@ namespace SeraphLeveling {
     public interface ILevelableToolContract<ToolT>
     {
         public abstract static string Name { get; }
+        public abstract static int BaseIncrementSize { get; set; }
+        public abstract static int IncrementStep { get; set; }
     }
     public abstract class LevelableTool<ToolT>
     {
@@ -103,6 +105,82 @@ namespace SeraphLeveling {
                 sb.AppendLine("\nNo pickaxe progress yet. Mine stone or ore with a pickaxe to start!");
             }
 
+        }
+        private static int ApplyStatPenalty(T progress, double rawPenalty, StringBuilder sb, StringBuilder verboseSb) {
+            int oldCredits = progress.TotalCredits;
+            var toolEntries = progress.ToolProgress.Select(kvp =>
+                (kvp.Key, (double)kvp.Value.PartialCredit, kvp.Value.CurrentIncrementSize)).ToList();
+
+            if (toolEntries.Count > 0)
+            {
+                var (newCr, lost) = SeraphLevelingModSystem.ApplyAbsolutePositionDecay(toolEntries, rawPenalty,
+                    ToolT.BaseIncrementSize, ToolT.IncrementStep, oldCredits,
+                    (k, a, s) => { if (progress.ToolProgress.TryGetValue(k, out var p)) {
+                        p.PartialCredit = (int)Math.Floor(a); p.CurrentIncrementSize = s; } },
+                    k => progress.ToolProgress.Remove(k), verboseSb, "Mining");
+                progress.TotalCredits = newCr;
+                sb.AppendLine($"  Mining: {oldCredits} \u2192 {newCr} (-{lost} credits, {rawPenalty:F0} pts)");
+                foreach (var entry in toolEntries)
+                {
+                    int oldToolCr = ToolT.IncrementStep > 0 ? (entry.Item3 - ToolT.BaseIncrementSize) / ToolT.IncrementStep : 0;
+                    if (progress.ToolProgress.TryGetValue(entry.Item1, out var after))
+                    {
+                        int newToolCr = ToolT.IncrementStep > 0 ? (after.CurrentIncrementSize - ToolT.BaseIncrementSize) / ToolT.IncrementStep : 0;
+                        int toolLost = oldToolCr - newToolCr;
+                        sb.AppendLine($"    {entry.Item1}: {(int)entry.Item2}/{entry.Item3} \u2192 {after.PartialCredit:F0}/{after.CurrentIncrementSize}{(toolLost > 0 ? $" (-{toolLost} cr)" : "")}");
+                    }
+                    else
+                        sb.AppendLine($"    {entry.Item1}: {(int)entry.Item2}/{entry.Item3} \u2192 removed (-{oldToolCr} cr)");
+                }
+                T.MarkForSave();
+                if (lost > 0) return lost;
+            }
+            else
+            {
+                int lost = Math.Min((int)rawPenalty, oldCredits);
+                progress.TotalCredits -= lost;
+                if (lost > 0) { sb.AppendLine($"  Mining: {oldCredits} \u2192 {progress.TotalCredits} (-{lost} credits)"); }
+                T.MarkForSave();
+                return lost;
+            }
+            return 0;
+        }
+
+        public static int ApplyDecay(IServerPlayer player, double currentDay, StringBuilder sb, StringBuilder verboseSb)
+        {
+            if (!SeraphLevelingModSystem.DecayExemptSkills.Contains(T.SkillKey) && !SeraphLevelingModSystem.DisabledSkills.Contains(T.SkillKey))
+            {
+                if (T.ProgressDictionary().TryGetValue(player.PlayerUID, out var progress) && (progress.TotalCredits > 0 || progress.ToolProgress.Count > 0))
+                {
+                    var (grace, basePoints, maxPoints) = SeraphLevelingModSystem.GetDecayParams(T.SkillKey);
+                    int decayCredits = SeraphLevelingModSystem.CalculateDecayPoints(progress.LastActivityDay, currentDay, grace, basePoints, maxPoints);
+                    if (decayCredits > 0)
+                    {
+                        return ApplyStatPenalty(progress, decayCredits, sb, verboseSb);
+                    }
+                }
+            }
+            return 0;
+        }
+
+        public static int ApplyDeathPenalty(IServerPlayer player, StringBuilder sb) {
+            if (!SeraphLevelingModSystem.DeathPenaltyExemptSkills.Contains(T.SkillKey) && !SeraphLevelingModSystem.DisabledSkills.Contains(T.SkillKey))
+            {
+                if (T.ProgressDictionary().TryGetValue(player.PlayerUID, out var progress) && (progress.TotalCredits > 0 || progress.ToolProgress.Count > 0))
+                {
+                    var toolEntries = progress.ToolProgress.Select(kvp =>
+                        (kvp.Key, (double)kvp.Value.PartialCredit, kvp.Value.CurrentIncrementSize)).ToList();
+                    double rawPenalty;
+                    if (toolEntries.Count > 0) {
+                        rawPenalty = ToolT.BaseIncrementSize * SeraphLevelingModSystem.DeathPenaltyFraction * Math.Sqrt(Math.Max(1, progress.TotalCredits));
+                    } else {
+                        rawPenalty = Math.Floor(SeraphLevelingModSystem.DeathPenaltyFraction * Math.Sqrt(Math.Max(1, progress.TotalCredits)));
+                    }
+
+                    return ApplyStatPenalty(progress, rawPenalty, sb, null);
+                }
+            }
+            return 0;
         }
     }
 }

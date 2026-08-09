@@ -7736,54 +7736,7 @@ namespace SeraphLeveling
             // --- Per-tool dictionary skills ---
 
             // Mining
-            if (!DecayExemptSkills.Contains("mining") && !DisabledSkills.Contains("mining"))
-            {
-                if (MiningProgress.TryGetValue(playerUid, out var mProg) && (mProg.TotalCredits > 0 || mProg.ToolProgress.Count > 0))
-                {
-                    var (grace, basePoints, maxPoints) = GetDecayParams("mining");
-                    int decayCredits = CalculateDecayPoints(mProg.LastActivityDay, currentDay, grace, basePoints, maxPoints);
-                    if (decayCredits > 0)
-                    {
-                        int oldCredits = mProg.TotalCredits;
-                        var toolEntries = mProg.ToolProgress.Select(kvp =>
-                            (kvp.Key, (double)kvp.Value.PartialCredit, kvp.Value.CurrentIncrementSize)).ToList();
-
-                        if (toolEntries.Count > 0)
-                        {
-                            double rawPenalty = (double)decayCredits;
-
-                            var (newCr, lost) = ApplyAbsolutePositionDecay(toolEntries, rawPenalty,
-                                BaseBlocksPerIncrement, IncrementStep, oldCredits,
-                                (k, a, s) => { if (mProg.ToolProgress.TryGetValue(k, out var p)) {
-                                    p.PartialCredit = (int)Math.Floor(a); p.CurrentIncrementSize = s; } },
-                                k => mProg.ToolProgress.Remove(k), verboseSb, "Mining");
-                            mProg.TotalCredits = newCr;
-                            if (lost > 0) totalDecayApplied += lost;
-                            sb.AppendLine($"  Mining: {oldCredits} \u2192 {newCr} (-{lost} credits, {rawPenalty:F0} pts)");
-                            foreach (var entry in toolEntries)
-                            {
-                                int oldToolCr = IncrementStep > 0 ? (entry.Item3 - BaseBlocksPerIncrement) / IncrementStep : 0;
-                                if (mProg.ToolProgress.TryGetValue(entry.Item1, out var after))
-                                {
-                                    int newToolCr = IncrementStep > 0 ? (after.CurrentIncrementSize - BaseBlocksPerIncrement) / IncrementStep : 0;
-                                    int toolLost = oldToolCr - newToolCr;
-                                    sb.AppendLine($"    {entry.Item1}: {(int)entry.Item2}/{entry.Item3} \u2192 {after.PartialCredit:F0}/{after.CurrentIncrementSize}{(toolLost > 0 ? $" (-{toolLost} cr)" : "")}");
-                                }
-                                else
-                                    sb.AppendLine($"    {entry.Item1}: {(int)entry.Item2}/{entry.Item3} \u2192 removed (-{oldToolCr} cr)");
-                            }
-                            pendingMiningProgressSave = true;
-                        }
-                        else
-                        {
-                            int lost = Math.Min(decayCredits, oldCredits);
-                            mProg.TotalCredits -= lost;
-                            if (lost > 0) { totalDecayApplied += lost; sb.AppendLine($"  Mining: {oldCredits} \u2192 {mProg.TotalCredits} (-{lost} credits)"); }
-                            pendingMiningProgressSave = true;
-                        }
-                    }
-                }
-            }
+            totalDecayApplied += MiningProgressData.ApplyDecay(player, currentDay, sb, verboseSb);
 
             // Melee
             if (!DecayExemptSkills.Contains("melee") && !DisabledSkills.Contains("melee"))
@@ -8405,7 +8358,7 @@ namespace SeraphLeveling
         /// Convert an absolute position back into (credits, accumulator, nextIncrementSize).
         /// Subtracts escalating costs until the remainder is less than the next cost.
         /// </summary>
-        private static (int credits, double accumulator, int incrementSize) AbsolutePositionToToolState(
+        public static (int credits, double accumulator, int incrementSize) AbsolutePositionToToolState(
             double absolutePosition, int baseIncrement, int incrementStep)
         {
             if (absolutePosition <= 0)
@@ -8436,7 +8389,7 @@ namespace SeraphLeveling
         /// 4) Write back via delegates; remove entries at zero
         /// Returns (newTotalCredits, creditsLost).
         /// </summary>
-        private static (int newTotalCredits, int creditsLost) ApplyAbsolutePositionDecay(
+        public static (int newTotalCredits, int creditsLost) ApplyAbsolutePositionDecay(
             List<(string key, double accumulator, int incrementSize)> toolEntries,
             double rawPenalty, int baseIncrement, int incrementStep, int oldTotalCredits,
             Action<string, double, int> writeBack,
@@ -8595,55 +8548,7 @@ namespace SeraphLeveling
             // --- Per-tool dictionary skills ---
 
             // Mining
-            if (!DeathPenaltyExemptSkills.Contains("mining") && !DisabledSkills.Contains("mining"))
-            {
-                if (MiningProgress.TryGetValue(playerUid, out var miningProg) && (miningProg.TotalCredits > 0 || miningProg.ToolProgress.Count > 0))
-                {
-                    int oldCredits = miningProg.TotalCredits;
-
-                    var toolEntries = miningProg.ToolProgress.Select(kvp =>
-                        (kvp.Key, (double)kvp.Value.PartialCredit, kvp.Value.CurrentIncrementSize)).ToList();
-
-                    if (toolEntries.Count > 0)
-                    {
-                        double rawPenalty = BaseBlocksPerIncrement * DeathPenaltyFraction * Math.Sqrt(Math.Max(1, oldCredits));
-                        var (newCr, _) = ApplyAbsolutePositionDecay(toolEntries, rawPenalty,
-                            BaseBlocksPerIncrement, IncrementStep, oldCredits,
-                            (k, a, s) => { if (miningProg.ToolProgress.TryGetValue(k, out var p)) {
-                                p.PartialCredit = (int)Math.Floor(a); p.CurrentIncrementSize = s; } },
-                            k => miningProg.ToolProgress.Remove(k), null, "Mining");
-                        miningProg.TotalCredits = newCr;
-                        int actualLost = oldCredits - newCr;
-                        if (actualLost > 0) totalCreditsLost += actualLost;
-                        sb.AppendLine($"  Mining: {oldCredits} \u2192 {newCr} (-{actualLost} credits, {rawPenalty:F0} pts)");
-                        foreach (var entry in toolEntries)
-                        {
-                            int oldToolCr = IncrementStep > 0 ? (entry.Item3 - BaseBlocksPerIncrement) / IncrementStep : 0;
-                            if (miningProg.ToolProgress.TryGetValue(entry.Item1, out var after))
-                            {
-                                int newToolCr = IncrementStep > 0 ? (after.CurrentIncrementSize - BaseBlocksPerIncrement) / IncrementStep : 0;
-                                int toolLost = oldToolCr - newToolCr;
-                                sb.AppendLine($"    {entry.Item1}: {(int)entry.Item2}/{entry.Item3} \u2192 {after.PartialCredit}/{after.CurrentIncrementSize}{(toolLost > 0 ? $" (-{toolLost} cr)" : "")}");
-                            }
-                            else
-                                sb.AppendLine($"    {entry.Item1}: {(int)entry.Item2}/{entry.Item3} \u2192 removed (-{oldToolCr} cr)");
-                        }
-                    }
-                    else if (oldCredits > 0)
-                    {
-                        int intendedLoss = (int)Math.Floor(DeathPenaltyFraction * Math.Sqrt(Math.Max(1, oldCredits)));
-                        intendedLoss = Math.Min(intendedLoss, oldCredits);
-                        if (intendedLoss > 0)
-                        {
-                            miningProg.TotalCredits = Math.Max(0, oldCredits - intendedLoss);
-                            int actualLost = oldCredits - miningProg.TotalCredits;
-                            totalCreditsLost += actualLost;
-                            sb.AppendLine($"  Mining: {oldCredits} \u2192 {miningProg.TotalCredits} (-{actualLost} credits)");
-                        }
-                    }
-                    pendingMiningProgressSave = true;
-                }
-            }
+            MiningProgressData.ApplyDeathPenalty(player, sb);
 
             // Melee
             if (!DeathPenaltyExemptSkills.Contains("melee") && !DisabledSkills.Contains("melee"))
