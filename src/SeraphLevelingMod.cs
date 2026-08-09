@@ -662,6 +662,23 @@ namespace SeraphLeveling
         public static HashSet<string> DisabledSkills = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         // =========================================================================
+        // MULTI-MOD COMPATIBILITY
+        // =========================================================================
+
+        public static HashSet<ModDefinition> LoadedMods { get; internal set; } = [ ModDefinitions.Vanilla ];
+        public static HashSet<ModDefinition> DetectLoadedMods(IModLoader modLoader)
+        {
+            HashSet<ModDefinition> retVal = [ ModDefinitions.Vanilla ];
+            if (DetectAnySacredLib(modLoader))
+            {
+                // Sacred Classes replaces the vanilla set of classes
+                retVal.Remove(ModDefinitions.Vanilla);
+                retVal.Add(ModDefinitions.SacredClasses);
+            }
+            return retVal;
+        }
+
+        // =========================================================================
         // SACRED CLASSES COMPATIBILITY
         // =========================================================================
 
@@ -4057,6 +4074,29 @@ namespace SeraphLeveling
             string characterClass = entity.WatchedAttributes.GetString("characterClass", "");
             return characterClass.Equals("hunter", StringComparison.OrdinalIgnoreCase) ||
                    characterClass.Equals("clockmaker", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Checks if the player's class has the given defined trait.
+        /// </summary>
+        public static bool PlayerHasTrait(EntityPlayer entity, TraitDefinition traitDefinition)
+        {
+            string[] classTraits = entity.WatchedAttributes.GetStringArray("characterTraits", []);
+            foreach (string trait in classTraits)
+            {
+                if (trait.Equals(traitDefinition.Id, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            // Fallback: check known classes from loaded mods that have the given trait
+            string characterClass = entity.WatchedAttributes.GetString("characterClass", "");
+            return LoadedMods
+                    .SelectMany(modDef => modDef.CharacterClasses)
+                    .Where(charClassDef => charClassDef.Traits.Contains(traitDefinition))
+                    .Select(charClassDef => charClassDef.Id)
+                    .Any(id => characterClass.Equals(id, StringComparison.OrdinalIgnoreCase));
         }
 
         /// <summary>
