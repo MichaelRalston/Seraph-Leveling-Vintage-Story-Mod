@@ -1940,9 +1940,7 @@ namespace SeraphLeveling
             sb.AppendLine("=== All Trait Progression ===");
 
             // Progression traits
-            var miningProg = MiningProgress.GetOrAdd(playerUid, _ => new MiningProgressData());
-            int miningMax = GetMaxMiningCredits(player.Entity);
-            sb.AppendLine($"Mining: {miningProg.TotalCredits}/{miningMax} (+{CalculateMiningBonusPercent(miningProg.TotalCredits)}% speed)");
+            MiningProgressData.GetTraitAllCommandLine(player, sb);
 
             var meleeProg = MeleeProgress.GetOrAdd(playerUid, _ => new MeleeProgressData());
             sb.AppendLine($"Melee: {meleeProg.TotalCredits}/{MaxMeleeDamagePercent} (+{meleeProg.TotalCredits}% damage)");
@@ -13185,13 +13183,7 @@ namespace SeraphLeveling
             string playerUid = player.PlayerUID;
 
             // Reset Mining
-            if (MiningProgress.TryGetValue(playerUid, out var miningProg))
-            {
-                miningProg.TotalCredits = 0;
-                miningProg.ToolProgress.Clear();
-                pendingMiningProgressSave = true;
-            }
-            ApplyMiningBonus(player, 0);
+            MiningProgressData.ResetProgress(player);
 
             // Reset Melee
             if (MeleeProgress.TryGetValue(playerUid, out var meleeProg))
@@ -13566,17 +13558,7 @@ namespace SeraphLeveling
             string playerUid = player.PlayerUID;
 
             // Max Mining
-            // Pass raw credits to ApplyMiningBonus, NOT CalculateMiningBonusPercent(credits).
-            // ApplyMiningBonus expects the raw credit/level value and subtracts the negative-
-            // trait penalty internally (Hunter's Claustrophobic -10%, Tailor's Weak -10%).
-            // Passing the already-capped bonus percent caused the penalty to be subtracted
-            // twice, so Hunter would land at +40% mining instead of the intended +50%.
-            int maxMiningCredits = GetMaxMiningCredits(player.Entity);
-            var miningProg = MiningProgress.GetOrAdd(playerUid, _ => new MiningProgressData());
-            miningProg.TotalCredits = maxMiningCredits;
-            miningProg.ToolProgress.Clear();
-            pendingMiningProgressSave = true;
-            ApplyMiningBonus(player, maxMiningCredits);
+            MiningProgressData.MaxStat(player);
 
             // Max Melee — same fix as Mining (pass raw credits so Farsighted/Nervous penalties
             // don't get subtracted twice and Hunter/Malefactor/Clockmaker can hit +50%).
@@ -13750,11 +13732,7 @@ namespace SeraphLeveling
             const int CREDITS = 1;
 
             // Mining (pass raw credits — Apply* handles negative-trait subtraction internally)
-            var miningProg = MiningProgress.GetOrAdd(playerUid, _ => new MiningProgressData());
-            miningProg.TotalCredits = CREDITS;
-            miningProg.ToolProgress.Clear();
-            pendingMiningProgressSave = true;
-            ApplyMiningBonus(player, CREDITS);
+            MiningProgressData.ApplyTraitTestSuite1Command(player);
 
             // Melee
             var meleeProg = MeleeProgress.GetOrAdd(playerUid, _ => new MeleeProgressData());

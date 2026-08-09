@@ -84,6 +84,16 @@ namespace SeraphLeveling {
             }
         }
 
+        public static void ResetProgress(IServerPlayer player) {
+            var progress = GetDict(player);
+            progress.TotalCredits = 0;
+            var toolEntries = progress.ToolProgress.Select(kvp =>
+                (kvp.Key, (double)kvp.Value.PartialCredit, kvp.Value.CurrentIncrementSize)).ToList();
+            progress.LastActivityDay = 0;
+            T.MarkForSave();
+            progress.ApplyBonus(player);
+        }
+
         public override void WriteIncrementLine(StringBuilder sb)
         {
             if (ToolProgress.Count > 0)
