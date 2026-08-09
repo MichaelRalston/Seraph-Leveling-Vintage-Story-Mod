@@ -662,6 +662,26 @@ namespace SeraphLeveling
         public static HashSet<string> DisabledSkills = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         // =========================================================================
+        // MULTI-MOD COMPATIBILITY
+        // =========================================================================
+
+        public static ConcurrentDictionary<AttributeModifierDefinition, ConcurrentDictionary<string, AAttributeModifierProgressData>> ProgressData = [];
+        public static ConcurrentDictionary<AttributeModifierDefinition, bool> PendingSaves = [];
+
+        public static HashSet<ModDefinition> LoadedMods { get; internal set; } = [ ModDefinitions.Vanilla ];
+        public static HashSet<ModDefinition> DetectLoadedMods(IModLoader modLoader)
+        {
+            HashSet<ModDefinition> retVal = [ ModDefinitions.Vanilla ];
+            if (DetectAnySacredLib(modLoader))
+            {
+                // Sacred Classes replaces the vanilla set of classes
+                retVal.Remove(ModDefinitions.Vanilla);
+                retVal.Add(ModDefinitions.SacredClasses);
+            }
+            return retVal;
+        }
+
+        // =========================================================================
         // SACRED CLASSES COMPATIBILITY
         // =========================================================================
 
@@ -3971,23 +3991,30 @@ namespace SeraphLeveling
         /// </summary>
         public static bool PlayerHasVanillaFleetfootedStatic(EntityPlayer entity)
         {
-            string[] classTraits = entity.WatchedAttributes.GetStringArray("characterTraits", null);
+            return PlayerHasTrait(entity, TraitDefinitions.Fleetfooted);
+        }
 
-            if (classTraits != null)
+        /// <summary>
+        /// Checks if the player's class has the given defined trait.
+        /// </summary>
+        public static bool PlayerHasTrait(EntityPlayer entity, TraitDefinition traitDefinition)
+        {
+            string[] classTraits = entity.WatchedAttributes.GetStringArray("characterTraits", []);
+            foreach (string trait in classTraits)
             {
-                foreach (string trait in classTraits)
+                if (trait.Equals(traitDefinition.Id, StringComparison.OrdinalIgnoreCase))
                 {
-                    if (trait.Equals("fleetfooted", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return true;
-                    }
+                    return true;
                 }
             }
 
-            // Fallback: check known classes that have Fleetfooted (Hunter, Clockmaker)
+            // Fallback: check known classes from loaded mods that have the given trait
             string characterClass = entity.WatchedAttributes.GetString("characterClass", "");
-            return characterClass.Equals("hunter", StringComparison.OrdinalIgnoreCase) ||
-                   characterClass.Equals("clockmaker", StringComparison.OrdinalIgnoreCase);
+            return LoadedMods
+                    .SelectMany(modDef => modDef.CharacterClasses)
+                    .Where(charClassDef => charClassDef.Traits.Contains(traitDefinition))
+                    .Select(charClassDef => charClassDef.Id)
+                    .Any(id => characterClass.Equals(id, StringComparison.OrdinalIgnoreCase));
         }
 
         /// <summary>
