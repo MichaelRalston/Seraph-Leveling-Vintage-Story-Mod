@@ -4057,23 +4057,7 @@ namespace SeraphLeveling
         /// </summary>
         public static bool PlayerHasVanillaFleetfootedStatic(EntityPlayer entity)
         {
-            string[] classTraits = entity.WatchedAttributes.GetStringArray("characterTraits", null);
-
-            if (classTraits != null)
-            {
-                foreach (string trait in classTraits)
-                {
-                    if (trait.Equals("fleetfooted", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            // Fallback: check known classes that have Fleetfooted (Hunter, Clockmaker)
-            string characterClass = entity.WatchedAttributes.GetString("characterClass", "");
-            return characterClass.Equals("hunter", StringComparison.OrdinalIgnoreCase) ||
-                   characterClass.Equals("clockmaker", StringComparison.OrdinalIgnoreCase);
+            return PlayerHasTrait(entity, TraitDefinitions.Fleetfooted);
         }
 
         /// <summary>
