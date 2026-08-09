@@ -288,5 +288,10 @@ namespace SeraphLeveling
 
             return bonusPercent;
         }
+
+        public override void CheckUnlocks(IServerPlayer player) {
+            SeraphLevelingModSystem.CheckHardyHealthUnlock(player);
+            SeraphLevelingModSystem.CheckClaustrophobicRemoval(player);
+        }
     }
 }

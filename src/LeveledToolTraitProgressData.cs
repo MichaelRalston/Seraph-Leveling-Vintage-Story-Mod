@@ -192,5 +192,64 @@ namespace SeraphLeveling {
             }
             return 0;
         }
+
+        public override TextCommandResult SetLevelFromCommand(IServerPlayer player, int level, TextCommandCallingArgs args)
+        {
+            string toolName = (string)args[1];
+            string playerUid = player.PlayerUID;
+            int maxCredits = GetMaxCredits(player.Entity);
+            if (level < 0)
+                return TextCommandResult.Error("Credits cannot be negative.");
+
+            if (toolName != null)
+            {
+                // Per-tool mode: set credits on a specific pickaxe without clearing others
+                int oldToolCredits = 0;
+                if (ToolProgress.TryGetValue(toolName, out var existingTool))
+                    oldToolCredits = SeraphLevelingModSystem.CalculateToolCredits(existingTool.CurrentIncrementSize, ToolT.BaseIncrementSize, ToolT.IncrementStep);
+
+                int projectedTotal = TotalCredits - oldToolCredits + level;
+                if (projectedTotal > maxCredits)
+                    return TextCommandResult.Error($"Setting {level} credits on {toolName} would result in {projectedTotal} total credits, exceeding max ({maxCredits}).");
+
+                if (level == 0)
+                {
+                    ToolProgress.Remove(toolName);
+                }
+                else
+                {
+                    var pickaxeProgress = GetToolProgress(toolName);
+                    pickaxeProgress.CurrentIncrementSize = ToolT.BaseIncrementSize + (level * ToolT.IncrementStep);
+                    pickaxeProgress.PartialCredit = 0;
+                }
+
+                TotalCredits = SeraphLevelingModSystem.RecalculateTotalCreditsFromTools(
+                    ToolProgress, p => p.CurrentIncrementSize,
+                    ToolT.BaseIncrementSize, ToolT.IncrementStep);
+
+                T.MarkForSave();
+                int bonusPercent = ApplyBonus(player);
+                CheckUnlocks(player);
+                UpdateSkillActivityDay();
+
+                return TextCommandResult.Success($"Set {level} credits on {toolName}. Total: {TotalCredits}/{maxCredits} (+{bonusPercent}% mining speed).");
+            }
+            else
+            {
+                // Total mode: set TotalCredits directly and clear per-tool progress
+                if (level > maxCredits)
+                    return TextCommandResult.Error($"Credits cannot exceed max ({maxCredits}).");
+
+                TotalCredits = level;
+                ToolProgress.Clear();
+
+                T.MarkForSave();
+                int bonusPercent = ApplyBonus(player);
+                CheckUnlocks(player);
+                UpdateSkillActivityDay();
+
+                return TextCommandResult.Success($"Mining credits set to {level} (+{bonusPercent}% mining speed). Per-pickaxe progress reset.");
+            }
+        }
     }
 }

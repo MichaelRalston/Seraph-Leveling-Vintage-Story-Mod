@@ -2216,7 +2216,7 @@ namespace SeraphLeveling
         /// Calculates credits earned by a tool from its CurrentIncrementSize.
         /// Credits = (currentIncrementSize - baseIncrement) / incrementStep
         /// </summary>
-        private static int CalculateToolCredits(int currentIncrementSize, int baseIncrement, int incrementStep)
+        public static int CalculateToolCredits(int currentIncrementSize, int baseIncrement, int incrementStep)
         {
             if (incrementStep <= 0) return 0;
             int credits = (currentIncrementSize - baseIncrement) / incrementStep;
@@ -2226,7 +2226,7 @@ namespace SeraphLeveling
         /// <summary>
         /// Recalculates TotalCredits by summing credits from all per-tool entries.
         /// </summary>
-        private static int RecalculateTotalCreditsFromTools<T>(
+        public static int RecalculateTotalCreditsFromTools<T>(
             Dictionary<string, T> toolDict,
             System.Func<T, int> getIncrementSize,
             int baseIncrement, int incrementStep)
@@ -2656,25 +2656,7 @@ namespace SeraphLeveling
         /// </summary>
         private TextCommandResult OnTraitMiningLevelCommand(TextCommandCallingArgs args)
         {
-            var player = args.Caller.Player as IServerPlayer;
-            if (player?.Entity == null)
-            {
-                return TextCommandResult.Error("Could not find player entity");
-            }
-
-            int? newCredits = (int?)args[0];
-
-            // If no value provided, show current level
-            if (!newCredits.HasValue)
-            {
-                int maxCredits = GetMaxMiningCredits(player.Entity);
-                var progress = MiningProgress.GetOrAdd(player.PlayerUID, _ => new MiningProgressData());
-                int currentBonus = CalculateMiningBonusPercent(progress.TotalCredits);
-                return TextCommandResult.Success($"Current mining level: {progress.TotalCredits}/{maxCredits} (+{currentBonus}% mining speed)");
-            }
-
-            string toolName = (string)args[1];
-            return SetMiningLevelForPlayer(player, newCredits.Value, toolName);
+            return MiningProgressData.HandleLevelCommand(args);
         }
 
         /// <summary>
@@ -10986,7 +10968,7 @@ namespace SeraphLeveling
         /// Check and apply Hardy health unlock if thresholds are met.
         /// Requires 110% mining speed and 10% armor durability.
         /// </summary>
-        private static void CheckHardyHealthUnlock(IServerPlayer player)
+        public static void CheckHardyHealthUnlock(IServerPlayer player)
         {
             if (player?.Entity == null) return;
 
@@ -11251,7 +11233,7 @@ namespace SeraphLeveling
         /// Check and apply Claustrophobic removal if threshold is met (Hunter only).
         /// Requires 100% mining speed.
         /// </summary>
-        private static void CheckClaustrophobicRemoval(IServerPlayer player)
+        public static void CheckClaustrophobicRemoval(IServerPlayer player)
         {
             if (player?.Entity == null) return;
 

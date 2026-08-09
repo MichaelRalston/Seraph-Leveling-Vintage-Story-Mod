@@ -124,6 +124,10 @@ namespace SeraphLeveling {
             LastActivityDay = SeraphLevelingModSystem.ServerApi.World.Calendar.TotalDays;
         }
 
+        public virtual void CheckUnlocks(IServerPlayer player) {
+
+        }
+
         public static TextCommandResult SetLevel(IServerPlayer player, int level) {
             var progress = GetDict(player);
             int maxLevel = progress.GetMaxCredits(player.Entity);
@@ -161,6 +165,20 @@ namespace SeraphLeveling {
             return TextCommandResult.Success(sb.ToString().TrimEnd());
         }
 
+        public virtual TextCommandResult SetLevelFromCommand(IServerPlayer player, int newCredits, TextCommandCallingArgs args) {
+            // Set the player's progress
+            TotalCredits = newCredits;
+            ZeroPartialCredit();
+            CalculateIncrementSize();
+
+            T.MarkForSave();
+            int bonusPercent = ApplyBonus(player);
+            UpdateSkillActivityDay();
+
+            return TextCommandResult.Success($"{T.Name} credits set to {newCredits} (+{bonusPercent}{T.Stat}).");
+
+        }
+
         public static TextCommandResult HandleLevelCommand(TextCommandCallingArgs args) {
             var player = args.Caller.Player as IServerPlayer;
             if (player?.Entity == null)
@@ -190,16 +208,7 @@ namespace SeraphLeveling {
                 return TextCommandResult.Error($"Credits cannot exceed max ({maxCredits})");
             }
 
-            // Set the player's progress
-            progress.TotalCredits = newCredits.Value;
-            progress.ZeroPartialCredit();
-            progress.CalculateIncrementSize();
-
-            T.MarkForSave();
-            int bonusPercent = progress.ApplyBonus(player);
-            progress.UpdateSkillActivityDay();
-
-            return TextCommandResult.Success($"{T.Name} credits set to {newCredits.Value} (+{bonusPercent}{T.Stat}).");
+            return progress.SetLevelFromCommand(player, newCredits.Value, args);
         }
 
         public static TextCommandResult HandleMaxCommand(TextCommandCallingArgs args) {
