@@ -294,6 +294,15 @@ namespace SeraphLeveling {
             {
                 return TextCommandResult.Success($"Current max {T.LongDescription} bonus: +{T.GlobalMax}%");
             }
+        }
+
+        public static void HandleLogin(IServerPlayer player) {
+            var progress = GetDict(player);
+            progress.ApplyBonus(player);
+            if (progress.TotalCredits > 0)
+            {
+                SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Applied {T.Description} bonus {progress.TotalCredits}% to player {player.PlayerName}");
+            }
 
         }
     }

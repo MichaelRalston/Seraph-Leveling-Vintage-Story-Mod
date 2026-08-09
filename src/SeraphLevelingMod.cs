@@ -5219,16 +5219,7 @@ namespace SeraphLeveling
             }
 
             // Apply walking bonus (Stats always applied, WatchedAttributes only sync if changed)
-            var walkingProg = WalkingProgress.GetOrAdd(playerUid, _ => new WalkingProgressData
-            {
-                CurrentIncrementSize = BaseBlocksWalkedPerIncrement
-            });
-            int walkingCredits = walkingProg.TotalCredits;
-            ApplyWalkingBonusStatic(byPlayer, walkingCredits);
-            if (walkingCredits > 0)
-            {
-                ServerApi.Logger.Debug($"[SeraphLeveling] Applied walking bonus {walkingCredits}% to player {byPlayer.PlayerName}");
-            }
+            WalkingProgressData.HandleLogin(byPlayer);
 
             // Apply hunger bonus (Stats always applied, WatchedAttributes only sync if changed)
             var hungerProg = HungerProgress.GetOrAdd(playerUid, _ => new HungerProgressData
