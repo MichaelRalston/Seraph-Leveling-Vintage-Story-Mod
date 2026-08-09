@@ -14132,8 +14132,7 @@ namespace SeraphLeveling
             ApplyRangedBonusStatic(player, CREDITS);
 
             // Walking
-            var walkingProg = WalkingProgress.GetOrAdd(playerUid, _ => new WalkingProgressData());
-            walkingProg.ApplyTraitTestSuite1Command(player);
+            WalkingProgressData.ApplyTraitTestSuite1Command(player);
 
             // Hunger
             var hungerProg = HungerProgress.GetOrAdd(playerUid, _ => new HungerProgressData());

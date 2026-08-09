@@ -137,8 +137,8 @@ namespace SeraphLeveling {
 
         }
 
-        private static ref T GetDict(IPlayer player) {
-            return ref T.ProgressDictionary().GetOrAdd(player.PlayerUID, _ => new T());
+        private static T GetDict(IPlayer player) {
+            return T.ProgressDictionary().GetOrAdd(player.PlayerUID, _ => new T());
         }
 
         public static void ApplyTraitTestSuite1Command(IServerPlayer player) {
@@ -152,11 +152,11 @@ namespace SeraphLeveling {
 
         public abstract string GetTraitAllString(IPlayer player);
         public static void GetTraitAllCommandLine(IPlayer player, StringBuilder sb) {
-            var progress = T.ProgressDictionary().GetOrAdd(player.PlayerUID, _ => new T());
+            var progress = GetDict(player);
             sb.AppendLine(progress.GetTraitAllString(player));
         }
         public static void ResetProgress(IServerPlayer player) {
-            var progress = T.ProgressDictionary().GetOrAdd(player.PlayerUID, _ => new T());
+            var progress = GetDict(player);
             progress.TotalCredits = 0;
             progress.PartialCredit = V.Zero;
             progress.CurrentIncrementSize = progress.GetBaseIncrement();
@@ -165,7 +165,7 @@ namespace SeraphLeveling {
             progress.ApplyBonus(player);
         }
         public static void MaxStat(IServerPlayer player) {
-            var progress = T.ProgressDictionary().GetOrAdd(player.PlayerUID, _ => new T());
+            var progress = GetDict(player);
             int maxCredits = progress.GetMaxCredits(player.Entity);
             progress.TotalCredits = maxCredits;
             progress.PartialCredit = V.Zero;
