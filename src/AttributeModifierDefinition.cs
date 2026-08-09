@@ -10,13 +10,14 @@ namespace SeraphLeveling
     public record class AttributeModifierDefinition
     {
         public required string Id { get; init; }
+        public required Func<AttributeModifierDefinition, byte, AAttributeModifierProgressData> ProgressDataFactory { get; init; }
         public required string SaveKey { get; init; }
         public required string Description { get; init; }
         public required string PersistenceHeader { get; init; }
-        public virtual int PersistenceVersion { get; }
+        public virtual int PersistenceVersion { get; } = 1;
 
         public byte[] PersistenceHeaderBytes => Encoding.ASCII.GetBytes(PersistenceHeader);
-        public ConcurrentDictionary<string, AttributeModifierProgressData> ProgressDictionary => SeraphLevelingModSystem.ProgressData.GetOrAdd(this, _ => []);
+        public ConcurrentDictionary<string, AAttributeModifierProgressData> ProgressDictionary => SeraphLevelingModSystem.ProgressData.GetOrAdd(this, _ => []);
 
         public bool IsSavePending()
         {
@@ -57,7 +58,7 @@ namespace SeraphLeveling
                         }
 
                         byte version = reader.ReadByte();
-                        var progressData = new AttributeModifierProgressData(this, version);
+                        var progressData = ProgressDataFactory(this, version);
 
                         int playerCount = reader.ReadInt32();
                         for (int i = 0; i < playerCount; i++)
@@ -65,7 +66,8 @@ namespace SeraphLeveling
                             try
                             {
                                 string playerUid = reader.ReadString();
-                                progress[playerUid] = T.ReadVersion(version, reader);
+                                progressData.ReadVersion(version, reader);
+                                progress[playerUid] = progressData;
                             }
                             catch (Exception innerEx)
                             {

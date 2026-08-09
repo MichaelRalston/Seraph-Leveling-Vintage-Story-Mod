@@ -7,6 +7,7 @@ namespace SeraphLeveling
         public static readonly AttributeModifierDefinition WalkingSpeed = new LeveledAttributeModifierDefinition()
         {
             Id = "walkingSpeed",
+            ProgressDataFactory = (def, version) => new LeveledAttributeModifierProgressData<float>(def, version),
             SaveKey = "sitWalkingProgress",
             Description = "walking",
             PersistenceHeader = "SIW",
