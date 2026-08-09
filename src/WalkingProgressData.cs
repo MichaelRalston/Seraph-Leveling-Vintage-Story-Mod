@@ -35,6 +35,7 @@ namespace SeraphLeveling
 
         public static string SAVE_KEY => "sitWalkingProgress";
         public static string Description => "walking";
+        public static string SkillKey => "walking";
         public static string Name => "Walking";
         public static string Stat => "% speed";
         public static string LongDescription => "walking speed";

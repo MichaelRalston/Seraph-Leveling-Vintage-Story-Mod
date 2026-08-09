@@ -17,6 +17,7 @@ namespace SeraphLeveling {
     {
         public static virtual string Name { get; }
         public static virtual string Stat { get; }
+        public static virtual string SkillKey { get; }
         public static virtual string LongDescription { get; }
         public static virtual int GlobalMax{get; set;}
 
@@ -308,6 +309,31 @@ namespace SeraphLeveling {
         public static void ApplyBonusIfExists(IServerPlayer player) {
             if (T.ProgressDictionary().TryGetValue(player.PlayerUID, out var progress))
             progress.ApplyBonus(player);
+        }
+
+        public static int ApplyDecay(IServerPlayer player, double currentDay, StringBuilder sb, StringBuilder verboseSb) {
+            if (!SeraphLevelingModSystem.DecayExemptSkills.Contains(T.SkillKey) && !SeraphLevelingModSystem.DisabledSkills.Contains(T.SkillKey))
+            {
+                if (T.ProgressDictionary().TryGetValue(player.PlayerUID, out var progress) && (progress.TotalCredits > 0 || progress.PartialCredit > V.Zero))
+                {
+                    var (grace, basePoints, maxPoints) = SeraphLevelingModSystem.GetDecayParams(T.SkillKey);
+                    int decayCredits = SeraphLevelingModSystem.CalculateDecayPoints(progress.LastActivityDay, currentDay, grace, basePoints, maxPoints);
+                    if (decayCredits > 0)
+                    {
+                        int oldCredits = progress.TotalCredits;
+                        float oldAcc = float.CreateTruncating(progress.PartialCredit); int oldInc = progress.CurrentIncrementSize;
+                        double rawPenalty = (double)decayCredits;
+                        var (newCr, newAcc, newInc, lost) = SeraphLevelingModSystem.ApplySingleAccumulatorDecay(
+                            oldAcc, oldInc, oldCredits,
+                            rawPenalty, progress.GetBaseIncrement(), progress.GetIncrementStep(), verboseSb, T.SkillKey);
+                        progress.TotalCredits = newCr; progress.PartialCredit = V.CreateTruncating(newAcc); progress.CurrentIncrementSize = newInc;
+                        sb.AppendLine($"  {T.Name}: {oldCredits} \u2192 {newCr} (-{lost} credits, {rawPenalty:F0} pts), {oldAcc:F0}/{oldInc} \u2192 {(int)newAcc}/{newInc}");
+                        T.MarkForSave();
+                        if (lost > 0) return lost;
+                    }
+                }
+            }
+            return 0;
         }
     }
 }

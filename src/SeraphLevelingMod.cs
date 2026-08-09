@@ -7705,7 +7705,7 @@ namespace SeraphLeveling
         /// Get per-skill decay parameters, falling back to global defaults.
         /// Returns (gracePeriodDays, basePointsPerDay, maxPointsPerDay).
         /// </summary>
-        private static (double grace, int basePoints, int maxPoints) GetDecayParams(string skillKey)
+        public static (double grace, int basePoints, int maxPoints) GetDecayParams(string skillKey)
         {
             double grace = DecayGracePeriodOverrides.TryGetValue(skillKey, out var g) ? g : DecayGracePeriodDays;
             int basePoints = DecayBasePointsOverrides.TryGetValue(skillKey, out var b) ? b : DecayBasePointsPerDay;
@@ -7718,7 +7718,7 @@ namespace SeraphLeveling
         /// Uses triangular formula: consecutive inactive days multiply the base rate.
         /// Only calculates decay for a single day tick (not cumulative).
         /// </summary>
-        private static int CalculateDecayPoints(double lastActivityDay, double currentDay,
+        public static int CalculateDecayPoints(double lastActivityDay, double currentDay,
             double gracePeriodDays, int basePointsPerDay, int maxPointsPerDay)
         {
             if (lastActivityDay <= 0) return 0; // No activity recorded yet, no decay
@@ -7987,27 +7987,7 @@ namespace SeraphLeveling
             // --- Single-accumulator skills ---
 
             // Walking
-            if (!DecayExemptSkills.Contains("walking") && !DisabledSkills.Contains("walking"))
-            {
-                if (WalkingProgress.TryGetValue(playerUid, out var wProg) && (wProg.TotalCredits > 0 || wProg.PartialCredit > 0))
-                {
-                    var (grace, basePoints, maxPoints) = GetDecayParams("walking");
-                    int decayCredits = CalculateDecayPoints(wProg.LastActivityDay, currentDay, grace, basePoints, maxPoints);
-                    if (decayCredits > 0)
-                    {
-                        int oldCredits = wProg.TotalCredits;
-                        float oldAcc = wProg.PartialCredit; int oldInc = wProg.CurrentIncrementSize;
-                        double rawPenalty = (double)decayCredits;
-                        var (newCr, newAcc, newInc, lost) = ApplySingleAccumulatorDecay(
-                            oldAcc, oldInc, oldCredits,
-                            rawPenalty, BaseBlocksWalkedPerIncrement, WalkingIncrementStep, verboseSb, "Walking");
-                        wProg.TotalCredits = newCr; wProg.PartialCredit = (float)newAcc; wProg.CurrentIncrementSize = newInc;
-                        if (lost > 0) totalDecayApplied += lost;
-                        sb.AppendLine($"  Walking: {oldCredits} \u2192 {newCr} (-{lost} credits, {rawPenalty:F0} pts), {oldAcc:F0}/{oldInc} \u2192 {(int)newAcc}/{newInc}");
-                        pendingWalkingProgressSave = true;
-                    }
-                }
-            }
+            totalDecayApplied += WalkingProgressData.ApplyDecay(player, currentDay, sb, verboseSb);
 
             // Hunger
             if (!DecayExemptSkills.Contains("hunger") && !DisabledSkills.Contains("hunger"))
@@ -8564,7 +8544,7 @@ namespace SeraphLeveling
         /// Computes absolute position from oldTotalCredits (more robust than from incrementSize),
         /// subtracts rawPenalty, converts back.
         /// </summary>
-        private static (int newCredits, double newAccumulator, int newIncrementSize, int creditsLost)
+        public static (int newCredits, double newAccumulator, int newIncrementSize, int creditsLost)
             ApplySingleAccumulatorDecay(
             double currentAccumulator, int currentIncrementSize, int oldTotalCredits,
             double rawPenalty, int baseIncrement, int incrementStep,
