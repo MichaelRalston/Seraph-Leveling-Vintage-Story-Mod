@@ -12,7 +12,12 @@ namespace SeraphLeveling
     {
 
     }
-    public abstract record class AttributeModifierDefinition<T, PD>: ISaveableAttribute where T : AttributeModifierDefinition<T, PD> where PD : AAttributeModifierProgressData<T, PD>
+
+    public interface IConstructable<D, PD>
+    {
+        static abstract PD Create(D def);
+    }
+    public abstract record class AttributeModifierDefinition<D, PD>: ISaveableAttribute where D : AttributeModifierDefinition<D, PD>, IConstructable<D, PD> where PD : AAttributeModifierProgressData<D, PD>
     {
         public required string Id { get; init; }
         public required string SaveKey { get; init; }
@@ -36,7 +41,8 @@ namespace SeraphLeveling
 
         private static readonly object persistLock = new object();
 
-        protected abstract PD CreateProgressData();
+        protected PD CreateProgressData() => D.Create((D)this);
+
 
         public bool IsSavePending()
         {
@@ -193,7 +199,16 @@ namespace SeraphLeveling
 
     }
 
-    public abstract record class LeveledAttributeModifierDefinition : AttributeModifierDefinition<LeveledAttributeModifierDefinition, LeveledAttributeModifierProgressData>
+    public abstract record class LeveledPartialAttributeModifierDefinition: LeveledAttributeModifierDefinition<LeveledPartialAttributeModifierDefinition, LeveledPartialAttributeModifierProgressData>, IConstructable<LeveledPartialAttributeModifierDefinition, LeveledPartialAttributeModifierProgressData>
+    {
+        public static LeveledPartialAttributeModifierProgressData Create(LeveledPartialAttributeModifierDefinition definition) { return new LeveledPartialAttributeModifierProgressData(definition); }
+    }
+
+    public abstract record class LeveledToolAttributeModifierDefinition: LeveledAttributeModifierDefinition<LeveledToolAttributeModifierDefinition, LeveledToolAttributeModifierProgressData>, IConstructable<LeveledToolAttributeModifierDefinition, LeveledToolAttributeModifierProgressData>
+    {
+        public static LeveledToolAttributeModifierProgressData Create(LeveledToolAttributeModifierDefinition definition) { return new LeveledToolAttributeModifierProgressData(definition); }
+    }
+    public abstract record class LeveledAttributeModifierDefinition<D, PD>  : AttributeModifierDefinition<D, PD> where PD : LeveledAttributeModifierProgressData<D, PD> where D: LeveledAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
     {
         public required string Name { get; init; }
         public required string Stat { get; init; }
@@ -204,14 +219,12 @@ namespace SeraphLeveling
         public required int IncrementStep { get; init; }
         public required string IncrementUnits { get; init; }
 
-        protected override LeveledAttributeModifierProgressData CreateProgressData() => new(this);
-
         public virtual int GetMaxCredits(EntityPlayer player) => GlobalMaxCredits;
 
         public override int ApplyDecay(IServerPlayer player, double currentDay, StringBuilder sb, StringBuilder verboseSb) {
             if (!SeraphLevelingModSystem.DecayExemptSkills.Contains(SkillKey) && !SeraphLevelingModSystem.DisabledSkills.Contains(SkillKey))
             {
-                if (ProgressDictionary.TryGetValue(player.PlayerUID, out var progressB) && (progressB is LeveledAttributeModifierProgressData progress) && (progress.TotalCredits > 0 || progress.PartialCredit > 0))
+                if (ProgressDictionary.TryGetValue(player.PlayerUID, out var progressB) && (progressB is PD progress) && (progress.TotalCredits > 0 || progress.PartialCredit > 0))
                 {
                     var (grace, basePoints, maxPoints) = SeraphLevelingModSystem.GetDecayParams(SkillKey);
                     int decayCredits = SeraphLevelingModSystem.CalculateDecayPoints(progress.LastActivityDay, currentDay, grace, basePoints, maxPoints);
@@ -227,7 +240,7 @@ namespace SeraphLeveling
         public override int ApplyDeathPenalty(IServerPlayer player, StringBuilder sb) {
             if (!SeraphLevelingModSystem.DeathPenaltyExemptSkills.Contains(SkillKey) && !SeraphLevelingModSystem.DisabledSkills.Contains(SkillKey))
             {
-                if (ProgressDictionary.TryGetValue(player.PlayerUID, out var progressB) && (progressB is LeveledAttributeModifierProgressData progress) && (progress.TotalCredits > 0 || progress.PartialCredit > 0))
+                if (ProgressDictionary.TryGetValue(player.PlayerUID, out var progressB) && (progressB is LeveledAttributeModifierProgressData<D, PD> progress) && (progress.TotalCredits > 0 || progress.PartialCredit > 0))
                 {
                     double rawPenalty = BaseIncrement * SeraphLevelingModSystem.DeathPenaltyFraction * Math.Sqrt(Math.Max(1, progress.TotalCredits));
                     return progress.ApplyStatPenalty(rawPenalty, sb, null);
