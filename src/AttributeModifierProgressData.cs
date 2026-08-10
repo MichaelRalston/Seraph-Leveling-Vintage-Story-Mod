@@ -68,7 +68,7 @@ namespace SeraphLeveling
                 rawPenalty, Definition.BaseIncrement, Definition.IncrementStep, verboseSb, Definition.SkillKey);
             TotalCredits = newCr; PartialCredit = (float)newAcc; CurrentIncrementSize = newInc;
             sb.AppendLine($"  {Definition.Name}: {oldCredits} \u2192 {newCr} (-{lost} credits, {rawPenalty:F0} pts), {oldAcc:F0}/{oldInc} \u2192 {(int)newAcc}/{newInc}");
-            Definition.MarkForSave();
+            Definition.MarkForSave(true);
             if (lost > 0) return lost;
             return 0;
         }
@@ -95,7 +95,7 @@ namespace SeraphLeveling
             PartialCredit = 0;
             CalculateIncrementSize();
 
-            Definition.MarkForSave();
+            Definition.MarkForSave(true);
             int bonusPercent = Definition.ApplyBonus(player, this);
             UpdateSkillActivityDay();
 

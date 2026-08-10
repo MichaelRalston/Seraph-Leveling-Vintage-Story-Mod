@@ -10,8 +10,13 @@ namespace SeraphLeveling
 {
     public interface ISaveableAttribute
     {
-
+        public string Id { get; }
+        public bool HasUnsavedProgress();
+        public void MarkForSave(bool pending);
+        public void PersistProgress(ICoreServerAPI serverApi);
+        public void ResetProgress();
     }
+
     public abstract record class AttributeModifierDefinition<T, PD>: ISaveableAttribute where T : AttributeModifierDefinition<T, PD> where PD : AAttributeModifierProgressData<T, PD>
     {
         public required string Id { get; init; }
@@ -34,18 +39,21 @@ namespace SeraphLeveling
             }
         }
 
+        public bool HasUnsavedProgress() => !ProgressDictionary.IsEmpty;
+        public void ResetProgress() => ProgressDictionary.Clear();
+
         private static readonly object persistLock = new object();
 
-        protected abstract PD CreateProgressData();
+        public abstract PD CreateProgressData();
 
         public bool IsSavePending()
         {
             return SeraphLevelingModSystem.PendingSaves.GetValueOrDefault(this, false);
         }
 
-        public void MarkForSave()
+        public void MarkForSave(bool pending)
         {
-            SeraphLevelingModSystem.PendingSaves.AddOrUpdate(this, true, (_, _) => true);
+            SeraphLevelingModSystem.PendingSaves.AddOrUpdate(this, pending, (_, _) => pending);
         }
 
         public virtual void LoadProgress(ICoreServerAPI serverApi)
@@ -95,7 +103,7 @@ namespace SeraphLeveling
                             }
                         }
                         if (version != PersistenceVersion) {
-                            MarkForSave();
+                            MarkForSave(true);
                         }
                     }
                 }
@@ -204,7 +212,7 @@ namespace SeraphLeveling
         public required int IncrementStep { get; init; }
         public required string IncrementUnits { get; init; }
 
-        protected override LeveledAttributeModifierProgressData CreateProgressData() => new(this);
+        public override LeveledAttributeModifierProgressData CreateProgressData() => new(this);
 
         public virtual int GetMaxCredits(EntityPlayer player) => GlobalMaxCredits;
 
@@ -242,7 +250,7 @@ namespace SeraphLeveling
             progress.PartialCredit = 0;
             progress.CurrentIncrementSize = BaseIncrement;
             progress.LastActivityDay = 0;
-            MarkForSave();
+            MarkForSave(true);
             ApplyBonus(player, progress);
         }
         public void MaxStat(IServerPlayer player) {
@@ -250,14 +258,14 @@ namespace SeraphLeveling
             int maxCredits = GetMaxCredits(player.Entity);
             progress.TotalCredits = maxCredits;
             progress.PartialCredit = 0;
-            MarkForSave();
+            MarkForSave(true);
             ApplyBonus(player, progress);
         }
         public void ApplyTraitTestSuite1Command(IServerPlayer player) {
             var progress = GetDict(player);
             progress.TotalCredits = 1;
             progress.PartialCredit = 0;
-            MarkForSave();
+            MarkForSave(true);
             ApplyBonus(player, progress);
         }
 
@@ -323,7 +331,7 @@ namespace SeraphLeveling
             int maxLevel = GetMaxCredits(player.Entity);
             if (level > maxLevel) return TextCommandResult.Error($"Level cannot exceed max ({maxLevel}).");
             progress.TotalCredits = level;
-            MarkForSave();
+            MarkForSave(true);
             ApplyBonus(player, progress);
             progress.UpdateSkillActivityDay();
             return TextCommandResult.Success($"{Name} level set to {level} (+{level}{Stat}) for {player.PlayerName}.");
@@ -340,7 +348,7 @@ namespace SeraphLeveling
                 }
 
                 GlobalMaxCredits = newValue.Value;
-                MarkForSave();
+                MarkForSave(true);
 
                 // Recalculate and reapply bonuses for all online players
                 foreach (IServerPlayer player in SeraphLevelingModSystem.ServerApi.World.AllOnlinePlayers)

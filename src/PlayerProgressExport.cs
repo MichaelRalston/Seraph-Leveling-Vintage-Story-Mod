@@ -14,7 +14,7 @@ namespace SeraphLeveling
     /// </summary>
     public class PlayerProgressExport
     {
-        public int FormatVersion = 1;
+        public int FormatVersion = 2;
         public string SourcePlayerName;
         public string SourcePlayerUid;
         public double ExportedGameDay;
@@ -22,7 +22,7 @@ namespace SeraphLeveling
         public MiningProgressData Mining;
         public MeleeProgressData Melee;
         public RangedProgressData Ranged;
-        public WalkingProgressData Walking;
+        public LeveledAttributeModifierProgressData Walking;
         public HungerProgressData Hunger;
         public ArmorProgressData Armor;
         public ClothierProgressData Clothier;

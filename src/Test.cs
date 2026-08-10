@@ -664,13 +664,13 @@ namespace SeraphLeveling
             }
 
             // PERS-007: Walking data exists in dictionary
-            bool hasWalkingData = SeraphLevelingModSystem.WalkingProgress.ContainsKey(playerUid);
+            bool hasWalkingData = AttributeModifierDefinitions.WalkingSpeed.ProgressDictionary.ContainsKey(playerUid);
             AssertTrue("PERS-007", "Walking data exists in dictionary", hasWalkingData, "exists", "missing");
 
             // PERS-008: Walking WatchedAttributes matches dictionary
             if (hasWalkingData)
             {
-                var walkingData = SeraphLevelingModSystem.WalkingProgress[playerUid];
+                var walkingData = AttributeModifierDefinitions.WalkingSpeed.ProgressDictionary[playerUid];
                 int watchedLevel = watchedAttrs.GetInt(SeraphLevelingModSystem.WATCHED_WALKING_LEVEL, -999);
                 AssertEqual("PERS-008", "Walking level synced to WatchedAttributes", walkingData.TotalCredits, watchedLevel);
             }
