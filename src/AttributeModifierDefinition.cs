@@ -12,15 +12,13 @@ namespace SeraphLeveling
     {
 
     }
-    public record class AttributeModifierDefinition<T, PD>: ISaveableAttribute where T : AttributeModifierDefinition<T, PD> where PD : AAttributeModifierProgressData<T, PD>
+    public abstract record class AttributeModifierDefinition<T, PD>: ISaveableAttribute where T : AttributeModifierDefinition<T, PD> where PD : AAttributeModifierProgressData<T, PD>
     {
         public required string Id { get; init; }
-        public required System.Func<AttributeModifierDefinition<T, PD>, PD> ProgressDataFactory { get; init; }
         public required string SaveKey { get; init; }
         public required string SkillKey { get; init; }
         public required string Description { get; init; }
         public required string PersistenceHeader { get; init; }
-        public required System.Func<IServerPlayer, PD, int> ApplyBonus { get; init; }
         public virtual int PersistenceVersion { get; } = 1;
 
         public byte[] PersistenceHeaderBytes => Encoding.ASCII.GetBytes(PersistenceHeader);
@@ -37,6 +35,8 @@ namespace SeraphLeveling
         }
 
         private static readonly object persistLock = new object();
+
+        protected abstract PD CreateProgressData();
 
         public bool IsSavePending()
         {
@@ -77,7 +77,7 @@ namespace SeraphLeveling
                         }
 
                         byte version = reader.ReadByte();
-                        var progressData = ProgressDataFactory(this);
+                        var progressData = CreateProgressData();
 
                         int playerCount = reader.ReadInt32();
                         for (int i = 0; i < playerCount; i++)
@@ -178,28 +178,32 @@ namespace SeraphLeveling
             return 0;
         }
 
+        public abstract int ApplyBonus(IServerPlayer player, PD progressData);
+
         public void ApplyBonusIfExists(IServerPlayer player) {
             if (ProgressDictionary.TryGetValue(player.PlayerUID, out var progress))
-            ApplyBonus(player, progress);
+                ApplyBonus(player, progress);
         }
 
         protected PD GetDict(IPlayer player) {
-            return ProgressDictionary.GetOrAdd(player.PlayerUID, _ => ProgressDataFactory(this));
+            return ProgressDictionary.GetOrAdd(player.PlayerUID, _ => CreateProgressData());
         }
 
     }
 
-    public record class LeveledAttributeModifierDefinition : AttributeModifierDefinition<LeveledAttributeModifierDefinition, LeveledAttributeModifierProgressData>
+    public abstract record class LeveledAttributeModifierDefinition : AttributeModifierDefinition<LeveledAttributeModifierDefinition, LeveledAttributeModifierProgressData>
     {
         public required string Name { get; init; }
         public required string Stat { get; init; }
         public required string LongDescription { get; init; }
         public required int GlobalMaxCredits { get; set; }
-        public required System.Func<EntityPlayer, int> GetMaxCredits { get; init; }
         public override int PersistenceVersion { get; } = 2;
-
         public required int BaseIncrement { get; init; }
         public required int IncrementStep { get; init; }
+
+        protected override LeveledAttributeModifierProgressData CreateProgressData() => new(this);
+
+        public virtual int GetMaxCredits(EntityPlayer player) => GlobalMaxCredits;
 
         public override int ApplyDecay(IServerPlayer player, double currentDay, StringBuilder sb, StringBuilder verboseSb) {
             if (!SeraphLevelingModSystem.DecayExemptSkills.Contains(SkillKey) && !SeraphLevelingModSystem.DisabledSkills.Contains(SkillKey))
