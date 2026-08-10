@@ -32,7 +32,6 @@ namespace SeraphLeveling
         public int TotalCredits { get; set; }
         /// <summary>Last in-game day when this skill was used. Used for skill decay.</summary>
         public double LastActivityDay { get; set; }
-        /// <summary>Action taken toward the next credit.</summary>
 
         public void UpdateSkillActivityDay()
         {
@@ -74,6 +73,7 @@ namespace SeraphLeveling
         {
             sb.AppendLine($"Progress: {PartialCredit:F1}/{CurrentIncrementSize} {Definition.IncrementUnits}");
         }
+        /// <summary>Action taken toward the next credit.</summary>
         public float PartialCredit { get; set; } = 0; // formerly known as BlocksInIncrement
         /// <summary>Actions needed for the next credit (1000, 2000, 3000, etc.).</summary>
         public int CurrentIncrementSize { get; set; }
