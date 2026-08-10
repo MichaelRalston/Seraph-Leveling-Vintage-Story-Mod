@@ -15,12 +15,20 @@ namespace SeraphLeveling
             Name = "Walking",
             Stat = "% speed",
             LongDescription = "walking speed",
+            IncrementUnits = "blocks",
             BaseIncrement = SeraphLevelingModSystem.BaseBlocksWalkedPerIncrement,
             IncrementStep = SeraphLevelingModSystem.WalkingIncrementStep,
             GlobalMaxCredits = SeraphLevelingModSystem.MaxWalkingSpeedPercent,
             GetMaxCredits = (player) =>
             {
                 return SeraphLevelingModSystem.MaxWalkingSpeedPercent;
+            },
+            CalculateBonus = (entity, progress) =>
+            {
+                bool hasFleetfooted = entity != null && SeraphLevelingModSystem.PlayerHasVanillaFleetfootedStatic(entity);
+                int vanillaBonus = hasFleetfooted ? SeraphLevelingModSystem.VANILLA_FLEETFOOTED_WALK_BONUS : 0;
+                int earnableBonus = Math.Max(0, SeraphLevelingModSystem.MaxWalkingSpeedPercent - vanillaBonus);
+                return Math.Min(progress.TotalCredits, earnableBonus);
             },
             ApplyBonus = (player, progressB) => 
             {
