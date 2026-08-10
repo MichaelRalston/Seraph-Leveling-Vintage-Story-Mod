@@ -7217,7 +7217,6 @@ namespace SeraphLeveling
         private void LoadWalkingProgress()
         {
             AttributeModifierDefinitions.WalkingSpeed.LoadProgress(ServerApi);
-            // LoadProgress<WalkingProgressData>();
         }
 
         /// <summary>
