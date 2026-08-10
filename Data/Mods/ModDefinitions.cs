@@ -10,7 +10,8 @@ namespace SeraphLeveling.Data.Mods
             ModId = "vanilla",
             CharacterClasses = [
                 CharacterClassDefinitions.Commoner,
-                CharacterClassDefinitions.Hunter
+                CharacterClassDefinitions.Hunter,
+                CharacterClassDefinitions.Clockmaker
             ]
         };
 
