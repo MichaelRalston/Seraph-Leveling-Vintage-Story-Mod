@@ -13589,7 +13589,7 @@ namespace SeraphLeveling
             ApplyRangedBonusStatic(player, maxRangedCredits);
 
             // Max Walking
-            WalkingProgressData.MaxStat(player);
+            AttributeModifierDefinitions.WalkingSpeed.MaxStat(player);
 
             // Max Hunger
             int maxHungerCredits = CalculateMaxHungerCredits(player.Entity);

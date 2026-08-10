@@ -18,6 +18,10 @@ namespace SeraphLeveling
             BaseIncrement = SeraphLevelingModSystem.BaseBlocksWalkedPerIncrement,
             IncrementStep = SeraphLevelingModSystem.WalkingIncrementStep,
             GlobalMaxCredits = SeraphLevelingModSystem.MaxWalkingSpeedPercent,
+            GetMaxCredits = (player) =>
+            {
+                return SeraphLevelingModSystem.MaxWalkingSpeedPercent;
+            },
             ApplyBonus = (player, progressB) => 
             {
                 if (progressB is not LeveledAttributeModifierProgressData progress) return 0;

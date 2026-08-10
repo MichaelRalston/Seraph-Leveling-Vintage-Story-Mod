@@ -195,6 +195,7 @@ namespace SeraphLeveling
         public required string Stat { get; init; }
         public required string LongDescription { get; init; }
         public required int GlobalMaxCredits { get; set; }
+        public required System.Func<EntityPlayer, int> GetMaxCredits { get; init; }
         public override int PersistenceVersion { get; } = 2;
 
         public required int BaseIncrement { get; init; }
@@ -234,6 +235,14 @@ namespace SeraphLeveling
             progress.PartialCredit = 0;
             progress.CurrentIncrementSize = BaseIncrement;
             progress.LastActivityDay = 0;
+            MarkForSave();
+            ApplyBonus(player, progress);
+        }
+        public void MaxStat(IServerPlayer player) {
+            var progress = GetDict(player);
+            int maxCredits = GetMaxCredits(player.Entity);
+            progress.TotalCredits = maxCredits;
+            progress.PartialCredit = 0;
             MarkForSave();
             ApplyBonus(player, progress);
         }
