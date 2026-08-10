@@ -9,22 +9,20 @@ namespace SeraphLeveling
     public interface IAttributeModifierProgressData {
 
     }
-    public abstract class AAttributeModifierProgressData<T>: IAttributeModifierProgressData where T : AttributeModifierDefinition<T>
+    public abstract class AAttributeModifierProgressData<D, PD>: IAttributeModifierProgressData where PD : AAttributeModifierProgressData<D,PD> where D: AttributeModifierDefinition<D,PD>
     {
-        protected T Definition { get; init; }
-        protected byte Version { get; init; }
+        protected D Definition { get; init; }
 
-        public AAttributeModifierProgressData(T definition, byte version)
+        public AAttributeModifierProgressData(D definition)
         {
             Definition = definition;
-            Version = version;
         }
 
         public abstract void ReadVersion(byte version, BinaryReader reader);
         public abstract void WriteOut(BinaryWriter writer);
     }
 
-    public class LeveledAttributeModifierProgressData(LeveledAttributeModifierDefinition definition, byte version) : AAttributeModifierProgressData<LeveledAttributeModifierDefinition>(definition, version)
+    public class LeveledAttributeModifierProgressData(LeveledAttributeModifierDefinition definition) : AAttributeModifierProgressData<LeveledAttributeModifierDefinition, LeveledAttributeModifierProgressData>(definition)
     {
         /// <summary>Total credits earned (each credit = 1% bonus).</summary>
         public int TotalCredits { get; set; }

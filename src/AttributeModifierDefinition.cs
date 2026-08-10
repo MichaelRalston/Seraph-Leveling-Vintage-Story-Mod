@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Vintagestory.API.Server;
+using Vintagestory.API.Common;
 
 namespace SeraphLeveling
 {
@@ -11,18 +12,19 @@ namespace SeraphLeveling
     {
 
     }
-    public record class AttributeModifierDefinition<T>: ISaveableAttribute where T : AttributeModifierDefinition<T>
+    public record class AttributeModifierDefinition<T, PD>: ISaveableAttribute where T : AttributeModifierDefinition<T, PD> where PD : AAttributeModifierProgressData<T, PD>
     {
         public required string Id { get; init; }
-        public required Func<AttributeModifierDefinition<T>, byte, AAttributeModifierProgressData<T>> ProgressDataFactory { get; init; }
+        public required System.Func<AttributeModifierDefinition<T, PD>, PD> ProgressDataFactory { get; init; }
         public required string SaveKey { get; init; }
         public required string SkillKey { get; init; }
         public required string Description { get; init; }
         public required string PersistenceHeader { get; init; }
+        public required System.Func<IServerPlayer, PD, int> ApplyBonus { get; init; }
         public virtual int PersistenceVersion { get; } = 1;
 
         public byte[] PersistenceHeaderBytes => Encoding.ASCII.GetBytes(PersistenceHeader);
-        public ConcurrentDictionary<string, AAttributeModifierProgressData<T>> ProgressDictionary
+        public ConcurrentDictionary<string, PD> ProgressDictionary
         {
             get
             {
@@ -30,7 +32,7 @@ namespace SeraphLeveling
                     this,
                     _ => new ConcurrentDictionary<string, IAttributeModifierProgressData>()
                 );
-                return (ConcurrentDictionary<string, AAttributeModifierProgressData<T>>)(object)innerDict;
+                return (ConcurrentDictionary<string, PD>)(object)innerDict;
             }
         }
 
@@ -75,7 +77,7 @@ namespace SeraphLeveling
                         }
 
                         byte version = reader.ReadByte();
-                        var progressData = ProgressDataFactory(this, version);
+                        var progressData = ProgressDataFactory(this);
 
                         int playerCount = reader.ReadInt32();
                         for (int i = 0; i < playerCount; i++)
@@ -168,9 +170,26 @@ namespace SeraphLeveling
             }
             writer.Write(PersistenceVersion);
         }
+
+        public virtual int ApplyDecay(IServerPlayer player, double currentDay, StringBuilder sb, StringBuilder verboseSb) {
+            return 0;
+        }
+        public virtual int ApplyDeathPenalty(IServerPlayer player, StringBuilder sb) {
+            return 0;
+        }
+
+        public void ApplyBonusIfExists(IServerPlayer player) {
+            if (ProgressDictionary.TryGetValue(player.PlayerUID, out var progress))
+            ApplyBonus(player, progress);
+        }
+
+        protected PD GetDict(IPlayer player) {
+            return ProgressDictionary.GetOrAdd(player.PlayerUID, _ => ProgressDataFactory(this));
+        }
+
     }
 
-    public record class LeveledAttributeModifierDefinition : AttributeModifierDefinition<LeveledAttributeModifierDefinition>
+    public record class LeveledAttributeModifierDefinition : AttributeModifierDefinition<LeveledAttributeModifierDefinition, LeveledAttributeModifierProgressData>
     {
         public required string Name { get; init; }
         public required string Stat { get; init; }
@@ -181,7 +200,7 @@ namespace SeraphLeveling
         public required int BaseIncrement { get; init; }
         public required int IncrementStep { get; init; }
 
-        public int ApplyDecay(IServerPlayer player, double currentDay, StringBuilder sb, StringBuilder verboseSb) {
+        public override int ApplyDecay(IServerPlayer player, double currentDay, StringBuilder sb, StringBuilder verboseSb) {
             if (!SeraphLevelingModSystem.DecayExemptSkills.Contains(SkillKey) && !SeraphLevelingModSystem.DisabledSkills.Contains(SkillKey))
             {
                 if (ProgressDictionary.TryGetValue(player.PlayerUID, out var progressB) && (progressB is LeveledAttributeModifierProgressData progress) && (progress.TotalCredits > 0 || progress.PartialCredit > 0))
@@ -197,7 +216,7 @@ namespace SeraphLeveling
             return 0;
         }
 
-        public int ApplyDeathPenalty(IServerPlayer player, StringBuilder sb) {
+        public override int ApplyDeathPenalty(IServerPlayer player, StringBuilder sb) {
             if (!SeraphLevelingModSystem.DeathPenaltyExemptSkills.Contains(SkillKey) && !SeraphLevelingModSystem.DisabledSkills.Contains(SkillKey))
             {
                 if (ProgressDictionary.TryGetValue(player.PlayerUID, out var progressB) && (progressB is LeveledAttributeModifierProgressData progress) && (progress.TotalCredits > 0 || progress.PartialCredit > 0))
@@ -207,6 +226,16 @@ namespace SeraphLeveling
                 }
             }
             return 0;
+        }
+
+        public void ResetProgress(IServerPlayer player) {
+            var progress = GetDict(player);
+            progress.TotalCredits = 0;
+            progress.PartialCredit = 0;
+            progress.CurrentIncrementSize = BaseIncrement;
+            progress.LastActivityDay = 0;
+            MarkForSave();
+            ApplyBonus(player, progress);
         }
 
     }

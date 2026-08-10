@@ -7900,7 +7900,7 @@ namespace SeraphLeveling
             // --- Single-accumulator skills ---
 
             // Walking
-            totalDecayApplied += WalkingProgressData.ApplyDecay(player, currentDay, sb, verboseSb);
+            totalDecayApplied += AttributeModifierDefinitions.WalkingSpeed.ApplyDecay(player, currentDay, sb, verboseSb);
 
             // Hunger
             if (!DecayExemptSkills.Contains("hunger") && !DisabledSkills.Contains("hunger"))
@@ -8131,7 +8131,7 @@ namespace SeraphLeveling
                 ApplyMeleeBonusStatic(player, meleeProg.TotalCredits);
             if (RangedProgress.TryGetValue(playerUid, out var rangedProg))
                 ApplyRangedBonusStatic(player, rangedProg.TotalCredits);
-            WalkingProgressData.ApplyBonusIfExists(player);
+            AttributeModifierDefinitions.WalkingSpeed.ApplyBonusIfExists(player);
             if (HungerProgress.TryGetValue(playerUid, out var hungerProg))
                 ApplyHungerBonusStatic(player, hungerProg.TotalCredits);
             if (ArmorProgress.TryGetValue(playerUid, out var armorProg))
@@ -8715,7 +8715,7 @@ namespace SeraphLeveling
             // --- Single accumulator skills ---
 
             // Walking
-            totalCreditsLost += WalkingProgressData.ApplyDeathPenalty(player, sb);
+            totalCreditsLost += AttributeModifierDefinitions.WalkingSpeed.ApplyDeathPenalty(player, sb);
             // Hunger
             if (!DeathPenaltyExemptSkills.Contains("hunger") && !DisabledSkills.Contains("hunger"))
             {
@@ -13215,7 +13215,7 @@ namespace SeraphLeveling
             ApplyRangedBonusStatic(player, 0);
 
             // Reset Walking
-            WalkingProgressData.ResetProgress(player);
+            AttributeModifierDefinitions.WalkingSpeed.ResetProgress(player);
 
             // Reset Hunger
             if (HungerProgress.TryGetValue(playerUid, out var hungerProg))
