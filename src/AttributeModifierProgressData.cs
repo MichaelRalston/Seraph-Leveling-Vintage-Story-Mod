@@ -71,7 +71,7 @@ namespace SeraphLeveling
             ZeroPartialCredit();
             CalculateIncrementSize();
 
-            Definition.MarkForSave();
+            Definition.MarkForSave(true);
             int bonusPercent = Definition.ApplyBonus(player, (PD)this);
             UpdateSkillActivityDay();
 
@@ -155,7 +155,7 @@ namespace SeraphLeveling
                 rawPenalty, Definition.BaseIncrement, Definition.IncrementStep, verboseSb, Definition.SkillKey);
             TotalCredits = newCr; PartialCredit = (float)newAcc; CurrentIncrementSize = newInc;
             sb.AppendLine($"  {Definition.Name}: {oldCredits} \u2192 {newCr} (-{lost} credits, {rawPenalty:F0} pts), {oldAcc:F0}/{oldInc} \u2192 {(int)newAcc}/{newInc}");
-            Definition.MarkForSave();
+            Definition.MarkForSave(true);
             if (lost > 0) return lost;
             return 0;
         }
@@ -254,7 +254,7 @@ namespace SeraphLeveling
                     ToolProgress, p => p.CurrentIncrementSize,
                     Definition.Tool.BaseIncrement, Definition.Tool.IncrementStep);
 
-                Definition.MarkForSave();
+                Definition.MarkForSave(true);
                 int bonusPercent = Definition.ApplyBonus(player, (PD)this);
                 Definition.CheckUnlocks(player);
                 UpdateSkillActivityDay();
@@ -270,7 +270,7 @@ namespace SeraphLeveling
                 TotalCredits = level;
                 ToolProgress.Clear();
 
-                Definition.MarkForSave();
+                Definition.MarkForSave(true);
                 int bonusPercent = Definition.ApplyBonus(player, (PD)this);
                 Definition.CheckUnlocks(player);
                 UpdateSkillActivityDay();
@@ -345,7 +345,7 @@ namespace SeraphLeveling
                     else
                         sb.AppendLine($"    {entry.Item1}: {(int)entry.Item2}/{entry.Item3} \u2192 removed (-{oldToolCr} cr)");
                 }
-                Definition.MarkForSave();
+                Definition.MarkForSave(true);
                 if (lost > 0) return lost;
             }
             else
@@ -353,7 +353,7 @@ namespace SeraphLeveling
                 int lost = Math.Min((int)rawPenalty, oldCredits);
                 TotalCredits -= lost;
                 if (lost > 0) { sb.AppendLine($"  {Definition.Name}: {oldCredits} \u2192 {TotalCredits} (-{lost} credits)"); }
-                Definition.MarkForSave();
+                Definition.MarkForSave(true);
                 return lost;
             }
             return 0;
