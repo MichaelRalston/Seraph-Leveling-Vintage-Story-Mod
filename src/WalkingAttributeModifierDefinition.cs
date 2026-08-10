@@ -1,4 +1,5 @@
 using System;
+using Vintagestory.API.Common;
 using Vintagestory.API.Server;
 
 namespace SeraphLeveling
@@ -47,6 +48,14 @@ namespace SeraphLeveling
             }
 
             return bonusPercent;
+        }
+
+        public override int CalculateBonus(EntityPlayer entity, LeveledAttributeModifierProgressData progress)
+        {
+            bool hasFleetfooted = entity != null && SeraphLevelingModSystem.PlayerHasVanillaFleetfootedStatic(entity);
+            int vanillaBonus = hasFleetfooted ? SeraphLevelingModSystem.VANILLA_FLEETFOOTED_WALK_BONUS : 0;
+            int earnableBonus = Math.Max(0, SeraphLevelingModSystem.MaxWalkingSpeedPercent - vanillaBonus);
+            return Math.Min(progress.TotalCredits, earnableBonus);
         }
     }
 }
