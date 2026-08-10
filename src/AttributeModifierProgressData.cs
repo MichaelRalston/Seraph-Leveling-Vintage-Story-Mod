@@ -25,6 +25,28 @@ namespace SeraphLeveling
         public abstract void WriteOut(BinaryWriter writer);
     }
 
+    public class UnlockedAttributeModifierProgressData(UnlockedAttributeModifierDefinition definition) : AAttributeModifierProgressData<UnlockedAttributeModifierDefinition, UnlockedAttributeModifierProgressData>(definition)
+    {
+        /// <summary>Whether the trait has been unlocked.</summary>
+        public bool IsUnlocked { get; set; } = false;
+
+        public override void ReadVersion(byte version, BinaryReader reader)
+        {
+            switch (version) {
+                case 1:
+                    IsUnlocked = reader.ReadBoolean();
+                    break;
+                default:
+                    throw new NotSupportedException($"Version {version} is not supported");
+            }
+        }
+
+        public override void WriteOut(BinaryWriter writer)
+        {
+            writer.Write(IsUnlocked);
+        }
+    }
+
     public abstract class LeveledAttributeModifierProgressData<D, PD>(D definition) : AAttributeModifierProgressData<D, PD>(definition) where PD : LeveledAttributeModifierProgressData<D, PD> where D : LeveledAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
     {
         /// <summary>Total credits earned (each credit = 1% bonus).</summary>

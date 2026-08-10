@@ -2011,8 +2011,7 @@ namespace SeraphLeveling
             var improviserProg = ImproviserProgress.GetOrAdd(playerUid, _ => new ImproviserProgressData());
             sb.AppendLine($"Improviser: {(improviserProg.IsUnlocked ? "UNLOCKED" : $"{improviserProg.TotalRockDamage:F0} rock damage (locked)")}");
 
-            var tinkererProg = TinkererProgress.GetOrAdd(playerUid, _ => new TinkererProgressData());
-            sb.AppendLine($"Tinkerer: {(tinkererProg.IsUnlocked ? "UNLOCKED" : "locked")}");
+            AttributeModifierDefinitions.Tinkerer.GetTraitAllCommandLine(player, sb);
 
             var mercilessProg = MercilessProgress.GetOrAdd(playerUid, _ => new MercilessProgressData());
             sb.AppendLine($"Merciless: {(mercilessProg.IsUnlocked ? "UNLOCKED" : "locked")}");
@@ -11127,12 +11126,12 @@ namespace SeraphLeveling
             player.Entity.WatchedAttributes.SetBool(WATCHED_TINKERER_UNLOCKED, unlocked);
 
             // Update extraTraits to show Tinkerer trait if unlocked (for UI display)
-            UpdateExtraTraitStatic(player.Entity, TINKERER_TRAIT_CODE, unlocked);
+            UpdateExtraTraitStatic(player.Entity, AttributeModifierDefinitions.Tinkerer.ExtraTraitKey, unlocked);
 
             // IMPORTANT: Add "tinkerer" to extraTraits to unlock tuning spear recipes
             // The game's recipe system checks extraTraits for dynamically granted traits
             // that unlock recipes via requiresTrait (e.g., the tuning spear requires "tinkerer")
-            UpdateExtraTraitStatic(player.Entity, "tinkerer", unlocked);
+            UpdateExtraTraitStatic(player.Entity, AttributeModifierDefinitions.Tinkerer.Id, unlocked);
         }
 
         /// <summary>

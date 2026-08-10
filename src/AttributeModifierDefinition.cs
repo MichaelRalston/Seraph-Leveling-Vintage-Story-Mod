@@ -25,7 +25,6 @@ namespace SeraphLeveling
     {
         public required string Id { get; init; }
         public required string SaveKey { get; init; }
-        public required string SkillKey { get; init; }
         public required string Description { get; init; }
         public required string PersistenceHeader { get; init; }
         public virtual int PersistenceVersion { get; } = 1;
@@ -191,19 +190,26 @@ namespace SeraphLeveling
             return 0;
         }
 
-        public abstract int ApplyBonus(IServerPlayer player, PD progressData);
-
-        public abstract int CalculateBonus(EntityPlayer entity, PD progress);
-
-        public void ApplyBonusIfExists(IServerPlayer player) {
-            if (ProgressDictionary.TryGetValue(player.PlayerUID, out var progress))
-                ApplyBonus(player, progress);
-        }
-
         protected PD GetDict(IPlayer player) {
             return ProgressDictionary.GetOrAdd(player.PlayerUID, _ => CreateProgressData());
         }
 
+    }
+
+    public record class UnlockedAttributeModifierDefinition : AttributeModifierDefinition<UnlockedAttributeModifierDefinition, UnlockedAttributeModifierProgressData>, IConstructable<UnlockedAttributeModifierDefinition, UnlockedAttributeModifierProgressData>
+    {
+        public required string Name { get; init; }
+        public required string ExtraTraitKey { get; init; }
+
+        public static UnlockedAttributeModifierProgressData Create(UnlockedAttributeModifierDefinition definition)
+        {
+            return new UnlockedAttributeModifierProgressData(definition);
+        }
+
+        public void GetTraitAllCommandLine(IPlayer player, StringBuilder sb) {
+            var progress = GetDict(player);
+            sb.AppendLine($"{Name}: {(progress.IsUnlocked ? "UNLOCKED" : "locked")}");
+        }
     }
 
     public abstract record class LeveledPartialAttributeModifierDefinition: LeveledAttributeModifierDefinition<LeveledPartialAttributeModifierDefinition, LeveledPartialAttributeModifierProgressData>, IConstructable<LeveledPartialAttributeModifierDefinition, LeveledPartialAttributeModifierProgressData>
@@ -215,8 +221,10 @@ namespace SeraphLeveling
     {
         public static LeveledToolAttributeModifierProgressData Create(LeveledToolAttributeModifierDefinition definition) { return new LeveledToolAttributeModifierProgressData(definition); }
     }
+
     public abstract record class LeveledAttributeModifierDefinition<D, PD>  : AttributeModifierDefinition<D, PD> where PD : LeveledAttributeModifierProgressData<D, PD> where D: LeveledAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
     {
+        public required string SkillKey { get; init; }
         public required string Name { get; init; }
         public required string Stat { get; init; }
         public required string LongDescription { get; init; }
@@ -227,6 +235,15 @@ namespace SeraphLeveling
         public required string IncrementUnits { get; init; }
 
         public virtual int GetMaxCredits(EntityPlayer player) => GlobalMaxCredits;
+
+        public abstract int ApplyBonus(IServerPlayer player, PD progressData);
+
+        public abstract int CalculateBonus(EntityPlayer entity, PD progress);
+
+        public void ApplyBonusIfExists(IServerPlayer player) {
+            if (ProgressDictionary.TryGetValue(player.PlayerUID, out var progress))
+                ApplyBonus(player, progress);
+        }
 
         public override int ApplyDecay(IServerPlayer player, double currentDay, StringBuilder sb, StringBuilder verboseSb) {
             if (!SeraphLevelingModSystem.DecayExemptSkills.Contains(SkillKey) && !SeraphLevelingModSystem.DisabledSkills.Contains(SkillKey))

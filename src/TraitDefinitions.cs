@@ -11,5 +11,13 @@ namespace SeraphLeveling
                 AttributeModifierDefinitions.WalkingSpeed
             ]
         };
+
+        public static readonly TraitDefinition Tinkerer = new()
+        {
+            Id = "tinkerer",
+            Attributes = [
+                AttributeModifierDefinitions.Tinkerer
+            ]
+        };
     }
 }
