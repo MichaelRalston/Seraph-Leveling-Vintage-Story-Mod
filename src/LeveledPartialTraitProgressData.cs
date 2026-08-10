@@ -80,47 +80,46 @@ namespace SeraphLeveling {
         public abstract int GetBaseIncrement();
 
         public void DoEvent(IServerPlayer player, V score) {
-                // Skip all processing if already at max - completely invisible
-                var maxCredits = GetMaxCredits(player.Entity);
-                if (TotalCredits >= maxCredits) return;
+            // Skip all processing if already at max - completely invisible
+            var maxCredits = GetMaxCredits(player.Entity);
+            if (TotalCredits >= maxCredits) return;
 
-                int oldCredits = TotalCredits;
+            int oldCredits = TotalCredits;
 
-                // Apply sleep buff multiplier to score
-                float modifiedScore = SeraphLevelingModSystem.ApplyXPMultiplier(player.PlayerUID, float.CreateTruncating(score));
+            // Apply sleep buff multiplier to score
+            float modifiedScore = SeraphLevelingModSystem.ApplyXPMultiplier(player.PlayerUID, float.CreateTruncating(score));
 
-                // Add distance to progress
-                PartialCredit += V.CreateTruncating(modifiedScore);
+            // Add distance to progress
+            PartialCredit += V.CreateTruncating(modifiedScore);
 
-                // Check if we've earned any new credits
-                var incrementStep = GetIncrementStep();
-                var units = GetIncrementUnits();
-                while (PartialCredit >= V.CreateTruncating(CurrentIncrementSize) && TotalCredits < maxCredits)
-                {
-                    // Earn a credit
-                    TotalCredits++;
-                    PartialCredit -= V.CreateTruncating(CurrentIncrementSize);
-                    CurrentIncrementSize += incrementStep;
+            // Check if we've earned any new credits
+            var incrementStep = GetIncrementStep();
+            var units = GetIncrementUnits();
+            while (PartialCredit >= V.CreateTruncating(CurrentIncrementSize) && TotalCredits < maxCredits)
+            {
+                // Earn a credit
+                TotalCredits++;
+                PartialCredit -= V.CreateTruncating(CurrentIncrementSize);
+                CurrentIncrementSize += incrementStep;
 
-                    SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Player {player.PlayerName} earned {T.Description} credit {TotalCredits}, next requires {CurrentIncrementSize} {units}");
-                }
+                SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Player {player.PlayerName} earned {T.Description} credit {TotalCredits}, next requires {CurrentIncrementSize} {units}");
+            }
 
-                // Mark for saving if any progress was made
-                if (PartialCredit > V.Zero || TotalCredits > oldCredits)
-                {
-                    T.MarkForSave();
-                }
+            // Mark for saving if any progress was made
+            if (PartialCredit > V.Zero || TotalCredits > oldCredits)
+            {
+                T.MarkForSave();
+            }
 
-                // If credits increased, update the stat and notify player
-                if (TotalCredits > oldCredits)
-                {
-                    ApplyBonus(player);
+            // If credits increased, update the stat and notify player
+            if (TotalCredits > oldCredits)
+            {
+                ApplyBonus(player);
 
-                    // Notify player of level up with raw improvement (shows progress even when capped)
-                    SeraphLevelingModSystem.NotifyLevelUp(player,
-                        Lang.Get($"seraphleveling:message-{T.Description}-level-up", TotalCredits, TotalCredits));
-                }
-
+                // Notify player of level up with raw improvement (shows progress even when capped)
+                SeraphLevelingModSystem.NotifyLevelUp(player,
+                    Lang.Get($"seraphleveling:message-{T.Description}-level-up", TotalCredits, TotalCredits));
+            }
         }
 
 

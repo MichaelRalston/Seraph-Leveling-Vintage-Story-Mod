@@ -665,8 +665,8 @@ namespace SeraphLeveling
         // MULTI-MOD COMPATIBILITY
         // =========================================================================
 
-        public static ConcurrentDictionary<AttributeModifierDefinition, ConcurrentDictionary<string, AAttributeModifierProgressData>> ProgressData = [];
-        public static ConcurrentDictionary<AttributeModifierDefinition, bool> PendingSaves = [];
+        public static ConcurrentDictionary<ISaveableAttribute, ConcurrentDictionary<string, IAttributeModifierProgressData>> ProgressData = [];
+        public static ConcurrentDictionary<ISaveableAttribute, bool> PendingSaves = [];
 
         public static HashSet<ModDefinition> LoadedMods { get; internal set; } = [ ModDefinitions.Vanilla ];
         public static HashSet<ModDefinition> DetectLoadedMods(IModLoader modLoader)
@@ -7153,7 +7153,8 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistWalkingProgress()
         {
-            PersistProgress<WalkingProgressData>();
+            AttributeModifierDefinitions.WalkingSpeed.PersistProgress(ServerApi);
+            // PersistProgress<WalkingProgressData>();
         }
 
         private void LoadProgress<T>() where T:ProgressData<T>,IProgressDataContract<T>
@@ -7216,7 +7217,8 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadWalkingProgress()
         {
-            LoadProgress<WalkingProgressData>();
+            AttributeModifierDefinitions.WalkingSpeed.LoadProgress(ServerApi);
+            // LoadProgress<WalkingProgressData>();
         }
 
         /// <summary>

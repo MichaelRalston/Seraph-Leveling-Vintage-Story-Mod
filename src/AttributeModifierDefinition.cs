@@ -7,17 +7,34 @@ using Vintagestory.API.Server;
 
 namespace SeraphLeveling
 {
-    public record class AttributeModifierDefinition
+    public interface ISaveableAttribute
+    {
+
+    }
+    public record class AttributeModifierDefinition<T>: ISaveableAttribute where T : AttributeModifierDefinition<T>
     {
         public required string Id { get; init; }
-        public required Func<AttributeModifierDefinition, byte, AAttributeModifierProgressData> ProgressDataFactory { get; init; }
+        public required Func<AttributeModifierDefinition<T>, byte, AAttributeModifierProgressData<T>> ProgressDataFactory { get; init; }
         public required string SaveKey { get; init; }
+        public required string SkillKey { get; init; }
         public required string Description { get; init; }
         public required string PersistenceHeader { get; init; }
         public virtual int PersistenceVersion { get; } = 1;
 
         public byte[] PersistenceHeaderBytes => Encoding.ASCII.GetBytes(PersistenceHeader);
-        public ConcurrentDictionary<string, AAttributeModifierProgressData> ProgressDictionary => SeraphLevelingModSystem.ProgressData.GetOrAdd(this, _ => []);
+        public ConcurrentDictionary<string, AAttributeModifierProgressData<T>> ProgressDictionary
+        {
+            get
+            {
+                var innerDict = SeraphLevelingModSystem.ProgressData.GetOrAdd(
+                    this,
+                    _ => new ConcurrentDictionary<string, IAttributeModifierProgressData>()
+                );
+                return (ConcurrentDictionary<string, AAttributeModifierProgressData<T>>)(object)innerDict;
+            }
+        }
+
+        private static readonly object persistLock = new object();
 
         public bool IsSavePending()
         {
@@ -89,6 +106,52 @@ namespace SeraphLeveling
             }
         }
 
+        public virtual void PersistProgress(ICoreServerAPI serverApi)
+        {
+            if (serverApi == null) return;
+            var progress = ProgressDictionary;
+
+            lock (persistLock)
+            {
+                if (progress.IsEmpty)
+                {
+                    return;
+                }
+
+                try
+                {
+                    var snapshot = progress.ToArray();
+
+                    byte[] data;
+                    using (var ms = new MemoryStream())
+                    {
+                        using (var writer = new BinaryWriter(ms))
+                        {
+                            WriteHeader(writer);
+
+                            // Write number of players
+                            writer.Write(snapshot.Length);
+
+                            foreach (var playerKvp in snapshot)
+                            {
+                                writer.Write(playerKvp.Key);   // Player UID
+                                var p = playerKvp.Value;
+                                p.WriteOut(writer);
+                            }
+                        }
+                        data = ms.ToArray();
+                    }
+
+                    serverApi.WorldManager.SaveGame.StoreData(SaveKey, data);
+                    serverApi.Logger.Debug($"[SeraphLeveling] Persisted {Description} progress for {snapshot.Length} players");
+                }
+                catch (Exception ex)
+                {
+                    serverApi.Logger.Error($"[SeraphLeveling] Failed to persist {Description} progress: {ex.Message}");
+                }
+            }
+        }
+
         private bool ReadHeader(BinaryReader reader)
         {
             bool hasProblem = false;
@@ -99,14 +162,52 @@ namespace SeraphLeveling
             }
             return !hasProblem;
         }
+        public void WriteHeader(BinaryWriter writer) {
+            foreach (var b in PersistenceHeaderBytes) {
+                writer.Write(b);
+            }
+            writer.Write(PersistenceVersion);
+        }
     }
 
-    public record class LeveledAttributeModifierDefinition : AttributeModifierDefinition
+    public record class LeveledAttributeModifierDefinition : AttributeModifierDefinition<LeveledAttributeModifierDefinition>
     {
         public required string Name { get; init; }
         public required string Stat { get; init; }
         public required string LongDescription { get; init; }
         public required int GlobalMaxCredits { get; set; }
         public override int PersistenceVersion { get; } = 2;
+
+        public required int BaseIncrement { get; init; }
+        public required int IncrementStep { get; init; }
+
+        public int ApplyDecay(IServerPlayer player, double currentDay, StringBuilder sb, StringBuilder verboseSb) {
+            if (!SeraphLevelingModSystem.DecayExemptSkills.Contains(SkillKey) && !SeraphLevelingModSystem.DisabledSkills.Contains(SkillKey))
+            {
+                if (ProgressDictionary.TryGetValue(player.PlayerUID, out var progressB) && (progressB is LeveledAttributeModifierProgressData progress) && (progress.TotalCredits > 0 || progress.PartialCredit > 0))
+                {
+                    var (grace, basePoints, maxPoints) = SeraphLevelingModSystem.GetDecayParams(SkillKey);
+                    int decayCredits = SeraphLevelingModSystem.CalculateDecayPoints(progress.LastActivityDay, currentDay, grace, basePoints, maxPoints);
+                    if (decayCredits > 0)
+                    {
+                        return progress.ApplyStatPenalty(decayCredits, sb, verboseSb);
+                    }
+                }
+            }
+            return 0;
+        }
+
+        public int ApplyDeathPenalty(IServerPlayer player, StringBuilder sb) {
+            if (!SeraphLevelingModSystem.DeathPenaltyExemptSkills.Contains(SkillKey) && !SeraphLevelingModSystem.DisabledSkills.Contains(SkillKey))
+            {
+                if (ProgressDictionary.TryGetValue(player.PlayerUID, out var progressB) && (progressB is LeveledAttributeModifierProgressData progress) && (progress.TotalCredits > 0 || progress.PartialCredit > 0))
+                {
+                    double rawPenalty = BaseIncrement * SeraphLevelingModSystem.DeathPenaltyFraction * Math.Sqrt(Math.Max(1, progress.TotalCredits));
+                    return progress.ApplyStatPenalty(rawPenalty, sb, null);
+                }
+            }
+            return 0;
+        }
+
     }
 }
