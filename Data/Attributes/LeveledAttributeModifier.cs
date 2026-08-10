@@ -1,12 +1,6 @@
-using System;
-using System.Linq;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.IO;
 using System.Text;
 using Vintagestory.API.Server;
 using Vintagestory.API.Common;
-using System.ComponentModel;
 
 namespace SeraphLeveling.Data.Attributes
 {
@@ -169,4 +163,43 @@ namespace SeraphLeveling.Data.Attributes
         }
     }
 
+    public abstract class LeveledAttributeModifierProgressData<D, PD>(D definition) : AttributeModifierProgressData<D, PD>(definition) where PD : LeveledAttributeModifierProgressData<D, PD> where D : LeveledAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
+    {
+        /// <summary>Total credits earned (each credit = 1% bonus).</summary>
+        public int TotalCredits { get; set; }
+        /// <summary>Last in-game day when this skill was used. Used for skill decay.</summary>
+        public double LastActivityDay { get; set; }
+
+        public void UpdateSkillActivityDay()
+        {
+            if (!SeraphLevelingModSystem.EnableSkillDecay) return;
+            if (SeraphLevelingModSystem.ServerApi == null) return;
+
+            LastActivityDay = SeraphLevelingModSystem.ServerApi.World.Calendar.TotalDays;
+        }
+
+        public virtual TextCommandResult SetLevelFromCommand(IServerPlayer player, int newCredits, TextCommandCallingArgs args)
+        {
+            // Set the player's progress
+            TotalCredits = newCredits;
+            ZeroPartialCredit();
+            CalculateIncrementSize();
+
+            Definition.MarkForSave(true);
+            int bonusPercent = Definition.ApplyBonus(player, (PD)this);
+            UpdateSkillActivityDay();
+
+            return TextCommandResult.Success($"{Definition.Name} credits set to {newCredits} (+{bonusPercent}{Definition.Stat}).");
+        }
+        public virtual void ZeroPartialCredit()
+        {
+        }
+        public virtual void CalculateIncrementSize()
+        {
+        }
+        public virtual void WriteIncrementLine(StringBuilder sb)
+        {
+            // Empty.
+        }
+    }
 }

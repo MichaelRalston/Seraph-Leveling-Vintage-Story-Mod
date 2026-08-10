@@ -1,12 +1,10 @@
 using System;
-using System.Linq;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Vintagestory.API.Server;
 using Vintagestory.API.Common;
-using System.ComponentModel;
 
 namespace SeraphLeveling.Data.Attributes
 {
@@ -23,7 +21,8 @@ namespace SeraphLeveling.Data.Attributes
     {
         static abstract PD Create(D def);
     }
-    public abstract record class AttributeModifierDefinition<D, PD> : ISaveableAttribute where D : AttributeModifierDefinition<D, PD>, IConstructable<D, PD> where PD : AAttributeModifierProgressData<D, PD>
+    
+    public abstract record class AttributeModifierDefinition<D, PD> : ISaveableAttribute where D : AttributeModifierDefinition<D, PD>, IConstructable<D, PD> where PD : AttributeModifierProgressData<D, PD>
     {
         public required string Id { get; init; }
         public required string SaveKey { get; init; }
@@ -203,102 +202,21 @@ namespace SeraphLeveling.Data.Attributes
 
     }
 
-    public record class UnlockedAttributeModifierDefinition : AttributeModifierDefinition<UnlockedAttributeModifierDefinition, UnlockedAttributeModifierProgressData>, IConstructable<UnlockedAttributeModifierDefinition, UnlockedAttributeModifierProgressData>
+    public interface IAttributeModifierProgressData
     {
-        public required string Name { get; init; }
-        public required string ExtraTraitKey { get; init; }
 
-        public static UnlockedAttributeModifierProgressData Create(UnlockedAttributeModifierDefinition definition)
-        {
-            return new UnlockedAttributeModifierProgressData(definition);
-        }
-
-        public void GetTraitAllCommandLine(IPlayer player, StringBuilder sb) {
-            var progress = GetDict(player);
-            sb.AppendLine($"{Name}: {(progress.IsUnlocked ? "UNLOCKED" : "locked")}");
-        }
     }
-
-    public abstract record class LeveledPartialAttributeModifierDefinition: LeveledAttributeModifierDefinition<LeveledPartialAttributeModifierDefinition, LeveledPartialAttributeModifierProgressData>, IConstructable<LeveledPartialAttributeModifierDefinition, LeveledPartialAttributeModifierProgressData>
-    {
-        public required int BaseIncrement { get; init; }
-        public required int IncrementStep { get; init; }
-        public required string IncrementUnits { get; init; }
-
-        public static LeveledPartialAttributeModifierProgressData Create(LeveledPartialAttributeModifierDefinition definition) { return new LeveledPartialAttributeModifierProgressData(definition); }
-        public void ResetProgress(IServerPlayer player)
-        {
-            var progress = GetDict(player);
-            progress.TotalCredits = 0;
-            progress.PartialCredit = 0;
-            progress.CurrentIncrementSize = BaseIncrement;
-            progress.LastActivityDay = 0;
-            MarkForSave(true);
-            ApplyBonus(player, progress);
-        }
-    }
-
     
-    public record class ToolDefinition
+    public abstract class AttributeModifierProgressData<D, PD> : IAttributeModifierProgressData where PD : AttributeModifierProgressData<D, PD> where D : AttributeModifierDefinition<D, PD>, IConstructable<D, PD>
     {
-        public required string Name { get; init; }
-        public required int BaseIncrement { get; init; }
-        public required int IncrementStep { get; init; }
-        public required string IncrementUnits { get; init; }
-    }
-    public abstract record class LeveledToolAttributeModifierDefinition<D, PD> : LeveledAttributeModifierDefinition<D, PD> where PD : LeveledToolAttributeModifierProgressData<D, PD> where D : LeveledToolAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
-    {
-        public required ToolDefinition Tool { get; init; }
-        public void ResetProgress(IServerPlayer player)
+        protected D Definition { get; init; }
+
+        public AttributeModifierProgressData(D definition)
         {
-            var progress = GetDict(player);
-            progress.TotalCredits = 0;
-            var toolEntries = progress.ToolProgress.Select(kvp =>
-                (kvp.Key, (double)kvp.Value.PartialCredit, kvp.Value.CurrentIncrementSize)).ToList();
-            progress.LastActivityDay = 0;
-            MarkForSave(true);
-            ApplyBonus(player, progress);
-        }
-        public override int ApplyDecay(IServerPlayer player, double currentDay, StringBuilder sb, StringBuilder verboseSb)
-        {
-            if (!SeraphLevelingModSystem.DecayExemptSkills.Contains(SkillKey) && !SeraphLevelingModSystem.DisabledSkills.Contains(SkillKey))
-            {
-                if (ProgressDictionary.TryGetValue(player.PlayerUID, out var progress) && (progress.TotalCredits > 0 || progress.ToolProgress.Count > 0))
-                {
-                    var (grace, basePoints, maxPoints) = SeraphLevelingModSystem.GetDecayParams(SkillKey);
-                    int decayCredits = SeraphLevelingModSystem.CalculateDecayPoints(progress.LastActivityDay, currentDay, grace, basePoints, maxPoints);
-                    if (decayCredits > 0)
-                    {
-                        return progress.ApplyStatPenalty(decayCredits, sb, verboseSb);
-                    }
-                }
-            }
-            return 0;
+            Definition = definition;
         }
 
-        public override int ApplyDeathPenalty(IServerPlayer player, StringBuilder sb)
-        {
-            if (!SeraphLevelingModSystem.DeathPenaltyExemptSkills.Contains(SkillKey) && !SeraphLevelingModSystem.DisabledSkills.Contains(SkillKey))
-            {
-                if (ProgressDictionary.TryGetValue(player.PlayerUID, out var progress) && (progress.TotalCredits > 0 || progress.ToolProgress.Count > 0))
-                {
-                    var toolEntries = progress.ToolProgress.Select(kvp =>
-                        (kvp.Key, (double)kvp.Value.PartialCredit, kvp.Value.CurrentIncrementSize)).ToList();
-                    double rawPenalty;
-                    if (toolEntries.Count > 0)
-                    {
-                        rawPenalty = Tool.BaseIncrement * SeraphLevelingModSystem.DeathPenaltyFraction * Math.Sqrt(Math.Max(1, progress.TotalCredits));
-                    }
-                    else
-                    {
-                        rawPenalty = Math.Floor(SeraphLevelingModSystem.DeathPenaltyFraction * Math.Sqrt(Math.Max(1, progress.TotalCredits)));
-                    }
-
-                    return progress.ApplyStatPenalty(rawPenalty, sb, null);
-                }
-            }
-            return 0;
-        }
-
+        public abstract void ReadVersion(byte version, BinaryReader reader);
+        public abstract void WriteOut(BinaryWriter writer);
     }
 }
