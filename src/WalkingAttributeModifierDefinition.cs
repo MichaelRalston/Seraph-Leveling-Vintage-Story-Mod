@@ -4,9 +4,9 @@ using Vintagestory.API.Server;
 
 namespace SeraphLeveling
 {
-    public record class WalkingAttributeModifierDefinition : LeveledAttributeModifierDefinition
+    public record class WalkingAttributeModifierDefinition : LeveledPartialAttributeModifierDefinition
     {
-        public override int ApplyBonus(IServerPlayer player, LeveledAttributeModifierProgressData progressData)
+        public override int ApplyBonus(IServerPlayer player, LeveledPartialAttributeModifierProgressData progressData)
         {
             if (player?.Entity == null) return 0;
 
@@ -50,7 +50,7 @@ namespace SeraphLeveling
             return bonusPercent;
         }
 
-        public override int CalculateBonus(EntityPlayer entity, LeveledAttributeModifierProgressData progress)
+        public override int CalculateBonus(EntityPlayer entity, LeveledPartialAttributeModifierProgressData progress)
         {
             bool hasFleetfooted = entity != null && SeraphLevelingModSystem.PlayerHasVanillaFleetfootedStatic(entity);
             int vanillaBonus = hasFleetfooted ? SeraphLevelingModSystem.VANILLA_FLEETFOOTED_WALK_BONUS : 0;
