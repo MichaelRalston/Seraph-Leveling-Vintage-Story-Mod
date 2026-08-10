@@ -66,7 +66,7 @@ namespace SeraphLeveling
             return "SIT";
         }
 
-        public new static byte GetVersion() {
+        public static byte GetVersion() {
             return (byte)4;
         }
         public static string SAVE_KEY => "sitMiningProgress";
@@ -77,7 +77,7 @@ namespace SeraphLeveling
         public static string LongDescription => "mining speed";
 
 
-        public new static MiningProgressData ReadVersion(byte version, BinaryReader reader) {
+        public static MiningProgressData ReadVersion(byte version, BinaryReader reader) {
             MiningProgressData progress;
             int pickaxeCount;
             switch (version) {

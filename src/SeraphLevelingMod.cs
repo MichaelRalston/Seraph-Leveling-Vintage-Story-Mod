@@ -1960,7 +1960,7 @@ namespace SeraphLeveling
             sb.AppendLine("=== All Trait Progression ===");
 
             // Progression traits
-            MiningProgressData.GetTraitAllCommandLine(player, sb);
+            AttributeModifierDefinitions.MiningSpeed.GetTraitAllCommandLine(player, sb);
 
             var meleeProg = MeleeProgress.GetOrAdd(playerUid, _ => new MeleeProgressData());
             sb.AppendLine($"Melee: {meleeProg.TotalCredits}/{MaxMeleeDamagePercent} (+{meleeProg.TotalCredits}% damage)");
@@ -2177,7 +2177,7 @@ namespace SeraphLeveling
         /// </summary>
         private TextCommandResult OnTraitMiningCommand(TextCommandCallingArgs args)
         {
-            return MiningProgressData.HandleTraitCommand(args);
+            return AttributeModifierDefinitions.MiningSpeed.HandleTraitCommand(args);
         }
 
         /// <summary>
@@ -2676,7 +2676,7 @@ namespace SeraphLeveling
         /// </summary>
         private TextCommandResult OnTraitMiningLevelCommand(TextCommandCallingArgs args)
         {
-            return MiningProgressData.HandleLevelCommand(args);
+            return AttributeModifierDefinitions.MiningSpeed.HandleLevelCommand(args);
         }
 
         /// <summary>
@@ -7054,7 +7054,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistMiningProgress()
         {
-            PersistProgress<MiningProgressData>();
+            AttributeModifierDefinitions.MiningSpeed.PersistProgress(ServerApi);
         }
 
         /// <summary>
@@ -7063,7 +7063,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadMiningProgress()
         {
-            LoadProgress<MiningProgressData>();
+            AttributeModifierDefinitions.MiningSpeed.LoadProgress(ServerApi);
         }
 
         /// <summary>
@@ -7743,7 +7743,7 @@ namespace SeraphLeveling
             // --- Per-tool dictionary skills ---
 
             // Mining
-            totalDecayApplied += MiningProgressData.ApplyDecay(player, currentDay, sb, verboseSb);
+            totalDecayApplied += AttributeModifierDefinitions.MiningSpeed.ApplyDecay(player, currentDay, sb, verboseSb);
 
             // Melee
             if (!DecayExemptSkills.Contains("melee") && !DisabledSkills.Contains("melee"))
@@ -8555,7 +8555,7 @@ namespace SeraphLeveling
             // --- Per-tool dictionary skills ---
 
             // Mining
-            MiningProgressData.ApplyDeathPenalty(player, sb);
+            AttributeModifierDefinitions.MiningSpeed.ApplyDeathPenalty(player, sb);
 
             // Melee
             if (!DeathPenaltyExemptSkills.Contains("melee") && !DisabledSkills.Contains("melee"))
@@ -13192,7 +13192,7 @@ namespace SeraphLeveling
             string playerUid = player.PlayerUID;
 
             // Reset Mining
-            MiningProgressData.ResetProgress(player);
+            AttributeModifierDefinitions.MiningSpeed.ResetProgress(player);
 
             // Reset Melee
             if (MeleeProgress.TryGetValue(playerUid, out var meleeProg))
@@ -13567,7 +13567,7 @@ namespace SeraphLeveling
             string playerUid = player.PlayerUID;
 
             // Max Mining
-            MiningProgressData.MaxStat(player);
+            AttributeModifierDefinitions.MiningSpeed.MaxStat(player);
 
             // Max Melee — same fix as Mining (pass raw credits so Farsighted/Nervous penalties
             // don't get subtracted twice and Hunter/Malefactor/Clockmaker can hit +50%).
@@ -13741,7 +13741,7 @@ namespace SeraphLeveling
             const int CREDITS = 1;
 
             // Mining (pass raw credits — Apply* handles negative-trait subtraction internally)
-            MiningProgressData.ApplyTraitTestSuite1Command(player);
+            AttributeModifierDefinitions.MiningSpeed.ApplyTraitTestSuite1Command(player);
 
             // Melee
             var meleeProg = MeleeProgress.GetOrAdd(playerUid, _ => new MeleeProgressData());
