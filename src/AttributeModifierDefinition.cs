@@ -12,7 +12,11 @@ namespace SeraphLeveling
 {
     public interface ISaveableAttribute
     {
-
+        public string Id { get; }
+        public bool HasUnsavedProgress();
+        public void MarkForSave(bool pending);
+        public void PersistProgress(ICoreServerAPI serverApi);
+        public void ResetProgress();
     }
 
     public interface IConstructable<D, PD>
@@ -23,7 +27,6 @@ namespace SeraphLeveling
     {
         public required string Id { get; init; }
         public required string SaveKey { get; init; }
-        public required string SkillKey { get; init; }
         public required string Description { get; init; }
         public required string PersistenceHeader { get; init; }
         public virtual int PersistenceVersion { get; init; } = 1;
@@ -41,9 +44,12 @@ namespace SeraphLeveling
             }
         }
 
+        public bool HasUnsavedProgress() => !ProgressDictionary.IsEmpty;
+        public void ResetProgress() => ProgressDictionary.Clear();
+
         private static readonly object persistLock = new object();
 
-        protected PD CreateProgressData() => D.Create((D)this);
+        public PD CreateProgressData() => D.Create((D)this);
 
 
         public bool IsSavePending()
@@ -51,9 +57,9 @@ namespace SeraphLeveling
             return SeraphLevelingModSystem.PendingSaves.GetValueOrDefault(this, false);
         }
 
-        public void MarkForSave()
+        public void MarkForSave(bool pending)
         {
-            SeraphLevelingModSystem.PendingSaves.AddOrUpdate(this, true, (_, _) => true);
+            SeraphLevelingModSystem.PendingSaves.AddOrUpdate(this, pending, (_, _) => pending);
         }
 
         public virtual void LoadProgress(ICoreServerAPI serverApi)
@@ -103,9 +109,8 @@ namespace SeraphLeveling
                                 break;
                             }
                         }
-                        if (version != PersistenceVersion)
-                        {
-                            MarkForSave();
+                        if (version != PersistenceVersion) {
+                            MarkForSave(true);
                         }
                     }
                 }
@@ -192,32 +197,63 @@ namespace SeraphLeveling
             return 0;
         }
 
-        public abstract int ApplyBonus(IServerPlayer player, PD progressData);
-
-        public abstract int CalculateBonus(EntityPlayer entity, PD progress);
-
-        public void ApplyBonusIfExists(IServerPlayer player)
-        {
-            if (ProgressDictionary.TryGetValue(player.PlayerUID, out var progress))
-                ApplyBonus(player, progress);
-        }
-
-        protected PD GetDict(IPlayer player)
-        {
+        protected PD GetDict(IPlayer player) {
             return ProgressDictionary.GetOrAdd(player.PlayerUID, _ => CreateProgressData());
         }
 
     }
 
-    public abstract record class LeveledPartialAttributeModifierDefinition : LeveledAttributeModifierDefinition<LeveledPartialAttributeModifierDefinition, LeveledPartialAttributeModifierProgressData>, IConstructable<LeveledPartialAttributeModifierDefinition, LeveledPartialAttributeModifierProgressData>
+    public record class UnlockedAttributeModifierDefinition : AttributeModifierDefinition<UnlockedAttributeModifierDefinition, UnlockedAttributeModifierProgressData>, IConstructable<UnlockedAttributeModifierDefinition, UnlockedAttributeModifierProgressData>
     {
+        public required string Name { get; init; }
+        public required string ExtraTraitKey { get; init; }
+
+        public static UnlockedAttributeModifierProgressData Create(UnlockedAttributeModifierDefinition definition)
+        {
+            return new UnlockedAttributeModifierProgressData(definition);
+        }
+
+        public void GetTraitAllCommandLine(IPlayer player, StringBuilder sb) {
+            var progress = GetDict(player);
+            sb.AppendLine($"{Name}: {(progress.IsUnlocked ? "UNLOCKED" : "locked")}");
+        }
+    }
+
+    public abstract record class LeveledPartialAttributeModifierDefinition: LeveledAttributeModifierDefinition<LeveledPartialAttributeModifierDefinition, LeveledPartialAttributeModifierProgressData>, IConstructable<LeveledPartialAttributeModifierDefinition, LeveledPartialAttributeModifierProgressData>
+    {
+        public static LeveledPartialAttributeModifierProgressData Create(LeveledPartialAttributeModifierDefinition definition) { return new LeveledPartialAttributeModifierProgressData(definition); }
+    }
+
+    public abstract record class LeveledToolAttributeModifierDefinition: LeveledAttributeModifierDefinition<LeveledToolAttributeModifierDefinition, LeveledToolAttributeModifierProgressData>, IConstructable<LeveledToolAttributeModifierDefinition, LeveledToolAttributeModifierProgressData>
+    {
+        public static LeveledToolAttributeModifierProgressData Create(LeveledToolAttributeModifierDefinition definition) { return new LeveledToolAttributeModifierProgressData(definition); }
+    }
+
+    public abstract record class LeveledAttributeModifierDefinition<D, PD>  : AttributeModifierDefinition<D, PD> where PD : LeveledAttributeModifierProgressData<D, PD> where D: LeveledAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
+    {
+        public required string SkillKey { get; init; }
+        public required string Name { get; init; }
+        public required string Stat { get; init; }
+        public required string LongDescription { get; init; }
+        public required int GlobalMaxCredits { get; set; }
+        public override int PersistenceVersion { get; init; } = 2;
         public required int BaseIncrement { get; init; }
         public required int IncrementStep { get; init; }
         public required string IncrementUnits { get; init; }
         public static LeveledPartialAttributeModifierProgressData Create(LeveledPartialAttributeModifierDefinition definition) { return new LeveledPartialAttributeModifierProgressData(definition); }
 
-        public override int ApplyDecay(IServerPlayer player, double currentDay, StringBuilder sb, StringBuilder verboseSb)
-        {
+        public virtual int GetMaxCredits(EntityPlayer player) => GlobalMaxCredits;
+
+        public abstract int ApplyBonus(IServerPlayer player, PD progressData);
+
+        public abstract int CalculateBonus(EntityPlayer entity, PD progress);
+
+        public void ApplyBonusIfExists(IServerPlayer player) {
+            if (ProgressDictionary.TryGetValue(player.PlayerUID, out var progress))
+                ApplyBonus(player, progress);
+        }
+
+        public override int ApplyDecay(IServerPlayer player, double currentDay, StringBuilder sb, StringBuilder verboseSb) {
             if (!SeraphLevelingModSystem.DecayExemptSkills.Contains(SkillKey) && !SeraphLevelingModSystem.DisabledSkills.Contains(SkillKey))
             {
                 if (ProgressDictionary.TryGetValue(player.PlayerUID, out var progressB) && (progressB is LeveledPartialAttributeModifierProgressData progress) && (progress.TotalCredits > 0 || progress.PartialCredit > 0))
@@ -253,7 +289,7 @@ namespace SeraphLeveling
             progress.PartialCredit = 0;
             progress.CurrentIncrementSize = BaseIncrement;
             progress.LastActivityDay = 0;
-            MarkForSave();
+            MarkForSave(true);
             ApplyBonus(player, progress);
         }
     }
@@ -340,7 +376,7 @@ namespace SeraphLeveling
             int maxCredits = GetMaxCredits(player.Entity);
             progress.TotalCredits = maxCredits;
             progress.ZeroPartialCredit();
-            MarkForSave();
+            MarkForSave(true);
             ApplyBonus(player, progress);
         }
         public void ApplyTraitTestSuite1Command(IServerPlayer player)
@@ -348,7 +384,7 @@ namespace SeraphLeveling
             var progress = GetDict(player);
             progress.TotalCredits = 1;
             progress.ZeroPartialCredit();
-            MarkForSave();
+            MarkForSave(true);
             ApplyBonus(player, progress);
         }
 
@@ -417,7 +453,7 @@ namespace SeraphLeveling
             int maxLevel = GetMaxCredits(player.Entity);
             if (level > maxLevel) return TextCommandResult.Error($"Level cannot exceed max ({maxLevel}).");
             progress.TotalCredits = level;
-            MarkForSave();
+            MarkForSave(true);
             ApplyBonus(player, progress);
             progress.UpdateSkillActivityDay();
             return TextCommandResult.Success($"{Name} level set to {level} (+{level}{Stat}) for {player.PlayerName}.");
@@ -435,7 +471,7 @@ namespace SeraphLeveling
                 }
 
                 GlobalMaxCredits = newValue.Value;
-                MarkForSave();
+                MarkForSave(true);
 
                 // Recalculate and reapply bonuses for all online players
                 foreach (IServerPlayer player in SeraphLevelingModSystem.ServerApi.World.AllOnlinePlayers)

@@ -121,12 +121,6 @@ namespace SeraphLeveling
         // Vanilla Fleetfooted trait walk speed bonus (used for cap calculations)
         public const int VANILLA_FLEETFOOTED_WALK_BONUS = 10;
 
-        // Storage for walking progress - keyed by player UID
-        public static ConcurrentDictionary<string, WalkingProgressData> WalkingProgress = new ConcurrentDictionary<string, WalkingProgressData>();
-
-        // Flag to indicate pending walking progress save
-        public static volatile bool pendingWalkingProgressSave = false;
-
         // Tracking last known positions for walking distance calculation (using Position2D to avoid Vec3d allocations)
         private static ConcurrentDictionary<string, Position2D> lastPlayerPositions = new ConcurrentDictionary<string, Position2D>();
 
@@ -665,8 +659,8 @@ namespace SeraphLeveling
         // MULTI-MOD COMPATIBILITY
         // =========================================================================
 
-        public static ConcurrentDictionary<ISaveableAttribute, ConcurrentDictionary<string, IAttributeModifierProgressData>> ProgressData = [];
-        public static ConcurrentDictionary<ISaveableAttribute, bool> PendingSaves = [];
+        public readonly static ConcurrentDictionary<ISaveableAttribute, ConcurrentDictionary<string, IAttributeModifierProgressData>> ProgressData = [];
+        public readonly static ConcurrentDictionary<ISaveableAttribute, bool> PendingSaves = [];
 
         public static HashSet<ModDefinition> LoadedMods { get; internal set; } = [ ModDefinitions.Vanilla ];
         public static HashSet<ModDefinition> DetectLoadedMods(IModLoader modLoader)
@@ -975,6 +969,11 @@ namespace SeraphLeveling
         public static bool IsSkillDisabled(string skillName)
         {
             return DisabledSkills.Contains(skillName);
+        }
+
+        public static bool IsAttributeModifierDisabled(ISaveableAttribute attribute)
+        {
+            return DisabledSkills.Contains(attribute.Id);
         }
 
         public override void StartServerSide(ICoreServerAPI api)
@@ -2012,8 +2011,7 @@ namespace SeraphLeveling
             var improviserProg = ImproviserProgress.GetOrAdd(playerUid, _ => new ImproviserProgressData());
             sb.AppendLine($"Improviser: {(improviserProg.IsUnlocked ? "UNLOCKED" : $"{improviserProg.TotalRockDamage:F0} rock damage (locked)")}");
 
-            var tinkererProg = TinkererProgress.GetOrAdd(playerUid, _ => new TinkererProgressData());
-            sb.AppendLine($"Tinkerer: {(tinkererProg.IsUnlocked ? "UNLOCKED" : "locked")}");
+            AttributeModifierDefinitions.Tinkerer.GetTraitAllCommandLine(player, sb);
 
             var mercilessProg = MercilessProgress.GetOrAdd(playerUid, _ => new MercilessProgressData());
             sb.AppendLine($"Merciless: {(mercilessProg.IsUnlocked ? "UNLOCKED" : "locked")}");
@@ -4846,7 +4844,7 @@ namespace SeraphLeveling
         private void OnWalkingTick(float dt)
         {
             // Skip walking progression if disabled
-            if (IsSkillDisabled("walking")) return;
+            if (IsAttributeModifierDisabled(AttributeModifierDefinitions.WalkingSpeed)) return;
 
             foreach (IServerPlayer player in ServerApi.World.AllOnlinePlayers)
             {
@@ -4875,10 +4873,7 @@ namespace SeraphLeveling
                 if (distance < 0.01f || distance > MAX_DISTANCE_PER_TICK) continue;
 
                 // Get or create player progress data
-                var playerProgress = WalkingProgress.GetOrAdd(playerUid, _ => new WalkingProgressData
-                {
-                    CurrentIncrementSize = BaseBlocksWalkedPerIncrement
-                });
+                var playerProgress = AttributeModifierDefinitions.WalkingSpeed.ProgressDictionary.GetOrAdd(playerUid, _ => AttributeModifierDefinitions.WalkingSpeed.CreateProgressData());
 
                 playerProgress.DoEvent(player, distance);
             }
@@ -6714,6 +6709,20 @@ namespace SeraphLeveling
             // Persist any pending progress before shutdown
             if (ServerApi != null)
             {
+                var saveableAttributes = LoadedMods
+                        .SelectMany(mod => mod.CharacterClasses)
+                        .SelectMany(charClass => charClass.Traits)
+                        .SelectMany(trait => trait.Attributes)
+                        .ToHashSet();
+
+                foreach (var def in saveableAttributes)
+                {
+                    if (PendingSaves.GetValueOrDefault(def, false) || def.HasUnsavedProgress())
+                    {
+                        def.PersistProgress(ServerApi);
+                    }
+                }
+
                 if (pendingMiningProgressSave || !MiningProgress.IsEmpty)
                 {
                     PersistMiningProgress();
@@ -6725,10 +6734,6 @@ namespace SeraphLeveling
                 if (pendingRangedProgressSave || !RangedProgress.IsEmpty)
                 {
                     PersistRangedProgress();
-                }
-                if (pendingWalkingProgressSave || !WalkingProgress.IsEmpty)
-                {
-                    PersistWalkingProgress();
                 }
                 if (pendingHungerProgressSave || !HungerProgress.IsEmpty)
                 {
@@ -6849,10 +6854,20 @@ namespace SeraphLeveling
             // Unpatch server-side Harmony patches
             serverHarmony?.UnpatchAll("seraphleveling.server");
 
+            var disposableAttributes = LoadedMods
+                    .SelectMany(mod => mod.CharacterClasses)
+                    .SelectMany(charClass => charClass.Traits)
+                    .SelectMany(trait => trait.Attributes)
+                    .ToHashSet();
+            foreach (var def in disposableAttributes)
+            {
+                def.ResetProgress();
+                def.MarkForSave(false); // TODO Just clear PendingSaves once all traits are converted
+            }
+
             MiningProgress.Clear();
             MeleeProgress.Clear();
             RangedProgress.Clear();
-            WalkingProgress.Clear();
             HungerProgress.Clear();
             ArmorProgress.Clear();
             ClothierProgress.Clear();
@@ -6880,7 +6895,6 @@ namespace SeraphLeveling
             pendingMiningProgressSave = false;
             pendingMeleeProgressSave = false;
             pendingRangedProgressSave = false;
-            pendingWalkingProgressSave = false;
             pendingHungerProgressSave = false;
             pendingArmorProgressSave = false;
             pendingClothierProgressSave = false;
@@ -6908,6 +6922,20 @@ namespace SeraphLeveling
             // Guard against persisting empty data after Dispose() has cleared dictionaries
             if (isDisposed) return;
 
+            var saveableAttributes = LoadedMods
+                    .SelectMany(mod => mod.CharacterClasses)
+                    .SelectMany(charClass => charClass.Traits)
+                    .SelectMany(trait => trait.Attributes)
+                    .ToHashSet();
+            foreach (var def in saveableAttributes)
+            {
+                if (PendingSaves.GetValueOrDefault(def, false) || def.HasUnsavedProgress())
+                {
+                    def.PersistProgress(ServerApi);
+                    PendingSaves.AddOrUpdate(def, false, (_, _) => false);
+                }
+            }
+
             if (pendingMiningProgressSave || !MiningProgress.IsEmpty)
             {
                 PersistMiningProgress();
@@ -6924,12 +6952,6 @@ namespace SeraphLeveling
             {
                 PersistRangedProgress();
                 pendingRangedProgressSave = false;
-            }
-
-            if (pendingWalkingProgressSave || !WalkingProgress.IsEmpty)
-            {
-                PersistWalkingProgress();
-                pendingWalkingProgressSave = false;
             }
 
             if (pendingHungerProgressSave || !HungerProgress.IsEmpty)
@@ -8175,7 +8197,7 @@ namespace SeraphLeveling
                         rangedProg.LastActivityDay = currentDay;
                     break;
                 case "walking":
-                    if (WalkingProgress.TryGetValue(playerUid, out var walkingProg))
+                    if (AttributeModifierDefinitions.WalkingSpeed.ProgressDictionary.TryGetValue(playerUid, out var walkingProg))
                         walkingProg.LastActivityDay = currentDay;
                     break;
                 case "hunger":
@@ -8982,7 +9004,7 @@ namespace SeraphLeveling
             // Movement/Survival skills
             sb.AppendLine("--- Movement/Survival ---");
             AppendDecayStatus(sb, "Walking", "walking", playerUid, currentDay,
-                () => WalkingProgress.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
+                () => AttributeModifierDefinitions.WalkingSpeed.ProgressDictionary.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
             AppendDecayStatus(sb, "Hunger", "hunger", playerUid, currentDay,
                 () => HungerProgress.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
             AppendDecayStatus(sb, "Furtive", "furtive", playerUid, currentDay,
@@ -11104,12 +11126,12 @@ namespace SeraphLeveling
             player.Entity.WatchedAttributes.SetBool(WATCHED_TINKERER_UNLOCKED, unlocked);
 
             // Update extraTraits to show Tinkerer trait if unlocked (for UI display)
-            UpdateExtraTraitStatic(player.Entity, TINKERER_TRAIT_CODE, unlocked);
+            UpdateExtraTraitStatic(player.Entity, AttributeModifierDefinitions.Tinkerer.ExtraTraitKey, unlocked);
 
             // IMPORTANT: Add "tinkerer" to extraTraits to unlock tuning spear recipes
             // The game's recipe system checks extraTraits for dynamically granted traits
             // that unlock recipes via requiresTrait (e.g., the tuning spear requires "tinkerer")
-            UpdateExtraTraitStatic(player.Entity, "tinkerer", unlocked);
+            UpdateExtraTraitStatic(player.Entity, AttributeModifierDefinitions.Tinkerer.Id, unlocked);
         }
 
         /// <summary>
@@ -13009,7 +13031,7 @@ namespace SeraphLeveling
             string playerUid = player.PlayerUID;
             var progress = HeavyFootedRemovalProgress.GetOrAdd(playerUid, _ => new HeavyFootedRemovalProgressData());
             var furtiveProgress = FurtiveProgress.GetOrAdd(playerUid, _ => new FurtiveProgressData());
-            var walkingProgress = WalkingProgress.GetOrAdd(playerUid, _ => new WalkingProgressData());
+            var walkingProgress = AttributeModifierDefinitions.WalkingSpeed.ProgressDictionary.GetOrAdd(playerUid, _ => AttributeModifierDefinitions.WalkingSpeed.CreateProgressData());
 
             var sb = new StringBuilder();
             sb.AppendLine($"Heavy Footed trait: {(progress.IsRemoved ? "REMOVED" : "Active")}");
@@ -13422,7 +13444,7 @@ namespace SeraphLeveling
             if (MiningProgress.TryGetValue(uid, out var mining)) ex.Mining = mining;
             if (MeleeProgress.TryGetValue(uid, out var melee)) ex.Melee = melee;
             if (RangedProgress.TryGetValue(uid, out var ranged)) ex.Ranged = ranged;
-            if (WalkingProgress.TryGetValue(uid, out var walking)) ex.Walking = walking;
+            if (AttributeModifierDefinitions.WalkingSpeed.ProgressDictionary.TryGetValue(uid, out var walking)) ex.Walking = walking;
             if (HungerProgress.TryGetValue(uid, out var hunger)) ex.Hunger = hunger;
             if (ArmorProgress.TryGetValue(uid, out var armor)) ex.Armor = armor;
             if (ClothierProgress.TryGetValue(uid, out var clothier)) ex.Clothier = clothier;
@@ -13451,7 +13473,7 @@ namespace SeraphLeveling
             if (ex.Mining != null) { MiningProgress[uid] = ex.Mining; pendingMiningProgressSave = true; }
             if (ex.Melee != null) { MeleeProgress[uid] = ex.Melee; pendingMeleeProgressSave = true; }
             if (ex.Ranged != null) { RangedProgress[uid] = ex.Ranged; pendingRangedProgressSave = true; }
-            if (ex.Walking != null) { WalkingProgress[uid] = ex.Walking; pendingWalkingProgressSave = true; }
+            if (ex.Walking != null) { AttributeModifierDefinitions.WalkingSpeed.ProgressDictionary[uid] = ex.Walking; AttributeModifierDefinitions.WalkingSpeed.MarkForSave(true); }
             if (ex.Hunger != null) { HungerProgress[uid] = ex.Hunger; pendingHungerProgressSave = true; }
             if (ex.Armor != null) { ArmorProgress[uid] = ex.Armor; pendingArmorProgressSave = true; }
             if (ex.Clothier != null) { ClothierProgress[uid] = ex.Clothier; pendingClothierProgressSave = true; }

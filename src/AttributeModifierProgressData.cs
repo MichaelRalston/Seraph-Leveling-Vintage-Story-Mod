@@ -6,6 +6,7 @@ using System.Text;
 using Vintagestory.API.Common;
 using System.Linq;
 
+using Vintagestory.API.Config;
 
 namespace SeraphLeveling
 {
@@ -26,7 +27,7 @@ namespace SeraphLeveling
         public abstract void WriteOut(BinaryWriter writer);
     }
 
-        public class UnlockedAttributeModifierProgressData(UnlockedAttributeModifierDefinition definition) : AAttributeModifierProgressData<UnlockedAttributeModifierDefinition, UnlockedAttributeModifierProgressData>(definition)
+    public class UnlockedAttributeModifierProgressData(UnlockedAttributeModifierDefinition definition) : AAttributeModifierProgressData<UnlockedAttributeModifierDefinition, UnlockedAttributeModifierProgressData>(definition)
     {
         /// <summary>Whether the trait has been unlocked.</summary>
         public bool IsUnlocked { get; set; } = false;

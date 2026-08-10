@@ -17,5 +17,13 @@ namespace SeraphLeveling
                 TraitDefinitions.Fleetfooted
             ]
         };
+
+        public static readonly CharacterClassDefinition Clockmaker = new()
+        {
+            Id = "clockmaker",
+            Traits = [
+                TraitDefinitions.Tinkerer
+            ]
+        };
     }
 }
