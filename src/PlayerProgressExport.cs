@@ -22,7 +22,7 @@ namespace SeraphLeveling
         public MiningProgressData Mining;
         public MeleeProgressData Melee;
         public RangedProgressData Ranged;
-        public LeveledAttributeModifierProgressData Walking;
+        public LeveledPartialAttributeModifierProgressData Walking;
         public HungerProgressData Hunger;
         public ArmorProgressData Armor;
         public ClothierProgressData Clothier;
