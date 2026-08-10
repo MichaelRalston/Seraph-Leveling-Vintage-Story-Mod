@@ -1110,7 +1110,7 @@ namespace SeraphLeveling
                     .WithDescription("View your walking speed progression stats")
                     .RequiresPrivilege(Privilege.chat)
                     .RequiresPlayer()
-                    .HandleWith(WalkingProgressData.HandleTraitCommand)
+                    .HandleWith(AttributeModifierDefinitions.WalkingSpeed.HandleTraitCommand)
                 .EndSubCommand()
                 .BeginSubCommand("walkingbase")
                     .WithDescription("Get or set the base blocks per level (admin only)")
@@ -1123,13 +1123,13 @@ namespace SeraphLeveling
                     .WithArgs(api.ChatCommands.Parsers.OptionalInt("level"))
                     .RequiresPrivilege(Privilege.controlserver)
                     .RequiresPlayer()
-                    .HandleWith(WalkingProgressData.HandleLevelCommand)
+                    .HandleWith(AttributeModifierDefinitions.WalkingSpeed.HandleLevelCommand)
                 .EndSubCommand()
                 .BeginSubCommand("walkingmax")
                     .WithDescription("Get or set the max walking speed bonus percent (admin only)")
                     .WithArgs(api.ChatCommands.Parsers.OptionalInt("percent"))
                     .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(WalkingProgressData.HandleMaxCommand)
+                    .HandleWith(AttributeModifierDefinitions.WalkingSpeed.HandleMaxCommand)
                 .EndSubCommand()
                 .BeginSubCommand("walkingincrement")
                     .WithDescription("Get or set the walking increment step per credit (admin only)")
@@ -1968,7 +1968,7 @@ namespace SeraphLeveling
             var rangedProg = RangedProgress.GetOrAdd(playerUid, _ => new RangedProgressData());
             sb.AppendLine($"Ranged: {rangedProg.TotalCredits}/{MaxRangedDamagePercent} (+{rangedProg.TotalCredits}% dmg, +{rangedProg.TotalCredits}% acc, +{rangedProg.TotalCredits}% dist)");
 
-            WalkingProgressData.GetTraitAllCommandLine(player, sb);
+            AttributeModifierDefinitions.WalkingSpeed.GetTraitAllCommandLine(player, sb);
 
             var hungerProg = HungerProgress.GetOrAdd(playerUid, _ => new HungerProgressData { CurrentIncrementSize = BaseSecondsPerIncrement });
             sb.AppendLine($"Hunger: {hungerProg.TotalCredits}/{MaxHungerReductionPercent} (-{hungerProg.TotalCredits}% hunger rate)");
@@ -2097,7 +2097,7 @@ namespace SeraphLeveling
             {
                 case "walking":
                 {
-                    return WalkingProgressData.SetLevel(targetPlayer, level);
+                    return AttributeModifierDefinitions.WalkingSpeed.SetLevel(targetPlayer, level);
                 }
                 case "hunger":
                 {
@@ -5128,7 +5128,7 @@ namespace SeraphLeveling
             }
 
             // Apply walking bonus (Stats always applied, WatchedAttributes only sync if changed)
-            WalkingProgressData.HandleLogin(byPlayer);
+            AttributeModifierDefinitions.WalkingSpeed.HandleLogin(byPlayer);
 
             // Apply hunger bonus (Stats always applied, WatchedAttributes only sync if changed)
             var hungerProg = HungerProgress.GetOrAdd(playerUid, _ => new HungerProgressData
@@ -7154,7 +7154,6 @@ namespace SeraphLeveling
         public static void PersistWalkingProgress()
         {
             AttributeModifierDefinitions.WalkingSpeed.PersistProgress(ServerApi);
-            // PersistProgress<WalkingProgressData>();
         }
 
         private void LoadProgress<T>() where T:ProgressData<T>,IProgressDataContract<T>
@@ -7218,7 +7217,6 @@ namespace SeraphLeveling
         private void LoadWalkingProgress()
         {
             AttributeModifierDefinitions.WalkingSpeed.LoadProgress(ServerApi);
-            // LoadProgress<WalkingProgressData>();
         }
 
         /// <summary>
@@ -13760,7 +13758,7 @@ namespace SeraphLeveling
             ApplyRangedBonusStatic(player, CREDITS);
 
             // Walking
-            WalkingProgressData.ApplyTraitTestSuite1Command(player);
+            AttributeModifierDefinitions.WalkingSpeed.ApplyTraitTestSuite1Command(player);
 
             // Hunger
             var hungerProg = HungerProgress.GetOrAdd(playerUid, _ => new HungerProgressData());

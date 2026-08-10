@@ -3,6 +3,8 @@ using System.IO;
 using System.Numerics;
 using Vintagestory.API.Server;
 using System.Text;
+using Vintagestory.API.Common;
+
 
 namespace SeraphLeveling
 {
@@ -69,6 +71,35 @@ namespace SeraphLeveling
             Definition.MarkForSave();
             if (lost > 0) return lost;
             return 0;
+        }
+        public virtual void WriteIncrementLine(StringBuilder sb)
+        {
+            sb.AppendLine($"Progress: {PartialCredit:F1}/{CurrentIncrementSize} {Definition.IncrementUnits}");
+        }
+
+        public void UpdateSkillActivityDay() {
+            if (!SeraphLevelingModSystem.EnableSkillDecay) return;
+            if (SeraphLevelingModSystem.ServerApi == null) return;
+
+            LastActivityDay = SeraphLevelingModSystem.ServerApi.World.Calendar.TotalDays;
+        }
+        public virtual void CalculateIncrementSize()
+        {
+            // Calculate what the increment size should be at this level
+            CurrentIncrementSize = Definition.BaseIncrement + (TotalCredits * Definition.IncrementStep);
+        }
+
+        public virtual TextCommandResult SetLevelFromCommand(IServerPlayer player, int newCredits, TextCommandCallingArgs args) {
+            // Set the player's progress
+            TotalCredits = newCredits;
+            PartialCredit = 0;
+            CalculateIncrementSize();
+
+            Definition.MarkForSave();
+            int bonusPercent = Definition.ApplyBonus(player, this);
+            UpdateSkillActivityDay();
+
+            return TextCommandResult.Success($"{Definition.Name} credits set to {newCredits} (+{bonusPercent}{Definition.Stat}).");
         }
 
     }
