@@ -659,7 +659,8 @@ namespace SeraphLeveling
         // MULTI-MOD COMPATIBILITY
         // =========================================================================
 
-        public readonly static ConcurrentDictionary<ISaveableAttribute, ConcurrentDictionary<string, IAttributeModifierProgressData>> ProgressData = [];
+        // This is actually ConcurrentDictionary<ISaveableAttribute, ConcurrentDictionary<ISaveableAttribute, IAttributeModifierProgressData>>, but . . .
+        public readonly static ConcurrentDictionary<ISaveableAttribute, object> ProgressData = [];
         public readonly static ConcurrentDictionary<ISaveableAttribute, bool> PendingSaves = [];
 
         public static HashSet<ModDefinition> LoadedMods { get; internal set; } = [ ModDefinitions.Vanilla ];

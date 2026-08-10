@@ -38,9 +38,9 @@ namespace SeraphLeveling
             {
                 var innerDict = SeraphLevelingModSystem.ProgressData.GetOrAdd(
                     this,
-                    _ => new ConcurrentDictionary<string, IAttributeModifierProgressData>()
+                    _ => new ConcurrentDictionary<string, PD>()
                 );
-                return (ConcurrentDictionary<string, PD>)(object)innerDict;
+                return (ConcurrentDictionary<string, PD>)innerDict;
             }
         }
 

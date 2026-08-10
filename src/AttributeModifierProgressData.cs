@@ -34,7 +34,8 @@ namespace SeraphLeveling
 
         public override void ReadVersion(byte version, BinaryReader reader)
         {
-            switch (version) {
+            switch (version)
+            {
                 case 1:
                     IsUnlocked = reader.ReadBoolean();
                     break;
@@ -92,7 +93,8 @@ namespace SeraphLeveling
 
     public class LeveledPartialAttributeModifierProgressData(LeveledPartialAttributeModifierDefinition definition) : LeveledAttributeModifierProgressData<LeveledPartialAttributeModifierDefinition, LeveledPartialAttributeModifierProgressData>(definition)
     {
-        public void DoEvent(IServerPlayer player, float score) {
+        public void DoEvent(IServerPlayer player, float score)
+        {
             // Skip all processing if already at max - completely invisible
             var maxCredits = Definition.GetMaxCredits(player.Entity);
             if (TotalCredits >= maxCredits) return;
@@ -141,7 +143,7 @@ namespace SeraphLeveling
         /// <summary>Action taken toward the next credit.</summary>
         public float PartialCredit { get; set; } = 0; // formerly known as BlocksInIncrement
         /// <summary>Actions needed for the next credit (1000, 2000, 3000, etc.).</summary>
-        public int CurrentIncrementSize { get; set; }
+        public int CurrentIncrementSize { get; set; } = definition.BaseIncrement;
         public override void ZeroPartialCredit()
         {
             PartialCredit = 0;
@@ -215,7 +217,10 @@ namespace SeraphLeveling
         {
             if (!ToolProgress.TryGetValue(toolCode, out var progress))
             {
-                progress = new LevelableTool();
+                progress = new LevelableTool()
+                {
+                    CurrentIncrementSize = Definition.Tool.BaseIncrement
+                };
                 ToolProgress[toolCode] = progress;
             }
             return progress;

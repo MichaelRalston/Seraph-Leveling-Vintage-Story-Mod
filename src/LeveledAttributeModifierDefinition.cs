@@ -27,7 +27,7 @@ namespace SeraphLeveling
 
         public void ApplyBonusIfExists(IServerPlayer player) {
             if (ProgressDictionary.TryGetValue(player.PlayerUID, out var progress))
-                ApplyBonus(player, progress);
+                ApplyBonus(player, (PD)progress);
         }
 
         public virtual void CheckUnlocks(IServerPlayer player)
