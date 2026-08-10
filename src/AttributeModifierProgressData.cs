@@ -26,6 +26,28 @@ namespace SeraphLeveling
         public abstract void WriteOut(BinaryWriter writer);
     }
 
+        public class UnlockedAttributeModifierProgressData(UnlockedAttributeModifierDefinition definition) : AAttributeModifierProgressData<UnlockedAttributeModifierDefinition, UnlockedAttributeModifierProgressData>(definition)
+    {
+        /// <summary>Whether the trait has been unlocked.</summary>
+        public bool IsUnlocked { get; set; } = false;
+
+        public override void ReadVersion(byte version, BinaryReader reader)
+        {
+            switch (version) {
+                case 1:
+                    IsUnlocked = reader.ReadBoolean();
+                    break;
+                default:
+                    throw new NotSupportedException($"Version {version} is not supported");
+            }
+        }
+
+        public override void WriteOut(BinaryWriter writer)
+        {
+            writer.Write(IsUnlocked);
+        }
+    }
+
     public abstract class LeveledAttributeModifierProgressData<D, PD>(D definition) : AAttributeModifierProgressData<D, PD>(definition) where PD : LeveledAttributeModifierProgressData<D, PD> where D : LeveledAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
     {
         /// <summary>Total credits earned (each credit = 1% bonus).</summary>
@@ -69,6 +91,48 @@ namespace SeraphLeveling
 
     public class LeveledPartialAttributeModifierProgressData(LeveledPartialAttributeModifierDefinition definition) : LeveledAttributeModifierProgressData<LeveledPartialAttributeModifierDefinition, LeveledPartialAttributeModifierProgressData>(definition)
     {
+        public void DoEvent(IServerPlayer player, float score) {
+            // Skip all processing if already at max - completely invisible
+            var maxCredits = Definition.GetMaxCredits(player.Entity);
+            if (TotalCredits >= maxCredits) return;
+
+            int oldCredits = TotalCredits;
+
+            // Apply sleep buff multiplier to score
+            float modifiedScore = SeraphLevelingModSystem.ApplyXPMultiplier(player.PlayerUID, float.CreateTruncating(score));
+
+            // Add distance to progress
+            PartialCredit += float.CreateTruncating(modifiedScore);
+
+            // Check if we've earned any new credits
+            var incrementStep = Definition.IncrementStep;
+            var units = Definition.IncrementUnits;
+            while (PartialCredit >= float.CreateTruncating(CurrentIncrementSize) && TotalCredits < maxCredits)
+            {
+                // Earn a credit
+                TotalCredits++;
+                PartialCredit -= float.CreateTruncating(CurrentIncrementSize);
+                CurrentIncrementSize += incrementStep;
+
+                SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Player {player.PlayerName} earned {Definition.Description} credit {TotalCredits}, next requires {CurrentIncrementSize} {units}");
+            }
+
+            // Mark for saving if any progress was made
+            if (PartialCredit > 0f || TotalCredits > oldCredits)
+            {
+                Definition.MarkForSave(true);
+            }
+
+            // If credits increased, update the stat and notify player
+            if (TotalCredits > oldCredits)
+            {
+                Definition.ApplyBonus(player, this);
+
+                // Notify player of level up with raw improvement (shows progress even when capped)
+                SeraphLevelingModSystem.NotifyLevelUp(player,
+                    Lang.Get($"seraphleveling:message-{Definition.Description}-level-up", TotalCredits, TotalCredits));
+            }
+        }
         public override void WriteIncrementLine(StringBuilder sb)
         {
             sb.AppendLine($"Progress: {PartialCredit:F1}/{CurrentIncrementSize} {Definition.IncrementUnits}");
