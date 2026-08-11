@@ -664,7 +664,9 @@ namespace SeraphLeveling
         public static void DetectLoadedMods(IModLoader modLoader)
         {
             HashSet<ModDefinition> activeMods = [ModDefinitions.Vanilla];
-            if (DetectAnySacredLib(modLoader))
+            Instance.DetectCombatOverhaul(modLoader);
+            Instance.DetectSacredLib(modLoader);
+            if (IsSacredLibLoaded)
             {
                 // Sacred Classes replaces the vanilla set of classes
                 activeMods.Remove(ModDefinitions.Vanilla);
@@ -692,8 +694,6 @@ namespace SeraphLeveling
                     group => group.Key,
                     group => group.Select(x => x.TraitTuple).ToImmutableList()
                 );
-            Instance.DetectCombatOverhaul(modLoader);
-            Instance.DetectSacredLib(modLoader);
         }
 
         // =========================================================================
@@ -718,8 +718,8 @@ namespace SeraphLeveling
         /// </summary>
         private void DetectSacredLib(IModLoader modLoader)
         {
-            SeraphLevelingModSystem.IsSacredLibLoaded = SeraphLevelingModSystem.DetectAnySacredLib(modLoader);
-            if (SeraphLevelingModSystem.IsSacredLibLoaded)
+            IsSacredLibLoaded = DetectAnySacredLib(modLoader);
+            if (IsSacredLibLoaded)
             {
                 if (SacredLibEnableCompat)
                 {
