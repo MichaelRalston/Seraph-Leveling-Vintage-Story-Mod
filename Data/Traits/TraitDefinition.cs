@@ -6,7 +6,8 @@ namespace SeraphLeveling.Data.Traits
 {
     public record class TraitDefinition
     {
-        public string Id { get; init; }
-        public List<ISaveableAttribute> Attributes { get; init; }
+        public required string Id { get; init; }
+        public required List<ISaveableAttribute> Attributes { get; init; }
+        public List<IRequiredAttribute> Requirements { get; init; } = [];
     }
 }

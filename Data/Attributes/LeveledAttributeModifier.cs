@@ -4,7 +4,13 @@ using Vintagestory.API.Common;
 
 namespace SeraphLeveling.Data.Attributes
 {
-    public abstract record class LeveledAttributeModifierDefinition<D, PD>  : AttributeModifierDefinition<D, PD> where PD : LeveledAttributeModifierProgressData<D, PD> where D: LeveledAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
+    public interface ILeveledAttributeModifierDefinition
+    {
+        public string Name { get; }
+        public bool IsLeveledForPlayer(IPlayer player, int requiredCredits);
+    }
+
+    public abstract record class LeveledAttributeModifierDefinition<D, PD> : AttributeModifierDefinition<D, PD>, ILeveledAttributeModifierDefinition where PD : LeveledAttributeModifierProgressData<D, PD> where D: LeveledAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
     {
         public required string SkillKey { get; init; }
         public required string Name { get; init; }
@@ -12,6 +18,11 @@ namespace SeraphLeveling.Data.Attributes
         public required string LongDescription { get; init; }
         public required int GlobalMaxCredits { get; set; }
         public override int PersistenceVersion { get; init; } = 2;
+
+        public bool IsLeveledForPlayer(IPlayer player, int requiredCredits)
+        {
+            return GetDict(player).TotalCredits >= requiredCredits;
+        }
 
         public virtual int GetMaxCredits(EntityPlayer player) => GlobalMaxCredits;
 

@@ -6,11 +6,22 @@ using Vintagestory.API.Server;
 
 namespace SeraphLeveling.Data.Attributes
 {
-    public abstract record class UnlockedAttributeModifierDefinition<D, PD> : AttributeModifierDefinition<D, PD> where PD : UnlockedAttributeModifierProgressData<D, PD> where D : UnlockedAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
+    public interface IUnlockedAttributeModifierDefinition
+    {
+        public string Name { get; }
+        public bool IsUnlockedForPlayer(IPlayer player);
+    }
+
+    public abstract record class UnlockedAttributeModifierDefinition<D, PD> : AttributeModifierDefinition<D, PD>, IUnlockedAttributeModifierDefinition where PD : UnlockedAttributeModifierProgressData<D, PD> where D : UnlockedAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
     {
         public required string Name { get; init; }
         public required string ExtraTraitKey { get; init; }
         public required string UnlockedKey { get; init; }
+
+        public bool IsUnlockedForPlayer(IPlayer player)
+        {
+            return GetDict(player).IsUnlocked;
+        }
 
         public void GetTraitAllCommandLine(IPlayer player, StringBuilder sb) {
             var progress = GetDict(player);
@@ -80,7 +91,12 @@ namespace SeraphLeveling.Data.Attributes
         }
     }
 
-    public class UnlockedAttributeModifierProgressData<D, PD>(D definition) : AttributeModifierProgressData<D, PD>(definition) where PD : UnlockedAttributeModifierProgressData<D, PD> where D : UnlockedAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
+    public interface IUnlockedAttributeModifierProgressData
+    {
+        public bool IsUnlocked { get; }
+    }
+
+    public class UnlockedAttributeModifierProgressData<D, PD>(D definition) : AttributeModifierProgressData<D, PD>(definition), IUnlockedAttributeModifierProgressData where PD : UnlockedAttributeModifierProgressData<D, PD> where D : UnlockedAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
     {
         /// <summary>Whether the trait has been unlocked.</summary>
         public bool IsUnlocked { get; set; } = false;
