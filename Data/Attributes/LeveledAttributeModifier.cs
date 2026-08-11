@@ -61,7 +61,7 @@ namespace SeraphLeveling.Data.Attributes
 
             var sb = new StringBuilder();
             sb.AppendLine($"{Name} progression: {currentCredits}% / {maxCredits}%");
-            sb.AppendLine($"Current bonus: +{bonusPercent}{Stat}");
+            sb.AppendLine($"Current bonus: {Direction}{bonusPercent}{Stat}");
             progress.WriteIncrementLine(sb);
 
             if (currentCredits >= maxCredits)
@@ -139,18 +139,18 @@ namespace SeraphLeveling.Data.Attributes
                     ApplyBonus(player, progress);
                 }
 
-                return TextCommandResult.Success($"Max {LongDescription} bonus set to +{GlobalMaxCredits}%. All player bonuses recalculated.");
+                return TextCommandResult.Success($"Max {LongDescription} bonus set to {Direction}{GlobalMaxCredits}%. All player bonuses recalculated.");
             }
             else
             {
-                return TextCommandResult.Success($"Current max {LongDescription} bonus: +{GlobalMaxCredits}%");
+                return TextCommandResult.Success($"Current max {LongDescription} bonus: {Direction}{GlobalMaxCredits}%");
             }
         }
 
         public void GetTraitAllCommandLine(IPlayer player, StringBuilder sb)
         {
             var progress = GetDict(player);
-            sb.AppendLine($"{Name}: {progress.TotalCredits}/{GetMaxCredits(player.Entity)} (+{progress.TotalCredits}{Stat})");
+            sb.AppendLine($"{Name}: {progress.TotalCredits}/{GetMaxCredits(player.Entity)} ({Direction}{progress.TotalCredits}{Stat})");
         }
 
         public override void HandleLogin(IServerPlayer player)
@@ -190,7 +190,7 @@ namespace SeraphLeveling.Data.Attributes
             int bonusPercent = Definition.ApplyBonus(player, (PD)this);
             UpdateSkillActivityDay();
 
-            return TextCommandResult.Success($"{Definition.Name} credits set to {newCredits} (+{bonusPercent}{Definition.Stat}).");
+            return TextCommandResult.Success($"{Definition.Name} credits set to {newCredits} ({Definition.Direction}{bonusPercent}{Definition.Stat}).");
         }
         public virtual void ZeroPartialCredit()
         {

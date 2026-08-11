@@ -139,7 +139,7 @@ namespace SeraphLeveling.Data.Attributes
                 Definition.CheckUnlocks(player);
                 UpdateSkillActivityDay();
 
-                return TextCommandResult.Success($"Set {level} credits on {toolName}. Total: {TotalCredits}/{maxCredits} (+{bonusPercent}{Definition.Stat}).");
+                return TextCommandResult.Success($"Set {level} credits on {toolName}. Total: {TotalCredits}/{maxCredits} ({Definition.Direction}{bonusPercent}{Definition.Stat}).");
             }
             else
             {
