@@ -88,7 +88,7 @@ namespace SeraphLeveling.Data.Attributes
 
     public abstract class LeveledToolAttributeModifierProgressData<D, PD>(D def) : LeveledAttributeModifierProgressData<D, PD>(def) where PD : LeveledToolAttributeModifierProgressData<D, PD> where D : LeveledToolAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
     {
-        public Dictionary<string, LevelableTool> ToolProgress { get; set; }
+        public Dictionary<string, LevelableTool> ToolProgress { get; init; } = new Dictionary<string, LevelableTool>();
         public LevelableTool GetToolProgress(string toolCode)
         {
             if (!ToolProgress.TryGetValue(toolCode, out var progress))
@@ -139,7 +139,7 @@ namespace SeraphLeveling.Data.Attributes
                 Definition.CheckUnlocks(player);
                 UpdateSkillActivityDay();
 
-                return TextCommandResult.Success($"Set {level} credits on {toolName}. Total: {TotalCredits}/{maxCredits} (+{bonusPercent}{Definition.Stat}).");
+                return TextCommandResult.Success($"Set {level} credits on {toolName}. Total: {TotalCredits}/{maxCredits} ({Definition.Direction}{bonusPercent}{Definition.Stat}).");
             }
             else
             {

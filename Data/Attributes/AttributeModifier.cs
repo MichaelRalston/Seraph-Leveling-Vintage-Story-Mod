@@ -27,6 +27,7 @@ namespace SeraphLeveling.Data.Attributes
         public required string Id { get; init; }
         public required string SaveKey { get; init; }
         public required string Description { get; init; }
+        public virtual string Direction { get; init; } = "+";
         public required string PersistenceHeader { get; init; }
         public virtual int PersistenceVersion { get; init; } = 1;
 

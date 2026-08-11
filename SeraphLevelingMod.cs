@@ -160,12 +160,6 @@ namespace SeraphLeveling
         public const int VANILLA_RAVENOUS_HUNGER_PENALTY = 30;
         public const string WATCHED_RAVENOUS_REMAINING = "sitRavenousRemaining";
 
-        // Storage for hunger progress - keyed by player UID
-        public static ConcurrentDictionary<string, HungerProgressData> HungerProgress = new ConcurrentDictionary<string, HungerProgressData>();
-
-        // Flag to indicate pending hunger progress save
-        public static volatile bool pendingHungerProgressSave = false;
-
         // Keys for armor progression system
         public const string ARMOR_DURABILITY_STAT_CODE = "sitArmorDurabilityBonus";
         public const string ARMOR_WALKSPEED_STAT_CODE = "sitArmorWalkSpeedBonus";
@@ -1140,7 +1134,7 @@ namespace SeraphLeveling
                     .WithDescription("View your hunger rate progression stats")
                     .RequiresPrivilege(Privilege.chat)
                     .RequiresPlayer()
-                    .HandleWith(OnTraitHungerCommand)
+                    .HandleWith(AttributeModifierDefinitions.HungerRate.HandleTraitCommand)
                 .EndSubCommand()
                 .BeginSubCommand("hungerbase")
                     .WithDescription("Get or set the base seconds per level (admin only)")
@@ -1153,13 +1147,13 @@ namespace SeraphLeveling
                     .WithArgs(api.ChatCommands.Parsers.OptionalInt("level"))
                     .RequiresPrivilege(Privilege.controlserver)
                     .RequiresPlayer()
-                    .HandleWith(OnTraitHungerLevelCommand)
+                    .HandleWith(AttributeModifierDefinitions.HungerRate.HandleLevelCommand)
                 .EndSubCommand()
                 .BeginSubCommand("hungermax")
                     .WithDescription("Get or set the max hunger rate reduction percent (admin only)")
                     .WithArgs(api.ChatCommands.Parsers.OptionalInt("percent"))
                     .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitHungerMaxCommand)
+                    .HandleWith(AttributeModifierDefinitions.HungerRate.HandleMaxCommand)
                 .EndSubCommand()
                 .BeginSubCommand("hungerincrement")
                     .WithDescription("Get or set the hunger increment step per credit (admin only)")
@@ -1968,9 +1962,7 @@ namespace SeraphLeveling
             sb.AppendLine($"Ranged: {rangedProg.TotalCredits}/{MaxRangedDamagePercent} (+{rangedProg.TotalCredits}% dmg, +{rangedProg.TotalCredits}% acc, +{rangedProg.TotalCredits}% dist)");
 
             AttributeModifierDefinitions.WalkingSpeed.GetTraitAllCommandLine(player, sb);
-
-            var hungerProg = HungerProgress.GetOrAdd(playerUid, _ => new HungerProgressData { CurrentIncrementSize = BaseSecondsPerIncrement });
-            sb.AppendLine($"Hunger: {hungerProg.TotalCredits}/{MaxHungerReductionPercent} (-{hungerProg.TotalCredits}% hunger rate)");
+            AttributeModifierDefinitions.HungerRate.GetTraitAllCommandLine(player, sb);
 
             var armorProg = ArmorProgress.GetOrAdd(playerUid, _ => new ArmorProgressData());
             sb.AppendLine($"Armor: +{armorProg.TotalDurabilityCredits}/{MaxArmorDurabilityPercent}% durability, -{armorProg.TotalWalkSpeedCredits}/{MaxArmorWalkSpeedPercent}% walk penalty");
@@ -2099,14 +2091,7 @@ namespace SeraphLeveling
                 }
                 case "hunger":
                 {
-                    if (level > MaxHungerReductionPercent) return TextCommandResult.Error($"Level cannot exceed max ({MaxHungerReductionPercent}).");
-                    var progress = HungerProgress.GetOrAdd(targetUid, _ => new HungerProgressData { CurrentIncrementSize = BaseSecondsPerIncrement });
-                    progress.TotalCredits = level;
-                    pendingHungerProgressSave = true;
-                    ApplyHungerBonusStatic(targetPlayer, level);
-                    UpdateSkillActivityDay(targetUid, "hunger");
-                    result = $"Hunger level set to {level} (-{level}% hunger rate) for {targetPlayer.PlayerName}.";
-                    break;
+                    return AttributeModifierDefinitions.HungerRate.SetLevel(targetPlayer, level);
                 }
                 case "mender":
                 {
@@ -3124,55 +3109,6 @@ namespace SeraphLeveling
             }
         }
 
-        /// <summary>
-        /// Handler for /trait hunger command.
-        /// </summary>
-        private TextCommandResult OnTraitHungerCommand(TextCommandCallingArgs args)
-        {
-            var player = args.Caller.Player;
-            if (player?.Entity == null)
-            {
-                return TextCommandResult.Error("Could not find player entity");
-            }
-
-            string playerUid = player.PlayerUID;
-            var progress = HungerProgress.GetOrAdd(playerUid, _ => new HungerProgressData
-            {
-                CurrentIncrementSize = BaseSecondsPerIncrement
-            });
-
-            int currentCredits = progress.TotalCredits;
-            int playerMaxCredits = CalculateMaxHungerCredits(player.Entity as EntityPlayer);
-            int bonusPercent = CalculateHungerBonusPercent(currentCredits, player.Entity as EntityPlayer);
-            bool hasRavenous = PlayerHasVanillaRavenousStatic(player.Entity as EntityPlayer);
-
-            // Calculate target hunger rate (same for all classes)
-            int targetHungerRate = 100 - MaxHungerReductionPercent;
-
-            var sb = new StringBuilder();
-            sb.AppendLine($"Hunger progression: {currentCredits} / {playerMaxCredits} credits");
-            sb.AppendLine($"Current bonus: -{bonusPercent}% hunger rate");
-            if (hasRavenous)
-            {
-                int currentRate = 130 - bonusPercent;
-                sb.AppendLine($"Effective hunger rate: {currentRate}% (Ravenous: 130% base)");
-            }
-            else
-            {
-                int currentRate = 100 - bonusPercent;
-                sb.AppendLine($"Effective hunger rate: {currentRate}%");
-            }
-            sb.AppendLine($"Target hunger rate: {targetHungerRate}%");
-            sb.AppendLine($"\nProgress toward next credit:");
-            sb.AppendLine($"  {progress.SecondsInIncrement:F0}/{progress.CurrentIncrementSize} seconds at full saturation");
-
-            if (currentCredits >= playerMaxCredits)
-            {
-                sb.Insert(0, "=== MAXED OUT ===\n");
-            }
-
-            return TextCommandResult.Success(sb.ToString().TrimEnd());
-        }
 
         /// <summary>
         /// Handler for /trait hungerbase command.
@@ -3223,106 +3159,6 @@ namespace SeraphLeveling
             else
             {
                 return TextCommandResult.Success($"Current hunger increment step: +{HungerIncrementStep} per credit\nProgression: {BaseSecondsPerIncrement}, {BaseSecondsPerIncrement + HungerIncrementStep}, {BaseSecondsPerIncrement + HungerIncrementStep * 2}...");
-            }
-        }
-
-        /// <summary>
-        /// Handler for /trait hungerlevel command.
-        /// Gets or sets the player's hunger credits (level) directly.
-        /// </summary>
-        private TextCommandResult OnTraitHungerLevelCommand(TextCommandCallingArgs args)
-        {
-            var player = args.Caller.Player as IServerPlayer;
-            if (player?.Entity == null)
-            {
-                return TextCommandResult.Error("Could not find player entity");
-            }
-
-            // Calculate player-specific max credits
-            int playerMaxCredits = CalculateMaxHungerCredits(player.Entity);
-            string playerUid = player.PlayerUID;
-            var progress = HungerProgress.GetOrAdd(playerUid, _ => new HungerProgressData
-            {
-                CurrentIncrementSize = BaseSecondsPerIncrement
-            });
-
-            int? newCredits = (int?)args[0];
-
-            // If no value provided, show current level
-            if (!newCredits.HasValue)
-            {
-                bool hasRavenousCurrent = PlayerHasVanillaRavenousStatic(player.Entity);
-                int currentEffectiveRate = hasRavenousCurrent ? (130 - progress.TotalCredits) : (100 - progress.TotalCredits);
-                return TextCommandResult.Success($"Current hunger level: {progress.TotalCredits}/{playerMaxCredits} (-{progress.TotalCredits}% hunger rate, effective rate: {currentEffectiveRate}%)");
-            }
-
-            if (newCredits.Value < 0)
-            {
-                return TextCommandResult.Error("Credits cannot be negative");
-            }
-
-            if (newCredits.Value > playerMaxCredits)
-            {
-                return TextCommandResult.Error($"Credits cannot exceed max for this player ({playerMaxCredits})");
-            }
-
-            // Set the player's progress
-            progress.TotalCredits = newCredits.Value;
-            progress.SecondsInIncrement = 0;
-            // Calculate what the increment size should be at this level
-            progress.CurrentIncrementSize = BaseSecondsPerIncrement + (newCredits.Value * HungerIncrementStep);
-
-            pendingHungerProgressSave = true;
-
-            // Apply the bonus
-            int bonusPercent = ApplyHungerBonusStatic(player, newCredits.Value);
-
-            bool hasRavenous = PlayerHasVanillaRavenousStatic(player.Entity);
-            int effectiveRate = hasRavenous ? (130 - bonusPercent) : (100 - bonusPercent);
-
-            UpdateSkillActivityDay(playerUid, "hunger");
-
-            return TextCommandResult.Success($"Hunger credits set to {newCredits.Value}/{playerMaxCredits} (-{bonusPercent}% hunger rate, effective rate: {effectiveRate}%).");
-        }
-
-        /// <summary>
-        /// Handler for /trait hungermax command.
-        /// Gets or sets the maximum hunger rate reduction percent (for non-Ravenous players).
-        /// This determines the target hunger rate for all classes.
-        /// </summary>
-        private TextCommandResult OnTraitHungerMaxCommand(TextCommandCallingArgs args)
-        {
-            int? newValue = (int?)args[0];
-
-            if (newValue.HasValue)
-            {
-                if (newValue.Value < 1)
-                {
-                    return TextCommandResult.Error("Max hunger rate reduction percent must be at least 1");
-                }
-
-                MaxHungerReductionPercent = newValue.Value;
-                pendingConfigSave = true;
-
-                // Recalculate and reapply bonuses for all online players
-                foreach (IServerPlayer player in ServerApi.World.AllOnlinePlayers)
-                {
-                    if (player?.Entity == null) continue;
-                    string playerUid = player.PlayerUID;
-                    var progress = HungerProgress.GetOrAdd(playerUid, _ => new HungerProgressData
-                    {
-                        CurrentIncrementSize = BaseSecondsPerIncrement
-                    });
-                    ApplyHungerBonusStatic(player, progress.TotalCredits);
-                }
-
-                int targetRate = 100 - MaxHungerReductionPercent;
-                return TextCommandResult.Success($"Target hunger rate set to {targetRate}% (non-Ravenous: {MaxHungerReductionPercent} credits, Ravenous: {MaxHungerReductionPercent + VANILLA_RAVENOUS_HUNGER_PENALTY} credits). All player bonuses recalculated.");
-            }
-            else
-            {
-                int targetRate = 100 - MaxHungerReductionPercent;
-                return TextCommandResult.Success($"Target hunger rate: {targetRate}%\nNon-Ravenous players need {MaxHungerReductionPercent} credits\nRavenous players need {MaxHungerReductionPercent + VANILLA_RAVENOUS_HUNGER_PENALTY} credits");
             }
         }
 
@@ -3682,7 +3518,7 @@ namespace SeraphLeveling
         /// <summary>
         /// Checks if the player's class has the vanilla Ravenous trait.
         /// </summary>
-        private static bool PlayerHasVanillaRavenousStatic(EntityPlayer entity)
+        public static bool PlayerHasVanillaRavenousStatic(EntityPlayer entity)
         {
             string[] classTraits = entity.WatchedAttributes.GetStringArray("characterTraits", null);
 
@@ -4726,8 +4562,7 @@ namespace SeraphLeveling
                 if (distance < 0.01f || distance > MAX_DISTANCE_PER_TICK) continue;
 
                 // Get or create player progress data
-                var playerProgress = AttributeModifierDefinitions.WalkingSpeed.ProgressDictionary.GetOrAdd(playerUid, _ => AttributeModifierDefinitions.WalkingSpeed.CreateProgressData());
-
+                var playerProgress = AttributeModifierDefinitions.WalkingSpeed.GetForPlayer(playerUid);
                 playerProgress.DoEvent(player, distance);
             }
         }
@@ -4758,53 +4593,8 @@ namespace SeraphLeveling
                 // Only count time when at exactly max saturation
                 if (currentSaturation < maxSaturation) continue;
 
-                // Get or create player progress data
-                var playerProgress = HungerProgress.GetOrAdd(playerUid, _ => new HungerProgressData
-                {
-                    CurrentIncrementSize = BaseSecondsPerIncrement
-                });
-
-                // Calculate player-specific max credits (Ravenous players need more)
-                int playerMaxCredits = CalculateMaxHungerCredits(player.Entity);
-
-                // Skip all processing if already at max - completely invisible
-                if (playerProgress.TotalCredits >= playerMaxCredits) continue;
-
-                int oldCredits = playerProgress.TotalCredits;
-
-                // Apply sleep buff multiplier to time (since tick is every 1000ms)
-                float modifiedSeconds = ApplyXPMultiplier(playerUid, 1f);
-
-                // Add time to progress
-                playerProgress.SecondsInIncrement += modifiedSeconds;
-
-                // Check if we've earned any new credits
-                while (playerProgress.SecondsInIncrement >= playerProgress.CurrentIncrementSize && playerProgress.TotalCredits < playerMaxCredits)
-                {
-                    // Earn a credit
-                    playerProgress.TotalCredits++;
-                    playerProgress.SecondsInIncrement -= playerProgress.CurrentIncrementSize;
-                    playerProgress.CurrentIncrementSize += HungerIncrementStep;
-
-                    ServerApi.Logger.Debug($"[SeraphLeveling] Player {player.PlayerName} earned hunger credit {playerProgress.TotalCredits}/{playerMaxCredits}, next requires {playerProgress.CurrentIncrementSize} seconds");
-                }
-
-                // Mark for saving if any progress was made
-                if (playerProgress.SecondsInIncrement > 0 || playerProgress.TotalCredits > oldCredits)
-                {
-                    pendingHungerProgressSave = true;
-                }
-
-                // If credits increased, update the stat and notify player
-                if (playerProgress.TotalCredits > oldCredits)
-                {
-                    UpdateSkillActivityDay(playerUid, "hunger");
-                    ApplyHungerBonusStatic(player, playerProgress.TotalCredits);
-
-                    // Notify player of level up with raw improvement (shows progress even when cancelling Ravenous)
-                    NotifyLevelUp(player,
-                        Lang.Get("seraphleveling:message-hunger-level-up", playerProgress.TotalCredits, playerProgress.TotalCredits));
-                }
+                var playerProgress = AttributeModifierDefinitions.HungerRate.GetForPlayer(playerUid);
+                playerProgress.DoEvent(player, 1f);
             }
         }
 
@@ -4973,16 +4763,7 @@ namespace SeraphLeveling
             AttributeModifierDefinitions.WalkingSpeed.HandleLogin(byPlayer);
 
             // Apply hunger bonus (Stats always applied, WatchedAttributes only sync if changed)
-            var hungerProg = HungerProgress.GetOrAdd(playerUid, _ => new HungerProgressData
-            {
-                CurrentIncrementSize = BaseSecondsPerIncrement
-            });
-            int hungerCredits = hungerProg.TotalCredits;
-            ApplyHungerBonusStatic(byPlayer, hungerCredits);
-            if (hungerCredits > 0)
-            {
-                ServerApi.Logger.Debug($"[SeraphLeveling] Applied hunger bonus -{hungerCredits}% to player {byPlayer.PlayerName}");
-            }
+            AttributeModifierDefinitions.HungerRate.HandleLogin(byPlayer);
 
             // Apply armor bonuses (Stats always applied, WatchedAttributes only sync if changed)
             var armorProg = ArmorProgress.GetOrAdd(playerUid, _ => new ArmorProgressData());
@@ -6573,10 +6354,6 @@ namespace SeraphLeveling
                 {
                     PersistRangedProgress();
                 }
-                if (pendingHungerProgressSave || !HungerProgress.IsEmpty)
-                {
-                    PersistHungerProgress();
-                }
                 if (pendingArmorProgressSave || !ArmorProgress.IsEmpty)
                 {
                     PersistArmorProgress();
@@ -6701,7 +6478,6 @@ namespace SeraphLeveling
 
             MeleeProgress.Clear();
             RangedProgress.Clear();
-            HungerProgress.Clear();
             ArmorProgress.Clear();
             ClothierProgress.Clear();
             MenderProgress.Clear();
@@ -6726,7 +6502,6 @@ namespace SeraphLeveling
             pendingSleepBuffSave = false;
             pendingMeleeProgressSave = false;
             pendingRangedProgressSave = false;
-            pendingHungerProgressSave = false;
             pendingArmorProgressSave = false;
             pendingClothierProgressSave = false;
             pendingMenderProgressSave = false;
@@ -6776,12 +6551,6 @@ namespace SeraphLeveling
             {
                 PersistRangedProgress();
                 pendingRangedProgressSave = false;
-            }
-
-            if (pendingHungerProgressSave || !HungerProgress.IsEmpty)
-            {
-                PersistHungerProgress();
-                pendingHungerProgressSave = false;
             }
 
             if (pendingArmorProgressSave || !ArmorProgress.IsEmpty)
@@ -7065,7 +6834,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistHungerProgress()
         {
-            PersistProgress<HungerProgressData>();
+            AttributeModifierDefinitions.HungerRate.PersistProgress(ServerApi);
         }
 
         /// <summary>
@@ -7073,7 +6842,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadHungerProgress()
         {
-            LoadProgress<HungerProgressData>();
+            AttributeModifierDefinitions.HungerRate.LoadProgress(ServerApi);
         }
 
         /// <summary>
@@ -7741,27 +7510,7 @@ namespace SeraphLeveling
             totalDecayApplied += AttributeModifierDefinitions.WalkingSpeed.ApplyDecay(player, currentDay, sb, verboseSb);
 
             // Hunger
-            if (!DecayExemptSkills.Contains("hunger") && !DisabledSkills.Contains("hunger"))
-            {
-                if (HungerProgress.TryGetValue(playerUid, out var hProg) && (hProg.TotalCredits > 0 || hProg.SecondsInIncrement > 0))
-                {
-                    var (grace, basePoints, maxPoints) = GetDecayParams("hunger");
-                    int decayCredits = CalculateDecayPoints(hProg.LastActivityDay, currentDay, grace, basePoints, maxPoints);
-                    if (decayCredits > 0)
-                    {
-                        int oldCredits = hProg.TotalCredits;
-                        float oldAcc = hProg.SecondsInIncrement; int oldInc = hProg.CurrentIncrementSize;
-                        double rawPenalty = (double)decayCredits;
-                        var (newCr, newAcc, newInc, lost) = ApplySingleAccumulatorDecay(
-                            oldAcc, oldInc, oldCredits,
-                            rawPenalty, BaseSecondsPerIncrement, HungerIncrementStep, verboseSb, "Hunger");
-                        hProg.TotalCredits = newCr; hProg.SecondsInIncrement = (float)newAcc; hProg.CurrentIncrementSize = newInc;
-                        if (lost > 0) totalDecayApplied += lost;
-                        sb.AppendLine($"  Hunger: {oldCredits} \u2192 {newCr} (-{lost} credits, {rawPenalty:F0} pts), {oldAcc:F0}/{oldInc} \u2192 {(int)newAcc}/{newInc}");
-                        pendingHungerProgressSave = true;
-                    }
-                }
-            }
+            totalDecayApplied += AttributeModifierDefinitions.HungerRate.ApplyDecay(player, currentDay, sb, verboseSb);
 
             // Armor is exempt from decay (leveled by wearing new pieces, not renewable)
 
@@ -7969,8 +7718,7 @@ namespace SeraphLeveling
             if (RangedProgress.TryGetValue(playerUid, out var rangedProg))
                 ApplyRangedBonusStatic(player, rangedProg.TotalCredits);
             AttributeModifierDefinitions.WalkingSpeed.ApplyBonusIfExists(player);
-            if (HungerProgress.TryGetValue(playerUid, out var hungerProg))
-                ApplyHungerBonusStatic(player, hungerProg.TotalCredits);
+            AttributeModifierDefinitions.HungerRate.ApplyBonusIfExists(player);
             if (ArmorProgress.TryGetValue(playerUid, out var armorProg))
                 ApplyArmorBonusesStatic(player, armorProg.TotalDurabilityCredits, armorProg.TotalWalkSpeedCredits);
             if (MenderProgress.TryGetValue(playerUid, out var menderProg))
@@ -8008,10 +7756,6 @@ namespace SeraphLeveling
                 case "ranged":
                     if (RangedProgress.TryGetValue(playerUid, out var rangedProg))
                         rangedProg.LastActivityDay = currentDay;
-                    break;
-                case "hunger":
-                    if (HungerProgress.TryGetValue(playerUid, out var hungerProg))
-                        hungerProg.LastActivityDay = currentDay;
                     break;
                 case "armor":
                     if (ArmorProgress.TryGetValue(playerUid, out var armorProg))
@@ -8546,21 +8290,7 @@ namespace SeraphLeveling
             // Walking
             totalCreditsLost += AttributeModifierDefinitions.WalkingSpeed.ApplyDeathPenalty(player, sb);
             // Hunger
-            if (!DeathPenaltyExemptSkills.Contains("hunger") && !DisabledSkills.Contains("hunger"))
-            {
-                if (HungerProgress.TryGetValue(playerUid, out var hungerProg) && (hungerProg.TotalCredits > 0 || hungerProg.SecondsInIncrement > 0))
-                {
-                    int oldCredits = hungerProg.TotalCredits;
-                    float oldAcc = hungerProg.SecondsInIncrement; int oldInc = hungerProg.CurrentIncrementSize;
-                    double rawPenalty = BaseSecondsPerIncrement * DeathPenaltyFraction * Math.Sqrt(Math.Max(1, oldCredits));
-                    var (newCr, newAcc, newInc, lost) = ApplySingleAccumulatorDecay(
-                        oldAcc, oldInc, oldCredits, rawPenalty, BaseSecondsPerIncrement, HungerIncrementStep, null, "Hunger");
-                    hungerProg.TotalCredits = newCr; hungerProg.SecondsInIncrement = (float)newAcc; hungerProg.CurrentIncrementSize = newInc;
-                    if (lost > 0) totalCreditsLost += lost;
-                    pendingHungerProgressSave = true;
-                    sb.AppendLine($"  Hunger: {oldCredits} \u2192 {newCr} (-{lost} credits, {rawPenalty:F0} pts), {oldAcc:F0}/{oldInc} \u2192 {(int)newAcc}/{newInc}");
-                }
-            }
+            totalCreditsLost += AttributeModifierDefinitions.HungerRate.ApplyDeathPenalty(player, sb);
 
             // Mender
             if (!DeathPenaltyExemptSkills.Contains("mender") && !DisabledSkills.Contains("mender"))
@@ -8815,7 +8545,7 @@ namespace SeraphLeveling
             AppendDecayStatus(sb, "Walking", "walking", playerUid, currentDay,
                 () => AttributeModifierDefinitions.WalkingSpeed.ProgressDictionary.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
             AppendDecayStatus(sb, "Hunger", "hunger", playerUid, currentDay,
-                () => HungerProgress.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
+                () => AttributeModifierDefinitions.HungerRate.ProgressDictionary.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
             AppendDecayStatus(sb, "Furtive", "furtive", playerUid, currentDay,
                 () => FurtiveProgress.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
 
@@ -12971,14 +12701,7 @@ namespace SeraphLeveling
             AttributeModifierDefinitions.WalkingSpeed.ResetProgress(player);
 
             // Reset Hunger
-            if (HungerProgress.TryGetValue(playerUid, out var hungerProg))
-            {
-                hungerProg.TotalCredits = 0;
-                hungerProg.SecondsInIncrement = 0;
-                hungerProg.CurrentIncrementSize = 300; // Default base (5 minutes)
-                pendingHungerProgressSave = true;
-            }
-            ApplyHungerBonusStatic(player, 0);
+            AttributeModifierDefinitions.HungerRate.ResetProgress(player);
 
             // Reset Armor
             if (ArmorProgress.TryGetValue(playerUid, out var armorProg))
@@ -13173,7 +12896,7 @@ namespace SeraphLeveling
             if (MeleeProgress.TryGetValue(uid, out var melee)) ex.Melee = melee;
             if (RangedProgress.TryGetValue(uid, out var ranged)) ex.Ranged = ranged;
             if (AttributeModifierDefinitions.WalkingSpeed.ProgressDictionary.TryGetValue(uid, out var walking)) ex.Walking = walking;
-            if (HungerProgress.TryGetValue(uid, out var hunger)) ex.Hunger = hunger;
+            if (AttributeModifierDefinitions.HungerRate.ProgressDictionary.TryGetValue(uid, out var hunger)) ex.Hunger = hunger;
             if (ArmorProgress.TryGetValue(uid, out var armor)) ex.Armor = armor;
             if (ClothierProgress.TryGetValue(uid, out var clothier)) ex.Clothier = clothier;
             if (MenderProgress.TryGetValue(uid, out var mender)) ex.Mender = mender;
@@ -13202,7 +12925,7 @@ namespace SeraphLeveling
             if (ex.Melee != null) { MeleeProgress[uid] = ex.Melee; pendingMeleeProgressSave = true; }
             if (ex.Ranged != null) { RangedProgress[uid] = ex.Ranged; pendingRangedProgressSave = true; }
             if (ex.Walking != null) { AttributeModifierDefinitions.WalkingSpeed.ProgressDictionary[uid] = ex.Walking; AttributeModifierDefinitions.WalkingSpeed.MarkForSave(true); }
-            if (ex.Hunger != null) { HungerProgress[uid] = ex.Hunger; pendingHungerProgressSave = true; }
+            if (ex.Hunger != null) { AttributeModifierDefinitions.HungerRate.ProgressDictionary[uid] = ex.Walking; AttributeModifierDefinitions.HungerRate.MarkForSave(true); }
             if (ex.Armor != null) { ArmorProgress[uid] = ex.Armor; pendingArmorProgressSave = true; }
             if (ex.Clothier != null) { ClothierProgress[uid] = ex.Clothier; pendingClothierProgressSave = true; }
             if (ex.Mender != null) { MenderProgress[uid] = ex.Mender; pendingMenderProgressSave = true; }
@@ -13340,13 +13063,7 @@ namespace SeraphLeveling
             AttributeModifierDefinitions.WalkingSpeed.MaxStat(player);
 
             // Max Hunger
-            int maxHungerCredits = CalculateMaxHungerCredits(player.Entity);
-            var hungerProg = HungerProgress.GetOrAdd(playerUid, _ => new HungerProgressData());
-            hungerProg.TotalCredits = maxHungerCredits;
-            hungerProg.SecondsInIncrement = 0;
-            hungerProg.CurrentIncrementSize = BaseSecondsPerIncrement;
-            pendingHungerProgressSave = true;
-            ApplyHungerBonusStatic(player, CalculateHungerBonusPercent(maxHungerCredits, player.Entity));
+            AttributeModifierDefinitions.HungerRate.MaxStat(player);
 
             // Max Armor
             int maxArmorDurabilityCredits = MaxArmorDurabilityPercent;
@@ -13508,12 +13225,7 @@ namespace SeraphLeveling
             AttributeModifierDefinitions.WalkingSpeed.ApplyTraitTestSuite1Command(player);
 
             // Hunger
-            var hungerProg = HungerProgress.GetOrAdd(playerUid, _ => new HungerProgressData());
-            hungerProg.TotalCredits = CREDITS;
-            hungerProg.SecondsInIncrement = 0;
-            hungerProg.CurrentIncrementSize = BaseSecondsPerIncrement;
-            pendingHungerProgressSave = true;
-            ApplyHungerBonusStatic(player, CalculateHungerBonusPercent(CREDITS, player.Entity));
+            AttributeModifierDefinitions.HungerRate.ApplyTraitTestSuite1Command(player);
 
             // Armor (both durability and walkspeed tracks)
             var armorProg = ArmorProgress.GetOrAdd(playerUid, _ => new ArmorProgressData());

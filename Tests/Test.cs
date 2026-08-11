@@ -677,13 +677,13 @@ namespace SeraphLeveling.Tests
             }
 
             // PERS-009: Hunger data exists in dictionary
-            bool hasHungerData = SeraphLevelingModSystem.HungerProgress.ContainsKey(playerUid);
+            bool hasHungerData = AttributeModifierDefinitions.HungerRate.ProgressDictionary.ContainsKey(playerUid);
             AssertTrue("PERS-009", "Hunger data exists in dictionary", hasHungerData, "exists", "missing");
 
             // PERS-010: Hunger WatchedAttributes matches dictionary
             if (hasHungerData)
             {
-                var hungerData = SeraphLevelingModSystem.HungerProgress[playerUid];
+                var hungerData = AttributeModifierDefinitions.HungerRate.ProgressDictionary[playerUid];
                 int watchedLevel = watchedAttrs.GetInt(SeraphLevelingModSystem.WATCHED_HUNGER_LEVEL, -999);
                 AssertEqual("PERS-010", "Hunger level synced to WatchedAttributes", hungerData.TotalCredits, watchedLevel);
             }

@@ -72,7 +72,7 @@ namespace SeraphLeveling.Data.Attributes
 
             var sb = new StringBuilder();
             sb.AppendLine($"{Name} progression: {currentCredits}% / {maxCredits}%");
-            sb.AppendLine($"Current bonus: +{bonusPercent}{Stat}");
+            sb.AppendLine($"Current bonus: {Direction}{bonusPercent}{Stat}");
             progress.WriteIncrementLine(sb);
 
             if (currentCredits >= maxCredits)
@@ -99,7 +99,7 @@ namespace SeraphLeveling.Data.Attributes
             if (!newCredits.HasValue)
             {
                 int currentBonus = CalculateBonus(player.Entity, progress);
-                return TextCommandResult.Success($"Current {Description} level: {progress.TotalCredits}/{maxCredits} (+{currentBonus}{Stat})");
+                return TextCommandResult.Success($"Current {Description} level: {progress.TotalCredits}/{maxCredits} ({Direction}{currentBonus}{Stat})");
             }
 
             if (newCredits.Value < 0)
@@ -124,7 +124,7 @@ namespace SeraphLeveling.Data.Attributes
             MarkForSave(true);
             ApplyBonus(player, progress);
             progress.UpdateSkillActivityDay();
-            return TextCommandResult.Success($"{Name} level set to {level} (+{level}{Stat}) for {player.PlayerName}.");
+            return TextCommandResult.Success($"{Name} level set to {level} ({Direction}{level}{Stat}) for {player.PlayerName}.");
         }
 
         public TextCommandResult HandleMaxCommand(TextCommandCallingArgs args)
@@ -150,18 +150,18 @@ namespace SeraphLeveling.Data.Attributes
                     ApplyBonus(player, progress);
                 }
 
-                return TextCommandResult.Success($"Max {LongDescription} bonus set to +{GlobalMaxCredits}%. All player bonuses recalculated.");
+                return TextCommandResult.Success($"Max {LongDescription} bonus set to {Direction}{GlobalMaxCredits}%. All player bonuses recalculated.");
             }
             else
             {
-                return TextCommandResult.Success($"Current max {LongDescription} bonus: +{GlobalMaxCredits}%");
+                return TextCommandResult.Success($"Current max {LongDescription} bonus: {Direction}{GlobalMaxCredits}%");
             }
         }
 
         public void GetTraitAllCommandLine(IPlayer player, StringBuilder sb)
         {
             var progress = GetDict(player);
-            sb.AppendLine($"{Name}: {progress.TotalCredits}/{GetMaxCredits(player.Entity)} (+{progress.TotalCredits}{Stat})");
+            sb.AppendLine($"{Name}: {progress.TotalCredits}/{GetMaxCredits(player.Entity)} ({Direction}{progress.TotalCredits}{Stat})");
         }
 
         public override void HandleLogin(IServerPlayer player)
@@ -170,7 +170,7 @@ namespace SeraphLeveling.Data.Attributes
             ApplyBonus(player, progress);
             if (progress.TotalCredits > 0)
             {
-                SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Applied {Description} bonus {progress.TotalCredits}% to player {player.PlayerName}");
+                SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Applied {Description} bonus {Direction}{progress.TotalCredits}% to player {player.PlayerName}");
             }
         }
     }
@@ -201,7 +201,7 @@ namespace SeraphLeveling.Data.Attributes
             int bonusPercent = Definition.ApplyBonus(player, (PD)this);
             UpdateSkillActivityDay();
 
-            return TextCommandResult.Success($"{Definition.Name} credits set to {newCredits} (+{bonusPercent}{Definition.Stat}).");
+            return TextCommandResult.Success($"{Definition.Name} credits set to {newCredits} ({Definition.Direction}{bonusPercent}{Definition.Stat}).");
         }
         public virtual void ZeroPartialCredit()
         {

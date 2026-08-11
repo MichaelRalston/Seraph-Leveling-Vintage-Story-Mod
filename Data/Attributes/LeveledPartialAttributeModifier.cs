@@ -6,7 +6,7 @@ using Vintagestory.API.Config;
 
 namespace SeraphLeveling.Data.Attributes
 {
-    public abstract record class LeveledPartialAttributeModifierDefinition: LeveledAttributeModifierDefinition<LeveledPartialAttributeModifierDefinition, LeveledPartialAttributeModifierProgressData>, IConstructable<LeveledPartialAttributeModifierDefinition, LeveledPartialAttributeModifierProgressData>
+    public abstract record class LeveledPartialAttributeModifierDefinition : LeveledAttributeModifierDefinition<LeveledPartialAttributeModifierDefinition, LeveledPartialAttributeModifierProgressData>, IConstructable<LeveledPartialAttributeModifierDefinition, LeveledPartialAttributeModifierProgressData>
     {
         public required int BaseIncrement { get; init; }
         public required int IncrementStep { get; init; }
@@ -67,6 +67,7 @@ namespace SeraphLeveling.Data.Attributes
             // If credits increased, update the stat and notify player
             if (TotalCredits > oldCredits)
             {
+                UpdateSkillActivityDay();
                 Definition.ApplyBonus(player, this);
 
                 // Notify player of level up with raw improvement (shows progress even when capped)

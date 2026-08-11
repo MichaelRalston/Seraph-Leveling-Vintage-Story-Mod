@@ -26,7 +26,7 @@ namespace SeraphLeveling.Data
         public MeleeProgressData Melee;
         public RangedProgressData Ranged;
         public LeveledPartialAttributeModifierProgressData Walking;
-        public HungerProgressData Hunger;
+        public LeveledPartialAttributeModifierProgressData Hunger;
         public ArmorProgressData Armor;
         public ClothierProgressData Clothier;
         public MenderProgressData Mender;
