@@ -13,38 +13,6 @@ namespace SeraphLeveling.Data.Attributes
             return new TinkererAttributeModifierProgressData(def);
         }
 
-        public override void CheckUnlocks(IServerPlayer player)
-        {
-            if (player?.Entity == null) return;
-
-            string playerUid = player.PlayerUID;
-            var progress = GetDict(player);
-
-            // Already unlocked
-            if (progress.IsUnlocked) return;
-
-            // FIXME Abstract checking of requirements
-            
-            // Check Technical trait
-            var technicalProgress = SeraphLevelingModSystem.TechnicalProgress.GetOrAdd(playerUid, _ => new TechnicalProgressData());
-            if (!technicalProgress.IsUnlocked) return;
-
-            // Check Precise threshold
-            var preciseProgress = SeraphLevelingModSystem.PreciseProgress.GetOrAdd(playerUid, _ => new PreciseProgressData());
-            if (preciseProgress.TotalCredits < SeraphLevelingModSystem.TinkererPreciseThreshold) return;
-
-            // Both conditions met - unlock Tinkerer!
-            progress.IsUnlocked = true;
-            MarkForSave(true);
-
-            // Apply the trait
-            ApplyUnlock(player, progress);
-
-            // Notify player
-            SeraphLevelingModSystem.NotifyLevelUp(player,
-                Lang.Get("seraphleveling:message-tinkerer-unlock"));
-        }
-
         public override TextCommandResult HandleTraitCommand(TextCommandCallingArgs args)
         {
             IServerPlayer player = args.Caller.Player as IServerPlayer;
