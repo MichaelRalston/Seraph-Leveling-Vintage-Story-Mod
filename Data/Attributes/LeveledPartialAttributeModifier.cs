@@ -67,6 +67,7 @@ namespace SeraphLeveling.Data.Attributes
             // If credits increased, update the stat and notify player
             if (TotalCredits > oldCredits)
             {
+                UpdateSkillActivityDay();
                 Definition.ApplyBonus(player, this);
 
                 // Notify player of level up with raw improvement (shows progress even when capped)

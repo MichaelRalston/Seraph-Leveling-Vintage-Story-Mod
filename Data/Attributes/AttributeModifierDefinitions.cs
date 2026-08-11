@@ -31,6 +31,23 @@ namespace SeraphLeveling.Data.Attributes
             GlobalMaxCredits = SeraphLevelingModSystem.MaxWalkingSpeedPercent
         };
 
+        public static readonly HungerAttributeModifierDefinition HungerRate = new()
+        {
+            Id = "hungerRate",
+            SaveKey = "sitHungerProgress",
+            Description = "hunger",
+            PersistenceHeader = "SIH",
+            SkillKey = "hunger",
+            Name = "Hunger",
+            Direction = "-",
+            IncrementUnits = "seconds",
+            LongDescription = "hunger rate",
+            Stat = "% hunger rate",
+            BaseIncrement = SeraphLevelingModSystem.BaseSecondsPerIncrement,
+            IncrementStep = SeraphLevelingModSystem.HungerIncrementStep,
+            GlobalMaxCredits = SeraphLevelingModSystem.MaxHungerReductionPercent
+        };
+
         public static readonly MiningAttributeModifierDefinition MiningSpeed = new()
         {
             Id = "miningSpeed",
