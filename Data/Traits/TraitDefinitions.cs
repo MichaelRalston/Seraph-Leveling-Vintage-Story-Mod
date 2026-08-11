@@ -9,7 +9,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "fleetfooted",
             Attributes = [ 
-                AttributeModifierDefinitions.WalkingSpeed
+                (AttributeModifierDefinitions.WalkingSpeed, 10)
             ]
         };
 
@@ -17,7 +17,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "tinkerer",
             Attributes = [
-                AttributeModifierDefinitions.Tinkerer
+                (AttributeModifierDefinitions.Tinkerer, 1)
             ]
         };
     }

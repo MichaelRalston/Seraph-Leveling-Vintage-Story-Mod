@@ -6340,9 +6340,9 @@ namespace SeraphLeveling
 
                 foreach (var def in saveableAttributes)
                 {
-                    if (PendingSaves.GetValueOrDefault(def, false) || def.HasUnsavedProgress())
+                    if (PendingSaves.GetValueOrDefault(def.Item1, false) || def.Item1.HasUnsavedProgress())
                     {
-                        def.PersistProgress(ServerApi);
+                        def.Item1.PersistProgress(ServerApi);
                     }
                 }
 
@@ -6472,8 +6472,8 @@ namespace SeraphLeveling
                     .ToHashSet();
             foreach (var def in disposableAttributes)
             {
-                def.ResetProgress();
-                def.MarkForSave(false); // TODO Just clear PendingSaves once all traits are converted
+                def.Item1.ResetProgress();
+                def.Item1.MarkForSave(false); // TODO Just clear PendingSaves once all traits are converted
             }
 
             MeleeProgress.Clear();
@@ -6534,10 +6534,10 @@ namespace SeraphLeveling
                     .ToHashSet();
             foreach (var def in saveableAttributes)
             {
-                if (PendingSaves.GetValueOrDefault(def, false) || def.HasUnsavedProgress())
+                if (PendingSaves.GetValueOrDefault(def.Item1, false) || def.Item1.HasUnsavedProgress())
                 {
-                    def.PersistProgress(ServerApi);
-                    PendingSaves.AddOrUpdate(def, false, (_, _) => false);
+                    def.Item1.PersistProgress(ServerApi);
+                    PendingSaves.AddOrUpdate(def.Item1, false, (_, _) => false);
                 }
             }
 
