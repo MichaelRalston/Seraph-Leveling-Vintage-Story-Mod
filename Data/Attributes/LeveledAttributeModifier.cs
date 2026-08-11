@@ -124,6 +124,7 @@ namespace SeraphLeveling.Data.Attributes
             {
                 if (newValue.Value < 1)
                 {
+                    // FIXME This shouldn't be walking-specific
                     return TextCommandResult.Error("Max walking speed percent must be at least 1");
                 }
 
@@ -152,7 +153,7 @@ namespace SeraphLeveling.Data.Attributes
             sb.AppendLine($"{Name}: {progress.TotalCredits}/{GetMaxCredits(player.Entity)} (+{progress.TotalCredits}{Stat})");
         }
 
-        public void HandleLogin(IServerPlayer player)
+        public override void HandleLogin(IServerPlayer player)
         {
             var progress = GetDict(player);
             ApplyBonus(player, progress);

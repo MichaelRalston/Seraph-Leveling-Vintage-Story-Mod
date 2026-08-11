@@ -4,14 +4,15 @@ namespace SeraphLeveling.Data.Attributes
 {
     public static class AttributeModifierDefinitions
     {
-        public static readonly UnlockedAttributeModifierDefinition Tinkerer = new()
+        public static readonly TinkererAttributeModifierDefinition Tinkerer = new()
         {
             Id = "tinkerer",
             SaveKey = "sitTinkererProgress",
             Description = "tinkerer",
             PersistenceHeader = "TNK",
             Name = "Tinkerer",
-            ExtraTraitKey = SeraphLevelingModSystem.TINKERER_TRAIT_CODE
+            ExtraTraitKey = SeraphLevelingModSystem.TINKERER_TRAIT_CODE,
+            UnlockedKey = SeraphLevelingModSystem.WATCHED_TINKERER_UNLOCKED
         };
 
         public static readonly WalkingAttributeModifierDefinition WalkingSpeed = new()

@@ -538,10 +538,6 @@ namespace SeraphLeveling
         // Tinkerer unlock threshold
         public static int TinkererPreciseThreshold = 10;              // 10% Precise damage bonus required (plus Technical)
 
-        // Storage for tinkerer progress
-        public static ConcurrentDictionary<string, TinkererProgressData> TinkererProgress = new ConcurrentDictionary<string, TinkererProgressData>();
-        public static volatile bool pendingTinkererProgressSave = false;
-
         // =========================================================================
         // MERCILESS TRAIT - Unlocks shortsword/shield after armor + melee thresholds
         // =========================================================================
@@ -1454,7 +1450,7 @@ namespace SeraphLeveling
                     .WithArgs(api.ChatCommands.Parsers.Bool("unlock"))
                     .RequiresPrivilege(Privilege.controlserver)
                     .RequiresPlayer()
-                    .HandleWith(OnTraitTinkererUnlockCommand)
+                    .HandleWith(AttributeModifierDefinitions.Tinkerer.HandleUnlockCommand)
                 .EndSubCommand()
                 // Merciless trait commands
                 .BeginSubCommand("merciless")
@@ -5265,12 +5261,7 @@ namespace SeraphLeveling
             }
 
             // Apply tinkerer unlock
-            var tinkererProg = TinkererProgress.GetOrAdd(playerUid, _ => new TinkererProgressData());
-            if (tinkererProg.IsUnlocked)
-            {
-                ApplyTinkererBonusStatic(byPlayer, true);
-                ServerApi.Logger.Debug($"[SeraphLeveling] Applied tinkerer unlock to player {byPlayer.PlayerName}");
-            }
+            AttributeModifierDefinitions.Tinkerer.HandleLogin(byPlayer);
 
             // Apply merciless unlock
             var mercilessProg = MercilessProgress.GetOrAdd(playerUid, _ => new MercilessProgressData());
@@ -6797,10 +6788,6 @@ namespace SeraphLeveling
                 {
                     PersistImproviserProgress();
                 }
-                if (pendingTinkererProgressSave || !TinkererProgress.IsEmpty)
-                {
-                    PersistTinkererProgress();
-                }
                 if (pendingMercilessProgressSave || !MercilessProgress.IsEmpty)
                 {
                     PersistMercilessProgress();
@@ -6891,7 +6878,6 @@ namespace SeraphLeveling
             HardyHealthProgress.Clear();
             BowyerProgress.Clear();
             ImproviserProgress.Clear();
-            TinkererProgress.Clear();
             MercilessProgress.Clear();
             ClaustrophobicRemovalProgress.Clear();
             lastPlayerPositions.Clear();
@@ -6918,7 +6904,6 @@ namespace SeraphLeveling
             pendingHardyHealthProgressSave = false;
             pendingBowyerProgressSave = false;
             pendingImproviserProgressSave = false;
-            pendingTinkererProgressSave = false;
             pendingMercilessProgressSave = false;
             pendingClaustrophobicRemovalProgressSave = false;
             base.Dispose();
@@ -7040,12 +7025,6 @@ namespace SeraphLeveling
             {
                 PersistImproviserProgress();
                 pendingImproviserProgressSave = false;
-            }
-
-            if (pendingTinkererProgressSave || !TinkererProgress.IsEmpty)
-            {
-                PersistTinkererProgress();
-                pendingTinkererProgressSave = false;
             }
 
             if (pendingMercilessProgressSave || !MercilessProgress.IsEmpty)
@@ -11084,32 +11063,7 @@ namespace SeraphLeveling
         /// </summary>
         private static void CheckTinkererUnlock(IServerPlayer player)
         {
-            if (player?.Entity == null) return;
-
-            string playerUid = player.PlayerUID;
-            var progress = TinkererProgress.GetOrAdd(playerUid, _ => new TinkererProgressData());
-
-            // Already unlocked
-            if (progress.IsUnlocked) return;
-
-            // Check Technical trait
-            var technicalProgress = TechnicalProgress.GetOrAdd(playerUid, _ => new TechnicalProgressData());
-            if (!technicalProgress.IsUnlocked) return;
-
-            // Check Precise threshold
-            var preciseProgress = PreciseProgress.GetOrAdd(playerUid, _ => new PreciseProgressData());
-            if (preciseProgress.TotalCredits < TinkererPreciseThreshold) return;
-
-            // Both conditions met - unlock Tinkerer!
-            progress.IsUnlocked = true;
-            pendingTinkererProgressSave = true;
-
-            // Apply the trait
-            ApplyTinkererBonusStatic(player, true);
-
-            // Notify player
-            NotifyLevelUp(player,
-                Lang.Get("seraphleveling:message-tinkerer-unlock"));
+            AttributeModifierDefinitions.Tinkerer.CheckUnlock(player);
         }
 
         /// <summary>
@@ -11125,23 +11079,6 @@ namespace SeraphLeveling
             // -1 means one fewer temporal gear needed to repair translocators
             float gearCostReduction = unlocked ? -1f : 0f;
             player.Entity.Stats.Set("temporalGearTLRepairCost", TECHNICAL_STAT_CODE, gearCostReduction, false);
-        }
-
-        /// <summary>
-        /// Apply Tinkerer trait (unlocks tuning spear crafting).
-        /// Also adds "tinkerer" to extraTraits to unlock tuning spear recipes.
-        /// </summary>
-        private static void ApplyTinkererBonusStatic(IServerPlayer player, bool unlocked)
-        {
-            player.Entity.WatchedAttributes.SetBool(WATCHED_TINKERER_UNLOCKED, unlocked);
-
-            // Update extraTraits to show Tinkerer trait if unlocked (for UI display)
-            UpdateExtraTraitStatic(player.Entity, AttributeModifierDefinitions.Tinkerer.ExtraTraitKey, unlocked);
-
-            // IMPORTANT: Add "tinkerer" to extraTraits to unlock tuning spear recipes
-            // The game's recipe system checks extraTraits for dynamically granted traits
-            // that unlock recipes via requiresTrait (e.g., the tuning spear requires "tinkerer")
-            UpdateExtraTraitStatic(player.Entity, AttributeModifierDefinitions.Tinkerer.Id, unlocked);
         }
 
         /// <summary>
@@ -12956,21 +12893,7 @@ namespace SeraphLeveling
         /// </summary>
         private TextCommandResult OnTraitTinkererCommand(TextCommandCallingArgs args)
         {
-            IServerPlayer player = args.Caller.Player as IServerPlayer;
-            if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
-
-            string playerUid = player.PlayerUID;
-            var progress = TinkererProgress.GetOrAdd(playerUid, _ => new TinkererProgressData());
-            var technicalProgress = TechnicalProgress.GetOrAdd(playerUid, _ => new TechnicalProgressData());
-            var preciseProgress = PreciseProgress.GetOrAdd(playerUid, _ => new PreciseProgressData());
-
-            var sb = new StringBuilder();
-            sb.AppendLine($"Tinkerer trait: {(progress.IsUnlocked ? "UNLOCKED" : "Locked")}");
-            sb.AppendLine($"Requirements:");
-            sb.AppendLine($"  Technical trait: {(technicalProgress.IsUnlocked ? "UNLOCKED ✓" : "Locked ✗")}");
-            sb.AppendLine($"  Precise level: {preciseProgress.TotalCredits} / {TinkererPreciseThreshold} ({(preciseProgress.TotalCredits >= TinkererPreciseThreshold ? "✓" : "✗")})");
-
-            return TextCommandResult.Success(sb.ToString());
+            return AttributeModifierDefinitions.Tinkerer.HandleTraitCommand(args);
         }
 
         /// <summary>
@@ -13117,26 +13040,6 @@ namespace SeraphLeveling
             ApplyImproviserBonusStatic(player, unlock);
 
             return TextCommandResult.Success($"Improviser trait {(unlock ? "unlocked" : "locked")}.");
-        }
-
-        /// <summary>
-        /// Handler for /trait tinkererunlock command.
-        /// </summary>
-        private TextCommandResult OnTraitTinkererUnlockCommand(TextCommandCallingArgs args)
-        {
-            IServerPlayer player = args.Caller.Player as IServerPlayer;
-            if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
-
-            bool unlock = (bool)args[0];
-
-            string playerUid = player.PlayerUID;
-            var progress = TinkererProgress.GetOrAdd(playerUid, _ => new TinkererProgressData());
-            progress.IsUnlocked = unlock;
-
-            pendingTinkererProgressSave = true;
-            ApplyTinkererBonusStatic(player, unlock);
-
-            return TextCommandResult.Success($"Tinkerer trait {(unlock ? "unlocked" : "locked")}.");
         }
 
         /// <summary>
@@ -13371,12 +13274,7 @@ namespace SeraphLeveling
             ApplyImproviserBonusStatic(player, false);
 
             // Reset Tinkerer
-            if (TinkererProgress.TryGetValue(playerUid, out var tinkererProg))
-            {
-                tinkererProg.IsUnlocked = false;
-                pendingTinkererProgressSave = true;
-            }
-            ApplyTinkererBonusStatic(player, false);
+            AttributeModifierDefinitions.Tinkerer.ResetProgress(player);
 
             // Reset Merciless
             if (MercilessProgress.TryGetValue(playerUid, out var mercilessProg))
@@ -13468,7 +13366,7 @@ namespace SeraphLeveling
             if (HardyHealthProgress.TryGetValue(uid, out var hardy)) ex.HardyHealth = hardy;
             if (BowyerProgress.TryGetValue(uid, out var bowyer)) ex.Bowyer = bowyer;
             if (ImproviserProgress.TryGetValue(uid, out var improviser)) ex.Improviser = improviser;
-            if (TinkererProgress.TryGetValue(uid, out var tinkerer)) ex.Tinkerer = tinkerer;
+            if (AttributeModifierDefinitions.Tinkerer.ProgressDictionary.TryGetValue(uid, out var tinkerer)) ex.Tinkerer = tinkerer;
             if (MercilessProgress.TryGetValue(uid, out var merciless)) ex.Merciless = merciless;
             if (ClaustrophobicRemovalProgress.TryGetValue(uid, out var claustro)) ex.ClaustrophobicRemoval = claustro;
             if (HeavyFootedRemovalProgress.TryGetValue(uid, out var heavyFooted)) ex.HeavyFootedRemoval = heavyFooted;
@@ -13497,7 +13395,7 @@ namespace SeraphLeveling
             if (ex.HardyHealth != null) { HardyHealthProgress[uid] = ex.HardyHealth; pendingHardyHealthProgressSave = true; }
             if (ex.Bowyer != null) { BowyerProgress[uid] = ex.Bowyer; pendingBowyerProgressSave = true; }
             if (ex.Improviser != null) { ImproviserProgress[uid] = ex.Improviser; pendingImproviserProgressSave = true; }
-            if (ex.Tinkerer != null) { TinkererProgress[uid] = ex.Tinkerer; pendingTinkererProgressSave = true; }
+            if (ex.Tinkerer != null) { AttributeModifierDefinitions.Tinkerer.ProgressDictionary[uid] = ex.Tinkerer; AttributeModifierDefinitions.Tinkerer.MarkForSave(true); }
             if (ex.Merciless != null) { MercilessProgress[uid] = ex.Merciless; pendingMercilessProgressSave = true; }
             if (ex.ClaustrophobicRemoval != null) { ClaustrophobicRemovalProgress[uid] = ex.ClaustrophobicRemoval; pendingClaustrophobicRemovalProgressSave = true; }
             if (ex.CombatOverhaul != null) { COProgress[uid] = ex.CombatOverhaul; pendingCOProgressSave = true; }
@@ -13727,10 +13625,7 @@ namespace SeraphLeveling
             ApplyImproviserBonusStatic(player, true);
 
             // Unlock Tinkerer
-            var tinkererProg = TinkererProgress.GetOrAdd(playerUid, _ => new TinkererProgressData());
-            tinkererProg.IsUnlocked = true;
-            pendingTinkererProgressSave = true;
-            ApplyTinkererBonusStatic(player, true);
+            AttributeModifierDefinitions.Tinkerer.Unlock(player);
 
             // Unlock Merciless
             var mercilessProg = MercilessProgress.GetOrAdd(playerUid, _ => new MercilessProgressData());
@@ -14857,7 +14752,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistTinkererProgress()
         {
-            PersistProgress<TinkererProgressData>();
+            AttributeModifierDefinitions.Tinkerer.PersistProgress(ServerApi);
         }
 
         /// <summary>
@@ -14865,7 +14760,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadTinkererProgress()
         {
-            LoadProgress<TinkererProgressData>();
+            AttributeModifierDefinitions.Tinkerer.LoadProgress(ServerApi);
         }
 
         // =========================================================================

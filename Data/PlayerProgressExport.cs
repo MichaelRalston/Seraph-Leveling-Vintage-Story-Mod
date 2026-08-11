@@ -39,7 +39,7 @@ namespace SeraphLeveling.Data
         public HardyHealthProgressData HardyHealth;
         public BowyerProgressData Bowyer;
         public ImproviserProgressData Improviser;
-        public TinkererProgressData Tinkerer;
+        public TinkererAttributeModifierProgressData Tinkerer;
         public MercilessProgressData Merciless;
         public ClaustrophobicRemovalProgressData ClaustrophobicRemoval;
         public HeavyFootedRemovalProgressData HeavyFootedRemoval;

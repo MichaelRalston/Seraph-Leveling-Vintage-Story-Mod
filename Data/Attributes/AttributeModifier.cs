@@ -200,6 +200,7 @@ namespace SeraphLeveling.Data.Attributes
             return ProgressDictionary.GetOrAdd(player.PlayerUID, _ => CreateProgressData());
         }
 
+        public abstract void HandleLogin(IServerPlayer player);
     }
 
     public interface IAttributeModifierProgressData
