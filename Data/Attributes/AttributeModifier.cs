@@ -50,6 +50,11 @@ namespace SeraphLeveling.Data.Attributes
 
         public PD CreateProgressData() => D.Create((D)this);
 
+        public PD GetForPlayer(string playerUid)
+        {
+            return ProgressDictionary.GetOrAdd(playerUid, _ => CreateProgressData());
+        }
+
 
         public bool IsSavePending()
         {

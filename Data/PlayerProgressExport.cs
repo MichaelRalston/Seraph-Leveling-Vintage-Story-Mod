@@ -22,7 +22,7 @@ namespace SeraphLeveling.Data
         public string SourcePlayerUid;
         public double ExportedGameDay;
 
-        public MiningProgressData Mining;
+        public MiningAttributeModifierProgressData Mining;
         public MeleeProgressData Melee;
         public RangedProgressData Ranged;
         public LeveledPartialAttributeModifierProgressData Walking;
