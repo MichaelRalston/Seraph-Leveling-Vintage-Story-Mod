@@ -10670,7 +10670,7 @@ namespace SeraphLeveling
         /// </summary>
         private static void CheckTinkererUnlock(IServerPlayer player)
         {
-            AttributeModifierDefinitions.Tinkerer.CheckUnlocks(player);
+            TraitDefinitions.Tinkerer.CheckUnlocks(player);
         }
 
         /// <summary>

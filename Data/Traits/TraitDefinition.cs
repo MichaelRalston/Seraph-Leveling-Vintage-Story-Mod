@@ -13,7 +13,10 @@ namespace SeraphLeveling.Data.Traits
         public required List<(ISaveableAttribute, int)> Attributes { get; init; }
         public List<IRequiredAttribute> Requirements { get; init; } = [];
 
-        public void CheckUnlock(IServerPlayer player)
+        /// <summary>
+        /// Check and apply unlock if all requirements are met.
+        /// </summary>
+        public void CheckUnlocks(IServerPlayer player)
         {
             if (player?.Entity == null) return;
 

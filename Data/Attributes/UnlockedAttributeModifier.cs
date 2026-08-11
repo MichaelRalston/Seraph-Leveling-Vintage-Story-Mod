@@ -38,7 +38,7 @@ namespace SeraphLeveling.Data.Attributes
             ApplyUnlock(player, progress);
         }
 
-        public void Unlock(IServerPlayer player, bool notify = false)
+        public override void Unlock(IServerPlayer player, bool notify = false)
         {
             var progress = GetDict(player);
 

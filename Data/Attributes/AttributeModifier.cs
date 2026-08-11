@@ -16,6 +16,11 @@ namespace SeraphLeveling.Data.Attributes
         /// Check and apply unlock if all requirements are met.
         /// </summary>
         public abstract void CheckUnlocks(IServerPlayer player);
+
+        /// <summary>
+        /// Unlock the attribute if it can be unlocked
+        /// </summary>
+        public abstract void Unlock(IServerPlayer player, bool notify = false);
     }
 
     public interface ISaveableAttribute : IAttribute
@@ -41,6 +46,10 @@ namespace SeraphLeveling.Data.Attributes
         public virtual int PersistenceVersion { get; init; } = 1;
 
         public abstract void CheckUnlocks(IServerPlayer player);
+
+        public virtual void Unlock(IServerPlayer player, bool notify = false)
+        {
+        }
 
         public byte[] PersistenceHeaderBytes => Encoding.ASCII.GetBytes(PersistenceHeader);
         public ConcurrentDictionary<string, PD> ProgressDictionary
