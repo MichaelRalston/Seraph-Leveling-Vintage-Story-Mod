@@ -8,9 +8,18 @@ using Vintagestory.API.Common;
 
 namespace SeraphLeveling.Data.Attributes
 {
-    public interface ISaveableAttribute
+    public interface IAttribute
     {
         public string Id { get; }
+
+        /// <summary>
+        /// Check and apply unlock if all requirements are met.
+        /// </summary>
+        public abstract void CheckUnlocks(IServerPlayer player);
+    }
+
+    public interface ISaveableAttribute : IAttribute
+    {
         public bool HasUnsavedProgress();
         public void MarkForSave(bool pending);
         public void PersistProgress(ICoreServerAPI serverApi);
@@ -30,6 +39,8 @@ namespace SeraphLeveling.Data.Attributes
         public virtual string Direction { get; init; } = "+";
         public required string PersistenceHeader { get; init; }
         public virtual int PersistenceVersion { get; init; } = 1;
+
+        public abstract void CheckUnlocks(IServerPlayer player);
 
         public byte[] PersistenceHeaderBytes => Encoding.ASCII.GetBytes(PersistenceHeader);
         public ConcurrentDictionary<string, PD> ProgressDictionary

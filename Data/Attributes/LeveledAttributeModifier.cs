@@ -35,9 +35,13 @@ namespace SeraphLeveling.Data.Attributes
                 ApplyBonus(player, (PD)progress);
         }
 
-        public virtual void CheckUnlocks(IServerPlayer player)
+        /// <summary>
+        /// Check and apply unlock if all requirements are met.
+        /// </summary>
+        public override void CheckUnlocks(IServerPlayer player)
         {
         }
+
         public void MaxStat(IServerPlayer player)
         {
             var progress = GetDict(player);

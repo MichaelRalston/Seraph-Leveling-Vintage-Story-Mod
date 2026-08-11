@@ -13,7 +13,7 @@ namespace SeraphLeveling.Data.Attributes
             return new TinkererAttributeModifierProgressData(def);
         }
 
-        public override void CheckUnlock(IServerPlayer player)
+        public override void CheckUnlocks(IServerPlayer player)
         {
             if (player?.Entity == null) return;
 
@@ -38,7 +38,7 @@ namespace SeraphLeveling.Data.Attributes
             MarkForSave(true);
 
             // Apply the trait
-            AttributeModifierDefinitions.Tinkerer.ApplyUnlock(player, progress);
+            ApplyUnlock(player, progress);
 
             // Notify player
             SeraphLevelingModSystem.NotifyLevelUp(player,

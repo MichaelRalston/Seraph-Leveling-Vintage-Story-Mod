@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Text;
 using Vintagestory.API.Common;
+using Vintagestory.API.Config;
 using Vintagestory.API.Server;
 
 namespace SeraphLeveling.Data.Attributes
@@ -17,6 +18,7 @@ namespace SeraphLeveling.Data.Attributes
         public required string Name { get; init; }
         public required string ExtraTraitKey { get; init; }
         public required string UnlockedKey { get; init; }
+        public string NotifyLangKey { get; init; } = null;
 
         public bool IsUnlockedForPlayer(IPlayer player)
         {
@@ -36,18 +38,24 @@ namespace SeraphLeveling.Data.Attributes
             ApplyUnlock(player, progress);
         }
 
-        public void Unlock(IServerPlayer player)
+        public void Unlock(IServerPlayer player, bool notify = false)
         {
             var progress = GetDict(player);
+
+            // Already unlocked
+            if (progress.IsUnlocked) return;
+
+            // Perform the unlock
             progress.IsUnlocked = true;
             MarkForSave(true);
             ApplyUnlock(player, progress);
-        }
 
-        /// <summary>
-        /// Check and apply unlock if all requirements are met.
-        /// </summary>
-        public abstract void CheckUnlock(IServerPlayer player);
+            // Notify player
+            if (notify && !string.IsNullOrWhiteSpace(NotifyLangKey))
+            {
+                SeraphLevelingModSystem.NotifyLevelUp(player, Lang.Get(NotifyLangKey));
+            }
+        }
 
         public virtual void ApplyUnlock(IServerPlayer player, PD progress)
         {

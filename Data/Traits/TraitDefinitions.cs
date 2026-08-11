@@ -18,6 +18,8 @@ namespace SeraphLeveling.Data.Traits
             Id = "tinkerer",
             Attributes = [
                 (AttributeModifierDefinitions.Tinkerer, 1)
+            ],
+            Requirements = [
             ]
         };
     }

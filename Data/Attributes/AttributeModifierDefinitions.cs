@@ -12,7 +12,8 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "TNK",
             Name = "Tinkerer",
             ExtraTraitKey = SeraphLevelingModSystem.TINKERER_TRAIT_CODE,
-            UnlockedKey = SeraphLevelingModSystem.WATCHED_TINKERER_UNLOCKED
+            UnlockedKey = SeraphLevelingModSystem.WATCHED_TINKERER_UNLOCKED,
+            NotifyLangKey = "seraphleveling:message-tinkerer-unlock"
         };
 
         public static readonly WalkingAttributeModifierDefinition WalkingSpeed = new()

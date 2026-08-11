@@ -4,12 +4,14 @@ using Vintagestory.API.Server;
 namespace SeraphLeveling.Data.Traits
 {
     public interface IRequiredAttribute {
+        public string Name { get; }
         public bool IsMet(IServerPlayer player);
     }
 
     public class RequiredUnlockedAttribute : IRequiredAttribute
     {
         protected IUnlockedAttributeModifierDefinition Definition { get; init; }
+        public string Name { get => Definition.Name; }
 
         public RequiredUnlockedAttribute(IUnlockedAttributeModifierDefinition definition)
         {
@@ -26,6 +28,7 @@ namespace SeraphLeveling.Data.Traits
     {
         protected ILeveledAttributeModifierDefinition Definition { get; init; }
         protected int RequiredCredits { get; init; }
+        public string Name { get => Definition.Name; }
 
         public RequiredLeveledAttribute(ILeveledAttributeModifierDefinition definition, int requiredCredits)
         {
