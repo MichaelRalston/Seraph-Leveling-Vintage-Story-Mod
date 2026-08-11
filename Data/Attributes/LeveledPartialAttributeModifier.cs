@@ -6,7 +6,7 @@ using Vintagestory.API.Config;
 
 namespace SeraphLeveling.Data.Attributes
 {
-    public abstract record class LeveledPartialAttributeModifierDefinition: LeveledAttributeModifierDefinition<LeveledPartialAttributeModifierDefinition, LeveledPartialAttributeModifierProgressData>, IConstructable<LeveledPartialAttributeModifierDefinition, LeveledPartialAttributeModifierProgressData>
+    public abstract record class LeveledPartialAttributeModifierDefinition : LeveledAttributeModifierDefinition<LeveledPartialAttributeModifierDefinition, LeveledPartialAttributeModifierProgressData>, IConstructable<LeveledPartialAttributeModifierDefinition, LeveledPartialAttributeModifierProgressData>
     {
         public required int BaseIncrement { get; init; }
         public required int IncrementStep { get; init; }
