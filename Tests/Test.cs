@@ -629,13 +629,13 @@ namespace SeraphLeveling.Tests
             var watchedAttrs = player.Entity.WatchedAttributes;
 
             // PERS-001: Mining data exists in dictionary
-            bool hasMiningData = SeraphLevelingModSystem.MiningProgress.ContainsKey(playerUid);
+            bool hasMiningData = AttributeModifierDefinitions.MiningSpeed.ProgressDictionary.ContainsKey(playerUid);
             AssertTrue("PERS-001", "Mining data exists in dictionary", hasMiningData, "exists", "missing");
 
             // PERS-002: Mining WatchedAttributes matches dictionary
             if (hasMiningData)
             {
-                var miningData = SeraphLevelingModSystem.MiningProgress[playerUid];
+                var miningData = AttributeModifierDefinitions.MiningSpeed.ProgressDictionary[playerUid];
                 int watchedLevel = watchedAttrs.GetInt(SeraphLevelingModSystem.WATCHED_MINING_LEVEL, -999);
                 AssertEqual("PERS-002", "Mining level synced to WatchedAttributes", miningData.TotalCredits, watchedLevel);
             }
@@ -706,7 +706,7 @@ namespace SeraphLeveling.Tests
             // PERS-014: Mining data structure integrity
             if (hasMiningData)
             {
-                var miningData = SeraphLevelingModSystem.MiningProgress[playerUid];
+                var miningData = AttributeModifierDefinitions.MiningSpeed.ProgressDictionary[playerUid];
                 bool creditsValid = miningData.TotalCredits >= 0;
                 bool pickaxeProgressValid = miningData.ToolProgress != null;
                 AssertTrue("PERS-014", "Mining data structure valid", creditsValid && pickaxeProgressValid, "valid", "corrupted");

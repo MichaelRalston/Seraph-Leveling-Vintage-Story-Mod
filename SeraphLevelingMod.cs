@@ -641,14 +641,8 @@ namespace SeraphLeveling
         // Vanilla Hardy trait mining speed bonus (used for cap calculations)
         public const int VANILLA_HARDY_MINING_BONUS = 10;
 
-        // Storage for mining progress - keyed by player UID
-        public static ConcurrentDictionary<string, MiningProgressData> MiningProgress = new ConcurrentDictionary<string, MiningProgressData>();
-
         // Lock object for persistence operations
         private static readonly object persistLock = new object();
-
-        // Flag to indicate pending mining progress save
-        public static volatile bool pendingMiningProgressSave = false;
 
         // Flag to indicate pending config save
         private static volatile bool pendingConfigSave = false;
@@ -1029,7 +1023,7 @@ namespace SeraphLeveling
                     .WithDescription("Get or set the max mining speed bonus percent (admin only)")
                     .WithArgs(api.ChatCommands.Parsers.OptionalInt("percent"))
                     .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitMiningMaxCommand)
+                    .HandleWith(AttributeModifierDefinitions.MiningSpeed.HandleMaxCommand)
                 .EndSubCommand()
                 .BeginSubCommand("miningincrement")
                     .WithDescription("Get or set the increment step per credit (admin only)")
@@ -2080,7 +2074,7 @@ namespace SeraphLeveling
             switch (traitName)
             {
                 case "mining":
-                    return SetMiningLevelForPlayer(targetPlayer, level, toolName);
+                    return AttributeModifierDefinitions.MiningSpeed.GetForPlayer(targetUid).SetLevel(targetPlayer, level, toolName);
                 case "melee":
                     return SetMeleeLevelForPlayer(targetPlayer, level, toolName);
                 case "ranged":
@@ -2263,71 +2257,6 @@ namespace SeraphLeveling
                 if (toolCredits > 0) total += toolCredits;
             }
             return total;
-        }
-
-        /// <summary>
-        /// Sets per-tool credits for mining. Returns the result or null if the caller should proceed with total-level setting.
-        /// </summary>
-        private TextCommandResult SetMiningLevelForPlayer(IServerPlayer player, int level, string toolName)
-        {
-            string playerUid = player.PlayerUID;
-            int maxCredits = GetMaxMiningCredits(player.Entity);
-            var progress = MiningProgress.GetOrAdd(playerUid, _ => new MiningProgressData());
-
-            if (level < 0)
-                return TextCommandResult.Error("Credits cannot be negative.");
-
-            if (toolName != null)
-            {
-                // Per-tool mode: set credits on a specific pickaxe without clearing others
-                int oldToolCredits = 0;
-                if (progress.ToolProgress.TryGetValue(toolName, out var existingTool))
-                    oldToolCredits = CalculateToolCredits(existingTool.CurrentIncrementSize, BaseBlocksPerIncrement, IncrementStep);
-
-                int projectedTotal = progress.TotalCredits - oldToolCredits + level;
-                if (projectedTotal > maxCredits)
-                    return TextCommandResult.Error($"Setting {level} credits on {toolName} would result in {projectedTotal} total credits, exceeding max ({maxCredits}).");
-
-                if (level == 0)
-                {
-                    progress.ToolProgress.Remove(toolName);
-                }
-                else
-                {
-                    var pickaxeProgress = progress.GetToolProgress(toolName);
-                    pickaxeProgress.CurrentIncrementSize = BaseBlocksPerIncrement + (level * IncrementStep);
-                    pickaxeProgress.PartialCredit = 0;
-                }
-
-                progress.TotalCredits = RecalculateTotalCreditsFromTools(
-                    progress.ToolProgress, p => p.CurrentIncrementSize,
-                    BaseBlocksPerIncrement, IncrementStep);
-
-                pendingMiningProgressSave = true;
-                int bonusPercent = ApplyMiningBonus(player, progress.TotalCredits);
-                CheckHardyHealthUnlock(player);
-                CheckClaustrophobicRemoval(player);
-                UpdateSkillActivityDay(playerUid, "mining");
-
-                return TextCommandResult.Success($"Set {level} credits on {toolName}. Total: {progress.TotalCredits}/{maxCredits} (+{bonusPercent}% mining speed).");
-            }
-            else
-            {
-                // Total mode: set TotalCredits directly and clear per-tool progress
-                if (level > maxCredits)
-                    return TextCommandResult.Error($"Credits cannot exceed max ({maxCredits}).");
-
-                progress.TotalCredits = level;
-                progress.ToolProgress.Clear();
-
-                pendingMiningProgressSave = true;
-                int bonusPercent = ApplyMiningBonus(player, level);
-                CheckHardyHealthUnlock(player);
-                CheckClaustrophobicRemoval(player);
-                UpdateSkillActivityDay(playerUid, "mining");
-
-                return TextCommandResult.Success($"Mining credits set to {level} (+{bonusPercent}% mining speed). Per-pickaxe progress reset.");
-            }
         }
 
         /// <summary>
@@ -2744,41 +2673,6 @@ namespace SeraphLeveling
             }
 
             return 0;
-        }
-
-        /// <summary>
-        /// Handler for /trait miningmax command.
-        /// Gets or sets the maximum mining speed bonus percent.
-        /// </summary>
-        private TextCommandResult OnTraitMiningMaxCommand(TextCommandCallingArgs args)
-        {
-            int? newValue = (int?)args[0];
-
-            if (newValue.HasValue)
-            {
-                if (newValue.Value < 1)
-                {
-                    return TextCommandResult.Error("Max mining speed percent must be at least 1");
-                }
-
-                MaxMiningSpeedPercent = newValue.Value;
-                pendingConfigSave = true;
-
-                // Recalculate and reapply bonuses for all online players
-                foreach (IServerPlayer player in ServerApi.World.AllOnlinePlayers)
-                {
-                    if (player?.Entity == null) continue;
-                    string playerUid = player.PlayerUID;
-                    var progress = MiningProgress.GetOrAdd(playerUid, _ => new MiningProgressData());
-                    ApplyMiningBonus(player, progress.TotalCredits);
-                }
-
-                return TextCommandResult.Success($"Max mining speed bonus set to +{MaxMiningSpeedPercent}%. All player bonuses recalculated.");
-            }
-            else
-            {
-                return TextCommandResult.Success($"Current max mining speed bonus: +{MaxMiningSpeedPercent}%");
-            }
         }
 
         /// <summary>
@@ -4792,55 +4686,8 @@ namespace SeraphLeveling
             string playerUid = byPlayer.PlayerUID;
 
             // Get or create player progress data
-            var playerProgress = MiningProgress.GetOrAdd(playerUid, _ => new MiningProgressData());
-
-            // Get the player-specific max credits (accounts for Weak/Claustrophobic penalties)
-            int maxCredits = GetMaxMiningCredits(byPlayer.Entity);
-
-            // Skip all processing if already at max - completely invisible
-            if (playerProgress.TotalCredits >= maxCredits) return;
-
-            // Get or create progress for this specific pickaxe type
-            var pickaxeProgress = playerProgress.GetToolProgress(pickaxeCode);
-
-            int oldCredits = playerProgress.TotalCredits;
-
-            // Apply sleep buff multiplier to points
-            int modifiedPoints = ApplyXPMultiplier(playerUid, points);
-
-            // Add points to THIS pickaxe's progress
-            pickaxeProgress.PartialCredit += modifiedPoints;
-
-            // Check if we've earned any new credits with this pickaxe
-            while (pickaxeProgress.PartialCredit >= pickaxeProgress.CurrentIncrementSize && playerProgress.TotalCredits < maxCredits)
-            {
-                // Earn a credit
-                playerProgress.TotalCredits++;
-                pickaxeProgress.PartialCredit -= pickaxeProgress.CurrentIncrementSize;
-                pickaxeProgress.CurrentIncrementSize += IncrementStep;
-
-                ServerApi.Logger.Debug($"[SeraphLeveling] Player {byPlayer.PlayerName} earned credit {playerProgress.TotalCredits} with {pickaxeCode}, next requires {pickaxeProgress.CurrentIncrementSize} points");
-            }
-
-            pendingMiningProgressSave = true;
-
-            // Update last activity day for skill decay
-            UpdateSkillActivityDay(playerUid, "mining");
-
-            // If credits increased, update the stat and notify player
-            if (playerProgress.TotalCredits > oldCredits)
-            {
-                ApplyMiningBonus(byPlayer, playerProgress.TotalCredits);
-
-                // Notify player of level up with the level as the bonus (the raw mining speed improvement)
-                // This shows the true progress even when negative traits are still being cancelled
-                NotifyLevelUp(byPlayer,
-                    Lang.Get("seraphleveling:message-mining-level-up", playerProgress.TotalCredits, playerProgress.TotalCredits));
-
-                // Check for trait unlocks that depend on mining level
-                CheckHardyHealthUnlock(byPlayer);
-                CheckClaustrophobicRemoval(byPlayer);
-            }
+            var playerProgress = AttributeModifierDefinitions.MiningSpeed.GetForPlayer(playerUid);
+            playerProgress.DoEvent(byPlayer, pickaxeCode, points);
         }
 
         /// <summary>
@@ -5102,13 +4949,7 @@ namespace SeraphLeveling
             }
 
             // Apply mining bonus (Stats always applied, WatchedAttributes only sync if changed)
-            var miningProg = MiningProgress.GetOrAdd(playerUid, _ => new MiningProgressData());
-            int miningCredits = miningProg.TotalCredits;
-            ApplyMiningBonus(byPlayer, miningCredits);
-            if (miningCredits > 0)
-            {
-                ServerApi.Logger.Debug($"[SeraphLeveling] Applied mining bonus {miningCredits}% to player {byPlayer.PlayerName}");
-            }
+            AttributeModifierDefinitions.MiningSpeed.HandleLogin(byPlayer);
 
             // Apply melee bonus (Stats always applied, WatchedAttributes only sync if changed)
             var meleeProg = MeleeProgress.GetOrAdd(playerUid, _ => new MeleeProgressData());
@@ -6724,10 +6565,6 @@ namespace SeraphLeveling
                     }
                 }
 
-                if (pendingMiningProgressSave || !MiningProgress.IsEmpty)
-                {
-                    PersistMiningProgress();
-                }
                 if (pendingMeleeProgressSave || !MeleeProgress.IsEmpty)
                 {
                     PersistMeleeProgress();
@@ -6862,7 +6699,6 @@ namespace SeraphLeveling
                 def.MarkForSave(false); // TODO Just clear PendingSaves once all traits are converted
             }
 
-            MiningProgress.Clear();
             MeleeProgress.Clear();
             RangedProgress.Clear();
             HungerProgress.Clear();
@@ -6888,7 +6724,6 @@ namespace SeraphLeveling
             SleepBuffMultiplier.Clear();
             LastSleepBuffApplyTick.Clear();
             pendingSleepBuffSave = false;
-            pendingMiningProgressSave = false;
             pendingMeleeProgressSave = false;
             pendingRangedProgressSave = false;
             pendingHungerProgressSave = false;
@@ -6929,12 +6764,6 @@ namespace SeraphLeveling
                     def.PersistProgress(ServerApi);
                     PendingSaves.AddOrUpdate(def, false, (_, _) => false);
                 }
-            }
-
-            if (pendingMiningProgressSave || !MiningProgress.IsEmpty)
-            {
-                PersistMiningProgress();
-                pendingMiningProgressSave = false;
             }
 
             if (pendingMeleeProgressSave || !MeleeProgress.IsEmpty)
@@ -8134,8 +7963,7 @@ namespace SeraphLeveling
         {
             string playerUid = player.PlayerUID;
 
-            if (MiningProgress.TryGetValue(playerUid, out var miningProg))
-                ApplyMiningBonus(player, miningProg.TotalCredits);
+            AttributeModifierDefinitions.MiningSpeed.ApplyBonusIfExists(player);
             if (MeleeProgress.TryGetValue(playerUid, out var meleeProg))
                 ApplyMeleeBonusStatic(player, meleeProg.TotalCredits);
             if (RangedProgress.TryGetValue(playerUid, out var rangedProg))
@@ -8173,10 +8001,6 @@ namespace SeraphLeveling
 
             switch (skillType)
             {
-                case "mining":
-                    if (MiningProgress.TryGetValue(playerUid, out var miningProg))
-                        miningProg.LastActivityDay = currentDay;
-                    break;
                 case "melee":
                     if (MeleeProgress.TryGetValue(playerUid, out var meleeProg))
                         meleeProg.LastActivityDay = currentDay;
@@ -8184,10 +8008,6 @@ namespace SeraphLeveling
                 case "ranged":
                     if (RangedProgress.TryGetValue(playerUid, out var rangedProg))
                         rangedProg.LastActivityDay = currentDay;
-                    break;
-                case "walking":
-                    if (AttributeModifierDefinitions.WalkingSpeed.ProgressDictionary.TryGetValue(playerUid, out var walkingProg))
-                        walkingProg.LastActivityDay = currentDay;
                     break;
                 case "hunger":
                     if (HungerProgress.TryGetValue(playerUid, out var hungerProg))
@@ -8982,7 +8802,7 @@ namespace SeraphLeveling
             // Combat skills
             sb.AppendLine("--- Combat Skills ---");
             AppendDecayStatus(sb, "Mining", "mining", playerUid, currentDay,
-                () => MiningProgress.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
+                () => AttributeModifierDefinitions.MiningSpeed.ProgressDictionary.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
             AppendDecayStatus(sb, "Melee", "melee", playerUid, currentDay,
                 () => MeleeProgress.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
             AppendDecayStatus(sb, "Ranged", "ranged", playerUid, currentDay,
@@ -11020,7 +10840,7 @@ namespace SeraphLeveling
             if (progress.IsUnlocked) return;
 
             // Check mining speed threshold
-            var miningProgress = MiningProgress.GetOrAdd(playerUid, _ => new MiningProgressData());
+            var miningProgress = AttributeModifierDefinitions.MiningSpeed.GetForPlayer(playerUid);
             if (miningProgress.TotalCredits < HardyHealthMiningThreshold) return;
 
             // Check armor durability threshold
@@ -11242,7 +11062,7 @@ namespace SeraphLeveling
             if (progress.IsRemoved) return;
 
             // Check mining speed threshold
-            var miningProgress = MiningProgress.GetOrAdd(playerUid, _ => new MiningProgressData());
+            var miningProgress = AttributeModifierDefinitions.MiningSpeed.GetForPlayer(playerUid);
             if (miningProgress.TotalCredits < ClaustrophobicRemovalMiningThreshold) return;
 
             // Threshold met - remove Claustrophobic!
@@ -12837,7 +12657,7 @@ namespace SeraphLeveling
 
             string playerUid = player.PlayerUID;
             var progress = HardyHealthProgress.GetOrAdd(playerUid, _ => new HardyHealthProgressData());
-            var miningProgress = MiningProgress.GetOrAdd(playerUid, _ => new MiningProgressData());
+            var miningProgress = AttributeModifierDefinitions.MiningSpeed.GetForPlayer(playerUid);
             var armorProgress = ArmorProgress.GetOrAdd(playerUid, _ => new ArmorProgressData());
 
             var sb = new StringBuilder();
@@ -12934,7 +12754,7 @@ namespace SeraphLeveling
 
             string playerUid = player.PlayerUID;
             var progress = ClaustrophobicRemovalProgress.GetOrAdd(playerUid, _ => new ClaustrophobicRemovalProgressData());
-            var miningProgress = MiningProgress.GetOrAdd(playerUid, _ => new MiningProgressData());
+            var miningProgress = AttributeModifierDefinitions.MiningSpeed.GetForPlayer(playerUid);
 
             var sb = new StringBuilder();
             sb.AppendLine($"Claustrophobic trait: {(progress.IsRemoved ? "REMOVED" : "Active")}");
@@ -12964,7 +12784,7 @@ namespace SeraphLeveling
             string playerUid = player.PlayerUID;
             var progress = HeavyFootedRemovalProgress.GetOrAdd(playerUid, _ => new HeavyFootedRemovalProgressData());
             var furtiveProgress = FurtiveProgress.GetOrAdd(playerUid, _ => new FurtiveProgressData());
-            var walkingProgress = AttributeModifierDefinitions.WalkingSpeed.ProgressDictionary.GetOrAdd(playerUid, _ => AttributeModifierDefinitions.WalkingSpeed.CreateProgressData());
+            var walkingProgress = AttributeModifierDefinitions.WalkingSpeed.GetForPlayer(playerUid);
 
             var sb = new StringBuilder();
             sb.AppendLine($"Heavy Footed trait: {(progress.IsRemoved ? "REMOVED" : "Active")}");
@@ -13349,7 +13169,7 @@ namespace SeraphLeveling
                 ExportedGameDay = ServerApi.World.Calendar.TotalDays,
             };
 
-            if (MiningProgress.TryGetValue(uid, out var mining)) ex.Mining = mining;
+            if (AttributeModifierDefinitions.MiningSpeed.ProgressDictionary.TryGetValue(uid, out var mining)) ex.Mining = mining;
             if (MeleeProgress.TryGetValue(uid, out var melee)) ex.Melee = melee;
             if (RangedProgress.TryGetValue(uid, out var ranged)) ex.Ranged = ranged;
             if (AttributeModifierDefinitions.WalkingSpeed.ProgressDictionary.TryGetValue(uid, out var walking)) ex.Walking = walking;
@@ -13378,7 +13198,7 @@ namespace SeraphLeveling
         /// <summary>Install imported progression under a UID and flag each system for save.</summary>
         private void ApplyImportedProgress(string uid, PlayerProgressExport ex)
         {
-            if (ex.Mining != null) { MiningProgress[uid] = ex.Mining; pendingMiningProgressSave = true; }
+            if (ex.Mining != null) { AttributeModifierDefinitions.MiningSpeed.ProgressDictionary[uid] = ex.Mining; AttributeModifierDefinitions.WalkingSpeed.MarkForSave(true); }
             if (ex.Melee != null) { MeleeProgress[uid] = ex.Melee; pendingMeleeProgressSave = true; }
             if (ex.Ranged != null) { RangedProgress[uid] = ex.Ranged; pendingRangedProgressSave = true; }
             if (ex.Walking != null) { AttributeModifierDefinitions.WalkingSpeed.ProgressDictionary[uid] = ex.Walking; AttributeModifierDefinitions.WalkingSpeed.MarkForSave(true); }

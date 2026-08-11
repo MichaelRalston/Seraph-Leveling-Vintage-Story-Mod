@@ -27,6 +27,10 @@ namespace SeraphLeveling.Data.Attributes
 
     public class LeveledPartialAttributeModifierProgressData(LeveledPartialAttributeModifierDefinition definition) : LeveledAttributeModifierProgressData<LeveledPartialAttributeModifierDefinition, LeveledPartialAttributeModifierProgressData>(definition)
     {
+        /// <summary>Action taken toward the next credit.</summary>
+        public float PartialCredit { get; set; } = 0; // formerly known as BlocksInIncrement
+        /// <summary>Actions needed for the next credit (1000, 2000, 3000, etc.).</summary>
+        public int CurrentIncrementSize { get; set; } = definition.BaseIncrement;
         public void DoEvent(IServerPlayer player, float score)
         {
             // Skip all processing if already at max - completely invisible
@@ -74,10 +78,6 @@ namespace SeraphLeveling.Data.Attributes
         {
             sb.AppendLine($"Progress: {PartialCredit:F1}/{CurrentIncrementSize} {Definition.IncrementUnits}");
         }
-        /// <summary>Action taken toward the next credit.</summary>
-        public float PartialCredit { get; set; } = 0; // formerly known as BlocksInIncrement
-        /// <summary>Actions needed for the next credit (1000, 2000, 3000, etc.).</summary>
-        public int CurrentIncrementSize { get; set; } = definition.BaseIncrement;
         public override void ZeroPartialCredit()
         {
             PartialCredit = 0;

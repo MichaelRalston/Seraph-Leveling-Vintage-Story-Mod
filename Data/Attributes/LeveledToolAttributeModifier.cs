@@ -5,6 +5,7 @@ using System.IO;
 using System.Text;
 using Vintagestory.API.Server;
 using Vintagestory.API.Common;
+using Vintagestory.API.Config;
 
 namespace SeraphLeveling.Data.Attributes
 {
@@ -100,10 +101,9 @@ namespace SeraphLeveling.Data.Attributes
             }
             return progress;
         }
-        public override TextCommandResult SetLevelFromCommand(IServerPlayer player, int level, TextCommandCallingArgs args)
+
+        public TextCommandResult SetLevel(IServerPlayer player, int level, string toolName)
         {
-            string toolName = (string)args[1];
-            string playerUid = player.PlayerUID;
             int maxCredits = Definition.GetMaxCredits(player.Entity);
             if (level < 0)
                 return TextCommandResult.Error("Credits cannot be negative.");
@@ -125,9 +125,9 @@ namespace SeraphLeveling.Data.Attributes
                 }
                 else
                 {
-                    var pickaxeProgress = GetToolProgress(toolName);
-                    pickaxeProgress.CurrentIncrementSize = Definition.Tool.BaseIncrement + (level * Definition.Tool.IncrementStep);
-                    pickaxeProgress.PartialCredit = 0;
+                    var toolProgress = GetToolProgress(toolName);
+                    toolProgress.CurrentIncrementSize = Definition.Tool.BaseIncrement + (level * Definition.Tool.IncrementStep);
+                    toolProgress.PartialCredit = 0;
                 }
 
                 TotalCredits = SeraphLevelingModSystem.RecalculateTotalCreditsFromTools(
@@ -139,7 +139,7 @@ namespace SeraphLeveling.Data.Attributes
                 Definition.CheckUnlocks(player);
                 UpdateSkillActivityDay();
 
-                return TextCommandResult.Success($"Set {level} credits on {toolName}. Total: {TotalCredits}/{maxCredits} (+{bonusPercent}% mining speed).");
+                return TextCommandResult.Success($"Set {level} credits on {toolName}. Total: {TotalCredits}/{maxCredits} (+{bonusPercent}{Definition.Stat}).");
             }
             else
             {
@@ -155,8 +155,13 @@ namespace SeraphLeveling.Data.Attributes
                 Definition.CheckUnlocks(player);
                 UpdateSkillActivityDay();
 
-                return TextCommandResult.Success($"Mining credits set to {level} (+{bonusPercent}% mining speed). Per-pickaxe progress reset.");
+                return TextCommandResult.Success($"{Definition.Name} credits set to {level} (+{bonusPercent}{Definition.Stat}). Per-tool progress reset.");
             }
+        }
+        public override TextCommandResult SetLevelFromCommand(IServerPlayer player, int level, TextCommandCallingArgs args)
+        {
+            string toolName = (string)args[1];
+            return SetLevel(player, level, toolName);
         }
         public override void WriteOut(BinaryWriter writer)
         {
@@ -237,6 +242,55 @@ namespace SeraphLeveling.Data.Attributes
                 return lost;
             }
             return 0;
+        }
+        public void DoEvent(IServerPlayer player, string toolCode, float score)
+        {
+            // Get the player-specific max credits (accounts for Weak/Claustrophobic penalties)
+            int maxCredits = Definition.GetMaxCredits(player.Entity);
+
+            // Skip all processing if already at max - completely invisible
+            if (TotalCredits >= maxCredits) return;
+
+            // Get or create progress for this specific pickaxe type
+            var toolProgress = GetToolProgress(toolCode);
+
+            int oldCredits = TotalCredits;
+
+            // Apply sleep buff multiplier to points
+            int modifiedPoints = (int)SeraphLevelingModSystem.ApplyXPMultiplier(player.PlayerUID, score);
+
+            // Add points to THIS pickaxe's progress
+            toolProgress.PartialCredit += modifiedPoints;
+
+            // Check if we've earned any new credits with this pickaxe
+            while (toolProgress.PartialCredit >= toolProgress.CurrentIncrementSize && TotalCredits < maxCredits)
+            {
+                // Earn a credit
+                TotalCredits++;
+                toolProgress.PartialCredit -= toolProgress.CurrentIncrementSize;
+                toolProgress.CurrentIncrementSize += Definition.Tool.IncrementStep;
+
+                SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Player {player.PlayerName} earned credit {TotalCredits} with {toolCode}, next requires {toolProgress.CurrentIncrementSize} points");
+            }
+
+            Definition.MarkForSave(true);
+
+            // Update last activity day for skill decay
+            UpdateSkillActivityDay();
+
+            // If credits increased, update the stat and notify player
+            if (TotalCredits > oldCredits)
+            {
+                Definition.ApplyBonus(player, (PD)this);
+
+                // Notify player of level up with the level as the bonus (the raw mining speed improvement)
+                // This shows the true progress even when negative traits are still being cancelled
+                SeraphLevelingModSystem.NotifyLevelUp(player,
+                    Lang.Get($"seraphleveling:message-{Definition.Description}-level-up", TotalCredits, TotalCredits));
+
+                // Check for trait unlocks that depend on mining level
+                Definition.CheckUnlocks(player);
+            }
         }
     }
 }
