@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -245,7 +246,7 @@ namespace SeraphLeveling
         {
             bool hasSacredLib = SeraphLevelingModSystem.DetectAnySacredLib(api.ModLoader);
             api.Logger.Notification($"[SeraphLeveling] Initializing Clothier Blacklisted Items. Sacred Classes compatibility enabled: {hasSacredLib}");
-            ClothierBlacklistedItems = hasSacredLib ? 
+            ClothierBlacklistedItems = hasSacredLib ?
             new string[]
             {
                 // Woodsman
@@ -656,17 +657,43 @@ namespace SeraphLeveling
         public readonly static ConcurrentDictionary<ISaveableAttribute, object> ProgressData = [];
         public readonly static ConcurrentDictionary<ISaveableAttribute, bool> PendingSaves = [];
 
-        public static HashSet<ModDefinition> LoadedMods { get; internal set; } = [ ModDefinitions.Vanilla ];
-        public static HashSet<ModDefinition> DetectLoadedMods(IModLoader modLoader)
+        public static ImmutableDictionary<string, ImmutableList<(TraitDefinition Trait, int Value)>> TraitsForAttributes { get; private set; } = ImmutableDictionary<string, ImmutableList<(TraitDefinition, int)>>.Empty;
+        public static HashSet<ISaveableAttribute> LoadedAttributes { get; internal set; } = [];
+
+        public static HashSet<ModDefinition> LoadedMods { get; internal set; } = [ModDefinitions.Vanilla];
+        public static void DetectLoadedMods(IModLoader modLoader)
         {
-            HashSet<ModDefinition> retVal = [ ModDefinitions.Vanilla ];
+            HashSet<ModDefinition> activeMods = [ModDefinitions.Vanilla];
             if (DetectAnySacredLib(modLoader))
             {
                 // Sacred Classes replaces the vanilla set of classes
-                retVal.Remove(ModDefinitions.Vanilla);
-                retVal.Add(ModDefinitions.SacredClasses);
+                activeMods.Remove(ModDefinitions.Vanilla);
+                activeMods.Add(ModDefinitions.SacredClasses);
             }
-            return retVal;
+            LoadedMods = activeMods;
+            var flatAttributeMappings = activeMods
+                    .SelectMany(mod => mod.CharacterClasses)
+                    .SelectMany(charClass => charClass.Traits)
+                    .SelectMany(trait => trait.Attributes, (trait, attrRef) => new
+                    {
+                        Attribute = attrRef.Item1,
+                        TraitTuple = (Trait: trait, Value: attrRef.Item2)
+                    });
+
+            // 3. Extract the unique attributes
+            LoadedAttributes = flatAttributeMappings
+                .Select(x => x.Attribute)
+                .ToHashSet();
+
+            // 4. Group by Attribute ID and build an immutable dictionary atomicaly
+            TraitsForAttributes = flatAttributeMappings
+                .GroupBy(x => x.Attribute.Id)
+                .ToImmutableDictionary(
+                    group => group.Key,
+                    group => group.Select(x => x.TraitTuple).ToImmutableList()
+                );
+            Instance.DetectCombatOverhaul(modLoader);
+            Instance.DetectSacredLib(modLoader);
         }
 
         // =========================================================================
@@ -689,23 +716,23 @@ namespace SeraphLeveling
         /// <summary>
         /// Detect if Sacred Classes mod is loaded and log the result.
         /// </summary>
-        private void DetectSacredLib(ICoreServerAPI api)
+        private void DetectSacredLib(IModLoader modLoader)
         {
-            SeraphLevelingModSystem.IsSacredLibLoaded = SeraphLevelingModSystem.DetectAnySacredLib(api.ModLoader);
+            SeraphLevelingModSystem.IsSacredLibLoaded = SeraphLevelingModSystem.DetectAnySacredLib(modLoader);
             if (SeraphLevelingModSystem.IsSacredLibLoaded)
             {
                 if (SacredLibEnableCompat)
                 {
-                    api.Logger.Notification($"[SeraphLeveling] Sacred Classes mod detected. Compatibility enabled.");
+                    ServerApi.Logger.Notification($"[SeraphLeveling] Sacred Classes mod detected. Compatibility enabled.");
                 }
                 else
                 {
-                    api.Logger.Notification($"[SeraphLeveling] Sacred Classes mod detected, but compatibility is disabled in config.");
+                    ServerApi.Logger.Notification($"[SeraphLeveling] Sacred Classes mod detected, but compatibility is disabled in config.");
                 }
             }
             else
             {
-                api.Logger.Notification($"[SeraphLeveling]Sacred Classes mod not detected. Compatibility disabled.");
+                ServerApi.Logger.Notification($"[SeraphLeveling]Sacred Classes mod not detected. Compatibility disabled.");
             }
         }
 
@@ -984,9 +1011,8 @@ namespace SeraphLeveling
             // Load config file (sets defaults for new worlds)
             LoadConfigFile(api);
 
-            // Detect Combat Overhaul mod
-            DetectCombatOverhaul(api);
-            DetectSacredLib(api);
+            // Detect loaded mods.
+            DetectLoadedMods(api.ModLoader);
 
             // Register /trait command with subcommands
             api.ChatCommands.Create("trait")
@@ -2086,68 +2112,68 @@ namespace SeraphLeveling
             switch (traitName)
             {
                 case "walking":
-                {
-                    return AttributeModifierDefinitions.WalkingSpeed.SetLevel(targetPlayer, level);
-                }
+                    {
+                        return AttributeModifierDefinitions.WalkingSpeed.SetLevel(targetPlayer, level);
+                    }
                 case "hunger":
-                {
-                    return AttributeModifierDefinitions.HungerRate.SetLevel(targetPlayer, level);
-                }
+                    {
+                        return AttributeModifierDefinitions.HungerRate.SetLevel(targetPlayer, level);
+                    }
                 case "mender":
-                {
-                    if (level > MaxMenderPercent) return TextCommandResult.Error($"Level cannot exceed max ({MaxMenderPercent}).");
-                    var progress = MenderProgress.GetOrAdd(targetUid, _ => new MenderProgressData { CurrentIncrementSize = BaseMenderRepairsPerIncrement });
-                    progress.TotalCredits = level;
-                    pendingMenderProgressSave = true;
-                    ApplyMenderBonusStatic(targetPlayer, level);
-                    UpdateSkillActivityDay(targetUid, "mender");
-                    result = $"Mender level set to {level} (+{level}% repair) for {targetPlayer.PlayerName}.";
-                    break;
-                }
+                    {
+                        if (level > MaxMenderPercent) return TextCommandResult.Error($"Level cannot exceed max ({MaxMenderPercent}).");
+                        var progress = MenderProgress.GetOrAdd(targetUid, _ => new MenderProgressData { CurrentIncrementSize = BaseMenderRepairsPerIncrement });
+                        progress.TotalCredits = level;
+                        pendingMenderProgressSave = true;
+                        ApplyMenderBonusStatic(targetPlayer, level);
+                        UpdateSkillActivityDay(targetUid, "mender");
+                        result = $"Mender level set to {level} (+{level}% repair) for {targetPlayer.PlayerName}.";
+                        break;
+                    }
                 case "pilferer":
-                {
-                    if (level > MaxPilfererPercent) return TextCommandResult.Error($"Level cannot exceed max ({MaxPilfererPercent}).");
-                    var progress = PilfererProgress.GetOrAdd(targetUid, _ => new PilfererProgressData { CurrentIncrementSize = BasePilfererPointsPerIncrement });
-                    progress.TotalCredits = level;
-                    pendingPilfererProgressSave = true;
-                    ApplyPilfererBonusStatic(targetPlayer, level);
-                    UpdateSkillActivityDay(targetUid, "pilferer");
-                    result = $"Pilferer level set to {level} for {targetPlayer.PlayerName}.";
-                    break;
-                }
+                    {
+                        if (level > MaxPilfererPercent) return TextCommandResult.Error($"Level cannot exceed max ({MaxPilfererPercent}).");
+                        var progress = PilfererProgress.GetOrAdd(targetUid, _ => new PilfererProgressData { CurrentIncrementSize = BasePilfererPointsPerIncrement });
+                        progress.TotalCredits = level;
+                        pendingPilfererProgressSave = true;
+                        ApplyPilfererBonusStatic(targetPlayer, level);
+                        UpdateSkillActivityDay(targetUid, "pilferer");
+                        result = $"Pilferer level set to {level} for {targetPlayer.PlayerName}.";
+                        break;
+                    }
                 case "resourceful":
-                {
-                    if (level > MaxResourcefulLootPercent) return TextCommandResult.Error($"Level cannot exceed max ({MaxResourcefulLootPercent}).");
-                    var progress = ResourcefulProgress.GetOrAdd(targetUid, _ => new ResourcefulProgressData { CurrentIncrementSize = BaseResourcefulAnimalsPerIncrement });
-                    progress.TotalCredits = level;
-                    pendingResourcefulProgressSave = true;
-                    ApplyResourcefulBonusStatic(targetPlayer, level);
-                    UpdateSkillActivityDay(targetUid, "resourceful");
-                    result = $"Resourceful level set to {level} for {targetPlayer.PlayerName}.";
-                    break;
-                }
+                    {
+                        if (level > MaxResourcefulLootPercent) return TextCommandResult.Error($"Level cannot exceed max ({MaxResourcefulLootPercent}).");
+                        var progress = ResourcefulProgress.GetOrAdd(targetUid, _ => new ResourcefulProgressData { CurrentIncrementSize = BaseResourcefulAnimalsPerIncrement });
+                        progress.TotalCredits = level;
+                        pendingResourcefulProgressSave = true;
+                        ApplyResourcefulBonusStatic(targetPlayer, level);
+                        UpdateSkillActivityDay(targetUid, "resourceful");
+                        result = $"Resourceful level set to {level} for {targetPlayer.PlayerName}.";
+                        break;
+                    }
                 case "forager":
-                {
-                    if (level > MaxForagerLootPercent) return TextCommandResult.Error($"Level cannot exceed max ({MaxForagerLootPercent}).");
-                    var progress = ForagerProgress.GetOrAdd(targetUid, _ => new ForagerProgressData { CurrentIncrementSize = BaseForagerCropsPerIncrement });
-                    progress.TotalCredits = level;
-                    pendingForagerProgressSave = true;
-                    ApplyForagerBonusStatic(targetPlayer, level);
-                    UpdateSkillActivityDay(targetUid, "forager");
-                    result = $"Forager level set to {level} for {targetPlayer.PlayerName}.";
-                    break;
-                }
+                    {
+                        if (level > MaxForagerLootPercent) return TextCommandResult.Error($"Level cannot exceed max ({MaxForagerLootPercent}).");
+                        var progress = ForagerProgress.GetOrAdd(targetUid, _ => new ForagerProgressData { CurrentIncrementSize = BaseForagerCropsPerIncrement });
+                        progress.TotalCredits = level;
+                        pendingForagerProgressSave = true;
+                        ApplyForagerBonusStatic(targetPlayer, level);
+                        UpdateSkillActivityDay(targetUid, "forager");
+                        result = $"Forager level set to {level} for {targetPlayer.PlayerName}.";
+                        break;
+                    }
                 case "furtive":
-                {
-                    if (level > MaxFurtivePercent) return TextCommandResult.Error($"Level cannot exceed max ({MaxFurtivePercent}).");
-                    var progress = FurtiveProgress.GetOrAdd(targetUid, _ => new FurtiveProgressData { CurrentIncrementSize = BaseFurtiveSneakBlocksPerIncrement });
-                    progress.TotalCredits = level;
-                    pendingFurtiveProgressSave = true;
-                    ApplyFurtiveBonusStatic(targetPlayer, level);
-                    UpdateSkillActivityDay(targetUid, "furtive");
-                    result = $"Furtive level set to {level} (-{level}% detection) for {targetPlayer.PlayerName}.";
-                    break;
-                }
+                    {
+                        if (level > MaxFurtivePercent) return TextCommandResult.Error($"Level cannot exceed max ({MaxFurtivePercent}).");
+                        var progress = FurtiveProgress.GetOrAdd(targetUid, _ => new FurtiveProgressData { CurrentIncrementSize = BaseFurtiveSneakBlocksPerIncrement });
+                        progress.TotalCredits = level;
+                        pendingFurtiveProgressSave = true;
+                        ApplyFurtiveBonusStatic(targetPlayer, level);
+                        UpdateSkillActivityDay(targetUid, "furtive");
+                        result = $"Furtive level set to {level} (-{level}% detection) for {targetPlayer.PlayerName}.";
+                        break;
+                    }
                 default:
                     return TextCommandResult.Error($"Unknown trait '{traitName}'. Valid traits: mining, melee, ranged, walking, hunger, armor, mender, pilferer, resourceful, forager, furtive, precise");
             }
@@ -6332,17 +6358,11 @@ namespace SeraphLeveling
             // Persist any pending progress before shutdown
             if (ServerApi != null)
             {
-                var saveableAttributes = LoadedMods
-                        .SelectMany(mod => mod.CharacterClasses)
-                        .SelectMany(charClass => charClass.Traits)
-                        .SelectMany(trait => trait.Attributes)
-                        .ToHashSet();
-
-                foreach (var def in saveableAttributes)
+                foreach (var def in LoadedAttributes)
                 {
-                    if (PendingSaves.GetValueOrDefault(def.Item1, false) || def.Item1.HasUnsavedProgress())
+                    if (PendingSaves.GetValueOrDefault(def, false) || def.HasUnsavedProgress())
                     {
-                        def.Item1.PersistProgress(ServerApi);
+                        def.PersistProgress(ServerApi);
                     }
                 }
 
@@ -6465,15 +6485,10 @@ namespace SeraphLeveling
             // Unpatch server-side Harmony patches
             serverHarmony?.UnpatchAll("seraphleveling.server");
 
-            var disposableAttributes = LoadedMods
-                    .SelectMany(mod => mod.CharacterClasses)
-                    .SelectMany(charClass => charClass.Traits)
-                    .SelectMany(trait => trait.Attributes)
-                    .ToHashSet();
-            foreach (var def in disposableAttributes)
+            foreach (var def in LoadedAttributes)
             {
-                def.Item1.ResetProgress();
-                def.Item1.MarkForSave(false); // TODO Just clear PendingSaves once all traits are converted
+                def.ResetProgress();
+                def.MarkForSave(false); // TODO Just clear PendingSaves once all traits are converted
             }
 
             MeleeProgress.Clear();
@@ -6532,12 +6547,12 @@ namespace SeraphLeveling
                     .SelectMany(charClass => charClass.Traits)
                     .SelectMany(trait => trait.Attributes)
                     .ToHashSet();
-            foreach (var def in saveableAttributes)
+            foreach (var def in LoadedAttributes)
             {
-                if (PendingSaves.GetValueOrDefault(def.Item1, false) || def.Item1.HasUnsavedProgress())
+                if (PendingSaves.GetValueOrDefault(def, false) || def.HasUnsavedProgress())
                 {
-                    def.Item1.PersistProgress(ServerApi);
-                    PendingSaves.AddOrUpdate(def.Item1, false, (_, _) => false);
+                    def.PersistProgress(ServerApi);
+                    PendingSaves.AddOrUpdate(def, false, (_, _) => false);
                 }
             }
 
@@ -6709,7 +6724,7 @@ namespace SeraphLeveling
             LoadProgress<RangedProgressData>();
         }
 
-        public static void PersistProgress<T>() where T:ProgressData<T>,IProgressDataContract<T>
+        public static void PersistProgress<T>() where T : ProgressData<T>, IProgressDataContract<T>
         {
             if (ServerApi == null) return;
             var progress = T.ProgressDictionary();
@@ -6765,7 +6780,7 @@ namespace SeraphLeveling
             AttributeModifierDefinitions.WalkingSpeed.PersistProgress(ServerApi);
         }
 
-        private void LoadProgress<T>() where T:ProgressData<T>,IProgressDataContract<T>
+        private void LoadProgress<T>() where T : ProgressData<T>, IProgressDataContract<T>
         {
             var progress = T.ProgressDictionary();
             if (ServerApi == null) return;
@@ -6786,7 +6801,8 @@ namespace SeraphLeveling
                 {
                     using (var reader = new BinaryReader(ms))
                     {
-                        if (!ProgressData<T>.ReadHeader(reader)) {
+                        if (!ProgressData<T>.ReadHeader(reader))
+                        {
                             ServerApi.Logger.Warning("[SeraphLeveling] Invalid {description} progress data format");
                             return;
                         }
@@ -6802,11 +6818,12 @@ namespace SeraphLeveling
                             }
                             catch (Exception innerEx)
                             {
-                                ServerApi.Logger.Warning($"[SeraphLeveling] Skipping corrupt player entry {i+1}/{playerCount} in {description} data: {innerEx.Message}");
+                                ServerApi.Logger.Warning($"[SeraphLeveling] Skipping corrupt player entry {i + 1}/{playerCount} in {description} data: {innerEx.Message}");
                                 break;
                             }
                         }
-                        if (version != T.GetVersion()) {
+                        if (version != T.GetVersion())
+                        {
                             T.MarkForSave();
                         }
                     }
@@ -7373,8 +7390,13 @@ namespace SeraphLeveling
 
                             var (newCr, lost) = ApplyAbsolutePositionDecay(toolEntries, rawPenalty,
                                 BaseDamagePerIncrement, MeleeIncrementStep, oldCredits,
-                                (k, a, s) => { if (mProg.WeaponProgress.TryGetValue(k, out var p)) {
-                                    p.DamageInIncrement = (float)a; p.CurrentIncrementSize = s; } },
+                                (k, a, s) =>
+                                {
+                                    if (mProg.WeaponProgress.TryGetValue(k, out var p))
+                                    {
+                                        p.DamageInIncrement = (float)a; p.CurrentIncrementSize = s;
+                                    }
+                                },
                                 k => mProg.WeaponProgress.Remove(k), verboseSb, "Melee");
                             mProg.TotalCredits = newCr;
                             if (lost > 0) totalDecayApplied += lost;
@@ -7423,8 +7445,13 @@ namespace SeraphLeveling
 
                             var (newCr, lost) = ApplyAbsolutePositionDecay(toolEntries, rawPenalty,
                                 BaseRangedDamagePerIncrement, RangedIncrementStep, oldCredits,
-                                (k, a, s) => { if (rProg.WeaponProgress.TryGetValue(k, out var p)) {
-                                    p.DamageInIncrement = (float)a; p.CurrentIncrementSize = s; } },
+                                (k, a, s) =>
+                                {
+                                    if (rProg.WeaponProgress.TryGetValue(k, out var p))
+                                    {
+                                        p.DamageInIncrement = (float)a; p.CurrentIncrementSize = s;
+                                    }
+                                },
                                 k => rProg.WeaponProgress.Remove(k), verboseSb, "Ranged");
                             rProg.TotalCredits = newCr;
                             if (lost > 0) totalDecayApplied += lost;
@@ -7473,8 +7500,13 @@ namespace SeraphLeveling
 
                             var (newCr, lost) = ApplyAbsolutePositionDecay(toolEntries, rawPenalty,
                                 BasePreciseDamagePerIncrement, PreciseIncrementStep, oldCredits,
-                                (k, a, s) => { if (pProg.WeaponProgress.TryGetValue(k, out var p)) {
-                                    p.DamageInIncrement = (float)a; p.CurrentIncrementSize = s; } },
+                                (k, a, s) =>
+                                {
+                                    if (pProg.WeaponProgress.TryGetValue(k, out var p))
+                                    {
+                                        p.DamageInIncrement = (float)a; p.CurrentIncrementSize = s;
+                                    }
+                                },
                                 k => pProg.WeaponProgress.Remove(k), verboseSb, "Precise");
                             pProg.TotalCredits = newCr;
                             if (lost > 0) totalDecayApplied += lost;
@@ -7654,8 +7686,13 @@ namespace SeraphLeveling
 
                                     var (newCr, lost) = ApplyAbsolutePositionDecay(toolEntries, rawPenalty,
                                         COBaseDamagePerIncrement, COIncrementStep, oldProfCredits,
-                                        (k, a, s) => { if (profKvp.Value.WeaponProgress.TryGetValue(k, out var p)) {
-                                            p.DamageInIncrement = (float)a; p.CurrentIncrementSize = s; } },
+                                        (k, a, s) =>
+                                        {
+                                            if (profKvp.Value.WeaponProgress.TryGetValue(k, out var p))
+                                            {
+                                                p.DamageInIncrement = (float)a; p.CurrentIncrementSize = s;
+                                            }
+                                        },
                                         k => profKvp.Value.WeaponProgress.Remove(k), verboseSb, $"CO:{profKvp.Key}");
                                     profKvp.Value.TotalCredits = newCr;
                                     coSb.AppendLine($"    {profKvp.Key}: {oldProfCredits} \u2192 {newCr} (-{lost} credits, {rawPenalty:F0} pts)");
@@ -8147,8 +8184,13 @@ namespace SeraphLeveling
                         double rawPenalty = BaseDamagePerIncrement * DeathPenaltyFraction * Math.Sqrt(Math.Max(1, oldCredits));
                         var (newCr, _) = ApplyAbsolutePositionDecay(toolEntries, rawPenalty,
                             BaseDamagePerIncrement, MeleeIncrementStep, oldCredits,
-                            (k, a, s) => { if (meleeProg.WeaponProgress.TryGetValue(k, out var p)) {
-                                p.DamageInIncrement = (float)a; p.CurrentIncrementSize = s; } },
+                            (k, a, s) =>
+                            {
+                                if (meleeProg.WeaponProgress.TryGetValue(k, out var p))
+                                {
+                                    p.DamageInIncrement = (float)a; p.CurrentIncrementSize = s;
+                                }
+                            },
                             k => meleeProg.WeaponProgress.Remove(k), null, "Melee");
                         meleeProg.TotalCredits = newCr;
                         int actualLost = oldCredits - newCr;
@@ -8198,8 +8240,13 @@ namespace SeraphLeveling
                         double rawPenalty = BaseRangedDamagePerIncrement * DeathPenaltyFraction * Math.Sqrt(Math.Max(1, oldCredits));
                         var (newCr, _) = ApplyAbsolutePositionDecay(toolEntries, rawPenalty,
                             BaseRangedDamagePerIncrement, RangedIncrementStep, oldCredits,
-                            (k, a, s) => { if (rangedProg.WeaponProgress.TryGetValue(k, out var p)) {
-                                p.DamageInIncrement = (float)a; p.CurrentIncrementSize = s; } },
+                            (k, a, s) =>
+                            {
+                                if (rangedProg.WeaponProgress.TryGetValue(k, out var p))
+                                {
+                                    p.DamageInIncrement = (float)a; p.CurrentIncrementSize = s;
+                                }
+                            },
                             k => rangedProg.WeaponProgress.Remove(k), null, "Ranged");
                         rangedProg.TotalCredits = newCr;
                         int actualLost = oldCredits - newCr;
@@ -8249,8 +8296,13 @@ namespace SeraphLeveling
                         double rawPenalty = BasePreciseDamagePerIncrement * DeathPenaltyFraction * Math.Sqrt(Math.Max(1, oldCredits));
                         var (newCr, _) = ApplyAbsolutePositionDecay(toolEntries, rawPenalty,
                             BasePreciseDamagePerIncrement, PreciseIncrementStep, oldCredits,
-                            (k, a, s) => { if (preciseProg.WeaponProgress.TryGetValue(k, out var p)) {
-                                p.DamageInIncrement = (float)a; p.CurrentIncrementSize = s; } },
+                            (k, a, s) =>
+                            {
+                                if (preciseProg.WeaponProgress.TryGetValue(k, out var p))
+                                {
+                                    p.DamageInIncrement = (float)a; p.CurrentIncrementSize = s;
+                                }
+                            },
                             k => preciseProg.WeaponProgress.Remove(k), null, "Precise");
                         preciseProg.TotalCredits = newCr;
                         int actualLost = oldCredits - newCr;
@@ -8398,8 +8450,13 @@ namespace SeraphLeveling
                                 double rawPenalty = COBaseDamagePerIncrement * DeathPenaltyFraction * Math.Sqrt(Math.Max(1, oldProfCredits));
                                 var (newCr, _) = ApplyAbsolutePositionDecay(toolEntries, rawPenalty,
                                     COBaseDamagePerIncrement, COIncrementStep, oldProfCredits,
-                                    (k, a, s) => { if (profKvp.Value.WeaponProgress.TryGetValue(k, out var p)) {
-                                        p.DamageInIncrement = (float)a; p.CurrentIncrementSize = s; } },
+                                    (k, a, s) =>
+                                    {
+                                        if (profKvp.Value.WeaponProgress.TryGetValue(k, out var p))
+                                        {
+                                            p.DamageInIncrement = (float)a; p.CurrentIncrementSize = s;
+                                        }
+                                    },
                                     k => profKvp.Value.WeaponProgress.Remove(k), null, $"CO:{profKvp.Key}");
                                 profKvp.Value.TotalCredits = newCr;
                                 int actualLost = oldProfCredits - newCr;
@@ -8628,14 +8685,14 @@ namespace SeraphLeveling
         /// <summary>
         /// Detect if Combat Overhaul mod is loaded and log the result.
         /// </summary>
-        private void DetectCombatOverhaul(ICoreServerAPI api)
+        private void DetectCombatOverhaul(IModLoader modLoader)
         {
             // Accept the original Combat Overhaul AND the 1.22 fork
             // ("combatoverhaulfork"). The fork keeps CO's stat/trait names, so
             // detecting it re-enables proficiency progression, the bonus stat
             // application, and the /trait co* commands.
-            IsCombatOverhaulLoaded = DetectAnyCombatOverhaul(api.ModLoader);
-            IsCombatOverhaulForkLoaded = api.ModLoader.IsModEnabled("combatoverhaulfork");
+            IsCombatOverhaulLoaded = DetectAnyCombatOverhaul(modLoader);
+            IsCombatOverhaulForkLoaded = modLoader.IsModEnabled("combatoverhaulfork");
 
             if (IsCombatOverhaulLoaded)
             {
@@ -8643,11 +8700,11 @@ namespace SeraphLeveling
                     ? "Combat Overhaul (1.22 fork)" : "Combat Overhaul";
                 if (COEnableCompat)
                 {
-                    api.Logger.Notification($"[SeraphLeveling] {which} detected - proficiency progression enabled");
+                    ServerApi.Logger.Notification($"[SeraphLeveling] {which} detected - proficiency progression enabled");
                 }
                 else
                 {
-                    api.Logger.Notification($"[SeraphLeveling] {which} detected but compatibility disabled in config");
+                    ServerApi.Logger.Notification($"[SeraphLeveling] {which} detected but compatibility disabled in config");
                 }
             }
         }
@@ -13175,7 +13232,7 @@ namespace SeraphLeveling
             claustrophobicProg.IsRemoved = true;
             pendingClaustrophobicRemovalProgressSave = true;
             ApplyClaustrophobicRemovalStatic(player, true);
-    
+
             // Remove Heavy-footed (if applicable)
             var heavyFootedProg = HeavyFootedRemovalProgress.GetOrAdd(playerUid, _ => new HeavyFootedRemovalProgressData());
             heavyFootedProg.IsRemoved = true;
@@ -14476,7 +14533,7 @@ namespace SeraphLeveling
                                 }
                                 catch (Exception innerEx)
                                 {
-                                    ServerApi.Logger.Warning($"[SeraphLeveling] Skipping corrupt player entry {i+1}/{count} in sleep buff data: {innerEx.Message}");
+                                    ServerApi.Logger.Warning($"[SeraphLeveling] Skipping corrupt player entry {i + 1}/{count} in sleep buff data: {innerEx.Message}");
                                     break;
                                 }
                             }
@@ -14537,16 +14594,8 @@ namespace SeraphLeveling
         {
             base.StartClientSide(api);
             clientApi = api;
-
-            // Mirror server's IsCombatOverhaulLoaded flag on the client. The server-side
-            // assignment in StartServerSide doesn't run on a client-only instance, so without
-            // this the postfix would think CO is never loaded and skip CO trait display
-            // even when CO is actually installed. Accepts the original mod and the 1.22 fork.
-            SeraphLevelingModSystem.IsCombatOverhaulLoaded =
-                SeraphLevelingModSystem.DetectAnyCombatOverhaul(api.ModLoader);
-            SeraphLevelingModSystem.IsCombatOverhaulForkLoaded = api.ModLoader.IsModEnabled("combatoverhaulfork");
-
-            SeraphLevelingModSystem.IsSacredLibLoaded = SeraphLevelingModSystem.DetectAnySacredLib(api.ModLoader);
+            // Mirror the server's mod detection on the client.
+            SeraphLevelingModSystem.DetectLoadedMods(api.ModLoader);
 
             // Register network channel for receiving level-up sounds from server
             api.Network.RegisterChannel("seraphleveling")
