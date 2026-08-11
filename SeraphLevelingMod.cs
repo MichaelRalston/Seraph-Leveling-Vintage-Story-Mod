@@ -12500,7 +12500,7 @@ namespace SeraphLeveling
         /// </summary>
         private TextCommandResult OnTraitTinkererCommand(TextCommandCallingArgs args)
         {
-            return AttributeModifierDefinitions.Tinkerer.HandleTraitCommand(args);
+            return TraitDefinitions.Tinkerer.HandleTraitCommand(args);
         }
 
         /// <summary>

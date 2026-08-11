@@ -21,6 +21,11 @@ namespace SeraphLeveling.Data.Attributes
         /// Unlock the attribute if it can be unlocked
         /// </summary>
         public abstract void Unlock(IServerPlayer player, bool notify = false);
+
+        /// <summary>
+        /// Get a status string for the attribute to return for the attribute when the player uses the /trait command
+        /// </summary>
+        public abstract void CollectStatus(IPlayer player, StringBuilder sb);
     }
 
     public interface ISaveableAttribute : IAttribute
@@ -46,6 +51,7 @@ namespace SeraphLeveling.Data.Attributes
         public virtual int PersistenceVersion { get; init; } = 1;
 
         public abstract void CheckUnlocks(IServerPlayer player);
+        public abstract void CollectStatus(IPlayer player, StringBuilder sb);
 
         public virtual void Unlock(IServerPlayer player, bool notify = false)
         {

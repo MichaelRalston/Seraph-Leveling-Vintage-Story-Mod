@@ -86,8 +86,6 @@ namespace SeraphLeveling.Data.Attributes
             }
         }
 
-        public abstract TextCommandResult HandleTraitCommand(TextCommandCallingArgs args);
-
         public TextCommandResult HandleUnlockCommand(TextCommandCallingArgs args)
         {
             IServerPlayer player = args.Caller.Player as IServerPlayer;
@@ -102,6 +100,12 @@ namespace SeraphLeveling.Data.Attributes
             ApplyUnlock(player, progress);
 
             return TextCommandResult.Success($"{Name} trait {(unlock ? "unlocked" : "locked")}.");
+        }
+
+        public override void CollectStatus(IPlayer player, StringBuilder sb)
+        {
+            var progress = GetDict(player);
+            sb.AppendLine($"{Name} trait: {(progress.IsUnlocked ? "UNLOCKED" : "Locked")}");
         }
     }
 

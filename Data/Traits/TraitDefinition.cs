@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using SeraphLeveling.Data.Attributes;
+using Vintagestory.API.Common;
 using Vintagestory.API.Server;
 using Vintagestory.API.Util;
 
@@ -25,6 +27,22 @@ namespace SeraphLeveling.Data.Traits
             {
                 Attributes.Select(tuple => tuple.Item1).Foreach(attr => attr.Unlock(player, true));
             }
+        }
+
+        public virtual TextCommandResult HandleTraitCommand(TextCommandCallingArgs args)
+        {
+            IServerPlayer player = args.Caller.Player as IServerPlayer;
+            if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
+
+            var sb = new StringBuilder();
+            Attributes.Select(tuple => tuple.Item1).Foreach(attr => attr.CollectStatus(player, sb));
+            if (Requirements.Count > 0)
+            {
+                sb.AppendLine($"Requirements:");
+                Requirements.Foreach(req => req.CollectStatus(player, sb));
+            }
+            
+            return TextCommandResult.Success(sb.ToString().TrimEnd());
         }
     }
 }

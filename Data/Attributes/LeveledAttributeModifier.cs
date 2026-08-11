@@ -7,7 +7,8 @@ namespace SeraphLeveling.Data.Attributes
     public interface ILeveledAttributeModifierDefinition
     {
         public string Name { get; }
-        public bool IsLeveledForPlayer(IPlayer player, int requiredCredits);
+        public int GetCreditsForPlayer(IPlayer player);
+        public bool IsLeveledForPlayer(IPlayer player, int requiredCredits) => GetCreditsForPlayer(player) >= requiredCredits;
     }
 
     public abstract record class LeveledAttributeModifierDefinition<D, PD> : AttributeModifierDefinition<D, PD>, ILeveledAttributeModifierDefinition where PD : LeveledAttributeModifierProgressData<D, PD> where D: LeveledAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
@@ -19,9 +20,9 @@ namespace SeraphLeveling.Data.Attributes
         public required int GlobalMaxCredits { get; set; }
         public override int PersistenceVersion { get; init; } = 2;
 
-        public bool IsLeveledForPlayer(IPlayer player, int requiredCredits)
+        public int GetCreditsForPlayer(IPlayer player)
         {
-            return GetDict(player).TotalCredits >= requiredCredits;
+            return GetDict(player).TotalCredits;
         }
 
         public virtual int GetMaxCredits(EntityPlayer player) => GlobalMaxCredits;
@@ -60,21 +61,13 @@ namespace SeraphLeveling.Data.Attributes
             ApplyBonus(player, progress);
         }
 
-        public TextCommandResult HandleTraitCommand(TextCommandCallingArgs args)
+        public override void CollectStatus(IPlayer player, StringBuilder sb)
         {
-            var player = args.Caller.Player;
-            if (player?.Entity == null)
-            {
-                return TextCommandResult.Error("Could not find player entity");
-            }
-
             var progress = GetDict(player);
-
             int currentCredits = progress.TotalCredits;
             int bonusPercent = CalculateBonus(player.Entity, progress);
             int maxCredits = GetMaxCredits(player.Entity);
 
-            var sb = new StringBuilder();
             sb.AppendLine($"{Name} progression: {currentCredits}% / {maxCredits}%");
             sb.AppendLine($"Current bonus: {Direction}{bonusPercent}{Stat}");
             progress.WriteIncrementLine(sb);
@@ -83,9 +76,22 @@ namespace SeraphLeveling.Data.Attributes
             {
                 sb.Insert(0, "=== MAXED OUT ===\n");
             }
+        }
+
+        public TextCommandResult HandleTraitCommand(TextCommandCallingArgs args)
+        {
+            var player = args.Caller.Player;
+            if (player?.Entity == null)
+            {
+                return TextCommandResult.Error("Could not find player entity");
+            }
+
+            var sb = new StringBuilder();
+            CollectStatus(player, sb);
 
             return TextCommandResult.Success(sb.ToString().TrimEnd());
         }
+        
         public TextCommandResult HandleLevelCommand(TextCommandCallingArgs args)
         {
             var player = args.Caller.Player as IServerPlayer;
