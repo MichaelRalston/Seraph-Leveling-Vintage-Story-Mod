@@ -200,5 +200,177 @@ namespace SeraphLeveling.Data.Traits
             Attributes = [
             ]
         };
+
+        public static readonly TraitDefinition Carpenter = new()
+        {
+            Id = "carpenter",
+            Attributes = [
+            ],
+            Requirements = [
+            ]
+        };
+
+        public static readonly TraitDefinition Lumberjack = new()
+        {
+            Id = "lumberjack",
+            Attributes = [
+            ]
+        };
+
+        public static readonly TraitDefinition TreeWhisperer = new()
+        {
+            Id = "treewhisperer",
+            Attributes = [
+            ]
+        };
+
+        public static readonly TraitDefinition HeavyFooted = new()
+        {
+            Id = "heavyfooted",
+            Attributes = [
+            ]
+        };
+
+        public static readonly TraitDefinition Mason = new()
+        {
+            Id = "mason",
+            Attributes = [
+            ],
+            Requirements = [
+            ]
+        };
+
+        public static readonly TraitDefinition InteriorDesigner = new()
+        {
+            Id = "interiordesigner",
+            Attributes = [
+            ],
+            Requirements = [
+            ]
+        };
+
+        public static readonly TraitDefinition Potter = new()
+        {
+            Id = "potter",
+            Attributes = [
+            ],
+            Requirements = [
+            ]
+        };
+
+        public static readonly TraitDefinition Technician = new()
+        {
+            Id = "technician",
+            Attributes = [
+            ],
+            Requirements = [
+            ]
+        };
+
+        public static readonly TraitDefinition SiltSeeker = new()
+        {
+            Id = "siltseeker",
+            Attributes = [
+            ]
+        };
+
+        public static readonly TraitDefinition Townie = new()
+        {
+            Id = "townie",
+            Attributes = [
+            ]
+        };
+
+        public static readonly TraitDefinition Agoraphobic = new()
+        {
+            Id = "agoraphobic",
+            Attributes = [
+            ]
+        };
+
+        public static readonly TraitDefinition Alchemist = new()
+        {
+            Id = "alchemist",
+            Attributes = [
+            ],
+            Requirements = [
+            ]
+        };
+
+        public static readonly TraitDefinition Propagator = new()
+        {
+            Id = "propagator",
+            Attributes = [
+            ],
+            Requirements = [
+            ]
+        };
+
+        public static readonly TraitDefinition Naturalist = new()
+        {
+            Id = "naturalist",
+            Attributes = [
+            ]
+        };
+
+        public static readonly TraitDefinition Medic = new()
+        {
+            Id = "medic",
+            Attributes = [
+            ]
+        };
+
+        public static readonly TraitDefinition MasterCraftsman = new()
+        {
+            Id = "mastercraftsman",
+            Attributes = [
+            ],
+            Requirements = [
+            ]
+        };
+
+        public static readonly TraitDefinition Blacksmith = new()
+        {
+            Id = "blacksmith",
+            Attributes = [
+            ]
+        };
+
+        public static readonly TraitDefinition Armorer = new()
+        {
+            Id = "armourer", // not a typo
+            Attributes = [
+            ]
+        };
+
+        public static readonly TraitDefinition Engineer = new()
+        {
+            Id = "engineer",
+            Attributes = [
+            ]
+        };
+
+        public static readonly TraitDefinition Detonator = new()
+        {
+            Id = "detonator",
+            Attributes = [
+            ],
+            Requirements = [
+            ]
+        };
+
+        public static readonly TraitDefinition Stonespeaker = new()
+        {
+            Id = "stonespeaker",
+            Attributes = [
+            ]
+        };
+
+        public static readonly TraitDefinition CaveExplorer = new()
+        {
+            Id = "caveexplorer",
+            Attributes = [
+            ]
+        };
     }
 }

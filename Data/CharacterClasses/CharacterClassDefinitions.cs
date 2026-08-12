@@ -87,6 +87,10 @@ namespace SeraphLeveling.Data.CharacterClasses
         {
             Id = "woodsman",
             Traits = [
+                TraitDefinitions.Carpenter,
+                TraitDefinitions.Lumberjack,
+                TraitDefinitions.TreeWhisperer,
+                TraitDefinitions.HeavyFooted
             ]
         };
 
@@ -94,6 +98,13 @@ namespace SeraphLeveling.Data.CharacterClasses
         {
             Id = "craftsman",
             Traits = [
+                TraitDefinitions.Mason,
+                TraitDefinitions.InteriorDesigner,
+                TraitDefinitions.Potter,
+                TraitDefinitions.Technician,
+                TraitDefinitions.SiltSeeker,
+                TraitDefinitions.Townie,
+                TraitDefinitions.Agoraphobic
             ]
         };
 
@@ -101,6 +112,11 @@ namespace SeraphLeveling.Data.CharacterClasses
         {
             Id = "witch",
             Traits = [
+                TraitDefinitions.Alchemist,
+                TraitDefinitions.Propagator,
+                TraitDefinitions.Naturalist,
+                TraitDefinitions.Medic,
+                TraitDefinitions.Claustrophobic
             ]
         };
 
@@ -108,6 +124,10 @@ namespace SeraphLeveling.Data.CharacterClasses
         {
             Id = "blacksmith",
             Traits = [
+                TraitDefinitions.MasterCraftsman,
+                TraitDefinitions.Blacksmith,
+                TraitDefinitions.Armorer,
+                TraitDefinitions.Heavyhanded
             ]
         };
 
@@ -115,6 +135,12 @@ namespace SeraphLeveling.Data.CharacterClasses
         {
             Id = "artificer",
             Traits = [
+                TraitDefinitions.Technician,
+                TraitDefinitions.Tinkerer,
+                TraitDefinitions.Pilferer,
+                TraitDefinitions.Engineer,
+                TraitDefinitions.Technical,
+                TraitDefinitions.Weak
             ]
         };
 
@@ -122,6 +148,10 @@ namespace SeraphLeveling.Data.CharacterClasses
         {
             Id = "miner",
             Traits = [
+                TraitDefinitions.Detonator,
+                TraitDefinitions.Stonespeaker,
+                TraitDefinitions.CaveExplorer,
+                TraitDefinitions.Nearsighted
             ]
         };
 
