@@ -3,13 +3,14 @@ using System.IO;
 using System.Text;
 using Vintagestory.API.Server;
 using Vintagestory.API.Config;
+using Vintagestory.API.Common;
 
 namespace SeraphLeveling.Data.Attributes
 {
     public abstract record class LeveledPartialAttributeModifierDefinition : LeveledAttributeModifierDefinition<LeveledPartialAttributeModifierDefinition, LeveledPartialAttributeModifierProgressData>, IConstructable<LeveledPartialAttributeModifierDefinition, LeveledPartialAttributeModifierProgressData>
     {
-        public required int BaseIncrement { get; init; }
-        public required int IncrementStep { get; init; }
+        public required int BaseIncrement { get; set; }
+        public required int IncrementStep { get; set; }
         public required string IncrementUnits { get; init; }
 
         public static LeveledPartialAttributeModifierProgressData Create(LeveledPartialAttributeModifierDefinition definition) { return new LeveledPartialAttributeModifierProgressData(definition); }
@@ -23,6 +24,52 @@ namespace SeraphLeveling.Data.Attributes
             MarkForSave(true);
             ApplyBonus(player, progress);
         }
+
+        public TextCommandResult OnTraitIncrementCommand(TextCommandCallingArgs args)
+        {
+            int? newValue = (int?)args[0];
+
+            if (newValue.HasValue)
+            {
+                if (newValue.Value < 0)
+                {
+                    return TextCommandResult.Error("Increment step cannot be negative");
+                }
+
+                IncrementStep = newValue.Value;
+                SeraphLevelingModSystem.pendingConfigSave = true;
+
+                return TextCommandResult.Success($"{Name} increment step set to +{IncrementStep} per credit.\nProgression: {BaseIncrement}, {BaseIncrement + IncrementStep}, {BaseIncrement + IncrementStep * 2}...");
+            }
+            else
+            {
+                return TextCommandResult.Success($"Current {Description} increment step: +{IncrementStep} per credit\nProgression: {BaseIncrement}, {BaseIncrement + IncrementStep}, {BaseIncrement + IncrementStep * 2}...");
+            }
+        }
+
+        public TextCommandResult OnTraitBaseCommand(TextCommandCallingArgs args)
+        {
+            int? newValue = (int?)args[0];
+
+            if (newValue.HasValue)
+            {
+                if (newValue.Value < 1)
+                {
+                    return TextCommandResult.Error("Base {IncrementUnits} per increment must be at least 1");
+                }
+
+                BaseIncrement = newValue.Value;
+                SeraphLevelingModSystem.pendingConfigSave = true;
+
+                return TextCommandResult.Success($"Base {IncrementUnits} per increment set to {BaseIncrement}. New progress will require this many {IncrementUnits} for the first 1%.");
+            }
+            else
+            {
+                return TextCommandResult.Success($"Current base {IncrementUnits} per increment: {BaseIncrement}\nIncrement step: +{IncrementStep} per credit");
+            }
+        }
+
+
     }
 
     public class LeveledPartialAttributeModifierProgressData(LeveledPartialAttributeModifierDefinition definition) : LeveledAttributeModifierProgressData<LeveledPartialAttributeModifierDefinition, LeveledPartialAttributeModifierProgressData>(definition)

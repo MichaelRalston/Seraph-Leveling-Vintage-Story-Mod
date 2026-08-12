@@ -369,7 +369,7 @@ namespace SeraphLeveling.Tests
 
         private static void RunWalkingTests()
         {
-            int maxWalking = SeraphLevelingModSystem.MaxWalkingSpeedPercent;
+            int maxWalking = AttributeModifierDefinitions.WalkingSpeed.GlobalMaxCredits;
 
             // WALKING-001: Walking bonus calculation (null entity = no vanilla bonus)
             AssertEqual("WALKING-001", "Walking bonus at 5 credits", 5, SeraphLevelingModSystem.CalculateWalkingBonusPercent(5, null));

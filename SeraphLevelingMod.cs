@@ -121,13 +121,6 @@ namespace SeraphLeveling
         // Trait code for the walking speed mastery trait (Fleetfooted)
         public const string WALKING_TRAIT_CODE = "sitwalkingmastery";
 
-        // Walking speed progression configuration
-        // Base blocks for first 1%: 1000 blocks
-        // Each subsequent 1% requires +1000 more blocks (1000, 2000, 3000, etc.)
-        public static int BaseBlocksWalkedPerIncrement = 1000;  // Base blocks needed for first credit
-        public static int WalkingIncrementStep = 1000;          // How much more blocks each subsequent credit needs
-        public static int MaxWalkingSpeedPercent = 15;          // 15% max bonus (115% total speed)
-
         // Vanilla Fleetfooted trait walk speed bonus (used for cap calculations)
         public const int VANILLA_FLEETFOOTED_WALK_BONUS = 10;
 
@@ -631,7 +624,7 @@ namespace SeraphLeveling
         public static readonly object persistLock = new object();
 
         // Flag to indicate pending config save
-        private static volatile bool pendingConfigSave = false;
+        public static volatile bool pendingConfigSave = false;
 
         // Auto-save configuration
         public static int AutoSaveIntervalSeconds = 300;  // Default 5 minutes
@@ -1135,7 +1128,7 @@ namespace SeraphLeveling
                     .WithDescription("Get or set the base blocks per level (admin only)")
                     .WithArgs(api.ChatCommands.Parsers.OptionalInt("blocks"))
                     .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitWalkingBaseCommand)
+                    .HandleWith(AttributeModifierDefinitions.WalkingSpeed.OnTraitBaseCommand)
                 .EndSubCommand()
                 .BeginSubCommand("walkinglevel")
                     .WithDescription("Get or set your walking level (admin only)")
@@ -1154,7 +1147,7 @@ namespace SeraphLeveling
                     .WithDescription("Get or set the walking increment step per credit (admin only)")
                     .WithArgs(api.ChatCommands.Parsers.OptionalInt("step"))
                     .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitWalkingIncrementCommand)
+                    .HandleWith(AttributeModifierDefinitions.WalkingSpeed.OnTraitIncrementCommand)
                 .EndSubCommand()
                 .BeginSubCommand("hunger")
                     .WithDescription("View your hunger rate progression stats")
@@ -1166,7 +1159,7 @@ namespace SeraphLeveling
                     .WithDescription("Get or set the base seconds per level (admin only)")
                     .WithArgs(api.ChatCommands.Parsers.OptionalInt("seconds"))
                     .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitHungerBaseCommand)
+                    .HandleWith(AttributeModifierDefinitions.HungerRate.OnTraitBaseCommand)
                 .EndSubCommand()
                 .BeginSubCommand("hungerlevel")
                     .WithDescription("Get or set your hunger level (admin only)")
@@ -1185,7 +1178,7 @@ namespace SeraphLeveling
                     .WithDescription("Get or set the hunger increment step per credit (admin only)")
                     .WithArgs(api.ChatCommands.Parsers.OptionalInt("step"))
                     .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitHungerIncrementCommand)
+                    .HandleWith(AttributeModifierDefinitions.HungerRate.OnTraitIncrementCommand)
                 .EndSubCommand()
                 .BeginSubCommand("armor")
                     .WithDescription("View your armor progression stats")
@@ -3070,111 +3063,6 @@ namespace SeraphLeveling
         }
 
         /// <summary>
-        /// Handler for /trait walkingbase command.
-        /// Sets the base blocks needed for the first 1% increment.
-        /// </summary>
-        private TextCommandResult OnTraitWalkingBaseCommand(TextCommandCallingArgs args)
-        {
-            int? newValue = (int?)args[0];
-
-            if (newValue.HasValue)
-            {
-                if (newValue.Value < 1)
-                {
-                    return TextCommandResult.Error("Base blocks per increment must be at least 1");
-                }
-
-                BaseBlocksWalkedPerIncrement = newValue.Value;
-                pendingConfigSave = true;
-
-                return TextCommandResult.Success($"Base blocks per increment set to {BaseBlocksWalkedPerIncrement}. New progress will require this many blocks for first 1%.");
-            }
-            else
-            {
-                return TextCommandResult.Success($"Current base blocks per increment: {BaseBlocksWalkedPerIncrement}\nIncrement step: +{WalkingIncrementStep} per credit");
-            }
-        }
-
-        /// <summary>
-        /// Handler for /trait walkingincrement command.
-        /// Sets how many additional blocks are required for each subsequent credit.
-        /// </summary>
-        private TextCommandResult OnTraitWalkingIncrementCommand(TextCommandCallingArgs args)
-        {
-            int? newValue = (int?)args[0];
-
-            if (newValue.HasValue)
-            {
-                if (newValue.Value < 0)
-                {
-                    return TextCommandResult.Error("Increment step cannot be negative");
-                }
-
-                WalkingIncrementStep = newValue.Value;
-                pendingConfigSave = true;
-
-                return TextCommandResult.Success($"Walking increment step set to +{WalkingIncrementStep} per credit.\nProgression: {BaseBlocksWalkedPerIncrement}, {BaseBlocksWalkedPerIncrement + WalkingIncrementStep}, {BaseBlocksWalkedPerIncrement + WalkingIncrementStep * 2}...");
-            }
-            else
-            {
-                return TextCommandResult.Success($"Current walking increment step: +{WalkingIncrementStep} per credit\nProgression: {BaseBlocksWalkedPerIncrement}, {BaseBlocksWalkedPerIncrement + WalkingIncrementStep}, {BaseBlocksWalkedPerIncrement + WalkingIncrementStep * 2}...");
-            }
-        }
-
-
-        /// <summary>
-        /// Handler for /trait hungerbase command.
-        /// Sets the base seconds needed for the first 1% increment.
-        /// </summary>
-        private TextCommandResult OnTraitHungerBaseCommand(TextCommandCallingArgs args)
-        {
-            int? newValue = (int?)args[0];
-
-            if (newValue.HasValue)
-            {
-                if (newValue.Value < 1)
-                {
-                    return TextCommandResult.Error("Base seconds per increment must be at least 1");
-                }
-
-                BaseSecondsPerIncrement = newValue.Value;
-                pendingConfigSave = true;
-
-                return TextCommandResult.Success($"Base seconds per increment set to {BaseSecondsPerIncrement}. First 1% requires {BaseSecondsPerIncrement} seconds at full saturation.");
-            }
-            else
-            {
-                return TextCommandResult.Success($"Current base seconds per increment: {BaseSecondsPerIncrement}\nIncrement step: +{HungerIncrementStep} per credit");
-            }
-        }
-
-        /// <summary>
-        /// Handler for /trait hungerincrement command.
-        /// Sets how many additional seconds are required for each subsequent credit.
-        /// </summary>
-        private TextCommandResult OnTraitHungerIncrementCommand(TextCommandCallingArgs args)
-        {
-            int? newValue = (int?)args[0];
-
-            if (newValue.HasValue)
-            {
-                if (newValue.Value < 0)
-                {
-                    return TextCommandResult.Error("Increment step cannot be negative");
-                }
-
-                HungerIncrementStep = newValue.Value;
-                pendingConfigSave = true;
-
-                return TextCommandResult.Success($"Hunger increment step set to +{HungerIncrementStep} per credit.\nProgression: {BaseSecondsPerIncrement}, {BaseSecondsPerIncrement + HungerIncrementStep}, {BaseSecondsPerIncrement + HungerIncrementStep * 2}...");
-            }
-            else
-            {
-                return TextCommandResult.Success($"Current hunger increment step: +{HungerIncrementStep} per credit\nProgression: {BaseSecondsPerIncrement}, {BaseSecondsPerIncrement + HungerIncrementStep}, {BaseSecondsPerIncrement + HungerIncrementStep * 2}...");
-            }
-        }
-
-        /// <summary>
         /// Handler for /trait armor command.
         /// </summary>
         private TextCommandResult OnTraitArmorCommand(TextCommandCallingArgs args)
@@ -3616,7 +3504,7 @@ namespace SeraphLeveling
         {
             bool hasFleetfooted = entity != null && PlayerHasVanillaFleetfootedStatic(entity);
             int vanillaBonus = hasFleetfooted ? VANILLA_FLEETFOOTED_WALK_BONUS : 0;
-            int earnableBonus = Math.Max(0, MaxWalkingSpeedPercent - vanillaBonus);
+            int earnableBonus = Math.Max(0, AttributeModifierDefinitions.WalkingSpeed.GlobalMaxCredits - vanillaBonus);
             return Math.Min(credits, earnableBonus);
         }
 
@@ -6881,9 +6769,9 @@ namespace SeraphLeveling
                 MaxRangedAccuracyPercent = config.RangedMaxAccuracyPercent;
                 MaxRangedDistancePercent = config.RangedMaxDistancePercent;
 
-                BaseBlocksWalkedPerIncrement = config.WalkingBaseBlocksPerIncrement;
-                WalkingIncrementStep = config.WalkingIncrementStep;
-                MaxWalkingSpeedPercent = config.WalkingMaxPercent;
+                AttributeModifierDefinitions.WalkingSpeed.BaseIncrement = config.WalkingBaseBlocksPerIncrement;
+                AttributeModifierDefinitions.WalkingSpeed.IncrementStep = config.WalkingIncrementStep;
+                AttributeModifierDefinitions.WalkingSpeed.GlobalMaxCredits = config.WalkingMaxPercent;
 
                 BaseSecondsPerIncrement = config.HungerBaseSecondsPerIncrement;
                 HungerIncrementStep = config.HungerIncrementStep;
@@ -7116,9 +7004,9 @@ namespace SeraphLeveling
                 config.RangedMaxAccuracyPercent = MaxRangedAccuracyPercent;
                 config.RangedMaxDistancePercent = MaxRangedDistancePercent;
 
-                config.WalkingBaseBlocksPerIncrement = BaseBlocksWalkedPerIncrement;
-                config.WalkingIncrementStep = WalkingIncrementStep;
-                config.WalkingMaxPercent = MaxWalkingSpeedPercent;
+                config.WalkingBaseBlocksPerIncrement = AttributeModifierDefinitions.WalkingSpeed.BaseIncrement;
+                config.WalkingIncrementStep = AttributeModifierDefinitions.WalkingSpeed.IncrementStep;
+                config.WalkingMaxPercent = AttributeModifierDefinitions.WalkingSpeed.GlobalMaxCredits;
 
                 config.HungerBaseSecondsPerIncrement = BaseSecondsPerIncrement;
                 config.HungerIncrementStep = HungerIncrementStep;
@@ -9732,9 +9620,9 @@ namespace SeraphLeveling
                             MaxRangedDamagePercent = reader.ReadInt32();
                             MaxRangedAccuracyPercent = reader.ReadInt32();
                             MaxRangedDistancePercent = reader.ReadInt32();
-                            BaseBlocksWalkedPerIncrement = reader.ReadInt32();
-                            WalkingIncrementStep = reader.ReadInt32();
-                            MaxWalkingSpeedPercent = reader.ReadInt32();
+                            AttributeModifierDefinitions.WalkingSpeed.BaseIncrement = reader.ReadInt32();
+                            AttributeModifierDefinitions.WalkingSpeed.IncrementStep = reader.ReadInt32();
+                            AttributeModifierDefinitions.WalkingSpeed.GlobalMaxCredits = reader.ReadInt32();
                             // Hunger uses defaults
 
                             // Mark for re-save in new format
@@ -9755,9 +9643,9 @@ namespace SeraphLeveling
                             MaxRangedDamagePercent = reader.ReadInt32();
                             MaxRangedAccuracyPercent = reader.ReadInt32();
                             MaxRangedDistancePercent = reader.ReadInt32();
-                            BaseBlocksWalkedPerIncrement = reader.ReadInt32();
-                            WalkingIncrementStep = reader.ReadInt32();
-                            MaxWalkingSpeedPercent = reader.ReadInt32();
+                            AttributeModifierDefinitions.WalkingSpeed.BaseIncrement = reader.ReadInt32();
+                            AttributeModifierDefinitions.WalkingSpeed.IncrementStep = reader.ReadInt32();
+                            AttributeModifierDefinitions.WalkingSpeed.GlobalMaxCredits = reader.ReadInt32();
                             BaseSecondsPerIncrement = reader.ReadInt32();
                             HungerIncrementStep = reader.ReadInt32();
                             MaxHungerReductionPercent = reader.ReadInt32();
@@ -9781,9 +9669,9 @@ namespace SeraphLeveling
                             MaxRangedDamagePercent = reader.ReadInt32();
                             MaxRangedAccuracyPercent = reader.ReadInt32();
                             MaxRangedDistancePercent = reader.ReadInt32();
-                            BaseBlocksWalkedPerIncrement = reader.ReadInt32();
-                            WalkingIncrementStep = reader.ReadInt32();
-                            MaxWalkingSpeedPercent = reader.ReadInt32();
+                            AttributeModifierDefinitions.WalkingSpeed.BaseIncrement = reader.ReadInt32();
+                            AttributeModifierDefinitions.WalkingSpeed.IncrementStep = reader.ReadInt32();
+                            AttributeModifierDefinitions.WalkingSpeed.GlobalMaxCredits = reader.ReadInt32();
                             BaseSecondsPerIncrement = reader.ReadInt32();
                             HungerIncrementStep = reader.ReadInt32();
                             MaxHungerReductionPercent = reader.ReadInt32();
@@ -9815,9 +9703,9 @@ namespace SeraphLeveling
                             MaxRangedDamagePercent = reader.ReadInt32();
                             MaxRangedAccuracyPercent = reader.ReadInt32();
                             MaxRangedDistancePercent = reader.ReadInt32();
-                            BaseBlocksWalkedPerIncrement = reader.ReadInt32();
-                            WalkingIncrementStep = reader.ReadInt32();
-                            MaxWalkingSpeedPercent = reader.ReadInt32();
+                            AttributeModifierDefinitions.WalkingSpeed.BaseIncrement = reader.ReadInt32();
+                            AttributeModifierDefinitions.WalkingSpeed.IncrementStep = reader.ReadInt32();
+                            AttributeModifierDefinitions.WalkingSpeed.GlobalMaxCredits = reader.ReadInt32();
                             BaseSecondsPerIncrement = reader.ReadInt32();
                             HungerIncrementStep = reader.ReadInt32();
                             MaxHungerReductionPercent = reader.ReadInt32();
@@ -9851,9 +9739,9 @@ namespace SeraphLeveling
                             MaxRangedDamagePercent = reader.ReadInt32();
                             MaxRangedAccuracyPercent = reader.ReadInt32();
                             MaxRangedDistancePercent = reader.ReadInt32();
-                            BaseBlocksWalkedPerIncrement = reader.ReadInt32();
-                            WalkingIncrementStep = reader.ReadInt32();
-                            MaxWalkingSpeedPercent = reader.ReadInt32();
+                            AttributeModifierDefinitions.WalkingSpeed.BaseIncrement = reader.ReadInt32();
+                            AttributeModifierDefinitions.WalkingSpeed.IncrementStep = reader.ReadInt32();
+                            AttributeModifierDefinitions.WalkingSpeed.GlobalMaxCredits = reader.ReadInt32();
                             BaseSecondsPerIncrement = reader.ReadInt32();
                             HungerIncrementStep = reader.ReadInt32();
                             MaxHungerReductionPercent = reader.ReadInt32();
@@ -9889,7 +9777,7 @@ namespace SeraphLeveling
                     }
                 }
 
-                ServerApi.Logger.Notification($"[SeraphLeveling] Config loaded (Mining: Base={BaseBlocksPerIncrement}, Max={MaxMiningSpeedPercent}% | Melee: Base={BaseDamagePerIncrement}, Max={MaxMeleeDamagePercent}% | Ranged: Base={BaseRangedDamagePerIncrement}, MaxDmg={MaxRangedDamagePercent}% | Walking: Base={BaseBlocksWalkedPerIncrement}, Max={MaxWalkingSpeedPercent}% | Hunger: Base={BaseSecondsPerIncrement}, Max={MaxHungerReductionPercent}% | Armor: MaxDur={MaxArmorDurabilityPercent}%, MaxWalk={MaxArmorWalkSpeedPercent}%)");
+                ServerApi.Logger.Notification($"[SeraphLeveling] Config loaded (Mining: Base={BaseBlocksPerIncrement}, Max={MaxMiningSpeedPercent}% | Melee: Base={BaseDamagePerIncrement}, Max={MaxMeleeDamagePercent}% | Ranged: Base={BaseRangedDamagePerIncrement}, MaxDmg={MaxRangedDamagePercent}% | Walking: Base={AttributeModifierDefinitions.WalkingSpeed.BaseIncrement}, Max={AttributeModifierDefinitions.WalkingSpeed.GlobalMaxCredits}% | Hunger: Base={BaseSecondsPerIncrement}, Max={MaxHungerReductionPercent}% | Armor: MaxDur={MaxArmorDurabilityPercent}%, MaxWalk={MaxArmorWalkSpeedPercent}%)");
 
                 // Fold the world's values into the config file and drop the blob, so
                 // this world never reads from the save game again. An empty array is
@@ -13405,9 +13293,9 @@ namespace SeraphLeveling
             MaxRangedDistancePercent = 50;
 
             // Walking defaults
-            BaseBlocksWalkedPerIncrement = 1000;
-            WalkingIncrementStep = 1000;
-            MaxWalkingSpeedPercent = 15;
+            AttributeModifierDefinitions.WalkingSpeed.BaseIncrement = 1000;
+            AttributeModifierDefinitions.WalkingSpeed.IncrementStep = 1000;
+            AttributeModifierDefinitions.WalkingSpeed.GlobalMaxCredits = 15;
 
             // Hunger defaults
             BaseSecondsPerIncrement = 300;
