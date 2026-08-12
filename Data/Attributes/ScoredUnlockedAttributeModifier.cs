@@ -33,12 +33,14 @@ namespace SeraphLeveling.Data.Attributes
             // TODO Also check any requirements on the enclosing trait (e.g. ranged damage 10% for bowyer)
             if (progress.TotalCredits >= GlobalMaxCredits)
             {
+                bool oldUnlock = progress.IsUnlocked;
                 progress.IsUnlocked = true;
+                if (oldUnlock != progress.IsUnlocked)
+                {
+                    FireUnlockChangedEvent(player, oldUnlock, progress.IsUnlocked);
+                }
                 ApplyUnlock(player, progress);
                 SeraphLevelingModSystem.NotifyLevelUp(player, Lang.Get(NotifyLangKey));
-
-                // Check if traits that have this as a requirement should be unlocked
-                CheckDependentUnlocks(player);
             }
         }
 

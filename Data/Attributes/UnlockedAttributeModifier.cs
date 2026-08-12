@@ -12,7 +12,14 @@ namespace SeraphLeveling.Data.Attributes
     {
         public string Name { get; }
         public bool IsUnlockedForPlayer(IPlayer player);
+
+        /// <summary>
+        /// Registers a method to be called every time the unlock status for this attribute changes for a player
+        /// </summary>
+        public event UnlockChangedDelegate UnlockChanged;
     }
+
+    public delegate void UnlockChangedDelegate(IServerPlayer player, bool oldUnlock, bool newUnlock);
 
     public abstract record class UnlockedAttributeModifierDefinition<D, PD> : AttributeModifierDefinition<D, PD>, IUnlockedAttributeModifierDefinition where PD : UnlockedAttributeModifierProgressData<D, PD> where D : UnlockedAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
     {
@@ -21,6 +28,13 @@ namespace SeraphLeveling.Data.Attributes
         public required string UnlockedKey { get; init; }
         public string NotifyLangKey { get; init; } = null;
         public required Lazy<TraitDefinition> Trait { get; init; }
+
+        public event UnlockChangedDelegate UnlockChanged;
+
+        protected void FireUnlockChangedEvent(IServerPlayer player, bool oldUnlock, bool newUnlock)
+        {
+            UnlockChanged?.Invoke(player, oldUnlock, newUnlock);
+        }
 
         public bool IsUnlockedForPlayer(IPlayer player)
         {
@@ -53,7 +67,12 @@ namespace SeraphLeveling.Data.Attributes
         public virtual void ResetProgress(IServerPlayer player)
         {
             var progress = GetDict(player);
+            bool oldUnlock = progress.IsUnlocked;
             progress.IsUnlocked = false;
+            if (oldUnlock != progress.IsUnlocked)
+            {
+                FireUnlockChangedEvent(player, oldUnlock, progress.IsUnlocked);
+            }
             MarkForSave(true);
             ApplyUnlock(player, progress);
         }
@@ -85,7 +104,12 @@ namespace SeraphLeveling.Data.Attributes
 
         protected virtual void UnlockInner(IServerPlayer player, PD progress)
         {
+            bool oldUnlock = progress.IsUnlocked;
             progress.IsUnlocked = true;
+            if (oldUnlock != progress.IsUnlocked)
+            {
+                FireUnlockChangedEvent(player, oldUnlock, progress.IsUnlocked);
+            }
         }
 
         public virtual void ApplyUnlock(IServerPlayer player, PD progress)
@@ -119,13 +143,15 @@ namespace SeraphLeveling.Data.Attributes
             bool unlock = (bool)args[0];
 
             var progress = GetDict(player);
+            bool oldUnlock = progress.IsUnlocked;
             progress.IsUnlocked = unlock;
+            if (oldUnlock != progress.IsUnlocked)
+            {
+                FireUnlockChangedEvent(player, oldUnlock, progress.IsUnlocked);
+            }
 
             MarkForSave(true);
             ApplyUnlock(player, progress);
-
-            // Check if traits that have this as a requirement should be unlocked
-            CheckDependentUnlocks(player);
 
             return TextCommandResult.Success($"{Name} trait {(unlock ? "unlocked" : "locked")}.");
         }
@@ -134,11 +160,6 @@ namespace SeraphLeveling.Data.Attributes
         {
             var progress = GetDict(player);
             sb.AppendLine($"{Name} trait: {(progress.IsUnlocked ? "UNLOCKED" : "Locked")}");
-        }
-
-        protected virtual void CheckDependentUnlocks(IServerPlayer player)
-        {
-            // Do nothing by default
         }
     }
 

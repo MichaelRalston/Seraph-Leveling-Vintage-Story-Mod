@@ -10,7 +10,14 @@ namespace SeraphLeveling.Data.Attributes
         public string Name { get; }
         public int GetCreditsForPlayer(IPlayer player);
         public bool IsLeveledForPlayer(IPlayer player, int requiredCredits) => GetCreditsForPlayer(player) >= requiredCredits;
+
+        /// <summary>
+        /// Registers a method to be called every time the credit total for this attribute changes for a player
+        /// </summary>
+        public event CreditsChangedDelegate CreditsChanged;
     }
+
+    public delegate void CreditsChangedDelegate(IServerPlayer player, int oldCredits, int newCredits);
 
     public abstract record class LeveledAttributeModifierDefinition<D, PD> : AttributeModifierDefinition<D, PD>, ILeveledAttributeModifierDefinition where PD : LeveledAttributeModifierProgressData<D, PD> where D : LeveledAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
     {
@@ -40,6 +47,8 @@ namespace SeraphLeveling.Data.Attributes
         public required int BaseIncrement { get; set; }
         public required int IncrementStep { get; set; }
         public required string IncrementUnits { get; init; }
+
+        public event CreditsChangedDelegate CreditsChanged;
 
         public int GetCreditsForPlayer(IPlayer player)
         {
@@ -126,7 +135,12 @@ namespace SeraphLeveling.Data.Attributes
         {
             var progress = GetDict(player);
             int maxCredits = GetMaxCredits(player.Entity);
+            int oldCredits = progress.TotalCredits;
             progress.TotalCredits = maxCredits;
+            if (oldCredits != progress.TotalCredits)
+            {
+                CreditsChanged?.Invoke(player, oldCredits, progress.TotalCredits);
+            }
             progress.ZeroPartialCredit();
             MarkForSave(true);
             ApplyBonus(player, progress);
@@ -134,7 +148,12 @@ namespace SeraphLeveling.Data.Attributes
         public void ApplyTraitTestSuite1Command(IServerPlayer player)
         {
             var progress = GetDict(player);
+            int oldCredits = progress.TotalCredits;
             progress.TotalCredits = 1;
+            if (oldCredits != progress.TotalCredits)
+            {
+                CreditsChanged?.Invoke(player, oldCredits, progress.TotalCredits);
+            }
             progress.ZeroPartialCredit();
             MarkForSave(true);
             ApplyBonus(player, progress);
@@ -245,7 +264,12 @@ namespace SeraphLeveling.Data.Attributes
             var progress = GetDict(player);
             int maxLevel = GetMaxCredits(player.Entity);
             if (level > maxLevel) return TextCommandResult.Error($"Level cannot exceed max ({maxLevel}).");
+            int oldCredits = progress.TotalCredits;
             progress.TotalCredits = level;
+            if (oldCredits != progress.TotalCredits)
+            {
+                CreditsChanged?.Invoke(player, oldCredits, progress.TotalCredits);
+            }
             MarkForSave(true);
             ApplyBonus(player, progress);
             progress.UpdateSkillActivityDay();
@@ -304,7 +328,6 @@ namespace SeraphLeveling.Data.Attributes
             {
                 if (newValue.Value < 1)
                 {
-                    // FIXME This shouldn't be walking-specific
                     return TextCommandResult.Error($"Max {LongDescription} percent must be at least 1");
                 }
 

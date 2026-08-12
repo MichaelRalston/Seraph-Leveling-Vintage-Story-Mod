@@ -29,12 +29,6 @@ namespace SeraphLeveling.Data.Attributes
             player.Entity.Stats.Set("temporalGearTLRepairCost", SeraphLevelingModSystem.TECHNICAL_STAT_CODE, gearCostReduction, false);
         }
 
-        protected override void CheckDependentUnlocks(IServerPlayer player)
-        {
-            // Check if Tinkerer should now be unlocked
-            TraitDefinitions.Tinkerer.CheckUnlocks(player);
-        }
-
         public override void CollectStatus(IPlayer player, StringBuilder sb)
         {
             base.CollectStatus(player, sb);

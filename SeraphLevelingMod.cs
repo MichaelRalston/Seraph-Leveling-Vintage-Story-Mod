@@ -1286,8 +1286,8 @@ namespace SeraphLeveling
                     .RequiresPlayer()
                     .HandleWith(OnTraitPreciseLevelCommand)
                 .EndSubCommand();
-                AttributeModifierDefinitions.Technical.RegisterCommands(api, command);
-                command
+            AttributeModifierDefinitions.Technical.RegisterCommands(api, command);
+            command
                 // Hardy health trait commands
                 .BeginSubCommand("hardyhealth")
                     .WithDescription("View your hardy health unlock progress")

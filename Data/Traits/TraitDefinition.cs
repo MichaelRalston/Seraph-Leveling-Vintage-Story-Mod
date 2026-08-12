@@ -13,7 +13,23 @@ namespace SeraphLeveling.Data.Traits
     {
         public required string Id { get; init; }
         public required List<(ISaveableAttribute, int)> Attributes { get; init; }
-        public List<IRequiredAttribute> Requirements { get; init; } = [];
+        public List<IRequiredAttribute> Requirements
+        {
+            get;
+            init
+            {
+                field = value;
+                field?.ForEach(req => req.SatisfactionChanged += OnRequirementSatisfactionChanged);
+            }
+        } = [];
+
+        protected void OnRequirementSatisfactionChanged(IServerPlayer player, bool oldSatisfaction, bool newSatisfaction)
+        {
+            if (newSatisfaction)
+            {
+                CheckUnlocks(player);
+            }
+        }
 
         /// <summary>
         /// Check and apply unlock if all requirements are met.
@@ -23,7 +39,7 @@ namespace SeraphLeveling.Data.Traits
             if (player?.Entity == null) return;
 
             // Check prerequisites
-            if (Requirements.All(attr => attr.IsMet(player)))
+            if (Requirements.All(attr => attr.IsSatisfied(player)))
             {
                 Attributes.Select(tuple => tuple.Item1).Foreach(attr => attr.Unlock(player, true));
             }
