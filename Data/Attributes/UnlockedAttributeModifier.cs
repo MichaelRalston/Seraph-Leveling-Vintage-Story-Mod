@@ -104,6 +104,9 @@ namespace SeraphLeveling.Data.Attributes
             MarkForSave(true);
             ApplyUnlock(player, progress);
 
+            // Check if traits that have this as a requirement should be unlocked
+            CheckDependentUnlocks(player);
+
             return TextCommandResult.Success($"{Name} trait {(unlock ? "unlocked" : "locked")}.");
         }
 
@@ -111,6 +114,11 @@ namespace SeraphLeveling.Data.Attributes
         {
             var progress = GetDict(player);
             sb.AppendLine($"{Name} trait: {(progress.IsUnlocked ? "UNLOCKED" : "Locked")}");
+        }
+
+        protected virtual void CheckDependentUnlocks(IServerPlayer player)
+        {
+            // Do nothing by default
         }
     }
 

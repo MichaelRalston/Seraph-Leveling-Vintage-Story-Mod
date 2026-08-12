@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Text;
 using Vintagestory.API.Common;
+using Vintagestory.API.Config;
 using Vintagestory.API.Server;
 
 namespace SeraphLeveling.Data.Attributes
@@ -10,6 +11,29 @@ namespace SeraphLeveling.Data.Attributes
     {
         public required int GlobalMaxCredits { get; set; }
         public required string CreditDescription { get; init; }
+
+        public virtual void AddCredits(IServerPlayer player, int toAdd)
+        {
+            var progress = GetDict(player);
+
+            // Already unlocked - no more progress needed
+            if (progress.IsUnlocked) return;
+
+            progress.TotalCredits += toAdd;
+            MarkForSave(true);
+
+            SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Player {player.PlayerName} made progress towards {Name} ({progress.TotalCredits} / {GlobalMaxCredits})");
+
+            if (progress.TotalCredits >= GlobalMaxCredits)
+            {
+                progress.IsUnlocked = true;
+                ApplyUnlock(player, progress);
+                SeraphLevelingModSystem.NotifyLevelUp(player, Lang.Get(NotifyLangKey));
+
+                // Check if traits that have this as a requirement should be unlocked
+                CheckDependentUnlocks(player);
+            }
+        }
 
         public override void ResetProgress(IServerPlayer player)
         {

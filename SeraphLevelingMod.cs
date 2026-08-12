@@ -1342,7 +1342,7 @@ namespace SeraphLeveling
                     .WithArgs(api.ChatCommands.Parsers.Bool("unlock"))
                     .RequiresPrivilege(Privilege.controlserver)
                     .RequiresPlayer()
-                    .HandleWith(OnTraitTechnicalUnlockCommand)
+                    .HandleWith(AttributeModifierDefinitions.Technical.HandleUnlockCommand)
                 .EndSubCommand()
                 // Hardy health trait commands
                 .BeginSubCommand("hardyhealth")
@@ -2351,7 +2351,7 @@ namespace SeraphLeveling
 
                 pendingPreciseProgressSave = true;
                 int bonusPercent = ApplyPreciseBonusStatic(player, progress.TotalCredits);
-                CheckTinkererUnlock(player);
+                TraitDefinitions.Tinkerer.CheckUnlocks(player);
                 UpdateSkillActivityDay(playerUid, "precise");
 
                 return TextCommandResult.Success($"Set {level} credits on {toolName}. Total: {progress.TotalCredits}/{MaxPrecisePercent} (+{bonusPercent}% mechanical damage).");
@@ -2363,7 +2363,7 @@ namespace SeraphLeveling
 
                 pendingPreciseProgressSave = true;
                 int bonusPercent = ApplyPreciseBonusStatic(player, level);
-                CheckTinkererUnlock(player);
+                TraitDefinitions.Tinkerer.CheckUnlocks(player);
                 UpdateSkillActivityDay(playerUid, "precise");
 
                 return TextCommandResult.Success($"Precise level set to {level} (+{bonusPercent}% mechanical damage).");
@@ -10313,7 +10313,7 @@ namespace SeraphLeveling
                     Lang.Get("seraphleveling:message-precise-level-up", playerProgress.TotalCredits, playerProgress.TotalCredits));
 
                 // Check if Tinkerer should be unlocked
-                CheckTinkererUnlock(attackerPlayer);
+                TraitDefinitions.Tinkerer.CheckUnlocks(attackerPlayer);
             }
         }
 
@@ -10448,30 +10448,6 @@ namespace SeraphLeveling
 
             player.Entity.WatchedAttributes.SetBool(WATCHED_HARDY_HEALTH_UNLOCKED, unlocked);
             UpdateExtraTraitStatic(player.Entity, HARDY_HEALTH_TRAIT_CODE, unlocked);
-        }
-
-        /// <summary>
-        /// Check and apply Tinkerer unlock if thresholds are met.
-        /// Requires Technical trait AND 10% Precise damage bonus.
-        /// </summary>
-        private static void CheckTinkererUnlock(IServerPlayer player)
-        {
-            TraitDefinitions.Tinkerer.CheckUnlocks(player);
-        }
-
-        /// <summary>
-        /// Apply Technical trait (unlocks translocator gear cost reduction).
-        /// Sets the temporalGearTLRepairCost stat to -1 when unlocked, reducing gear cost by 1.
-        /// </summary>
-        private static void ApplyTechnicalBonusStatic(IServerPlayer player, bool unlocked)
-        {
-            player.Entity.WatchedAttributes.SetBool(WATCHED_TECHNICAL_UNLOCKED, unlocked);
-            UpdateExtraTraitStatic(player.Entity, TECHNICAL_TRAIT_CODE, unlocked);
-
-            // Set the temporal gear repair cost reduction stat
-            // -1 means one fewer temporal gear needed to repair translocators
-            float gearCostReduction = unlocked ? -1f : 0f;
-            player.Entity.Stats.Set("temporalGearTLRepairCost", TECHNICAL_STAT_CODE, gearCostReduction, false);
         }
 
         /// <summary>
@@ -12134,32 +12110,6 @@ namespace SeraphLeveling
         }
 
         /// <summary>
-        /// Handler for /trait technicalunlock command.
-        /// </summary>
-        private TextCommandResult OnTraitTechnicalUnlockCommand(TextCommandCallingArgs args)
-        {
-            IServerPlayer player = args.Caller.Player as IServerPlayer;
-            if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
-
-            bool unlock = (bool)args[0];
-
-            string playerUid = player.PlayerUID;
-            var progress = TechnicalProgress.GetOrAdd(playerUid, _ => new TechnicalProgressData());
-            progress.IsUnlocked = unlock;
-
-            pendingTechnicalProgressSave = true;
-            ApplyTechnicalBonusStatic(player, unlock);
-
-            // Check if Tinkerer should be unlocked
-            if (unlock)
-            {
-                CheckTinkererUnlock(player);
-            }
-
-            return TextCommandResult.Success($"Technical trait {(unlock ? "unlocked" : "locked")}.");
-        }
-
-        /// <summary>
         /// Process a translocator repair (called from Harmony patch).
         /// Gives progress toward Technical trait unlock.
         /// </summary>
@@ -12171,31 +12121,9 @@ namespace SeraphLeveling
             if (IsAttributeModifierDisabled(AttributeModifierDefinitions.Technical)) return;
 
             string playerUid = player.PlayerUID;
-            var progress = TechnicalProgress.GetOrAdd(playerUid, _ => new TechnicalProgressData());
-
-            // Already unlocked - no more progress needed
-            if (progress.IsUnlocked) return;
-
-            // Increment translocator repairs (apply sleep buff multiplier if active)
             int modifiedRepairs = ApplyXPMultiplier(playerUid, 1);
-            progress.TranslocatorsRepaired += modifiedRepairs;
-            pendingTechnicalProgressSave = true;
 
-            ServerApi.Logger.Debug($"[SeraphLeveling] Player {player.PlayerName} repaired translocator ({progress.TranslocatorsRepaired} / {TechnicalRequiredTranslocatorRepairs})");
-
-            // Check if we've reached the unlock threshold
-            if (progress.TranslocatorsRepaired >= TechnicalRequiredTranslocatorRepairs)
-            {
-                progress.IsUnlocked = true;
-                ApplyTechnicalBonusStatic(player, true);
-
-                // Notify player
-                NotifyLevelUp(player,
-                    Lang.Get("seraphleveling:message-technical-unlock"));
-
-                // Check if Tinkerer should now be unlocked
-                CheckTinkererUnlock(player);
-            }
+            AttributeModifierDefinitions.Technical.AddCredits(player, ApplyXPMultiplier(playerUid, 1));
         }
 
         /// <summary>

@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using Vintagestory.API.Common;
 using Vintagestory.API.Server;
+using SeraphLeveling.Data.Traits;
 
 namespace SeraphLeveling.Data.Attributes
 {
@@ -33,6 +34,12 @@ namespace SeraphLeveling.Data.Attributes
             // -1 means one fewer temporal gear needed to repair translocators
             float gearCostReduction = progress.IsUnlocked ? -1f : 0f;
             player.Entity.Stats.Set("temporalGearTLRepairCost", SeraphLevelingModSystem.TECHNICAL_STAT_CODE, gearCostReduction, false);
+        }
+
+        protected override void CheckDependentUnlocks(IServerPlayer player)
+        {
+            // Check if Tinkerer should now be unlocked
+            TraitDefinitions.Tinkerer.CheckUnlocks(player);
         }
     }
 

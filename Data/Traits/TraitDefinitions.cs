@@ -119,6 +119,8 @@ namespace SeraphLeveling.Data.Traits
                 (AttributeModifierDefinitions.Tinkerer, 1)
             ],
             Requirements = [
+                new RequiredUnlockedAttribute(AttributeModifierDefinitions.Technical),
+                // TODO Precise 10%
             ]
         };
 
