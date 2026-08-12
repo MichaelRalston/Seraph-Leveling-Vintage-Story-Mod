@@ -1011,38 +1011,8 @@ namespace SeraphLeveling
                 .HandleWith(OnTraitHelpCommand);
             AttributeModifierDefinitions.WalkingSpeed.RegisterCommands(api, command);
             AttributeModifierDefinitions.HungerRate.RegisterCommands(api, command);
+            AttributeModifierDefinitions.MiningSpeed.RegisterCommands(api, command);
             command
-                .BeginSubCommand("mining")
-                    .WithDescription("View your mining progression stats")
-                    .RequiresPrivilege(Privilege.chat)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitMiningCommand)
-                .EndSubCommand()
-                .BeginSubCommand("miningbase")
-                    .WithDescription("Get or set the base blocks per level (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalInt("blocks"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitMiningBaseCommand)
-                .EndSubCommand()
-                .BeginSubCommand("mininglevel")
-                    .WithDescription("Get or set your mining level (admin only). Usage: /trait mininglevel [level] [toolname]")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalInt("level"), api.ChatCommands.Parsers.OptionalWord("toolname"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitMiningLevelCommand)
-                .EndSubCommand()
-                .BeginSubCommand("miningmax")
-                    .WithDescription("Get or set the max mining speed bonus percent (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalInt("percent"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(AttributeModifierDefinitions.MiningSpeed.HandleMaxCommand)
-                .EndSubCommand()
-                .BeginSubCommand("miningincrement")
-                    .WithDescription("Get or set the increment step per credit (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalInt("step"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitMiningIncrementCommand)
-                .EndSubCommand()
                 .BeginSubCommand("melee")
                     .WithDescription("View your melee damage progression stats")
                     .RequiresPrivilege(Privilege.chat)
@@ -2094,66 +2064,6 @@ namespace SeraphLeveling
             }
 
             return TextCommandResult.Success(result);
-        }
-
-        /// <summary>
-        /// Handler for /trait mining command.
-        /// </summary>
-        private TextCommandResult OnTraitMiningCommand(TextCommandCallingArgs args)
-        {
-            return AttributeModifierDefinitions.MiningSpeed.HandleTraitCommand(args);
-        }
-
-        /// <summary>
-        /// Handler for /trait miningbase command.
-        /// Sets the base points needed for the first 1% increment.
-        /// </summary>
-        private TextCommandResult OnTraitMiningBaseCommand(TextCommandCallingArgs args)
-        {
-            int? newValue = (int?)args[0];
-
-            if (newValue.HasValue)
-            {
-                if (newValue.Value < 1)
-                {
-                    return TextCommandResult.Error("Base blocks per increment must be at least 1");
-                }
-
-                BaseBlocksPerIncrement = newValue.Value;
-                pendingConfigSave = true;
-
-                return TextCommandResult.Success($"Base blocks per increment set to {BaseBlocksPerIncrement}. New pickaxes will require this many points for first 1%.");
-            }
-            else
-            {
-                return TextCommandResult.Success($"Current base blocks per increment: {BaseBlocksPerIncrement}\nIncrement step: +{IncrementStep} per credit");
-            }
-        }
-
-        /// <summary>
-        /// Handler for /trait miningincrement command.
-        /// Sets how many additional points are required for each subsequent credit.
-        /// </summary>
-        private TextCommandResult OnTraitMiningIncrementCommand(TextCommandCallingArgs args)
-        {
-            int? newValue = (int?)args[0];
-
-            if (newValue.HasValue)
-            {
-                if (newValue.Value < 0)
-                {
-                    return TextCommandResult.Error("Increment step cannot be negative");
-                }
-
-                IncrementStep = newValue.Value;
-                pendingConfigSave = true;
-
-                return TextCommandResult.Success($"Increment step set to +{IncrementStep} per credit.\nProgression: {BaseBlocksPerIncrement}, {BaseBlocksPerIncrement + IncrementStep}, {BaseBlocksPerIncrement + IncrementStep * 2}...");
-            }
-            else
-            {
-                return TextCommandResult.Success($"Current increment step: +{IncrementStep} per credit\nProgression: {BaseBlocksPerIncrement}, {BaseBlocksPerIncrement + IncrementStep}, {BaseBlocksPerIncrement + IncrementStep * 2}...");
-            }
         }
 
         /// <summary>

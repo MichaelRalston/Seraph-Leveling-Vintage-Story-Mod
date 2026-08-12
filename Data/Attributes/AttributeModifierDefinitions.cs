@@ -78,6 +78,9 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "SIT",
             PersistenceVersion = 4,
             Tool = ToolDefinitions.Pickaxe,
+            BaseIncrement = SeraphLevelingModSystem.BaseBlocksPerIncrement,
+            IncrementStep = SeraphLevelingModSystem.IncrementStep,
+            IncrementUnits = "blocks",
             GlobalMaxCredits = SeraphLevelingModSystem.MaxMiningSpeedPercent,
             StatName = "miningSpeedMul"
         };
