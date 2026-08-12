@@ -20,7 +20,7 @@ namespace SeraphLeveling.Data.Attributes
         public required string ExtraTraitKey { get; init; }
         public required string UnlockedKey { get; init; }
         public string NotifyLangKey { get; init; } = null;
-        public required TraitDefinition Trait { get; init; }
+        public required Lazy<TraitDefinition> Trait { get; init; }
 
         public bool IsUnlockedForPlayer(IPlayer player)
         {
@@ -34,7 +34,7 @@ namespace SeraphLeveling.Data.Attributes
                 .WithDescription($"View your {Description} trait progress")
                 .RequiresPrivilege(Privilege.chat)
                 .RequiresPlayer()
-                .HandleWith(Trait.HandleTraitCommand)
+                .HandleWith(Trait.Value.HandleTraitCommand)
             .EndSubCommand()
             .BeginSubCommand($"{Description}unlock")
                 .WithDescription($"Manually unlock or lock {Description} trait (admin only)")

@@ -15,7 +15,7 @@ namespace SeraphLeveling.Data.Attributes
             ExtraTraitKey = SeraphLevelingModSystem.TINKERER_TRAIT_CODE,
             UnlockedKey = SeraphLevelingModSystem.WATCHED_TINKERER_UNLOCKED,
             NotifyLangKey = "seraphleveling:message-tinkerer-unlock",
-            Trait = Traits.TraitDefinitions.Tinkerer
+            Trait = new(() => Traits.TraitDefinitions.Tinkerer)
         };
 
         public static readonly TechnicalAttributeModifierDefinition Technical = new()
@@ -30,7 +30,7 @@ namespace SeraphLeveling.Data.Attributes
             NotifyLangKey = "seraphleveling:message-technical-unlock",
             GlobalMaxCredits = SeraphLevelingModSystem.TechnicalRequiredTranslocatorRepairs,
             CreditDescription = "translocators",
-            Trait = Traits.TraitDefinitions.Technical,
+            Trait = new(() => Traits.TraitDefinitions.Technical),
         };
 
         public static readonly BowyerAttributeModifierDefinition Bowyer = new()
@@ -46,7 +46,7 @@ namespace SeraphLeveling.Data.Attributes
             GlobalMaxCredits = SeraphLevelingModSystem.BowyerBowDamageThreshold,
             CreditDescription = "bow damage",
             WatchedCreditsAttributeKey = SeraphLevelingModSystem.WATCHED_BOWYER_BOW_DAMAGE,
-            Trait = Traits.TraitDefinitions.Bowyer,
+            Trait = new(() => Traits.TraitDefinitions.Bowyer),
         };
 
         public static readonly WalkingAttributeModifierDefinition WalkingSpeed = new()
