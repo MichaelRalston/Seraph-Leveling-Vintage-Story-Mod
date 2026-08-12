@@ -16,6 +16,18 @@ namespace SeraphLeveling.Data.Attributes
             NotifyLangKey = "seraphleveling:message-tinkerer-unlock"
         };
 
+        public static readonly TechnicalAttributeModifierDefinition Technical = new()
+        {
+            Id = "technical",
+            SaveKey = "sitTechnicalProgress",
+            Description = "technical",
+            PersistenceHeader = "TEC",
+            Name = "Technical",
+            ExtraTraitKey = SeraphLevelingModSystem.TECHNICAL_TRAIT_CODE,
+            UnlockedKey = SeraphLevelingModSystem.WATCHED_TECHNICAL_UNLOCKED,
+            NotifyLangKey = "seraphleveling:message-technical-unlock"
+        };
+
         public static readonly WalkingAttributeModifierDefinition WalkingSpeed = new()
         {
             Id = "walkingSpeed",

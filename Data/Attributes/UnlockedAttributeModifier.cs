@@ -30,7 +30,7 @@ namespace SeraphLeveling.Data.Attributes
             sb.AppendLine($"{Name}: {(progress.IsUnlocked ? "UNLOCKED" : "locked")}");
         }
 
-        public void ResetProgress(IServerPlayer player)
+        public virtual void ResetProgress(IServerPlayer player)
         {
             var progress = GetDict(player);
             progress.IsUnlocked = false;
