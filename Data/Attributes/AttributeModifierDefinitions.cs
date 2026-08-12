@@ -39,9 +39,9 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% speed",
             LongDescription = "walking speed",
             IncrementUnits = "blocks",
-            BaseIncrement = SeraphLevelingModSystem.BaseBlocksWalkedPerIncrement,
-            IncrementStep = SeraphLevelingModSystem.WalkingIncrementStep,
-            GlobalMaxCredits = SeraphLevelingModSystem.MaxWalkingSpeedPercent,
+            BaseIncrement = 1000,
+            IncrementStep = 1000,
+            GlobalMaxCredits = 15,
             StatName = "walkspeed",
         };
 
