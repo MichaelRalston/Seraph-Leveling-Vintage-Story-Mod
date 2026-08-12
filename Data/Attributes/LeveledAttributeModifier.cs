@@ -19,7 +19,7 @@ namespace SeraphLeveling.Data.Attributes
         public required string Stat { get; init; }
         public required string LongDescription { get; init; }
         public required int GlobalMaxCredits { get; set; }
-        public override int PersistenceVersion { get; init; } = 2;
+        public override byte PersistenceVersion { get; init; } = 2;
         public virtual string StatCode
         {
             get => field ??= $"sit{Name}Bonus"; init;

@@ -291,7 +291,7 @@ namespace SeraphLeveling
                 "clothes-upperbody-blackguard-shirt", "clothes-waist-blackguard-belt",
                 // Clockmaker
                 "clothes-hand-clockmaker-wristguard", "clothes-foot-clockmaker-shoes",
-                "clothes-upperbody-clockmaker-shirt", "clothes-shoulder-clockmaker-apron",
+                "clothes-upperbody-clockmaker-shirt", "clothes-shoulder-clockmaker-apron", "clothes-upperbodyover-clockmaker-tunic",
                 // Commoner
                 "clothes-upperbody-commoner-shirt", "clothes-upperbodyover-commoner-coat",
                 "clothes-lowerbody-commoner-trousers", "clothes-foot-commoner-boots", "clothes-hand-commoner-gloves"
@@ -628,7 +628,7 @@ namespace SeraphLeveling
         public const int VANILLA_HARDY_MINING_BONUS = 10;
 
         // Lock object for persistence operations
-        private static readonly object persistLock = new object();
+        public static readonly object persistLock = new object();
 
         // Flag to indicate pending config save
         private static volatile bool pendingConfigSave = false;
@@ -6756,7 +6756,7 @@ namespace SeraphLeveling
                 byte[] data = ServerApi.WorldManager.SaveGame.GetData(T.SAVE_KEY);
                 if (data == null || data.Length == 0)
                 {
-                    ServerApi.Logger.Debug("[SeraphLeveling] No {description} progress data found in world save");
+                    ServerApi.Logger.Debug($"[SeraphLeveling] No {description} progress data found in world save");
                     return;
                 }
 
@@ -6766,7 +6766,7 @@ namespace SeraphLeveling
                     {
                         if (!ProgressData<T>.ReadHeader(reader))
                         {
-                            ServerApi.Logger.Warning("[SeraphLeveling] Invalid {description} progress data format");
+                            ServerApi.Logger.Warning($"[SeraphLeveling] Invalid {description} progress data format");
                             return;
                         }
 

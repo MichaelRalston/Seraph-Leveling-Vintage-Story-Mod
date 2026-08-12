@@ -5,6 +5,7 @@ using System.IO;
 using System.Text;
 using Vintagestory.API.Server;
 using Vintagestory.API.Common;
+using System.Linq;
 
 namespace SeraphLeveling.Data.Attributes
 {
@@ -48,7 +49,7 @@ namespace SeraphLeveling.Data.Attributes
         public required string Description { get; init; }
         public virtual string Direction { get; init; } = "+";
         public required string PersistenceHeader { get; init; }
-        public virtual int PersistenceVersion { get; init; } = 1;
+        public virtual byte PersistenceVersion { get; init; } = 1;
 
         public abstract void CheckUnlocks(IServerPlayer player);
         public abstract void CollectStatus(IPlayer player, StringBuilder sb);
@@ -72,8 +73,6 @@ namespace SeraphLeveling.Data.Attributes
 
         public bool HasUnsavedProgress() => !ProgressDictionary.IsEmpty;
         public void ResetProgress() => ProgressDictionary.Clear();
-
-        private static readonly object persistLock = new object();
 
         public PD CreateProgressData() => D.Create((D)this);
 
@@ -111,6 +110,10 @@ namespace SeraphLeveling.Data.Attributes
                     serverApi.Logger.Debug($"[SeraphLeveling] No {Description} progress data found in world save");
                     return;
                 }
+                else {
+                    var stringyData = string.Concat(data.Select(b => b >= 32 && b <= 126 ? ((char)b).ToString() : $"[0x{b:X2}]"));
+                    serverApi.Logger.Debug($"[SeraphLeveling] {Description} progress data found: {stringyData} in world save");
+                }
 
                 using (var ms = new MemoryStream(data))
                 {
@@ -131,6 +134,7 @@ namespace SeraphLeveling.Data.Attributes
                             try
                             {
                                 string playerUid = reader.ReadString();
+                                serverApi.Logger.Debug($"[SeraphLeveling] {Description} progress contains progress for {playerUid}");
                                 progressData.ReadVersion(version, reader);
                                 progress[playerUid] = progressData;
                             }
@@ -158,8 +162,9 @@ namespace SeraphLeveling.Data.Attributes
         {
             if (serverApi == null) return;
             var progress = ProgressDictionary;
+            serverApi.Logger.Debug($"[SeraphLeveling] Entering PersistProgress for {Description} progress to go to {SaveKey}.");
 
-            lock (persistLock)
+            lock (SeraphLevelingModSystem.persistLock)
             {
                 if (progress.IsEmpty)
                 {
@@ -169,6 +174,9 @@ namespace SeraphLeveling.Data.Attributes
                 try
                 {
                     var snapshot = progress.ToArray();
+                    foreach (var playerKvp in snapshot) {
+                        serverApi.Logger.Debug($"[SeraphLeveling] {Description} progress contains progress for {playerKvp.Key}");
+                    }
 
                     byte[] data;
                     using (var ms = new MemoryStream())
@@ -192,6 +200,8 @@ namespace SeraphLeveling.Data.Attributes
 
                     serverApi.WorldManager.SaveGame.StoreData(SaveKey, data);
                     serverApi.Logger.Debug($"[SeraphLeveling] Persisted {Description} progress for {snapshot.Length} players");
+                    var stringyData = string.Concat(data.Select(b => b >= 32 && b <= 126 ? ((char)b).ToString() : $"[0x{b:X2}]"));
+                    serverApi.Logger.Debug($"[SeraphLeveling] {Description} progress was stored as {stringyData}");
                 }
                 catch (Exception ex)
                 {
