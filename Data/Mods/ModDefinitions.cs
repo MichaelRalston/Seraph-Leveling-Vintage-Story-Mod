@@ -11,7 +11,10 @@ namespace SeraphLeveling.Data.Mods
             CharacterClasses = [
                 CharacterClassDefinitions.Commoner,
                 CharacterClassDefinitions.Hunter,
-                CharacterClassDefinitions.Clockmaker
+                CharacterClassDefinitions.Malefactor,
+                CharacterClassDefinitions.Clockmaker,
+                CharacterClassDefinitions.Blackguard,
+                CharacterClassDefinitions.Tailor
             ]
         };
 
@@ -19,7 +22,19 @@ namespace SeraphLeveling.Data.Mods
         {
             ModId = "sacredlib",
             CharacterClasses = [
-                CharacterClassDefinitions.Commoner
+                CharacterClassDefinitions.Commoner,
+                CharacterClassDefinitions.Woodsman,
+                CharacterClassDefinitions.Craftsman,
+                CharacterClassDefinitions.Witch,
+                CharacterClassDefinitions.Blacksmith,
+                CharacterClassDefinitions.Artificer,
+                CharacterClassDefinitions.Miner,
+                CharacterClassDefinitions.Homesteader,
+                CharacterClassDefinitions.Huntsman,
+                CharacterClassDefinitions.Guardsman,
+                CharacterClassDefinitions.Hearthmaster,
+                CharacterClassDefinitions.Haberdasher,
+                CharacterClassDefinitions.Zealot
             ]
         };
     }
