@@ -6,16 +6,10 @@ using System.Text;
 using Vintagestory.API.Server;
 using Vintagestory.API.Common;
 using Vintagestory.API.Config;
+using SeraphLeveling.Data.Tools;
 
 namespace SeraphLeveling.Data.Attributes
 {
-    public record class ToolDefinition
-    {
-        public required string Name { get; init; }
-        public required int BaseIncrement { get; init; }
-        public required int IncrementStep { get; init; }
-        public required string IncrementUnits { get; init; }
-    }
     public abstract record class LeveledToolAttributeModifierDefinition<D, PD> : LeveledAttributeModifierDefinition<D, PD> where PD : LeveledToolAttributeModifierProgressData<D, PD> where D : LeveledToolAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
     {
         public required ToolDefinition Tool { get; init; }

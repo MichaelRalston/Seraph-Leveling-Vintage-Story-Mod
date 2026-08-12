@@ -1,4 +1,5 @@
 using System;
+using SeraphLeveling.Data.Tools;
 
 namespace SeraphLeveling.Data.Attributes
 {
@@ -74,13 +75,7 @@ namespace SeraphLeveling.Data.Attributes
             LongDescription = "mining speed",
             PersistenceHeader = "SIT",
             PersistenceVersion = 4,
-            Tool = new()
-            {
-                Name = "pickaxe",
-                BaseIncrement = SeraphLevelingModSystem.BaseBlocksPerIncrement,
-                IncrementStep = SeraphLevelingModSystem.IncrementStep,
-                IncrementUnits = "blocks"
-            },
+            Tool = ToolDefinitions.Pickaxe,
             GlobalMaxCredits = SeraphLevelingModSystem.MaxMiningSpeedPercent,
             StatName = "miningSpeedMul"
         };
