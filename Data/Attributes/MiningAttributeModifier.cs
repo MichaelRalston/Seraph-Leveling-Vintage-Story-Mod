@@ -23,7 +23,7 @@ namespace SeraphLeveling.Data.Attributes
                         legacyLevel = (int)((-1.0 + Math.Sqrt(discriminant)) / 2.0);
                     }
 
-                    TotalCredits = Math.Min(legacyLevel, SeraphLevelingModSystem.MaxMiningSpeedPercent);
+                    TotalCredits = Math.Min(legacyLevel, Definition.GlobalMaxCredits);
                     break;
                 case 2:
                     TotalCredits = reader.ReadInt32();

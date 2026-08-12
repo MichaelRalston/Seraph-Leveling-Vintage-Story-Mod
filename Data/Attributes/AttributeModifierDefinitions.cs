@@ -75,9 +75,9 @@ namespace SeraphLeveling.Data.Attributes
             IncrementUnits = "seconds",
             LongDescription = "hunger rate",
             Stat = "% hunger rate",
-            BaseIncrement = SeraphLevelingModSystem.BaseSecondsPerIncrement,
-            IncrementStep = SeraphLevelingModSystem.HungerIncrementStep,
-            GlobalMaxCredits = SeraphLevelingModSystem.MaxHungerReductionPercent,
+            BaseIncrement = 300,
+            IncrementStep = 60,
+            GlobalMaxCredits = 25,
             StatName = "hungerrate",
         };
 
@@ -93,7 +93,10 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "SIT",
             PersistenceVersion = 4,
             Tool = ToolDefinitions.Pickaxe,
-            GlobalMaxCredits = SeraphLevelingModSystem.MaxMiningSpeedPercent,
+            BaseIncrement = 100,
+            IncrementStep = 100,
+            IncrementUnits = "blocks",
+            GlobalMaxCredits = 50,
             StatName = "miningSpeedMul"
         };
     }

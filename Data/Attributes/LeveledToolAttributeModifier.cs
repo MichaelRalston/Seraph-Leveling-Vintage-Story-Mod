@@ -51,7 +51,7 @@ namespace SeraphLeveling.Data.Attributes
                     double rawPenalty;
                     if (toolEntries.Count > 0)
                     {
-                        rawPenalty = Tool.BaseIncrement * SeraphLevelingModSystem.DeathPenaltyFraction * Math.Sqrt(Math.Max(1, progress.TotalCredits));
+                        rawPenalty = BaseIncrement * SeraphLevelingModSystem.DeathPenaltyFraction * Math.Sqrt(Math.Max(1, progress.TotalCredits));
                     }
                     else
                     {
@@ -63,6 +63,28 @@ namespace SeraphLeveling.Data.Attributes
             }
             return 0;
         }
+        public new TextCommandResult OnTraitBaseCommand(TextCommandCallingArgs args)
+        {
+            int? newValue = (int?)args[0];
+
+            if (newValue.HasValue)
+            {
+                if (newValue.Value < 1)
+                {
+                    return TextCommandResult.Error($"Base {IncrementUnits} per increment must be at least 1");
+                }
+
+                BaseIncrement = newValue.Value;
+                SeraphLevelingModSystem.pendingConfigSave = true;
+
+                return TextCommandResult.Success($"Base {IncrementUnits} per increment set to {BaseIncrement}. New {Tool.Name} will require this many {IncrementUnits} for the first 1%.");
+            }
+            else
+            {
+                return TextCommandResult.Success($"Current base {IncrementUnits} per increment: {BaseIncrement}\nIncrement step: +{IncrementStep} per credit");
+            }
+        }
+
     }
 
     public class LevelableTool
@@ -89,7 +111,7 @@ namespace SeraphLeveling.Data.Attributes
             {
                 progress = new LevelableTool()
                 {
-                    CurrentIncrementSize = Definition.Tool.BaseIncrement
+                    CurrentIncrementSize = Definition.BaseIncrement
                 };
                 ToolProgress[toolCode] = progress;
             }
@@ -107,7 +129,7 @@ namespace SeraphLeveling.Data.Attributes
                 // Per-tool mode: set credits on a specific pickaxe without clearing others
                 int oldToolCredits = 0;
                 if (ToolProgress.TryGetValue(toolName, out var existingTool))
-                    oldToolCredits = SeraphLevelingModSystem.CalculateToolCredits(existingTool.CurrentIncrementSize, Definition.Tool.BaseIncrement, Definition.Tool.IncrementStep);
+                    oldToolCredits = SeraphLevelingModSystem.CalculateToolCredits(existingTool.CurrentIncrementSize, Definition.BaseIncrement, Definition.IncrementStep);
 
                 int projectedTotal = TotalCredits - oldToolCredits + level;
                 if (projectedTotal > maxCredits)
@@ -120,13 +142,13 @@ namespace SeraphLeveling.Data.Attributes
                 else
                 {
                     var toolProgress = GetToolProgress(toolName);
-                    toolProgress.CurrentIncrementSize = Definition.Tool.BaseIncrement + (level * Definition.Tool.IncrementStep);
+                    toolProgress.CurrentIncrementSize = Definition.BaseIncrement + (level * Definition.IncrementStep);
                     toolProgress.PartialCredit = 0;
                 }
 
                 TotalCredits = SeraphLevelingModSystem.RecalculateTotalCreditsFromTools(
                     ToolProgress, p => p.CurrentIncrementSize,
-                    Definition.Tool.BaseIncrement, Definition.Tool.IncrementStep);
+                    Definition.BaseIncrement, Definition.IncrementStep);
 
                 Definition.MarkForSave(true);
                 int bonusPercent = Definition.ApplyBonus(player, (PD)this);
@@ -201,7 +223,7 @@ namespace SeraphLeveling.Data.Attributes
             if (toolEntries.Count > 0)
             {
                 var (newCr, lost) = SeraphLevelingModSystem.ApplyAbsolutePositionDecay(toolEntries, rawPenalty,
-                    Definition.Tool.BaseIncrement, Definition.Tool.IncrementStep, oldCredits,
+                    Definition.BaseIncrement, Definition.IncrementStep, oldCredits,
                     (k, a, s) =>
                     {
                         if (ToolProgress.TryGetValue(k, out var p))
@@ -214,10 +236,10 @@ namespace SeraphLeveling.Data.Attributes
                 sb.AppendLine($"  Mining: {oldCredits} \u2192 {newCr} (-{lost} credits, {rawPenalty:F0} pts)");
                 foreach (var entry in toolEntries)
                 {
-                    int oldToolCr = Definition.Tool.IncrementStep > 0 ? (entry.Item3 - Definition.Tool.BaseIncrement) / Definition.Tool.IncrementStep : 0;
+                    int oldToolCr = Definition.IncrementStep > 0 ? (entry.Item3 - Definition.BaseIncrement) / Definition.IncrementStep : 0;
                     if (ToolProgress.TryGetValue(entry.Item1, out var after))
                     {
-                        int newToolCr = Definition.Tool.IncrementStep > 0 ? (after.CurrentIncrementSize - Definition.Tool.BaseIncrement) / Definition.Tool.IncrementStep : 0;
+                        int newToolCr = Definition.IncrementStep > 0 ? (after.CurrentIncrementSize - Definition.BaseIncrement) / Definition.IncrementStep : 0;
                         int toolLost = oldToolCr - newToolCr;
                         sb.AppendLine($"    {entry.Item1}: {(int)entry.Item2}/{entry.Item3} \u2192 {after.PartialCredit:F0}/{after.CurrentIncrementSize}{(toolLost > 0 ? $" (-{toolLost} cr)" : "")}");
                     }
@@ -262,7 +284,7 @@ namespace SeraphLeveling.Data.Attributes
                 // Earn a credit
                 TotalCredits++;
                 toolProgress.PartialCredit -= toolProgress.CurrentIncrementSize;
-                toolProgress.CurrentIncrementSize += Definition.Tool.IncrementStep;
+                toolProgress.CurrentIncrementSize += Definition.IncrementStep;
 
                 SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Player {player.PlayerName} earned credit {TotalCredits} with {toolCode}, next requires {toolProgress.CurrentIncrementSize} points");
             }
