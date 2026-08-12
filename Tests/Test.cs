@@ -222,7 +222,7 @@ namespace SeraphLeveling.Tests
 
         private static void RunMiningTests()
         {
-            int maxMining = SeraphLevelingModSystem.MaxMiningSpeedPercent;
+            int maxMining = AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits;
 
             // MINE-001: First credit at base increment
             // With default settings: 100 blocks = 1 credit = 1%
@@ -390,7 +390,7 @@ namespace SeraphLeveling.Tests
 
         private static void RunHungerTests()
         {
-            int maxHunger = SeraphLevelingModSystem.MaxHungerReductionPercent;
+            int maxHunger = AttributeModifierDefinitions.HungerRate.GlobalMaxCredits;
 
             // HUNGER-001: Hunger bonus calculation (null entity)
             AssertEqual("HUNGER-001", "Hunger bonus at 10 credits", 10, SeraphLevelingModSystem.CalculateHungerBonusPercent(10, null));

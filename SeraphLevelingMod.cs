@@ -44,9 +44,6 @@ namespace SeraphLeveling
         // Base blocks for first 1%: 100 blocks
         // Each subsequent 1% requires +100 more blocks (100, 200, 300, etc.)
         // Switching pickaxe types resets the increment counter back to base
-        public static int BaseBlocksPerIncrement = 100;  // Base points needed for first credit
-        public static int IncrementStep = 100;           // How much more points each subsequent credit needs
-        public static int MaxMiningSpeedPercent = 50;    // 50% max bonus
         public static int OreMultiplier = 5;             // Ore blocks count for 5x points
 
         // Keys for melee damage progression system
@@ -141,13 +138,6 @@ namespace SeraphLeveling
 
         // Trait code for the hunger mastery trait
         public const string HUNGER_TRAIT_CODE = "sithungermastery";
-
-        // Hunger rate progression configuration
-        // Base seconds at full saturation for first 1%: 300 seconds (5 minutes)
-        // Each subsequent 1% requires +60 more seconds (5 min, 6 min, 7 min, etc.)
-        public static int BaseSecondsPerIncrement = 300;   // Base seconds needed for first credit (5 minutes)
-        public static int HungerIncrementStep = 60;        // How many more seconds each subsequent credit needs (1 minute)
-        public static int MaxHungerReductionPercent = 25;  // 25% max hunger rate reduction (to 75% rate)
 
         // Vanilla Ravenous trait hunger rate increase (used for cap calculations)
         // Blackguard has +30% hunger rate, so earning 25% brings them back to nearly normal
@@ -3248,7 +3238,7 @@ namespace SeraphLeveling
             int ravenousPenalty = hasRavenous ? VANILLA_RAVENOUS_HUNGER_PENALTY : 0;
             // MaxHungerReductionPercent represents how much a normal player needs to reduce
             // Ravenous players need that PLUS their penalty to reach the same target
-            return MaxHungerReductionPercent + ravenousPenalty;
+            return AttributeModifierDefinitions.HungerRate.GlobalMaxCredits + ravenousPenalty;
         }
 
         /// <summary>
@@ -4672,124 +4662,6 @@ namespace SeraphLeveling
         }
 
         /// <summary>
-        /// Also handles Weak and Claustrophobic negative trait cancellation.
-        /// Stats are always applied (they're not persistent). WatchedAttributes only sync when values change.
-        /// Returns the actual applied bonus percentage (0-100 scale).
-        /// </summary>
-        private int ApplyMiningBonus(IServerPlayer player, int level)
-        {
-            if (player?.Entity == null) return 0;
-
-            // Use cached vanilla traits if available, otherwise fall back to direct check
-            var cache = GetCachedTraits(player.PlayerUID);
-            bool hasVanillaHardy = cache?.HasHardy ?? PlayerHasVanillaHardy(player.Entity);
-            bool hasWeak = cache?.HasWeak ?? PlayerHasVanillaWeak(player.Entity);
-            bool hasClaustrophobic = cache?.HasClaustrophobic ?? PlayerHasVanillaClaustrophobic(player.Entity);
-
-            int vanillaHardyBonus = hasVanillaHardy ? VANILLA_HARDY_MINING_BONUS : 0;
-
-            // Calculate remaining negative trait penalties
-            int weakMiningRemaining = hasWeak ? CalculateRemainingPenalty(VANILLA_WEAK_MINING_PENALTY, level) : 0;
-            // HP penalty is tied to mining penalty - when mining penalty is cancelled (at level 10), HP is also cancelled
-            int weakHpRemaining = weakMiningRemaining > 0 ? VANILLA_WEAK_HP_PENALTY : 0;
-            int claustrophobicMiningRemaining = hasClaustrophobic ? CalculateRemainingPenalty(VANILLA_CLAUSTROPHOBIC_MINING_PENALTY, level) : 0;
-            // Ore penalty is tied to mining penalty - when mining penalty is cancelled (at level 10), ore is also cancelled
-            int claustrophobicOreRemaining = claustrophobicMiningRemaining > 0 ? VANILLA_CLAUSTROPHOBIC_ORE_PENALTY : 0;
-
-            // Calculate net bonus after cancelling negative traits
-            // Negative trait penalty must be fully cancelled before bonus starts showing
-            int totalNegativePenalty = 0;
-            if (hasWeak) totalNegativePenalty += VANILLA_WEAK_MINING_PENALTY;
-            if (hasClaustrophobic) totalNegativePenalty += VANILLA_CLAUSTROPHOBIC_MINING_PENALTY;
-
-            int netLevel = Math.Max(0, level - totalNegativePenalty);
-
-            // Cap earned bonus so total (vanilla + earned) doesn't exceed MaxMiningSpeedPercent
-            int maxEarnableBonus = MaxMiningSpeedPercent - vanillaHardyBonus;
-            int bonusPercent = Math.Min(netLevel, Math.Max(0, maxEarnableBonus));
-
-            float bonus = bonusPercent * 0.01f;
-
-            // Always apply stats (they're not persistent)
-            // Set the mining speed stat
-            player.Entity.Stats.Set("miningSpeedMul", MINING_STAT_CODE, bonus, false);
-
-            // Counter-stats: when a vanilla negative trait's mining penalty is fully cancelled
-            // (remaining == 0), apply a +penalty counter on the same stat so the ACTUAL applied
-            // mining speed matches the displayed value. Without this, Hunter (Claustrophobic)
-            // and Tailor (Weak) would land at a functional +40% mining at maxall (vanilla -10%
-            // still applied, our +50% on top, net +40%) while their displayed +50% suggests
-            // parity with other classes.
-            if (hasClaustrophobic)
-            {
-                if (claustrophobicMiningRemaining == 0)
-                {
-                    // Negate the -10% mining speed penalty by applying +10%
-                    player.Entity.Stats.Set("miningSpeedMul", "sitClaustrophobicMiningCancel", VANILLA_CLAUSTROPHOBIC_MINING_PENALTY * 0.01f, false);
-                    // Negate the -15% ore drop penalty by applying +15%
-                    player.Entity.Stats.Set("oreDropRate", "sitClaustrophobicOreCancel", VANILLA_CLAUSTROPHOBIC_ORE_PENALTY * 0.01f, false);
-                }
-                else
-                {
-                    player.Entity.Stats.Remove("miningSpeedMul", "sitClaustrophobicMiningCancel");
-                    player.Entity.Stats.Remove("oreDropRate", "sitClaustrophobicOreCancel");
-                }
-            }
-
-            // When Weak mining penalty is fully cancelled, also negate the HP penalty AND the mining speed penalty
-            if (hasWeak)
-            {
-                if (weakMiningRemaining == 0)
-                {
-                    // Negate the -2 HP penalty by applying +2 HP
-                    player.Entity.Stats.Set("maxhealthExtraPoints", WEAK_HP_CANCEL_STAT_CODE, VANILLA_WEAK_HP_PENALTY, false);
-                    // Negate the -10% mining speed penalty by applying +10%
-                    player.Entity.Stats.Set("miningSpeedMul", "sitWeakMiningCancel", VANILLA_WEAK_MINING_PENALTY * 0.01f, false);
-                }
-                else
-                {
-                    player.Entity.Stats.Remove("maxhealthExtraPoints", WEAK_HP_CANCEL_STAT_CODE);
-                    player.Entity.Stats.Remove("miningSpeedMul", "sitWeakMiningCancel");
-                }
-            }
-
-            // Check if any values have changed before updating WatchedAttributes
-            var watchedAttrs = player.Entity.WatchedAttributes;
-            int oldLevel = watchedAttrs.GetInt(WATCHED_MINING_LEVEL, -1);
-            int oldBonus = watchedAttrs.GetInt(WATCHED_MINING_BONUS, -1);
-            int oldClaustoMining = watchedAttrs.GetInt(WATCHED_CLAUSTROPHOBIC_MINING_REMAINING, -1);
-
-            bool valuesChanged = (oldLevel != level) || (oldBonus != bonusPercent) || (oldClaustoMining != claustrophobicMiningRemaining);
-
-            // Only update WatchedAttributes if values changed
-            if (valuesChanged)
-            {
-                // Sync level and bonus to WatchedAttributes for client-side display
-                watchedAttrs.SetInt(WATCHED_MINING_LEVEL, level);
-                watchedAttrs.SetInt(WATCHED_MINING_BONUS, bonusPercent);
-                watchedAttrs.SetBool("sitHasVanillaHardy", hasVanillaHardy);
-
-                // Sync negative trait status
-                watchedAttrs.SetBool("sitHasWeak", hasWeak);
-                watchedAttrs.SetInt(WATCHED_WEAK_MINING_REMAINING, weakMiningRemaining);
-                watchedAttrs.SetInt(WATCHED_WEAK_HP_REMAINING, weakHpRemaining);
-                watchedAttrs.SetBool("sitHasClaustrophobic", hasClaustrophobic);
-                watchedAttrs.SetInt(WATCHED_CLAUSTROPHOBIC_MINING_REMAINING, claustrophobicMiningRemaining);
-                watchedAttrs.SetInt(WATCHED_CLAUSTROPHOBIC_ORE_REMAINING, claustrophobicOreRemaining);
-
-                // Add our trait to extraTraits only if:
-                // - Player doesn't already have Hardy AND
-                // - All negative mining penalties are cancelled (bonusPercent > 0)
-                UpdateExtraTrait(player.Entity, MINING_TRAIT_CODE, bonusPercent > 0 && !hasVanillaHardy);
-
-                // Only call MarkPathDirty once at the end (batched update)
-                watchedAttrs.MarkPathDirty(WATCHED_MINING_LEVEL);
-            }
-
-            return bonusPercent;
-        }
-
-        /// <summary>
         /// Checks if the player's class has the vanilla Hardy trait.
         /// </summary>
         public static bool PlayerHasVanillaHardy(EntityPlayer entity)
@@ -4847,7 +4719,7 @@ namespace SeraphLeveling
         public static float CalculateMiningBonus(int credits)
         {
             float bonus = credits * 0.01f;
-            return Math.Min(bonus, MaxMiningSpeedPercent / 100f);
+            return Math.Min(bonus, AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits / 100f);
         }
 
         /// <summary>
@@ -4856,7 +4728,7 @@ namespace SeraphLeveling
         /// </summary>
         public static int CalculateMiningBonusPercent(int credits)
         {
-            return Math.Min(credits, MaxMiningSpeedPercent);
+            return Math.Min(credits, AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits);
         }
 
         /// <summary>
@@ -4864,7 +4736,7 @@ namespace SeraphLeveling
         /// </summary>
         public static int CalculateMaxCredits()
         {
-            return MaxMiningSpeedPercent;
+            return AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits;
         }
 
         /// <summary>
@@ -4874,7 +4746,7 @@ namespace SeraphLeveling
         /// </summary>
         public static int GetMaxMiningCredits(EntityPlayer entity)
         {
-            if (entity == null) return MaxMiningSpeedPercent;
+            if (entity == null) return AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits;
 
             bool hasWeak = PlayerHasVanillaWeak(entity);
             bool hasClaustrophobic = PlayerHasVanillaClaustrophobic(entity);
@@ -4882,16 +4754,16 @@ namespace SeraphLeveling
             // Weak penalty is 10% mining speed, need 10 extra levels to cancel it
             if (hasWeak)
             {
-                return MaxMiningSpeedPercent + VANILLA_WEAK_MINING_PENALTY;
+                return AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits + VANILLA_WEAK_MINING_PENALTY;
             }
 
             // Claustrophobic penalty is 10% mining speed, need 10 extra levels to cancel it
             if (hasClaustrophobic)
             {
-                return MaxMiningSpeedPercent + VANILLA_CLAUSTROPHOBIC_MINING_PENALTY;
+                return AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits + VANILLA_CLAUSTROPHOBIC_MINING_PENALTY;
             }
 
-            return MaxMiningSpeedPercent;
+            return AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits;
         }
 
         // Server-side Harmony instance for melee damage tracking
@@ -6578,9 +6450,9 @@ namespace SeraphLeveling
                 LoadedConfigVersion = config.ConfigVersion;
 
                 // Apply config values to static variables
-                BaseBlocksPerIncrement = config.MiningBaseBlocksPerIncrement;
-                IncrementStep = config.MiningIncrementStep;
-                MaxMiningSpeedPercent = config.MiningMaxPercent;
+                AttributeModifierDefinitions.MiningSpeed.BaseIncrement = config.MiningBaseBlocksPerIncrement;
+                AttributeModifierDefinitions.MiningSpeed.IncrementStep = config.MiningIncrementStep;
+                AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits = config.MiningMaxPercent;
                 OreMultiplier = config.MiningOreMultiplier;
 
                 BaseDamagePerIncrement = config.MeleeBaseDamagePerIncrement;
@@ -6597,9 +6469,9 @@ namespace SeraphLeveling
                 AttributeModifierDefinitions.WalkingSpeed.IncrementStep = config.WalkingIncrementStep;
                 AttributeModifierDefinitions.WalkingSpeed.GlobalMaxCredits = config.WalkingMaxPercent;
 
-                BaseSecondsPerIncrement = config.HungerBaseSecondsPerIncrement;
-                HungerIncrementStep = config.HungerIncrementStep;
-                MaxHungerReductionPercent = config.HungerMaxReductionPercent;
+                AttributeModifierDefinitions.HungerRate.BaseIncrement = config.HungerBaseSecondsPerIncrement;
+                AttributeModifierDefinitions.HungerRate.IncrementStep = config.HungerIncrementStep;
+                AttributeModifierDefinitions.HungerRate.GlobalMaxCredits = config.HungerMaxReductionPercent;
 
                 BaseSecondsInArmorPerIncrement = config.ArmorBaseSecondsPerIncrement;
                 ArmorTimeIncrementStep = config.ArmorTimeIncrementStep;
@@ -6813,9 +6685,9 @@ namespace SeraphLeveling
                 config.ConfigVersion = CURRENT_CONFIG_VERSION;
                 LoadedConfigVersion = CURRENT_CONFIG_VERSION;
 
-                config.MiningBaseBlocksPerIncrement = BaseBlocksPerIncrement;
-                config.MiningIncrementStep = IncrementStep;
-                config.MiningMaxPercent = MaxMiningSpeedPercent;
+                config.MiningBaseBlocksPerIncrement = AttributeModifierDefinitions.MiningSpeed.BaseIncrement;
+                config.MiningIncrementStep = AttributeModifierDefinitions.MiningSpeed.IncrementStep;
+                config.MiningMaxPercent = AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits;
                 config.MiningOreMultiplier = OreMultiplier;
 
                 config.MeleeBaseDamagePerIncrement = BaseDamagePerIncrement;
@@ -6832,9 +6704,9 @@ namespace SeraphLeveling
                 config.WalkingIncrementStep = AttributeModifierDefinitions.WalkingSpeed.IncrementStep;
                 config.WalkingMaxPercent = AttributeModifierDefinitions.WalkingSpeed.GlobalMaxCredits;
 
-                config.HungerBaseSecondsPerIncrement = BaseSecondsPerIncrement;
-                config.HungerIncrementStep = HungerIncrementStep;
-                config.HungerMaxReductionPercent = MaxHungerReductionPercent;
+                config.HungerBaseSecondsPerIncrement = AttributeModifierDefinitions.HungerRate.BaseIncrement;
+                config.HungerIncrementStep = AttributeModifierDefinitions.HungerRate.IncrementStep;
+                config.HungerMaxReductionPercent = AttributeModifierDefinitions.HungerRate.GlobalMaxCredits;
 
                 config.ArmorBaseSecondsPerIncrement = BaseSecondsInArmorPerIncrement;
                 config.ArmorTimeIncrementStep = ArmorTimeIncrementStep;
@@ -9321,7 +9193,7 @@ namespace SeraphLeveling
             if (ServerApi == null) return;
 
             SaveConfigFile();
-            ServerApi.Logger.Debug($"[SeraphLeveling] Config saved to ModConfig/{CONFIG_FILE_NAME} (Mining: Base={BaseBlocksPerIncrement}, Max={MaxMiningSpeedPercent}% | Melee: Base={BaseDamagePerIncrement}, Max={MaxMeleeDamagePercent}% | CO: {COProficiencyBaseOverrides.Count} base overrides, {COProficiencyIncrementOverrides.Count} increment overrides)");
+            ServerApi.Logger.Debug($"[SeraphLeveling] Config saved to ModConfig/{CONFIG_FILE_NAME} (Mining: Base={AttributeModifierDefinitions.MiningSpeed.BaseIncrement}, Max={AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits}% | Melee: Base={BaseDamagePerIncrement}, Max={MaxMeleeDamagePercent}% | CO: {COProficiencyBaseOverrides.Count} base overrides, {COProficiencyIncrementOverrides.Count} increment overrides)");
         }
 
         /// <summary>
@@ -9370,12 +9242,12 @@ namespace SeraphLeveling
                         {
                             // Legacy format: just had BaseBlocksPerLevel (now BaseBlocksPerIncrement)
                             int legacyBase = reader.ReadInt32();
-                            BaseBlocksPerIncrement = legacyBase;
-                            IncrementStep = legacyBase; // Match old behavior
+                            AttributeModifierDefinitions.MiningSpeed.BaseIncrement = legacyBase;
+                            AttributeModifierDefinitions.MiningSpeed.IncrementStep = legacyBase; // Match old behavior
 
                             if (version >= 2)
                             {
-                                MaxMiningSpeedPercent = reader.ReadInt32();
+                                AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits = reader.ReadInt32();
                             }
                             // OreMultiplier uses default (5)
                             // Melee, Ranged, Walking, and Hunger use defaults
@@ -9385,9 +9257,9 @@ namespace SeraphLeveling
                         }
                         else if (version == 3)
                         {
-                            BaseBlocksPerIncrement = reader.ReadInt32();
-                            IncrementStep = reader.ReadInt32();
-                            MaxMiningSpeedPercent = reader.ReadInt32();
+                            AttributeModifierDefinitions.MiningSpeed.BaseIncrement = reader.ReadInt32();
+                            AttributeModifierDefinitions.MiningSpeed.IncrementStep = reader.ReadInt32();
+                            AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits = reader.ReadInt32();
                             OreMultiplier = reader.ReadInt32();
                             // Melee, Ranged, Walking, and Hunger use defaults
 
@@ -9397,9 +9269,9 @@ namespace SeraphLeveling
                         else if (version == 4)
                         {
                             // Version 4: has melee config but not ranged, walking, or hunger
-                            BaseBlocksPerIncrement = reader.ReadInt32();
-                            IncrementStep = reader.ReadInt32();
-                            MaxMiningSpeedPercent = reader.ReadInt32();
+                            AttributeModifierDefinitions.MiningSpeed.BaseIncrement = reader.ReadInt32();
+                            AttributeModifierDefinitions.MiningSpeed.IncrementStep = reader.ReadInt32();
+                            AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits = reader.ReadInt32();
                             OreMultiplier = reader.ReadInt32();
                             BaseDamagePerIncrement = reader.ReadInt32();
                             MeleeIncrementStep = reader.ReadInt32();
@@ -9412,9 +9284,9 @@ namespace SeraphLeveling
                         else if (version == 5)
                         {
                             // Version 5: has ranged config but not walking or hunger
-                            BaseBlocksPerIncrement = reader.ReadInt32();
-                            IncrementStep = reader.ReadInt32();
-                            MaxMiningSpeedPercent = reader.ReadInt32();
+                            AttributeModifierDefinitions.MiningSpeed.BaseIncrement = reader.ReadInt32();
+                            AttributeModifierDefinitions.MiningSpeed.IncrementStep = reader.ReadInt32();
+                            AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits = reader.ReadInt32();
                             OreMultiplier = reader.ReadInt32();
                             BaseDamagePerIncrement = reader.ReadInt32();
                             MeleeIncrementStep = reader.ReadInt32();
@@ -9432,9 +9304,9 @@ namespace SeraphLeveling
                         else if (version == 6)
                         {
                             // Version 6: has walking config but not hunger
-                            BaseBlocksPerIncrement = reader.ReadInt32();
-                            IncrementStep = reader.ReadInt32();
-                            MaxMiningSpeedPercent = reader.ReadInt32();
+                            AttributeModifierDefinitions.MiningSpeed.BaseIncrement = reader.ReadInt32();
+                            AttributeModifierDefinitions.MiningSpeed.IncrementStep = reader.ReadInt32();
+                            AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits = reader.ReadInt32();
                             OreMultiplier = reader.ReadInt32();
                             BaseDamagePerIncrement = reader.ReadInt32();
                             MeleeIncrementStep = reader.ReadInt32();
@@ -9455,9 +9327,9 @@ namespace SeraphLeveling
                         else if (version == 7)
                         {
                             // Version 7: has hunger config but not armor
-                            BaseBlocksPerIncrement = reader.ReadInt32();
-                            IncrementStep = reader.ReadInt32();
-                            MaxMiningSpeedPercent = reader.ReadInt32();
+                            AttributeModifierDefinitions.MiningSpeed.BaseIncrement = reader.ReadInt32();
+                            AttributeModifierDefinitions.MiningSpeed.IncrementStep = reader.ReadInt32();
+                            AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits = reader.ReadInt32();
                             OreMultiplier = reader.ReadInt32();
                             BaseDamagePerIncrement = reader.ReadInt32();
                             MeleeIncrementStep = reader.ReadInt32();
@@ -9470,9 +9342,9 @@ namespace SeraphLeveling
                             AttributeModifierDefinitions.WalkingSpeed.BaseIncrement = reader.ReadInt32();
                             AttributeModifierDefinitions.WalkingSpeed.IncrementStep = reader.ReadInt32();
                             AttributeModifierDefinitions.WalkingSpeed.GlobalMaxCredits = reader.ReadInt32();
-                            BaseSecondsPerIncrement = reader.ReadInt32();
-                            HungerIncrementStep = reader.ReadInt32();
-                            MaxHungerReductionPercent = reader.ReadInt32();
+                            AttributeModifierDefinitions.HungerRate.BaseIncrement = reader.ReadInt32();
+                            AttributeModifierDefinitions.HungerRate.IncrementStep = reader.ReadInt32();
+                            AttributeModifierDefinitions.HungerRate.GlobalMaxCredits = reader.ReadInt32();
                             // Armor uses defaults
 
                             // Mark for re-save in new format
@@ -9481,9 +9353,9 @@ namespace SeraphLeveling
                         else if (version == 8)
                         {
                             // Version 8: has armor config but not CO config
-                            BaseBlocksPerIncrement = reader.ReadInt32();
-                            IncrementStep = reader.ReadInt32();
-                            MaxMiningSpeedPercent = reader.ReadInt32();
+                            AttributeModifierDefinitions.MiningSpeed.BaseIncrement = reader.ReadInt32();
+                            AttributeModifierDefinitions.MiningSpeed.IncrementStep = reader.ReadInt32();
+                            AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits = reader.ReadInt32();
                             OreMultiplier = reader.ReadInt32();
                             BaseDamagePerIncrement = reader.ReadInt32();
                             MeleeIncrementStep = reader.ReadInt32();
@@ -9496,9 +9368,9 @@ namespace SeraphLeveling
                             AttributeModifierDefinitions.WalkingSpeed.BaseIncrement = reader.ReadInt32();
                             AttributeModifierDefinitions.WalkingSpeed.IncrementStep = reader.ReadInt32();
                             AttributeModifierDefinitions.WalkingSpeed.GlobalMaxCredits = reader.ReadInt32();
-                            BaseSecondsPerIncrement = reader.ReadInt32();
-                            HungerIncrementStep = reader.ReadInt32();
-                            MaxHungerReductionPercent = reader.ReadInt32();
+                            AttributeModifierDefinitions.HungerRate.BaseIncrement = reader.ReadInt32();
+                            AttributeModifierDefinitions.HungerRate.IncrementStep = reader.ReadInt32();
+                            AttributeModifierDefinitions.HungerRate.GlobalMaxCredits = reader.ReadInt32();
                             BaseSecondsInArmorPerIncrement = reader.ReadInt32();
                             ArmorTimeIncrementStep = reader.ReadInt32();
                             BaseDamageBlockedPerIncrement = reader.ReadInt32();
@@ -9515,9 +9387,9 @@ namespace SeraphLeveling
                         else if (version == 9)
                         {
                             // Version 9: has global CO config but no per-proficiency overrides
-                            BaseBlocksPerIncrement = reader.ReadInt32();
-                            IncrementStep = reader.ReadInt32();
-                            MaxMiningSpeedPercent = reader.ReadInt32();
+                            AttributeModifierDefinitions.MiningSpeed.BaseIncrement = reader.ReadInt32();
+                            AttributeModifierDefinitions.MiningSpeed.IncrementStep = reader.ReadInt32();
+                            AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits = reader.ReadInt32();
                             OreMultiplier = reader.ReadInt32();
                             BaseDamagePerIncrement = reader.ReadInt32();
                             MeleeIncrementStep = reader.ReadInt32();
@@ -9530,9 +9402,9 @@ namespace SeraphLeveling
                             AttributeModifierDefinitions.WalkingSpeed.BaseIncrement = reader.ReadInt32();
                             AttributeModifierDefinitions.WalkingSpeed.IncrementStep = reader.ReadInt32();
                             AttributeModifierDefinitions.WalkingSpeed.GlobalMaxCredits = reader.ReadInt32();
-                            BaseSecondsPerIncrement = reader.ReadInt32();
-                            HungerIncrementStep = reader.ReadInt32();
-                            MaxHungerReductionPercent = reader.ReadInt32();
+                            AttributeModifierDefinitions.HungerRate.BaseIncrement = reader.ReadInt32();
+                            AttributeModifierDefinitions.HungerRate.IncrementStep = reader.ReadInt32();
+                            AttributeModifierDefinitions.HungerRate.GlobalMaxCredits = reader.ReadInt32();
                             BaseSecondsInArmorPerIncrement = reader.ReadInt32();
                             ArmorTimeIncrementStep = reader.ReadInt32();
                             BaseDamageBlockedPerIncrement = reader.ReadInt32();
@@ -9551,9 +9423,9 @@ namespace SeraphLeveling
                         else if (version == 10)
                         {
                             // Current format with per-proficiency CO config
-                            BaseBlocksPerIncrement = reader.ReadInt32();
-                            IncrementStep = reader.ReadInt32();
-                            MaxMiningSpeedPercent = reader.ReadInt32();
+                            AttributeModifierDefinitions.MiningSpeed.BaseIncrement = reader.ReadInt32();
+                            AttributeModifierDefinitions.MiningSpeed.IncrementStep = reader.ReadInt32();
+                            AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits = reader.ReadInt32();
                             OreMultiplier = reader.ReadInt32();
                             BaseDamagePerIncrement = reader.ReadInt32();
                             MeleeIncrementStep = reader.ReadInt32();
@@ -9566,9 +9438,9 @@ namespace SeraphLeveling
                             AttributeModifierDefinitions.WalkingSpeed.BaseIncrement = reader.ReadInt32();
                             AttributeModifierDefinitions.WalkingSpeed.IncrementStep = reader.ReadInt32();
                             AttributeModifierDefinitions.WalkingSpeed.GlobalMaxCredits = reader.ReadInt32();
-                            BaseSecondsPerIncrement = reader.ReadInt32();
-                            HungerIncrementStep = reader.ReadInt32();
-                            MaxHungerReductionPercent = reader.ReadInt32();
+                            AttributeModifierDefinitions.HungerRate.BaseIncrement = reader.ReadInt32();
+                            AttributeModifierDefinitions.HungerRate.IncrementStep = reader.ReadInt32();
+                            AttributeModifierDefinitions.HungerRate.GlobalMaxCredits = reader.ReadInt32();
                             BaseSecondsInArmorPerIncrement = reader.ReadInt32();
                             ArmorTimeIncrementStep = reader.ReadInt32();
                             BaseDamageBlockedPerIncrement = reader.ReadInt32();
@@ -9601,7 +9473,7 @@ namespace SeraphLeveling
                     }
                 }
 
-                ServerApi.Logger.Notification($"[SeraphLeveling] Config loaded (Mining: Base={BaseBlocksPerIncrement}, Max={MaxMiningSpeedPercent}% | Melee: Base={BaseDamagePerIncrement}, Max={MaxMeleeDamagePercent}% | Ranged: Base={BaseRangedDamagePerIncrement}, MaxDmg={MaxRangedDamagePercent}% | Walking: Base={AttributeModifierDefinitions.WalkingSpeed.BaseIncrement}, Max={AttributeModifierDefinitions.WalkingSpeed.GlobalMaxCredits}% | Hunger: Base={BaseSecondsPerIncrement}, Max={MaxHungerReductionPercent}% | Armor: MaxDur={MaxArmorDurabilityPercent}%, MaxWalk={MaxArmorWalkSpeedPercent}%)");
+                ServerApi.Logger.Notification($"[SeraphLeveling] Config loaded (Mining: Base={AttributeModifierDefinitions.MiningSpeed.BaseIncrement}, Max={AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits}% | Melee: Base={BaseDamagePerIncrement}, Max={MaxMeleeDamagePercent}% | Ranged: Base={BaseRangedDamagePerIncrement}, MaxDmg={MaxRangedDamagePercent}% | Walking: Base={AttributeModifierDefinitions.WalkingSpeed.BaseIncrement}, Max={AttributeModifierDefinitions.WalkingSpeed.GlobalMaxCredits}% | Hunger: Base={AttributeModifierDefinitions.HungerRate.BaseIncrement}, Max={AttributeModifierDefinitions.HungerRate.GlobalMaxCredits}% | Armor: MaxDur={MaxArmorDurabilityPercent}%, MaxWalk={MaxArmorWalkSpeedPercent}%)");
 
                 // Fold the world's values into the config file and drop the blob, so
                 // this world never reads from the save game again. An empty array is
@@ -12994,9 +12866,9 @@ namespace SeraphLeveling
         private TextCommandResult OnTraitResetConfigCommand(TextCommandCallingArgs args)
         {
             // Mining defaults
-            BaseBlocksPerIncrement = 100;
-            IncrementStep = 100;
-            MaxMiningSpeedPercent = 50;
+            AttributeModifierDefinitions.MiningSpeed.BaseIncrement = 100;
+            AttributeModifierDefinitions.MiningSpeed.IncrementStep = 100;
+            AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits = 50;
             OreMultiplier = 5;
 
             // Melee defaults
@@ -13017,9 +12889,9 @@ namespace SeraphLeveling
             AttributeModifierDefinitions.WalkingSpeed.GlobalMaxCredits = 15;
 
             // Hunger defaults
-            BaseSecondsPerIncrement = 300;
-            HungerIncrementStep = 60;
-            MaxHungerReductionPercent = 25;
+            AttributeModifierDefinitions.HungerRate.BaseIncrement = 300;
+            AttributeModifierDefinitions.HungerRate.IncrementStep = 60;
+            AttributeModifierDefinitions.HungerRate.GlobalMaxCredits = 25;
 
             // Armor defaults
             BaseSecondsInArmorPerIncrement = 2880;
