@@ -47,6 +47,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "claustrophobic",
             Attributes = [
+                (AttributeModifierDefinitions.MiningSpeed, -10)
             ]
         };
 
@@ -105,6 +106,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "technical",
             Attributes = [
+                (AttributeModifierDefinitions.Technical, 1)
             ],
             Requirements = [
             ]
@@ -147,6 +149,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "ravenous",
             Attributes = [
+                (AttributeModifierDefinitions.HungerRate, -30)
             ]
         };
 
@@ -191,6 +194,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "weak",
             Attributes = [
+                (AttributeModifierDefinitions.MiningSpeed, -10)
             ]
         };
 
@@ -363,6 +367,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "stonespeaker",
             Attributes = [
+                (AttributeModifierDefinitions.MiningSpeed, 220)
             ]
         };
 
@@ -435,6 +440,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "strongarmed",
             Attributes = [
+                (AttributeModifierDefinitions.MiningSpeed, 100)
             ]
         };
 
