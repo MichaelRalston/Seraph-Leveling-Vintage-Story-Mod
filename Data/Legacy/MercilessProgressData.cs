@@ -13,7 +13,7 @@ namespace SeraphLeveling.Data.Legacy
         /// <summary>Whether the Merciless trait has been unlocked.</summary>
         public bool IsUnlocked { get; set; }
         public static string SAVE_KEY { get { return "sitMercilessProgress"; } }
-
+        public static string Description => "merciless";
         public MercilessProgressData()
         {
             IsUnlocked = false;

@@ -11,6 +11,8 @@ namespace SeraphLeveling.Data.Legacy
     public class BowyerProgressData : ProgressData<BowyerProgressData>, IProgressDataContract<BowyerProgressData>
     {
         /// <summary>Total damage dealt with simple bow or longbow.</summary>
+        public static string SAVE_KEY => "sitBowyerProgress";
+        public static string Description => "bowyer";
         public float TotalBowDamage { get; set; }
 
         /// <summary>Whether the Bowyer trait has been unlocked.</summary>

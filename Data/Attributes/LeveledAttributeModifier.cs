@@ -1,6 +1,7 @@
+using System;
 using System.Text;
-using Vintagestory.API.Server;
 using Vintagestory.API.Common;
+using Vintagestory.API.Server;
 
 namespace SeraphLeveling.Data.Attributes
 {
@@ -11,7 +12,7 @@ namespace SeraphLeveling.Data.Attributes
         public bool IsLeveledForPlayer(IPlayer player, int requiredCredits) => GetCreditsForPlayer(player) >= requiredCredits;
     }
 
-    public abstract record class LeveledAttributeModifierDefinition<D, PD> : AttributeModifierDefinition<D, PD>, ILeveledAttributeModifierDefinition where PD : LeveledAttributeModifierProgressData<D, PD> where D: LeveledAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
+    public abstract record class LeveledAttributeModifierDefinition<D, PD> : AttributeModifierDefinition<D, PD>, ILeveledAttributeModifierDefinition where PD : LeveledAttributeModifierProgressData<D, PD> where D : LeveledAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
     {
         public required string SkillKey { get; init; }
         public required string Name { get; init; }
@@ -19,6 +20,23 @@ namespace SeraphLeveling.Data.Attributes
         public required string LongDescription { get; init; }
         public required int GlobalMaxCredits { get; set; }
         public override int PersistenceVersion { get; init; } = 2;
+        public virtual string StatCode
+        {
+            get => field ??= $"sit{Name}Bonus"; init;
+        }
+        public virtual string WatchedLevel
+        {
+            get => field ??= $"sit{Name}Level"; init;
+        }
+        public virtual string WatchedBonus
+        {
+            get => field ??= $"sit{Name}BonusPercent"; init;
+        }
+        public virtual string TraitCode
+        {
+            get => field ??= $"sit{SkillKey}mastery"; init;
+        }
+        public required string StatName { get; init; }
 
         public int GetCreditsForPlayer(IPlayer player)
         {
@@ -27,11 +45,69 @@ namespace SeraphLeveling.Data.Attributes
 
         public virtual int GetMaxCredits(EntityPlayer player) => GlobalMaxCredits;
 
-        public abstract int ApplyBonus(IServerPlayer player, PD progressData);
+        public int CalculateLevelFromTraits(EntityPlayer entity)
+        {
+            int totalLevelFromTraits = 0;
+            if (SeraphLevelingModSystem.TraitsForAttributes.TryGetValue(Id, out var traitList))
+            {
+                foreach (var (trait, value) in traitList)
+                {
+                    // TODO: use cache?
+                    if (SeraphLevelingModSystem.PlayerHasTrait(entity, trait))
+                    {
+                        totalLevelFromTraits += value;
+                    }
+                }
+            }
+            return totalLevelFromTraits;
+        }
+        public virtual int ApplyBonus(IServerPlayer player, PD progressData)
+        {
+            if (player?.Entity == null) return 0;
 
-        public abstract int CalculateBonus(EntityPlayer entity, PD progress);
+            int totalLevelFromTraits = CalculateLevelFromTraits(player.Entity);
+            // Calculate raw bonus from level (1% per level)
+            float rawBonus = progressData.TotalCredits * 0.01f;
 
-        public void ApplyBonusIfExists(IServerPlayer player) {
+            // Cap earned bonus so total (vanilla + earned) doesn't exceed max earnable.
+            float maxEarnableBonus = (GlobalMaxCredits - totalLevelFromTraits) / 100f;
+            float bonus = Math.Min(rawBonus, Math.Max(0, maxEarnableBonus));
+            int bonusPercent = (int)(bonus * 100);
+
+            // Always apply stats (they're not persistent)
+            player.Entity.Stats.Set(StatName, StatCode, bonus, false);
+
+            // Check if any values have changed before updating WatchedAttributes
+            var watchedAttrs = player.Entity.WatchedAttributes;
+            int oldLevel = watchedAttrs.GetInt(WatchedLevel, -1);
+            int oldBonus = watchedAttrs.GetInt(WatchedBonus, -1);
+
+            bool valuesChanged = (oldLevel != progressData.TotalCredits) || (oldBonus != bonusPercent);
+
+            // Only update WatchedAttributes if values changed
+            if (valuesChanged)
+            {
+                // Sync level and bonus to WatchedAttributes for client-side display
+                watchedAttrs.SetInt(WatchedLevel, progressData.TotalCredits);
+                watchedAttrs.SetInt(WatchedBonus, bonusPercent);
+
+                SeraphLevelingModSystem.UpdateExtraTraitStatic(player.Entity, TraitCode, progressData.TotalCredits > 0);
+
+                watchedAttrs.MarkPathDirty(WatchedLevel);
+            }
+
+            return bonusPercent;
+        }
+
+        public virtual int CalculateBonus(EntityPlayer entity, PD progress)
+        {
+            int totalLevelFromTraits = CalculateLevelFromTraits(entity);
+            int earnableBonus = Math.Max(0, GlobalMaxCredits - totalLevelFromTraits);
+            return Math.Min(progress.TotalCredits, earnableBonus);
+        }
+
+        public void ApplyBonusIfExists(IServerPlayer player)
+        {
             if (ProgressDictionary.TryGetValue(player.PlayerUID, out var progress))
                 ApplyBonus(player, (PD)progress);
         }

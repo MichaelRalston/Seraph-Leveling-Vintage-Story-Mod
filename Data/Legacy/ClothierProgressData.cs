@@ -14,6 +14,8 @@ namespace SeraphLeveling.Data.Legacy
     public class ClothierProgressData : ProgressData<ClothierProgressData>, IProgressDataContract<ClothierProgressData>
     {
         /// <summary>Set of unique clothing item codes that have been worn.</summary>
+        public static string SAVE_KEY => "sitClothierProgress";
+        public static string Description => "clothier";
         public HashSet<string> UniqueClothesWorn { get; set; }
 
         /// <summary>Whether the sewing kit crafting has been unlocked.</summary>

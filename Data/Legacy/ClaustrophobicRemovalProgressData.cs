@@ -10,6 +10,8 @@ namespace SeraphLeveling.Data.Legacy
     /// </summary>
     public class ClaustrophobicRemovalProgressData : RemovalProgressData<ClaustrophobicRemovalProgressData>, IProgressDataContract<ClaustrophobicRemovalProgressData>
     {
+        public static string SAVE_KEY => "sitClaustrophobicRemovalProgress";
+        public static string Description => "claustrophobic removal";
         public static string GetHeaderString()
         {
             return "CLR";

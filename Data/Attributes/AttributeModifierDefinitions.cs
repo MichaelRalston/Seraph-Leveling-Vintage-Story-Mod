@@ -29,7 +29,8 @@ namespace SeraphLeveling.Data.Attributes
             IncrementUnits = "blocks",
             BaseIncrement = SeraphLevelingModSystem.BaseBlocksWalkedPerIncrement,
             IncrementStep = SeraphLevelingModSystem.WalkingIncrementStep,
-            GlobalMaxCredits = SeraphLevelingModSystem.MaxWalkingSpeedPercent
+            GlobalMaxCredits = SeraphLevelingModSystem.MaxWalkingSpeedPercent,
+            StatName = "walkspeed",
         };
 
         public static readonly HungerAttributeModifierDefinition HungerRate = new()
@@ -46,7 +47,8 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% hunger rate",
             BaseIncrement = SeraphLevelingModSystem.BaseSecondsPerIncrement,
             IncrementStep = SeraphLevelingModSystem.HungerIncrementStep,
-            GlobalMaxCredits = SeraphLevelingModSystem.MaxHungerReductionPercent
+            GlobalMaxCredits = SeraphLevelingModSystem.MaxHungerReductionPercent,
+            StatName = "hungerrate",
         };
 
         public static readonly MiningAttributeModifierDefinition MiningSpeed = new()
@@ -67,7 +69,8 @@ namespace SeraphLeveling.Data.Attributes
                 IncrementStep = SeraphLevelingModSystem.IncrementStep,
                 IncrementUnits = "blocks"
             },
-            GlobalMaxCredits = SeraphLevelingModSystem.MaxMiningSpeedPercent
+            GlobalMaxCredits = SeraphLevelingModSystem.MaxMiningSpeedPercent,
+            StatName = "miningSpeedMul"
         };
     }
 }

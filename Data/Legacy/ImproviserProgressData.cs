@@ -37,7 +37,7 @@ namespace SeraphLeveling.Data.Legacy
         }
 
         public static byte GetVersion() {
-            return (byte)2;
+            return (byte)1;
         }
         public override void WriteOut(BinaryWriter writer) {
             writer.Write(TotalRockDamage);
