@@ -25,6 +25,23 @@ namespace SeraphLeveling.Data.Attributes
             ApplyBonus(player, progress);
         }
 
+        public override IChatCommand RegisterCommands(ICoreServerAPI api, IChatCommand c)
+        {
+            return base.RegisterCommands(api, c)
+                            .BeginSubCommand($"{Description}base")
+                            .WithDescription($"Get or set the base {IncrementUnits} per level (admin only)")
+                            .WithArgs(api.ChatCommands.Parsers.OptionalInt(IncrementUnits))
+                            .RequiresPrivilege(Privilege.controlserver)
+                            .HandleWith(OnTraitBaseCommand)
+                        .EndSubCommand()
+                        .BeginSubCommand($"{Description}increment")
+                            .WithDescription($"Get or set the {Description} increment step per credit (admin only)")
+                            .WithArgs(api.ChatCommands.Parsers.OptionalInt("step"))
+                            .RequiresPrivilege(Privilege.controlserver)
+                            .HandleWith(OnTraitIncrementCommand)
+                        .EndSubCommand();
+        }
+
         public TextCommandResult OnTraitIncrementCommand(TextCommandCallingArgs args)
         {
             int? newValue = (int?)args[0];
