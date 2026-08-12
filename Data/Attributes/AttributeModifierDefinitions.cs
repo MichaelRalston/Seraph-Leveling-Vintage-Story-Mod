@@ -26,7 +26,9 @@ namespace SeraphLeveling.Data.Attributes
             Name = "Technical",
             ExtraTraitKey = SeraphLevelingModSystem.TECHNICAL_TRAIT_CODE,
             UnlockedKey = SeraphLevelingModSystem.WATCHED_TECHNICAL_UNLOCKED,
-            NotifyLangKey = "seraphleveling:message-technical-unlock"
+            NotifyLangKey = "seraphleveling:message-technical-unlock",
+            GlobalMaxCredits = SeraphLevelingModSystem.TechnicalRequiredTranslocatorRepairs,
+            CreditDescription = "translocators",
         };
 
         public static readonly WalkingAttributeModifierDefinition WalkingSpeed = new()

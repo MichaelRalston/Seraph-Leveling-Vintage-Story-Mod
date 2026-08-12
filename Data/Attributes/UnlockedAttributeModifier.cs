@@ -52,7 +52,7 @@ namespace SeraphLeveling.Data.Attributes
             if (progress.IsUnlocked) return;
 
             // Perform the unlock
-            progress.IsUnlocked = true;
+            UnlockInner(player, progress);
             MarkForSave(true);
             ApplyUnlock(player, progress);
 
@@ -61,6 +61,11 @@ namespace SeraphLeveling.Data.Attributes
             {
                 SeraphLevelingModSystem.NotifyLevelUp(player, Lang.Get(NotifyLangKey));
             }
+        }
+
+        protected virtual void UnlockInner(IServerPlayer player, PD progress)
+        {
+            progress.IsUnlocked = true;
         }
 
         public virtual void ApplyUnlock(IServerPlayer player, PD progress)

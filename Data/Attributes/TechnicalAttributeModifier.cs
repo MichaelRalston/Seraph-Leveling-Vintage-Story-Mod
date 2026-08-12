@@ -6,7 +6,7 @@ using Vintagestory.API.Server;
 
 namespace SeraphLeveling.Data.Attributes
 {
-    public record class TechnicalAttributeModifierDefinition : UnlockedAttributeModifierDefinition<TechnicalAttributeModifierDefinition, TechnicalAttributeModifierProgressData>, IConstructable<TechnicalAttributeModifierDefinition, TechnicalAttributeModifierProgressData>
+    public record class TechnicalAttributeModifierDefinition : ScoredUnlockedAttributeModifierDefinition<TechnicalAttributeModifierDefinition, TechnicalAttributeModifierProgressData>, IConstructable<TechnicalAttributeModifierDefinition, TechnicalAttributeModifierProgressData>
     {
         public static TechnicalAttributeModifierProgressData Create(TechnicalAttributeModifierDefinition def)
         {
@@ -16,38 +16,27 @@ namespace SeraphLeveling.Data.Attributes
         public override void ResetProgress(IServerPlayer player)
         {
             var progress = GetDict(player);
-            progress.TranslocatorsRepaired = 0;
+            progress.TotalCredits = 0;
             base.ResetProgress(player);
         }
 
         public override void GetTraitAllCommandLine(IPlayer player, StringBuilder sb) {
             var progress = GetDict(player);
-            sb.AppendLine($"{Name}: {progress.TranslocatorsRepaired}/{SeraphLevelingModSystem.TechnicalRequiredTranslocatorRepairs} translocators ({(progress.IsUnlocked ? "UNLOCKED" : "locked")})");
+            sb.AppendLine($"{Name}: {progress.TotalCredits}/{SeraphLevelingModSystem.TechnicalRequiredTranslocatorRepairs} translocators ({(progress.IsUnlocked ? "UNLOCKED" : "locked")})");
+        }
+
+        public override void ApplyUnlock(IServerPlayer player, TechnicalAttributeModifierProgressData progress)
+        {
+            base.ApplyUnlock(player, progress);
+            
+            // Set the temporal gear repair cost reduction stat
+            // -1 means one fewer temporal gear needed to repair translocators
+            float gearCostReduction = progress.IsUnlocked ? -1f : 0f;
+            player.Entity.Stats.Set("temporalGearTLRepairCost", SeraphLevelingModSystem.TECHNICAL_STAT_CODE, gearCostReduction, false);
         }
     }
 
-    public class TechnicalAttributeModifierProgressData(TechnicalAttributeModifierDefinition definition) : UnlockedAttributeModifierProgressData<TechnicalAttributeModifierDefinition, TechnicalAttributeModifierProgressData>(definition)
+    public class TechnicalAttributeModifierProgressData(TechnicalAttributeModifierDefinition definition) : ScoredUnlockedAttributeModifierProgressData<TechnicalAttributeModifierDefinition, TechnicalAttributeModifierProgressData>(definition)
     {
-        /// <summary>Number of translocators repaired.</summary>
-        public int TranslocatorsRepaired { get; set; } = 0;
-
-        public override void ReadVersion(byte version, BinaryReader reader)
-        {
-            switch (version)
-            {
-                case 1:
-                    TranslocatorsRepaired = reader.ReadInt32();
-                    IsUnlocked = reader.ReadBoolean();
-                    break;
-                default:
-                    throw new NotSupportedException($"Version {version} is not supported");
-            }
-        }
-
-        public override void WriteOut(BinaryWriter writer)
-        {
-            writer.Write(TranslocatorsRepaired);
-            writer.Write(IsUnlocked);
-        }
     }
 }

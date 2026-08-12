@@ -4673,12 +4673,7 @@ namespace SeraphLeveling
             }
 
             // Apply technical unlock
-            var technicalProg = TechnicalProgress.GetOrAdd(playerUid, _ => new TechnicalProgressData());
-            if (technicalProg.IsUnlocked)
-            {
-                ApplyTechnicalBonusStatic(byPlayer, true);
-                ServerApi.Logger.Debug($"[SeraphLeveling] Applied technical unlock to player {byPlayer.PlayerName}");
-            }
+            AttributeModifierDefinitions.Technical.HandleLogin(byPlayer);
 
             // Apply hardy health unlock
             var hardyHealthProg = HardyHealthProgress.GetOrAdd(playerUid, _ => new HardyHealthProgressData());
@@ -12173,7 +12168,7 @@ namespace SeraphLeveling
             if (player?.Entity == null) return;
 
             // Check if technical skill is disabled
-            if (IsSkillDisabled("technical")) return;
+            if (IsAttributeModifierDisabled(AttributeModifierDefinitions.Technical)) return;
 
             string playerUid = player.PlayerUID;
             var progress = TechnicalProgress.GetOrAdd(playerUid, _ => new TechnicalProgressData());
@@ -12555,13 +12550,7 @@ namespace SeraphLeveling
             ApplyPreciseBonusStatic(player, 0);
 
             // Reset Technical
-            if (TechnicalProgress.TryGetValue(playerUid, out var technicalProg))
-            {
-                technicalProg.TranslocatorsRepaired = 0;
-                technicalProg.IsUnlocked = false;
-                pendingTechnicalProgressSave = true;
-            }
-            ApplyTechnicalBonusStatic(player, false);
+            AttributeModifierDefinitions.Technical.ResetProgress(player);
 
             // Reset Hardy Health
             if (HardyHealthProgress.TryGetValue(playerUid, out var hardyHealthProg))
@@ -12900,11 +12889,7 @@ namespace SeraphLeveling
             ApplyPreciseBonusStatic(player, maxPreciseCredits);
 
             // Unlock Technical
-            var technicalProg = TechnicalProgress.GetOrAdd(playerUid, _ => new TechnicalProgressData());
-            technicalProg.TranslocatorsRepaired = TechnicalRequiredTranslocatorRepairs;
-            technicalProg.IsUnlocked = true;
-            pendingTechnicalProgressSave = true;
-            ApplyTechnicalBonusStatic(player, true);
+            AttributeModifierDefinitions.Technical.Unlock(player);
 
             // Unlock Hardy Health
             var hardyHealthProg = HardyHealthProgress.GetOrAdd(playerUid, _ => new HardyHealthProgressData());
