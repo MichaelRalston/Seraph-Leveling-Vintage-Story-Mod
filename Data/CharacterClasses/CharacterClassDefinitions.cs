@@ -19,7 +19,12 @@ namespace SeraphLeveling.Data.CharacterClasses
         {
             Id = "hunter",
             Traits = [
-                TraitDefinitions.Fleetfooted
+                TraitDefinitions.Focused,
+                TraitDefinitions.Resourceful,
+                TraitDefinitions.Fleetfooted,
+                TraitDefinitions.Bowyer,
+                TraitDefinitions.Farsighted,
+                TraitDefinitions.Claustrophobic
             ]
         };
 
@@ -27,6 +32,12 @@ namespace SeraphLeveling.Data.CharacterClasses
         {
             Id = "malefactor",
             Traits = [
+                TraitDefinitions.Forager,
+                TraitDefinitions.Pilferer,
+                TraitDefinitions.Furtive,
+                TraitDefinitions.Improviser,
+                TraitDefinitions.Frail,
+                TraitDefinitions.Nervous
             ]
         };
 
@@ -34,7 +45,12 @@ namespace SeraphLeveling.Data.CharacterClasses
         {
             Id = "clockmaker",
             Traits = [
-                TraitDefinitions.Tinkerer
+                TraitDefinitions.Precise,
+                TraitDefinitions.Technical,
+                TraitDefinitions.Fleetfooted,
+                TraitDefinitions.Tinkerer,
+                TraitDefinitions.Frail,
+                TraitDefinitions.Nervous
             ]
         };
 
@@ -42,6 +58,12 @@ namespace SeraphLeveling.Data.CharacterClasses
         {
             Id = "blackguard",
             Traits = [
+                TraitDefinitions.Soldier,
+                TraitDefinitions.Hardy,
+                TraitDefinitions.Merciless,
+                TraitDefinitions.Ravenous,
+                TraitDefinitions.Nearsighted,
+                TraitDefinitions.Heavyhanded
             ]
         };
 
@@ -49,6 +71,11 @@ namespace SeraphLeveling.Data.CharacterClasses
         {
             Id = "tailor",
             Traits = [
+                TraitDefinitions.Clothier,
+                TraitDefinitions.Mender,
+                TraitDefinitions.Civil,
+                TraitDefinitions.Weak,
+                TraitDefinitions.Kind
             ]
         };
 
