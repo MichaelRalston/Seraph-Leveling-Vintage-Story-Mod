@@ -23,7 +23,7 @@ namespace SeraphLeveling.Data.Attributes
 
         public override void GetTraitAllCommandLine(IPlayer player, StringBuilder sb) {
             var progress = GetDict(player);
-            sb.AppendLine($"{Name}: {progress.TotalCredits}/{SeraphLevelingModSystem.TechnicalRequiredTranslocatorRepairs} translocators ({(progress.IsUnlocked ? "UNLOCKED" : "locked")})");
+            sb.AppendLine($"{Name}: {progress.TotalCredits}/{GlobalMaxCredits} translocators ({(progress.IsUnlocked ? "UNLOCKED" : "locked")})");
         }
 
         public override void ApplyUnlock(IServerPlayer player, TechnicalAttributeModifierProgressData progress)
@@ -40,6 +40,19 @@ namespace SeraphLeveling.Data.Attributes
         {
             // Check if Tinkerer should now be unlocked
             TraitDefinitions.Tinkerer.CheckUnlocks(player);
+        }
+
+        public override void CollectStatus(IPlayer player, StringBuilder sb)
+        {
+            base.CollectStatus(player, sb);
+
+            var progress = GetDict(player);
+            sb.AppendLine($"Translocators repaired: {progress.TotalCredits} / {GlobalMaxCredits}");
+            if (!progress.IsUnlocked)
+            {
+                int remaining = GlobalMaxCredits - progress.TotalCredits;
+                sb.AppendLine($"Repair {remaining} more translocators to unlock!");
+            }
         }
     }
 

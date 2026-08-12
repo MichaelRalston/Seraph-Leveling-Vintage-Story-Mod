@@ -465,10 +465,6 @@ namespace SeraphLeveling
         // Technical progression configuration
         public static int TechnicalRequiredTranslocatorRepairs = 5;  // Repairs needed to unlock
 
-        // Storage for technical progress
-        public static ConcurrentDictionary<string, TechnicalProgressData> TechnicalProgress = new ConcurrentDictionary<string, TechnicalProgressData>();
-        public static volatile bool pendingTechnicalProgressSave = false;
-
         // =========================================================================
         // HARDY HEALTH TRAIT - Unlocks +5 HP after reaching mining and armor thresholds
         // =========================================================================
@@ -1335,7 +1331,7 @@ namespace SeraphLeveling
                     .WithDescription("View your technical trait progress")
                     .RequiresPrivilege(Privilege.chat)
                     .RequiresPlayer()
-                    .HandleWith(OnTraitTechnicalCommand)
+                    .HandleWith(TraitDefinitions.Technical.HandleTraitCommand)
                 .EndSubCommand()
                 .BeginSubCommand("technicalunlock")
                     .WithDescription("Manually unlock or lock technical trait (admin only)")
@@ -6197,10 +6193,6 @@ namespace SeraphLeveling
                 {
                     PersistPreciseProgress();
                 }
-                if (pendingTechnicalProgressSave || !TechnicalProgress.IsEmpty)
-                {
-                    PersistTechnicalProgress();
-                }
                 if (pendingHardyHealthProgressSave || !HardyHealthProgress.IsEmpty)
                 {
                     PersistHardyHealthProgress();
@@ -6287,7 +6279,6 @@ namespace SeraphLeveling
             ForagerProgress.Clear();
             FurtiveProgress.Clear();
             PreciseProgress.Clear();
-            TechnicalProgress.Clear();
             HardyHealthProgress.Clear();
             BowyerProgress.Clear();
             ImproviserProgress.Clear();
@@ -6311,7 +6302,6 @@ namespace SeraphLeveling
             pendingForagerProgressSave = false;
             pendingFurtiveProgressSave = false;
             pendingPreciseProgressSave = false;
-            pendingTechnicalProgressSave = false;
             pendingHardyHealthProgressSave = false;
             pendingBowyerProgressSave = false;
             pendingImproviserProgressSave = false;
@@ -6328,11 +6318,6 @@ namespace SeraphLeveling
             // Guard against persisting empty data after Dispose() has cleared dictionaries
             if (isDisposed) return;
 
-            var saveableAttributes = LoadedMods
-                    .SelectMany(mod => mod.CharacterClasses)
-                    .SelectMany(charClass => charClass.Traits)
-                    .SelectMany(trait => trait.Attributes)
-                    .ToHashSet();
             foreach (var def in LoadedAttributes)
             {
                 if (PendingSaves.GetValueOrDefault(def, false) || def.HasUnsavedProgress())
@@ -6400,12 +6385,6 @@ namespace SeraphLeveling
             {
                 PersistPreciseProgress();
                 pendingPreciseProgressSave = false;
-            }
-
-            if (pendingTechnicalProgressSave || !TechnicalProgress.IsEmpty)
-            {
-                PersistTechnicalProgress();
-                pendingTechnicalProgressSave = false;
             }
 
             if (pendingHardyHealthProgressSave || !HardyHealthProgress.IsEmpty)
@@ -12087,29 +12066,6 @@ namespace SeraphLeveling
         }
 
         /// <summary>
-        /// Handler for /trait technical command.
-        /// </summary>
-        private TextCommandResult OnTraitTechnicalCommand(TextCommandCallingArgs args)
-        {
-            IServerPlayer player = args.Caller.Player as IServerPlayer;
-            if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
-
-            string playerUid = player.PlayerUID;
-            var progress = TechnicalProgress.GetOrAdd(playerUid, _ => new TechnicalProgressData());
-
-            var sb = new StringBuilder();
-            sb.AppendLine($"Technical trait: {(progress.IsUnlocked ? "UNLOCKED" : "Locked")}");
-            sb.AppendLine($"Translocators repaired: {progress.TranslocatorsRepaired} / {TechnicalRequiredTranslocatorRepairs}");
-            if (!progress.IsUnlocked)
-            {
-                int remaining = TechnicalRequiredTranslocatorRepairs - progress.TranslocatorsRepaired;
-                sb.AppendLine($"Repair {remaining} more translocators to unlock!");
-            }
-
-            return TextCommandResult.Success(sb.ToString());
-        }
-
-        /// <summary>
         /// Process a translocator repair (called from Harmony patch).
         /// Gives progress toward Technical trait unlock.
         /// </summary>
@@ -12588,7 +12544,7 @@ namespace SeraphLeveling
             if (ForagerProgress.TryGetValue(uid, out var forager)) ex.Forager = forager;
             if (FurtiveProgress.TryGetValue(uid, out var furtive)) ex.Furtive = furtive;
             if (PreciseProgress.TryGetValue(uid, out var precise)) ex.Precise = precise;
-            if (TechnicalProgress.TryGetValue(uid, out var technical)) ex.Technical = technical;
+            if (AttributeModifierDefinitions.Technical.ProgressDictionary.TryGetValue(uid, out var technical)) ex.Technical = technical;
             if (HardyHealthProgress.TryGetValue(uid, out var hardy)) ex.HardyHealth = hardy;
             if (BowyerProgress.TryGetValue(uid, out var bowyer)) ex.Bowyer = bowyer;
             if (ImproviserProgress.TryGetValue(uid, out var improviser)) ex.Improviser = improviser;
@@ -12616,7 +12572,7 @@ namespace SeraphLeveling
             if (ex.Forager != null) { ForagerProgress[uid] = ex.Forager; pendingForagerProgressSave = true; }
             if (ex.Furtive != null) { FurtiveProgress[uid] = ex.Furtive; pendingFurtiveProgressSave = true; }
             if (ex.Precise != null) { PreciseProgress[uid] = ex.Precise; pendingPreciseProgressSave = true; }
-            if (ex.Technical != null) { TechnicalProgress[uid] = ex.Technical; pendingTechnicalProgressSave = true; }
+            if (ex.Technical != null) { AttributeModifierDefinitions.Technical.ProgressDictionary[uid] = ex.Technical; AttributeModifierDefinitions.Technical.MarkForSave(true); }
             if (ex.HardyHealth != null) { HardyHealthProgress[uid] = ex.HardyHealth; pendingHardyHealthProgressSave = true; }
             if (ex.Bowyer != null) { BowyerProgress[uid] = ex.Bowyer; pendingBowyerProgressSave = true; }
             if (ex.Improviser != null) { ImproviserProgress[uid] = ex.Improviser; pendingImproviserProgressSave = true; }
@@ -13876,7 +13832,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistTechnicalProgress()
         {
-            PersistProgress<TechnicalProgressData>();
+            AttributeModifierDefinitions.Technical.PersistProgress(ServerApi);
         }
 
         /// <summary>
@@ -13884,7 +13840,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadTechnicalProgress()
         {
-            LoadProgress<TechnicalProgressData>();
+            AttributeModifierDefinitions.Technical.LoadProgress(ServerApi);
         }
 
         // =========================================================================

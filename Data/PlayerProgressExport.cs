@@ -35,7 +35,7 @@ namespace SeraphLeveling.Data
         public ForagerProgressData Forager;
         public FurtiveProgressData Furtive;
         public PreciseProgressData Precise;
-        public TechnicalProgressData Technical;
+        public TechnicalAttributeModifierProgressData Technical;
         public HardyHealthProgressData HardyHealth;
         public BowyerProgressData Bowyer;
         public ImproviserProgressData Improviser;
