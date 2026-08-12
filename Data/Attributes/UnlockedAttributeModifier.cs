@@ -25,7 +25,7 @@ namespace SeraphLeveling.Data.Attributes
             return GetDict(player).IsUnlocked;
         }
 
-        public void GetTraitAllCommandLine(IPlayer player, StringBuilder sb) {
+        public virtual void GetTraitAllCommandLine(IPlayer player, StringBuilder sb) {
             var progress = GetDict(player);
             sb.AppendLine($"{Name}: {(progress.IsUnlocked ? "UNLOCKED" : "locked")}");
         }

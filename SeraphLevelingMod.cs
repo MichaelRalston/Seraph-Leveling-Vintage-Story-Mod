@@ -1937,8 +1937,7 @@ namespace SeraphLeveling
             var clothierProg = ClothierProgress.GetOrAdd(playerUid, _ => new ClothierProgressData());
             sb.AppendLine($"Clothier: {clothierProg.UniqueClothesWorn.Count}/{ClothierRequiredUniqueClothes} clothes ({(clothierProg.SewingKitUnlocked ? "UNLOCKED" : "locked")})");
 
-            var technicalProg = TechnicalProgress.GetOrAdd(playerUid, _ => new TechnicalProgressData());
-            sb.AppendLine($"Technical: {technicalProg.TranslocatorsRepaired}/{TechnicalRequiredTranslocatorRepairs} translocators ({(technicalProg.IsUnlocked ? "UNLOCKED" : "locked")})");
+            AttributeModifierDefinitions.Technical.GetTraitAllCommandLine(player, sb);
 
             var hardyHealthProg = HardyHealthProgress.GetOrAdd(playerUid, _ => new HardyHealthProgressData());
             sb.AppendLine($"Hardy Health: {(hardyHealthProg.IsUnlocked ? "UNLOCKED" : "locked")}");

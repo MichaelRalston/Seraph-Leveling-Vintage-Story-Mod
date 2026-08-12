@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.Text;
+using Vintagestory.API.Common;
 using Vintagestory.API.Server;
 
 namespace SeraphLeveling.Data.Attributes
@@ -16,6 +18,11 @@ namespace SeraphLeveling.Data.Attributes
             var progress = GetDict(player);
             progress.TranslocatorsRepaired = 0;
             base.ResetProgress(player);
+        }
+
+        public override void GetTraitAllCommandLine(IPlayer player, StringBuilder sb) {
+            var progress = GetDict(player);
+            sb.AppendLine($"{Name}: {progress.TranslocatorsRepaired}/{SeraphLevelingModSystem.TechnicalRequiredTranslocatorRepairs} translocators ({(progress.IsUnlocked ? "UNLOCKED" : "locked")})");
         }
     }
 
