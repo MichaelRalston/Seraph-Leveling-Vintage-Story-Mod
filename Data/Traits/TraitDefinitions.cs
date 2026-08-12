@@ -372,5 +372,123 @@ namespace SeraphLeveling.Data.Traits
             Attributes = [
             ]
         };
+
+        public static readonly TraitDefinition EarthSinger = new()
+        {
+            Id = "earthsinger",
+            Attributes = [
+            ]
+        };
+
+        public static readonly TraitDefinition Rancher = new()
+        {
+            Id = "rancher",
+            Attributes = [
+            ]
+        };
+
+        public static readonly TraitDefinition WildernessExplorer = new()
+        {
+            Id = "wildernessexplorer",
+            Attributes = [
+            ],
+            Requirements = [
+            ]
+        };
+
+        public static readonly TraitDefinition Butcher = new()
+        {
+            Id = "butcher",
+            Attributes = [
+            ]
+        };
+
+        public static readonly TraitDefinition Ranger = new()
+        {
+            Id = "ranger",
+            Attributes = [
+            ]
+        };
+
+        public static readonly TraitDefinition WellAdjusted = new()
+        {
+            Id = "welladjusted",
+            Attributes = [
+            ]
+        };
+
+        public static readonly TraitDefinition Bulwark = new()
+        {
+            Id = "bulwark",
+            Attributes = [
+            ]
+        };
+
+        public static readonly TraitDefinition ArmyMedic = new()
+        {
+            Id = "armymedic",
+            Attributes = [
+            ]
+        };
+
+        public static readonly TraitDefinition StrongArmed = new()
+        {
+            Id = "strongarmed",
+            Attributes = [
+            ]
+        };
+
+        public static readonly TraitDefinition HeavyHands = new()
+        {
+            Id = "heavyhands",
+            Attributes = [
+            ]
+        };
+
+        public static readonly TraitDefinition Culinary = new()
+        {
+            Id = "culinary",
+            Attributes = [
+            ],
+            Requirements = [
+            ]
+        };
+
+        public static readonly TraitDefinition Allumette = new()
+        {
+            Id = "allumette",
+            Attributes = [
+            ]
+        };
+
+        public static readonly TraitDefinition Weaver = new()
+        {
+            Id = "weaver",
+            Attributes = [
+            ],
+            Requirements = [
+            ]
+        };
+
+        public static readonly TraitDefinition Sacrificial = new()
+        {
+            Id = "sacrificial",
+            Attributes = [
+            ]
+        };
+
+        public static readonly TraitDefinition Insane = new()
+        {
+            Id = "insane",
+            Attributes = [
+            ]
+        };
+
+        public static readonly TraitDefinition Nudist = new()
+        {
+            Id = "nudist",
+            Attributes = [
+            ]
+        };
     }
 }

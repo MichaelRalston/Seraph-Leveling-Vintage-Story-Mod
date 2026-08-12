@@ -159,6 +159,11 @@ namespace SeraphLeveling.Data.CharacterClasses
         {
             Id = "homesteader",
             Traits = [
+                TraitDefinitions.Propagator,
+                TraitDefinitions.EarthSinger,
+                TraitDefinitions.Naturalist,
+                TraitDefinitions.Rancher,
+                TraitDefinitions.Claustrophobic
             ]
         };
 
@@ -166,6 +171,12 @@ namespace SeraphLeveling.Data.CharacterClasses
         {
             Id = "huntsman",
             Traits = [
+                TraitDefinitions.Bowyer,
+                TraitDefinitions.WildernessExplorer,
+                TraitDefinitions.Butcher,
+                TraitDefinitions.Ranger,
+                TraitDefinitions.WellAdjusted,
+                TraitDefinitions.Claustrophobic
             ]
         };
 
@@ -173,6 +184,12 @@ namespace SeraphLeveling.Data.CharacterClasses
         {
             Id = "guardsman",
             Traits = [
+                TraitDefinitions.Merciless,
+                TraitDefinitions.Bulwark,
+                TraitDefinitions.ArmyMedic,
+                TraitDefinitions.StrongArmed,
+                TraitDefinitions.HeavyHands,
+                TraitDefinitions.Ravenous
             ]
         };
 
@@ -180,6 +197,10 @@ namespace SeraphLeveling.Data.CharacterClasses
         {
             Id = "hearthmaster",
             Traits = [
+                TraitDefinitions.Culinary,
+                TraitDefinitions.Butcher,
+                TraitDefinitions.Allumette,
+                TraitDefinitions.Agoraphobic
             ]
         };
 
@@ -187,6 +208,10 @@ namespace SeraphLeveling.Data.CharacterClasses
         {
             Id = "haberdasher",
             Traits = [
+                TraitDefinitions.Clothier,
+                TraitDefinitions.Weaver,
+                TraitDefinitions.Townie,
+                TraitDefinitions.Agoraphobic
             ]
         };
 
@@ -194,6 +219,9 @@ namespace SeraphLeveling.Data.CharacterClasses
         {
             Id = "zealot",
             Traits = [
+                TraitDefinitions.Sacrificial,
+                TraitDefinitions.Insane,
+                TraitDefinitions.Nudist
             ]
         };
 
