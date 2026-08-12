@@ -31,6 +31,21 @@ namespace SeraphLeveling.Data.Attributes
             CreditDescription = "translocators",
         };
 
+        public static readonly BowyerAttributeModifierDefinition Bowyer = new()
+        {
+            Id = "bowyer",
+            SaveKey = "sitBowyerProgress",
+            Description = "bowyer",
+            PersistenceHeader = "BWY",
+            Name = "Bowyer",
+            ExtraTraitKey = SeraphLevelingModSystem.BOWYER_TRAIT_CODE,
+            UnlockedKey = SeraphLevelingModSystem.WATCHED_BOWYER_UNLOCKED,
+            NotifyLangKey = "seraphleveling:message-bowyer-unlock",
+            GlobalMaxCredits = SeraphLevelingModSystem.BowyerBowDamageThreshold,
+            CreditDescription = "bow damage",
+            WatchedCreditsAttributeKey = SeraphLevelingModSystem.WATCHED_BOWYER_BOW_DAMAGE,
+        };
+
         public static readonly WalkingAttributeModifierDefinition WalkingSpeed = new()
         {
             Id = "walkingSpeed",

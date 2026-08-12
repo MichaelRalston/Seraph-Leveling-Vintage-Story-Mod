@@ -14,13 +14,6 @@ namespace SeraphLeveling.Data.Attributes
             return new TechnicalAttributeModifierProgressData(def);
         }
 
-        public override void ResetProgress(IServerPlayer player)
-        {
-            var progress = GetDict(player);
-            progress.TotalCredits = 0;
-            base.ResetProgress(player);
-        }
-
         public override void GetTraitAllCommandLine(IPlayer player, StringBuilder sb) {
             var progress = GetDict(player);
             sb.AppendLine($"{Name}: {progress.TotalCredits}/{GlobalMaxCredits} translocators ({(progress.IsUnlocked ? "UNLOCKED" : "locked")})");
@@ -47,10 +40,10 @@ namespace SeraphLeveling.Data.Attributes
             base.CollectStatus(player, sb);
 
             var progress = GetDict(player);
-            sb.AppendLine($"Translocators repaired: {progress.TotalCredits} / {GlobalMaxCredits}");
+            sb.AppendLine($"Translocators repaired: {progress.TotalCredits:F0} / {GlobalMaxCredits:F0}");
             if (!progress.IsUnlocked)
             {
-                int remaining = GlobalMaxCredits - progress.TotalCredits;
+                int remaining = (int)(GlobalMaxCredits - progress.TotalCredits);
                 sb.AppendLine($"Repair {remaining} more translocators to unlock!");
             }
         }

@@ -31,8 +31,10 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "focused",
             Attributes = [
+                (AttributeModifierDefinitions.Bowyer, 1)
             ],
             Requirements = [
+                // TODO Generic ranged damage 10%
             ]
         };
 

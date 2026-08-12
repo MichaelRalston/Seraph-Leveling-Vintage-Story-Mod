@@ -9,10 +9,11 @@ namespace SeraphLeveling.Data.Attributes
 {
     public abstract record class ScoredUnlockedAttributeModifierDefinition<D, PD> : UnlockedAttributeModifierDefinition<D, PD> where PD : ScoredUnlockedAttributeModifierProgressData<D, PD> where D : ScoredUnlockedAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
     {
-        public required int GlobalMaxCredits { get; set; }
+        public required float GlobalMaxCredits { get; set; }
         public required string CreditDescription { get; init; }
+        public string WatchedCreditsAttributeKey { get; init; } = null;
 
-        public virtual void AddCredits(IServerPlayer player, int toAdd)
+        public virtual void AddCredits(IServerPlayer player, float toAdd)
         {
             var progress = GetDict(player);
 
@@ -22,8 +23,14 @@ namespace SeraphLeveling.Data.Attributes
             progress.TotalCredits += toAdd;
             MarkForSave(true);
 
-            SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Player {player.PlayerName} made progress towards {Name} ({progress.TotalCredits} / {GlobalMaxCredits})");
+            if (!string.IsNullOrWhiteSpace(WatchedCreditsAttributeKey))
+            {
+                player.Entity.WatchedAttributes.SetFloat(WatchedCreditsAttributeKey, progress.TotalCredits);
+            }
 
+            SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Player {player.PlayerName} made progress towards {Name} ({progress.TotalCredits:F0} / {GlobalMaxCredits:F0})");
+
+            // TODO Also check any requirements on the enclosing trait (e.g. ranged damage 10% for bowyer)
             if (progress.TotalCredits >= GlobalMaxCredits)
             {
                 progress.IsUnlocked = true;
@@ -56,7 +63,7 @@ namespace SeraphLeveling.Data.Attributes
 
     public class ScoredUnlockedAttributeModifierProgressData<D, PD>(D definition) : UnlockedAttributeModifierProgressData<D, PD>(definition) where PD : ScoredUnlockedAttributeModifierProgressData<D, PD> where D : ScoredUnlockedAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
     {
-        public int TotalCredits { get; set; } = 0;
+        public float TotalCredits { get; set; } = 0;
 
         public override void ReadVersion(byte version, BinaryReader reader)
         {

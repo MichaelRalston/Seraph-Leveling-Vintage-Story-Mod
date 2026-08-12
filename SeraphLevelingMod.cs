@@ -1938,8 +1938,7 @@ namespace SeraphLeveling
             var hardyHealthProg = HardyHealthProgress.GetOrAdd(playerUid, _ => new HardyHealthProgressData());
             sb.AppendLine($"Hardy Health: {(hardyHealthProg.IsUnlocked ? "UNLOCKED" : "locked")}");
 
-            var bowyerProg = BowyerProgress.GetOrAdd(playerUid, _ => new BowyerProgressData());
-            sb.AppendLine($"Bowyer: {(bowyerProg.IsUnlocked ? "UNLOCKED" : $"{bowyerProg.TotalBowDamage:F0} bow damage (locked)")}");
+            AttributeModifierDefinitions.Bowyer.GetTraitAllCommandLine(player, sb);
 
             var improviserProg = ImproviserProgress.GetOrAdd(playerUid, _ => new ImproviserProgressData());
             sb.AppendLine($"Improviser: {(improviserProg.IsUnlocked ? "UNLOCKED" : $"{improviserProg.TotalRockDamage:F0} rock damage (locked)")}");
@@ -4680,12 +4679,7 @@ namespace SeraphLeveling
             }
 
             // Apply bowyer unlock
-            var bowyerProg = BowyerProgress.GetOrAdd(playerUid, _ => new BowyerProgressData());
-            if (bowyerProg.IsUnlocked)
-            {
-                ApplyBowyerBonusStatic(byPlayer, true);
-                ServerApi.Logger.Debug($"[SeraphLeveling] Applied bowyer unlock to player {byPlayer.PlayerName}");
-            }
+            AttributeModifierDefinitions.Bowyer.HandleLogin(byPlayer);
 
             // Apply improviser unlock
             var improviserProg = ImproviserProgress.GetOrAdd(playerUid, _ => new ImproviserProgressData());
@@ -5779,20 +5773,9 @@ namespace SeraphLeveling
             if (player?.Entity == null || damage <= 0) return;
 
             string playerUid = player.PlayerUID;
-            var progress = BowyerProgress.GetOrAdd(playerUid, _ => new BowyerProgressData());
-
-            // Already unlocked
-            if (progress.IsUnlocked) return;
 
             // Apply sleep buff multiplier if active
-            float modifiedDamage = ApplyXPMultiplier(playerUid, damage);
-            progress.TotalBowDamage += modifiedDamage;
-            pendingBowyerProgressSave = true;
-
-            player.Entity.WatchedAttributes.SetFloat(WATCHED_BOWYER_BOW_DAMAGE, progress.TotalBowDamage);
-
-            // Check if unlock threshold is reached
-            CheckBowyerUnlock(player);
+            AttributeModifierDefinitions.Bowyer.AddCredits(player, ApplyXPMultiplier(playerUid, damage));
         }
 
         /// <summary>
@@ -12109,20 +12092,7 @@ namespace SeraphLeveling
         /// </summary>
         private TextCommandResult OnTraitBowyerCommand(TextCommandCallingArgs args)
         {
-            IServerPlayer player = args.Caller.Player as IServerPlayer;
-            if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
-
-            string playerUid = player.PlayerUID;
-            var progress = BowyerProgress.GetOrAdd(playerUid, _ => new BowyerProgressData());
-            var rangedProgress = RangedProgress.GetOrAdd(playerUid, _ => new RangedProgressData());
-
-            var sb = new StringBuilder();
-            sb.AppendLine($"Bowyer trait: {(progress.IsUnlocked ? "UNLOCKED" : "Locked")}");
-            sb.AppendLine($"Requirements:");
-            sb.AppendLine($"  Ranged level: {rangedProgress.TotalCredits} / {BowyerRangedDamageThreshold} ({(rangedProgress.TotalCredits >= BowyerRangedDamageThreshold ? "✓" : "✗")})");
-            sb.AppendLine($"  Bow damage: {progress.TotalBowDamage:F0} / {BowyerBowDamageThreshold} ({(progress.TotalBowDamage >= BowyerBowDamageThreshold ? "✓" : "✗")})");
-
-            return TextCommandResult.Success(sb.ToString());
+            return TraitDefinitions.Bowyer.HandleTraitCommand(args);
         }
 
         /// <summary>
@@ -12228,19 +12198,7 @@ namespace SeraphLeveling
         /// </summary>
         private TextCommandResult OnTraitBowyerUnlockCommand(TextCommandCallingArgs args)
         {
-            IServerPlayer player = args.Caller.Player as IServerPlayer;
-            if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
-
-            bool unlock = (bool)args[0];
-
-            string playerUid = player.PlayerUID;
-            var progress = BowyerProgress.GetOrAdd(playerUid, _ => new BowyerProgressData());
-            progress.IsUnlocked = unlock;
-
-            pendingBowyerProgressSave = true;
-            ApplyBowyerBonusStatic(player, unlock);
-
-            return TextCommandResult.Success($"Bowyer trait {(unlock ? "unlocked" : "locked")}.");
+            return AttributeModifierDefinitions.Bowyer.HandleUnlockCommand(args);
         }
 
         /// <summary>
@@ -12546,7 +12504,7 @@ namespace SeraphLeveling
             if (PreciseProgress.TryGetValue(uid, out var precise)) ex.Precise = precise;
             if (AttributeModifierDefinitions.Technical.ProgressDictionary.TryGetValue(uid, out var technical)) ex.Technical = technical;
             if (HardyHealthProgress.TryGetValue(uid, out var hardy)) ex.HardyHealth = hardy;
-            if (BowyerProgress.TryGetValue(uid, out var bowyer)) ex.Bowyer = bowyer;
+            if (AttributeModifierDefinitions.Bowyer.ProgressDictionary.TryGetValue(uid, out var bowyer)) ex.Bowyer = bowyer;
             if (ImproviserProgress.TryGetValue(uid, out var improviser)) ex.Improviser = improviser;
             if (AttributeModifierDefinitions.Tinkerer.ProgressDictionary.TryGetValue(uid, out var tinkerer)) ex.Tinkerer = tinkerer;
             if (MercilessProgress.TryGetValue(uid, out var merciless)) ex.Merciless = merciless;
@@ -12574,7 +12532,7 @@ namespace SeraphLeveling
             if (ex.Precise != null) { PreciseProgress[uid] = ex.Precise; pendingPreciseProgressSave = true; }
             if (ex.Technical != null) { AttributeModifierDefinitions.Technical.ProgressDictionary[uid] = ex.Technical; AttributeModifierDefinitions.Technical.MarkForSave(true); }
             if (ex.HardyHealth != null) { HardyHealthProgress[uid] = ex.HardyHealth; pendingHardyHealthProgressSave = true; }
-            if (ex.Bowyer != null) { BowyerProgress[uid] = ex.Bowyer; pendingBowyerProgressSave = true; }
+            if (ex.Bowyer != null) { AttributeModifierDefinitions.Bowyer.ProgressDictionary[uid] = ex.Bowyer; AttributeModifierDefinitions.Bowyer.MarkForSave(true); }
             if (ex.Improviser != null) { ImproviserProgress[uid] = ex.Improviser; pendingImproviserProgressSave = true; }
             if (ex.Tinkerer != null) { AttributeModifierDefinitions.Tinkerer.ProgressDictionary[uid] = ex.Tinkerer; AttributeModifierDefinitions.Tinkerer.MarkForSave(true); }
             if (ex.Merciless != null) { MercilessProgress[uid] = ex.Merciless; pendingMercilessProgressSave = true; }
@@ -12782,11 +12740,7 @@ namespace SeraphLeveling
             ApplyHardyHealthBonusStatic(player, true);
 
             // Unlock Bowyer
-            var bowyerProg = BowyerProgress.GetOrAdd(playerUid, _ => new BowyerProgressData());
-            bowyerProg.IsUnlocked = true;
-            bowyerProg.TotalBowDamage = BowyerBowDamageThreshold;
-            pendingBowyerProgressSave = true;
-            ApplyBowyerBonusStatic(player, true);
+            AttributeModifierDefinitions.Bowyer.Unlock(player);
 
             // Unlock Improviser
             var improviserProg = ImproviserProgress.GetOrAdd(playerUid, _ => new ImproviserProgressData());
@@ -13872,7 +13826,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistBowyerProgress()
         {
-            PersistProgress<BowyerProgressData>();
+            AttributeModifierDefinitions.Bowyer.PersistProgress(ServerApi);
         }
 
         /// <summary>
@@ -13880,7 +13834,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadBowyerProgress()
         {
-            LoadProgress<BowyerProgressData>();
+            AttributeModifierDefinitions.Bowyer.LoadProgress(ServerApi);
         }
 
         // =========================================================================
