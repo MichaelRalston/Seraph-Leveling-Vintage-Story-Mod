@@ -58,6 +58,10 @@ namespace SeraphLeveling.Data.Attributes
         {
         }
 
+        public virtual IChatCommand RegisterCommands(ICoreServerAPI _, IChatCommand c) {
+            return c;
+        }
+
         public byte[] PersistenceHeaderBytes => Encoding.ASCII.GetBytes(PersistenceHeader);
         public ConcurrentDictionary<string, PD> ProgressDictionary
         {

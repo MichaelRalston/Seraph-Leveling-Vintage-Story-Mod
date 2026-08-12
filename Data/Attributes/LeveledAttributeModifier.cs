@@ -154,6 +154,29 @@ namespace SeraphLeveling.Data.Attributes
             }
         }
 
+        public override IChatCommand RegisterCommands(ICoreServerAPI api, IChatCommand c)
+        {
+            return c.BeginSubCommand($"{Description}")
+                .WithDescription($"View your {LongDescription} progression stats")
+                .RequiresPrivilege(Privilege.chat)
+                .RequiresPlayer()
+                .HandleWith(HandleTraitCommand)
+            .EndSubCommand()
+            .BeginSubCommand($"{Description}level")
+                .WithDescription($"Get or set your {Description} level (admin only)")
+                .WithArgs(api.ChatCommands.Parsers.OptionalInt("level"))
+                .RequiresPrivilege(Privilege.controlserver)
+                .RequiresPlayer()
+                .HandleWith(HandleLevelCommand)
+            .EndSubCommand()
+            .BeginSubCommand($"{Description}max")
+                .WithDescription($"Get or set the max {LongDescription} bonus percent (admin only)")
+                .WithArgs(api.ChatCommands.Parsers.OptionalInt("percent"))
+                .RequiresPrivilege(Privilege.controlserver)
+                .HandleWith(HandleMaxCommand)
+            .EndSubCommand();
+        }
+
         public TextCommandResult HandleTraitCommand(TextCommandCallingArgs args)
         {
             var player = args.Caller.Player;
@@ -167,7 +190,7 @@ namespace SeraphLeveling.Data.Attributes
 
             return TextCommandResult.Success(sb.ToString().TrimEnd());
         }
-        
+
         public TextCommandResult HandleLevelCommand(TextCommandCallingArgs args)
         {
             var player = args.Caller.Player as IServerPlayer;
