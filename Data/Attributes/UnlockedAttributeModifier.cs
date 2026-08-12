@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text;
+using SeraphLeveling.Data.Traits;
 using Vintagestory.API.Common;
 using Vintagestory.API.Config;
 using Vintagestory.API.Server;
@@ -19,10 +20,29 @@ namespace SeraphLeveling.Data.Attributes
         public required string ExtraTraitKey { get; init; }
         public required string UnlockedKey { get; init; }
         public string NotifyLangKey { get; init; } = null;
+        public required TraitDefinition Trait { get; init; }
 
         public bool IsUnlockedForPlayer(IPlayer player)
         {
             return GetDict(player).IsUnlocked;
+        }
+
+        public override IChatCommand RegisterCommands(ICoreServerAPI api, IChatCommand command)
+        {
+            return base.RegisterCommands(api, command)
+            .BeginSubCommand(Description)
+                .WithDescription($"View your {Description} trait progress")
+                .RequiresPrivilege(Privilege.chat)
+                .RequiresPlayer()
+                .HandleWith(Trait.HandleTraitCommand)
+            .EndSubCommand()
+            .BeginSubCommand($"{Description}unlock")
+                .WithDescription($"Manually unlock or lock {Description} trait (admin only)")
+                .WithArgs(api.ChatCommands.Parsers.Bool("unlock"))
+                .RequiresPrivilege(Privilege.controlserver)
+                .RequiresPlayer()
+                .HandleWith(HandleUnlockCommand)
+            .EndSubCommand();
         }
 
         public virtual void GetTraitAllCommandLine(IPlayer player, StringBuilder sb) {
@@ -75,7 +95,7 @@ namespace SeraphLeveling.Data.Attributes
             // Update extraTraits to show trait if unlocked (for UI display)
             SeraphLevelingModSystem.UpdateExtraTraitStatic(player.Entity, ExtraTraitKey, progress.IsUnlocked);
 
-            // IMPORTANT: Add ID to extraTraits to unlock tuning spear recipes
+            // IMPORTANT: Add ID to extraTraits to unlock tuning spear etc recipes
             // The game's recipe system checks extraTraits for dynamically granted traits
             // that unlock recipes via requiresTrait (e.g., the tuning spear requires "tinkerer")
             SeraphLevelingModSystem.UpdateExtraTraitStatic(player.Entity, Id, progress.IsUnlocked);

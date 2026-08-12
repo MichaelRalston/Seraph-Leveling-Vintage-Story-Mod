@@ -1285,21 +1285,9 @@ namespace SeraphLeveling
                     .RequiresPrivilege(Privilege.controlserver)
                     .RequiresPlayer()
                     .HandleWith(OnTraitPreciseLevelCommand)
-                .EndSubCommand()
-                // Technical trait commands
-                .BeginSubCommand("technical")
-                    .WithDescription("View your technical trait progress")
-                    .RequiresPrivilege(Privilege.chat)
-                    .RequiresPlayer()
-                    .HandleWith(TraitDefinitions.Technical.HandleTraitCommand)
-                .EndSubCommand()
-                .BeginSubCommand("technicalunlock")
-                    .WithDescription("Manually unlock or lock technical trait (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.Bool("unlock"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .RequiresPlayer()
-                    .HandleWith(AttributeModifierDefinitions.Technical.HandleUnlockCommand)
-                .EndSubCommand()
+                .EndSubCommand();
+                AttributeModifierDefinitions.Technical.RegisterCommands(api, command);
+                command
                 // Hardy health trait commands
                 .BeginSubCommand("hardyhealth")
                     .WithDescription("View your hardy health unlock progress")
