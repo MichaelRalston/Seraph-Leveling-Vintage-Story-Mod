@@ -1,4 +1,5 @@
 using System;
+using SeraphLeveling.Data.Attributes;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Config;
@@ -694,7 +695,7 @@ namespace SeraphLeveling.Patches
             }
 
             // Process Bowyer unlock trait (crude bow crafting)
-            bool bowyerUnlocked = eplr.WatchedAttributes.GetBool(SeraphLevelingModSystem.WATCHED_BOWYER_UNLOCKED, false);
+            bool bowyerUnlocked = eplr.WatchedAttributes.GetBool(AttributeModifierDefinitions.Bowyer.UnlockedKey, false);
             if (bowyerUnlocked && !ClientHasVanillaTrait(eplr, "bowyer", "hunter"))
             {
                 // Skip if the player's class already shows a vanilla Bowyer line — vanilla covers it.

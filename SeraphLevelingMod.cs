@@ -472,22 +472,6 @@ namespace SeraphLeveling
         public static volatile bool pendingHardyHealthProgressSave = false;
 
         // =========================================================================
-        // BOWYER TRAIT - Unlocks crude bow/arrows after ranged damage + bow damage
-        // =========================================================================
-        public const string BOWYER_STAT_CODE = "sitBowyerBonus";
-        public const string WATCHED_BOWYER_UNLOCKED = "sitBowyerUnlocked";
-        public const string WATCHED_BOWYER_BOW_DAMAGE = "sitBowyerBowDamage";
-        public const string BOWYER_TRAIT_CODE = "sitbowyermastery";
-
-        // Bowyer unlock thresholds
-        public static int BowyerRangedDamageThreshold = 10;          // 10% ranged damage bonus required
-        public static int BowyerBowDamageThreshold = 300;            // 300 total bow damage required
-
-        // Storage for bowyer progress
-        public static ConcurrentDictionary<string, BowyerProgressData> BowyerProgress = new ConcurrentDictionary<string, BowyerProgressData>();
-        public static volatile bool pendingBowyerProgressSave = false;
-
-        // =========================================================================
         // IMPROVISER TRAIT - Unlocks sling after thrown rock damage
         // =========================================================================
         public const string IMPROVISER_STAT_CODE = "sitImproviserBonus";
@@ -2172,7 +2156,7 @@ namespace SeraphLeveling
 
                 pendingRangedProgressSave = true;
                 var (dmg, acc, dist) = ApplyRangedBonusStatic(player, progress.TotalCredits);
-                CheckBowyerUnlock(player);
+                TraitDefinitions.Bowyer.CheckUnlocks(player);
                 CheckImproviserUnlock(player);
                 UpdateSkillActivityDay(playerUid, "ranged");
 
@@ -2188,7 +2172,7 @@ namespace SeraphLeveling
 
                 pendingRangedProgressSave = true;
                 var (dmg, acc, dist) = ApplyRangedBonusStatic(player, level);
-                CheckBowyerUnlock(player);
+                TraitDefinitions.Bowyer.CheckUnlocks(player);
                 CheckImproviserUnlock(player);
                 UpdateSkillActivityDay(playerUid, "ranged");
 
@@ -5508,7 +5492,7 @@ namespace SeraphLeveling
                     Lang.Get("seraphleveling:message-ranged-level-up", playerProgress.TotalCredits, playerProgress.TotalCredits, playerProgress.TotalCredits, playerProgress.TotalCredits));
 
                 // Check for trait unlocks that depend on ranged damage
-                CheckBowyerUnlock(attackerPlayer);
+                TraitDefinitions.Bowyer.CheckUnlocks(attackerPlayer);
             }
         }
 
@@ -5950,10 +5934,6 @@ namespace SeraphLeveling
                 {
                     PersistHardyHealthProgress();
                 }
-                if (pendingBowyerProgressSave || !BowyerProgress.IsEmpty)
-                {
-                    PersistBowyerProgress();
-                }
                 if (pendingImproviserProgressSave || !ImproviserProgress.IsEmpty)
                 {
                     PersistImproviserProgress();
@@ -6033,7 +6013,6 @@ namespace SeraphLeveling
             FurtiveProgress.Clear();
             PreciseProgress.Clear();
             HardyHealthProgress.Clear();
-            BowyerProgress.Clear();
             ImproviserProgress.Clear();
             MercilessProgress.Clear();
             ClaustrophobicRemovalProgress.Clear();
@@ -6056,7 +6035,6 @@ namespace SeraphLeveling
             pendingFurtiveProgressSave = false;
             pendingPreciseProgressSave = false;
             pendingHardyHealthProgressSave = false;
-            pendingBowyerProgressSave = false;
             pendingImproviserProgressSave = false;
             pendingMercilessProgressSave = false;
             pendingClaustrophobicRemovalProgressSave = false;
@@ -6144,12 +6122,6 @@ namespace SeraphLeveling
             {
                 PersistHardyHealthProgress();
                 pendingHardyHealthProgressSave = false;
-            }
-
-            if (pendingBowyerProgressSave || !BowyerProgress.IsEmpty)
-            {
-                PersistBowyerProgress();
-                pendingBowyerProgressSave = false;
             }
 
             if (pendingImproviserProgressSave || !ImproviserProgress.IsEmpty)
@@ -10231,56 +10203,6 @@ namespace SeraphLeveling
         }
 
         /// <summary>
-        /// Check and apply Bowyer unlock if thresholds are met.
-        /// Requires 10% ranged damage AND 300 damage with simple bow/longbow.
-        /// </summary>
-        private static void CheckBowyerUnlock(IServerPlayer player)
-        {
-            if (player?.Entity == null) return;
-
-            string playerUid = player.PlayerUID;
-            var progress = BowyerProgress.GetOrAdd(playerUid, _ => new BowyerProgressData());
-
-            // Already unlocked
-            if (progress.IsUnlocked) return;
-
-            // Check ranged damage threshold
-            var rangedProgress = RangedProgress.GetOrAdd(playerUid, _ => new RangedProgressData());
-            if (rangedProgress.TotalCredits < BowyerRangedDamageThreshold) return;
-
-            // Check bow damage threshold
-            if (progress.TotalBowDamage < BowyerBowDamageThreshold) return;
-
-            // Both thresholds met - unlock Bowyer!
-            progress.IsUnlocked = true;
-            pendingBowyerProgressSave = true;
-
-            // Apply the trait
-            ApplyBowyerBonusStatic(player, true);
-
-            // Notify player
-            NotifyLevelUp(player,
-                Lang.Get("seraphleveling:message-bowyer-unlock"));
-        }
-
-        /// <summary>
-        /// Apply Bowyer trait (unlocks crude bow/arrows crafting).
-        /// Also adds "bowyer" to extraTraits to unlock crude bow/arrows recipes.
-        /// </summary>
-        private static void ApplyBowyerBonusStatic(IServerPlayer player, bool unlocked)
-        {
-            player.Entity.WatchedAttributes.SetBool(WATCHED_BOWYER_UNLOCKED, unlocked);
-
-            // Update extraTraits to show Bowyer trait if unlocked (for UI display)
-            UpdateExtraTraitStatic(player.Entity, BOWYER_TRAIT_CODE, unlocked);
-
-            // IMPORTANT: Add "bowyer" to extraTraits to unlock crude bow/arrows recipes
-            // The game's recipe system checks extraTraits for dynamically granted traits
-            // that unlock recipes via requiresTrait (e.g., crude bow/arrows require "bowyer")
-            UpdateExtraTraitStatic(player.Entity, "bowyer", unlocked);
-        }
-
-        /// <summary>
         /// Check and apply Improviser unlock if threshold is met.
         /// Requires 300 damage with thrown rocks.
         /// </summary>
@@ -12173,13 +12095,7 @@ namespace SeraphLeveling
             ApplyHardyHealthBonusStatic(player, false);
 
             // Reset Bowyer
-            if (BowyerProgress.TryGetValue(playerUid, out var bowyerProg))
-            {
-                bowyerProg.IsUnlocked = false;
-                bowyerProg.TotalBowDamage = 0;
-                pendingBowyerProgressSave = true;
-            }
-            ApplyBowyerBonusStatic(player, false);
+            AttributeModifierDefinitions.Bowyer.ResetProgress(player);
 
             // Reset Improviser
             if (ImproviserProgress.TryGetValue(playerUid, out var improviserProg))
