@@ -14,6 +14,12 @@ namespace SeraphLeveling.Patches
         // Reference to the client API, set during patch application
         public static ICoreClientAPI ClientApi { get; set; }
 
+        // The actual vanilla lang key is the literal phrase "No positive or negative traits"
+        // (yes, the key contains spaces). The previous "charactersheet-notraits" key doesn't
+        // exist in vanilla, so Lang.Get returned the key string itself, defeating the
+        // localization check.
+        public const string NO_TRAITS_KEY = "No positive or negative traits";
+
         /// <summary>
         /// Postfix for getClassTraitText - adds dynamic mining and melee progression info.
         /// The method has NO parameters - it's an instance method on CharacterSystem.
@@ -61,23 +67,11 @@ namespace SeraphLeveling.Patches
 
             ClientApi.Logger.Debug($"[SeraphLeveling] getClassTraitText postfix called. Mining: Level={miningLevel}, Bonus={miningBonus}%, HasHardy={hasVanillaHardy} | Melee: Level={meleeLevel}, Bonus={meleeBonus}%, HasSoldier={hasVanillaSoldier} | Ranged: Level={rangedLevel}, HasFocused={hasVanillaFocused} | Walking: Level={walkingLevel}, HasFleetfooted={hasVanillaFleetfooted} | Armor: Dur={armorDurabilityLevel}, Walk={armorWalkSpeedLevel}");
 
-            // Get the "no traits" message - vanilla uses this for classes like Commoner.
-            // The actual vanilla lang key is the literal phrase "No positive or negative traits"
-            // (yes, the key contains spaces). The previous "charactersheet-notraits" key doesn't
-            // exist in vanilla, so Lang.Get returned the key string itself, defeating the
-            // localization check. Subsequent `Contains("No positive or negative traits")`
-            // fallbacks below are kept as a defense-in-depth English match.
-            string noTraitsMsg = Lang.Get("No positive or negative traits");
-
-            ClientApi.Logger.Debug($"[SeraphLeveling] Original result: '{__result}', noTraitsMsg: '{noTraitsMsg}'");
+            ClientApi.Logger.Debug($"[SeraphLeveling] Original result: '{__result}', noTraitsMsg: '{Lang.Get(NO_TRAITS_KEY)}'");
 
             // Check if we have NO real traits (only "no traits" message or empty)
             // Use Contains to handle cases where the message might have formatting
-            bool hasNoTraits = string.IsNullOrEmpty(__result) ||
-                               __result.Trim() == noTraitsMsg.Trim() ||
-                               __result == noTraitsMsg ||
-                               __result.Contains(noTraitsMsg) ||
-                               __result.Contains("No positive or negative traits");
+            bool hasNoTraits = HasNoTraits(__result);
 
             // Process mining progression (Hardy trait)
             // Only show Hardy when miningBonus > 0 (after negative traits are cancelled)
@@ -125,11 +119,7 @@ namespace SeraphLeveling.Patches
                 string plainMeleeTraitName = Lang.Get("seraphleveling:trait-sitmeleemastery");
 
                 // Re-check hasNoTraits after mining processing
-                hasNoTraits = string.IsNullOrEmpty(__result) ||
-                              __result.Trim() == noTraitsMsg.Trim() ||
-                              __result == noTraitsMsg ||
-                              __result.Contains(noTraitsMsg) ||
-                              __result.Contains("No positive or negative traits");
+                hasNoTraits = HasNoTraits(__result);
 
                 if (hasVanillaSoldier)
                 {
@@ -164,11 +154,7 @@ namespace SeraphLeveling.Patches
                 string plainRangedTraitName = Lang.Get("seraphleveling:trait-sitrangedmastery");
 
                 // Re-check hasNoTraits after melee processing
-                hasNoTraits = string.IsNullOrEmpty(__result) ||
-                              __result.Trim() == noTraitsMsg.Trim() ||
-                              __result == noTraitsMsg ||
-                              __result.Contains(noTraitsMsg) ||
-                              __result.Contains("No positive or negative traits");
+                hasNoTraits = HasNoTraits(__result);
 
                 if (hasVanillaFocused)
                 {
@@ -208,11 +194,7 @@ namespace SeraphLeveling.Patches
                 string plainWalkingTraitName = Lang.Get("seraphleveling:trait-sitwalkingmastery");
 
                 // Re-check hasNoTraits after ranged processing
-                hasNoTraits = string.IsNullOrEmpty(__result) ||
-                              __result.Trim() == noTraitsMsg.Trim() ||
-                              __result == noTraitsMsg ||
-                              __result.Contains(noTraitsMsg) ||
-                              __result.Contains("No positive or negative traits");
+                hasNoTraits = HasNoTraits(__result);
 
                 if (hasVanillaFleetfooted)
                 {
@@ -244,11 +226,7 @@ namespace SeraphLeveling.Patches
             if (armorDurabilityLevel > 0 || armorWalkSpeedLevel > 0)
             {
                 // Re-check hasNoTraits after walking processing
-                hasNoTraits = string.IsNullOrEmpty(__result) ||
-                              __result.Trim() == noTraitsMsg.Trim() ||
-                              __result == noTraitsMsg ||
-                              __result.Contains(noTraitsMsg) ||
-                              __result.Contains("No positive or negative traits");
+                hasNoTraits = HasNoTraits(__result);
 
                 // Calculate combined bonuses
                 int totalDurabilityBonus = armorDurabilityBonus;
@@ -308,11 +286,7 @@ namespace SeraphLeveling.Patches
                 string dynamicClothierTrait = BuildLocalizedTraitLine("clothier", "seraphleveling:trait-clothier-dynamic");
 
                 // Re-check hasNoTraits after armor processing
-                hasNoTraits = string.IsNullOrEmpty(__result) ||
-                              __result.Trim() == noTraitsMsg.Trim() ||
-                              __result == noTraitsMsg ||
-                              __result.Contains(noTraitsMsg) ||
-                              __result.Contains("No positive or negative traits");
+                hasNoTraits = HasNoTraits(__result);
 
                 if (hasNoTraits)
                 {
@@ -338,11 +312,7 @@ namespace SeraphLeveling.Patches
                 string dynamicMenderTrait = BuildLocalizedTraitLine("mender", "seraphleveling:trait-mender-dynamic", menderBonus);
 
                 // Re-check hasNoTraits
-                hasNoTraits = string.IsNullOrEmpty(__result) ||
-                              __result.Trim() == noTraitsMsg.Trim() ||
-                              __result == noTraitsMsg ||
-                              __result.Contains(noTraitsMsg) ||
-                              __result.Contains("No positive or negative traits");
+                hasNoTraits = HasNoTraits(__result);
 
                 if (hasVanillaMender)
                 {
@@ -382,11 +352,7 @@ namespace SeraphLeveling.Patches
                     pilfererVesselBonus, pilfererRustyBonus, pilfererWholeBonus);
 
                 // Re-check hasNoTraits
-                hasNoTraits = string.IsNullOrEmpty(__result) ||
-                              __result.Trim() == noTraitsMsg.Trim() ||
-                              __result == noTraitsMsg ||
-                              __result.Contains(noTraitsMsg) ||
-                              __result.Contains("No positive or negative traits");
+                hasNoTraits = HasNoTraits(__result);
 
                 if (hasVanillaPilferer)
                 {
@@ -431,11 +397,7 @@ namespace SeraphLeveling.Patches
                 string dynamicResourcefulTrait = BuildLocalizedTraitLine("resourceful", "seraphleveling:trait-resourceful-dynamic", resourcefulLootBonus, resourcefulSpeedBonus);
 
                 // Re-check hasNoTraits
-                hasNoTraits = string.IsNullOrEmpty(__result) ||
-                              __result.Trim() == noTraitsMsg.Trim() ||
-                              __result == noTraitsMsg ||
-                              __result.Contains(noTraitsMsg) ||
-                              __result.Contains("No positive or negative traits");
+                hasNoTraits = HasNoTraits(__result);
 
                 if (hasVanillaResourceful)
                 {
@@ -473,11 +435,7 @@ namespace SeraphLeveling.Patches
                 string dynamicForagerTrait = BuildLocalizedTraitLine("forager", "seraphleveling:trait-forager-dynamic", foragerLootBonus, foragerWildCropBonus);
 
                 // Re-check hasNoTraits
-                hasNoTraits = string.IsNullOrEmpty(__result) ||
-                              __result.Trim() == noTraitsMsg.Trim() ||
-                              __result == noTraitsMsg ||
-                              __result.Contains(noTraitsMsg) ||
-                              __result.Contains("No positive or negative traits");
+                hasNoTraits = HasNoTraits(__result);
 
                 if (hasVanillaForager)
                 {
@@ -513,11 +471,7 @@ namespace SeraphLeveling.Patches
                 string dynamicFurtiveTrait = BuildLocalizedTraitLine("furtive", "seraphleveling:trait-furtive-dynamic", furtiveBonus);
 
                 // Re-check hasNoTraits
-                hasNoTraits = string.IsNullOrEmpty(__result) ||
-                              __result.Trim() == noTraitsMsg.Trim() ||
-                              __result == noTraitsMsg ||
-                              __result.Contains(noTraitsMsg) ||
-                              __result.Contains("No positive or negative traits");
+                hasNoTraits = HasNoTraits(__result);
 
                 if (hasVanillaFurtive)
                 {
@@ -550,11 +504,7 @@ namespace SeraphLeveling.Patches
                 string dynamicPreciseTrait = BuildLocalizedTraitLine("precise", "seraphleveling:trait-precise-dynamic", preciseBonus);
 
                 // Re-check hasNoTraits
-                hasNoTraits = string.IsNullOrEmpty(__result) ||
-                              __result.Trim() == noTraitsMsg.Trim() ||
-                              __result == noTraitsMsg ||
-                              __result.Contains(noTraitsMsg) ||
-                              __result.Contains("No positive or negative traits");
+                hasNoTraits = HasNoTraits(__result);
 
                 if (hasVanillaPrecise)
                 {
@@ -597,11 +547,7 @@ namespace SeraphLeveling.Patches
                 string dynamicHungerTrait = Lang.Get("seraphleveling:trait-hunger-dynamic", displayedHungerReduction);
 
                 // Re-check hasNoTraits
-                hasNoTraits = string.IsNullOrEmpty(__result) ||
-                              __result.Trim() == noTraitsMsg.Trim() ||
-                              __result == noTraitsMsg ||
-                              __result.Contains(noTraitsMsg) ||
-                              __result.Contains("No positive or negative traits");
+                hasNoTraits = HasNoTraits(__result);
 
                 if (hasNoTraits)
                 {
@@ -625,11 +571,7 @@ namespace SeraphLeveling.Patches
                 string dynamicTechnicalTrait = BuildLocalizedTraitLine("technical", "seraphleveling:trait-technical-dynamic");
 
                 // Re-check hasNoTraits
-                hasNoTraits = string.IsNullOrEmpty(__result) ||
-                              __result.Trim() == noTraitsMsg.Trim() ||
-                              __result == noTraitsMsg ||
-                              __result.Contains(noTraitsMsg) ||
-                              __result.Contains("No positive or negative traits");
+                hasNoTraits = HasNoTraits(__result);
 
                 if (hasNoTraits)
                 {
@@ -653,11 +595,7 @@ namespace SeraphLeveling.Patches
                 string dynamicHardyHealthTrait = BuildLocalizedTraitLine("hardy", "seraphleveling:trait-hardyhealth-dynamic", SeraphLevelingModSystem.HardyHealthBonus);
 
                 // Re-check hasNoTraits
-                hasNoTraits = string.IsNullOrEmpty(__result) ||
-                              __result.Trim() == noTraitsMsg.Trim() ||
-                              __result == noTraitsMsg ||
-                              __result.Contains(noTraitsMsg) ||
-                              __result.Contains("No positive or negative traits");
+                hasNoTraits = HasNoTraits(__result);
 
                 // If the Mining block already added a mining-only Hardy line for this player
                 // (no vanilla Hardy class), fold the health bonus INTO that line instead of
@@ -704,11 +642,7 @@ namespace SeraphLeveling.Patches
                 string dynamicBowyerTrait = BuildLocalizedTraitLine("bowyer", "seraphleveling:trait-bowyer-dynamic");
 
                 // Re-check hasNoTraits
-                hasNoTraits = string.IsNullOrEmpty(__result) ||
-                              __result.Trim() == noTraitsMsg.Trim() ||
-                              __result == noTraitsMsg ||
-                              __result.Contains(noTraitsMsg) ||
-                              __result.Contains("No positive or negative traits");
+                hasNoTraits = HasNoTraits(__result);
 
                 if (hasNoTraits)
                 {
@@ -732,11 +666,7 @@ namespace SeraphLeveling.Patches
                 string dynamicImproviserTrait = BuildLocalizedTraitLine("improviser", "seraphleveling:trait-improviser-dynamic");
 
                 // Re-check hasNoTraits
-                hasNoTraits = string.IsNullOrEmpty(__result) ||
-                              __result.Trim() == noTraitsMsg.Trim() ||
-                              __result == noTraitsMsg ||
-                              __result.Contains(noTraitsMsg) ||
-                              __result.Contains("No positive or negative traits");
+                hasNoTraits = HasNoTraits(__result);
 
                 if (hasNoTraits)
                 {
@@ -760,11 +690,7 @@ namespace SeraphLeveling.Patches
                 string dynamicTinkererTrait = BuildLocalizedTraitLine("tinkerer", "seraphleveling:trait-tinkerer-dynamic");
 
                 // Re-check hasNoTraits
-                hasNoTraits = string.IsNullOrEmpty(__result) ||
-                              __result.Trim() == noTraitsMsg.Trim() ||
-                              __result == noTraitsMsg ||
-                              __result.Contains(noTraitsMsg) ||
-                              __result.Contains("No positive or negative traits");
+                hasNoTraits = HasNoTraits(__result);
 
                 if (hasNoTraits)
                 {
@@ -788,11 +714,7 @@ namespace SeraphLeveling.Patches
                 string dynamicMercilessTrait = BuildLocalizedTraitLine("merciless", "seraphleveling:trait-merciless-dynamic");
 
                 // Re-check hasNoTraits
-                hasNoTraits = string.IsNullOrEmpty(__result) ||
-                              __result.Trim() == noTraitsMsg.Trim() ||
-                              __result == noTraitsMsg ||
-                              __result.Contains(noTraitsMsg) ||
-                              __result.Contains("No positive or negative traits");
+                hasNoTraits = HasNoTraits(__result);
 
                 if (hasNoTraits)
                 {
@@ -1064,11 +986,7 @@ namespace SeraphLeveling.Patches
                     string coTrait = $"<font color=\"#84ff84\">• {displayName} </font> <font opacity=\"0.6\">(+{bonus * 100:F0}% attack speed)</font>";
 
                     // Re-check hasNoTraits
-                    hasNoTraits = string.IsNullOrEmpty(__result) ||
-                                  __result.Trim() == noTraitsMsg.Trim() ||
-                                  __result == noTraitsMsg ||
-                                  __result.Contains(noTraitsMsg) ||
-                                  __result.Contains("No positive or negative traits");
+                    hasNoTraits = HasNoTraits(__result);
 
                     if (hasNoTraits)
                     {
@@ -1105,11 +1023,7 @@ namespace SeraphLeveling.Patches
             {
                 string steadyAimTrait = $"<font color=\"#84ff84\">• Steady Aim </font> <font opacity=\"0.6\">(+{steadyAimNetBonus * 100:F0}% aim stability)</font>";
 
-                hasNoTraits = string.IsNullOrEmpty(__result) ||
-                              __result.Trim() == noTraitsMsg.Trim() ||
-                              __result == noTraitsMsg ||
-                              __result.Contains(noTraitsMsg) ||
-                              __result.Contains("No positive or negative traits");
+                hasNoTraits = HasNoTraits(__result);
 
                 if (hasNoTraits)
                 {
@@ -1521,6 +1435,27 @@ namespace SeraphLeveling.Patches
             while (text != previous && safety < 8);
 
             return text;
+        }
+
+        private static bool HasNoTraits(string text)
+        {
+            // Get the "no traits" message - vanilla uses this for classes like Commoner.
+            // The actual vanilla lang key is the literal phrase "No positive or negative traits"
+            // (yes, the key contains spaces). The previous "charactersheet-notraits" key doesn't
+            // exist in vanilla, so Lang.Get returned the key string itself, defeating the
+            // localization check. Subsequent `Contains("No positive or negative traits")`
+            // fallbacks below are kept as a defense-in-depth English match.
+            string noTraitsMsg = Lang.Get(NO_TRAITS_KEY);
+
+            // Check if we have NO real traits (only "no traits" message or empty)
+            // Use Contains to handle cases where the message might have formatting
+            bool hasNoTraits = string.IsNullOrEmpty(text) ||
+                               text.Trim() == noTraitsMsg.Trim() ||
+                               text == noTraitsMsg ||
+                               text.Contains(noTraitsMsg) ||
+                               text.Contains(NO_TRAITS_KEY);
+            
+            return hasNoTraits;
         }
     }
 }
