@@ -12,8 +12,8 @@ namespace SeraphLeveling.Data.Attributes
             Description = "tinkerer",
             PersistenceHeader = "TNK",
             Name = "Tinkerer",
-            ExtraTraitKey = SeraphLevelingModSystem.TINKERER_TRAIT_CODE,
-            UnlockedKey = SeraphLevelingModSystem.WATCHED_TINKERER_UNLOCKED,
+            ExtraTraitKey = "sittinkerermastery",
+            UnlockedKey = "sitTinkererUnlocked",
             NotifyLangKey = "seraphleveling:message-tinkerer-unlock",
             Trait = new(() => Traits.TraitDefinitions.Tinkerer)
         };
@@ -25,10 +25,10 @@ namespace SeraphLeveling.Data.Attributes
             Description = "technical",
             PersistenceHeader = "TEC",
             Name = "Technical",
-            ExtraTraitKey = SeraphLevelingModSystem.TECHNICAL_TRAIT_CODE,
-            UnlockedKey = SeraphLevelingModSystem.WATCHED_TECHNICAL_UNLOCKED,
+            ExtraTraitKey = "sittechnicalmastery",
+            UnlockedKey = "sitTechnicalUnlocked",
             NotifyLangKey = "seraphleveling:message-technical-unlock",
-            GlobalMaxCredits = SeraphLevelingModSystem.TechnicalRequiredTranslocatorRepairs,
+            GlobalMaxCredits = 5,
             CreditDescription = "translocators",
             Trait = new(() => Traits.TraitDefinitions.Technical),
         };

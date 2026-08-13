@@ -618,7 +618,7 @@ namespace SeraphLeveling.Patches
             }
 
             // Process Technical unlock trait (translocator gear cost reduction)
-            bool technicalUnlocked = eplr.WatchedAttributes.GetBool(SeraphLevelingModSystem.WATCHED_TECHNICAL_UNLOCKED, false);
+            bool technicalUnlocked = eplr.WatchedAttributes.GetBool(AttributeModifierDefinitions.Technical.UnlockedKey, false);
             if (technicalUnlocked && !ClientHasVanillaTrait(eplr, "technical", "clockmaker"))
             {
                 string plainTechnicalTraitName = Lang.Get("seraphleveling:trait-sittechnicalmastery");
@@ -753,7 +753,7 @@ namespace SeraphLeveling.Patches
             }
 
             // Process Tinkerer unlock trait (tuning spear crafting)
-            bool tinkererUnlocked = eplr.WatchedAttributes.GetBool(SeraphLevelingModSystem.WATCHED_TINKERER_UNLOCKED, false);
+            bool tinkererUnlocked = eplr.WatchedAttributes.GetBool(AttributeModifierDefinitions.Tinkerer.UnlockedKey, false);
             if (tinkererUnlocked && !ClientHasVanillaTrait(eplr, "tinkerer", "clockmaker"))
             {
                 string plainTinkererTraitName = Lang.Get("seraphleveling:trait-sittinkerermastery");

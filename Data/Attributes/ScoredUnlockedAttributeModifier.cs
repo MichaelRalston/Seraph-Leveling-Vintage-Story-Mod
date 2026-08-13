@@ -9,7 +9,7 @@ namespace SeraphLeveling.Data.Attributes
 {
     public abstract record class ScoredUnlockedAttributeModifierDefinition<D, PD> : UnlockedAttributeModifierDefinition<D, PD> where PD : ScoredUnlockedAttributeModifierProgressData<D, PD> where D : ScoredUnlockedAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
     {
-        public required float GlobalMaxCredits { get; set; }
+        public required int GlobalMaxCredits { get; set; }
         public required string CreditDescription { get; init; }
         public string WatchedCreditsAttributeKey { get; init; } = null;
 

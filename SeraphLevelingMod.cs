@@ -445,17 +445,6 @@ namespace SeraphLeveling
         public static volatile bool pendingPreciseProgressSave = false;
 
         // =========================================================================
-        // TECHNICAL TRAIT - Unlocks after repairing translocators
-        // =========================================================================
-        public const string TECHNICAL_STAT_CODE = "sitTechnicalBonus";
-        public const string WATCHED_TECHNICAL_UNLOCKED = "sitTechnicalUnlocked";
-        public const string WATCHED_TECHNICAL_REPAIRS = "sitTechnicalRepairs";
-        public const string TECHNICAL_TRAIT_CODE = "sittechnicalmastery";
-
-        // Technical progression configuration
-        public static int TechnicalRequiredTranslocatorRepairs = 5;  // Repairs needed to unlock
-
-        // =========================================================================
         // HARDY HEALTH TRAIT - Unlocks +5 HP after reaching mining and armor thresholds
         // =========================================================================
         public const string HARDY_HEALTH_STAT_CODE = "sitHardyHealthBonus";
@@ -485,16 +474,6 @@ namespace SeraphLeveling
         // Storage for improviser progress
         public static ConcurrentDictionary<string, ImproviserProgressData> ImproviserProgress = new ConcurrentDictionary<string, ImproviserProgressData>();
         public static volatile bool pendingImproviserProgressSave = false;
-
-        // =========================================================================
-        // TINKERER TRAIT - Unlocks tuning spear after Technical + Precise threshold
-        // =========================================================================
-        public const string TINKERER_STAT_CODE = "sitTinkererBonus";
-        public const string WATCHED_TINKERER_UNLOCKED = "sitTinkererUnlocked";
-        public const string TINKERER_TRAIT_CODE = "sittinkerermastery";
-
-        // Tinkerer unlock threshold
-        public static int TinkererPreciseThreshold = 10;              // 10% Precise damage bonus required (plus Technical)
 
         // =========================================================================
         // MERCILESS TRAIT - Unlocks shortsword/shield after armor + melee thresholds
@@ -6476,7 +6455,7 @@ namespace SeraphLeveling
                 PreciseIncrementStep = config.PreciseIncrementStep;
                 MaxPrecisePercent = config.PreciseMaxPercent;
 
-                TechnicalRequiredTranslocatorRepairs = config.TechnicalRequiredTranslocatorRepairs;
+                AttributeModifierDefinitions.Technical.GlobalMaxCredits = config.TechnicalRequiredTranslocatorRepairs;
 
                 HardyHealthMiningThreshold = config.HardyHealthMiningThreshold;
                 HardyHealthArmorDurabilityThreshold = config.HardyHealthArmorDurabilityThreshold;
@@ -6706,7 +6685,7 @@ namespace SeraphLeveling
                 config.PreciseIncrementStep = PreciseIncrementStep;
                 config.PreciseMaxPercent = MaxPrecisePercent;
 
-                config.TechnicalRequiredTranslocatorRepairs = TechnicalRequiredTranslocatorRepairs;
+                config.TechnicalRequiredTranslocatorRepairs = AttributeModifierDefinitions.Technical.GlobalMaxCredits;
 
                 config.HardyHealthMiningThreshold = HardyHealthMiningThreshold;
                 config.HardyHealthArmorDurabilityThreshold = HardyHealthArmorDurabilityThreshold;
@@ -12798,7 +12777,7 @@ namespace SeraphLeveling
             MaxPrecisePercent = 30;
 
             // Technical defaults
-            TechnicalRequiredTranslocatorRepairs = 5;
+            AttributeModifierDefinitions.Technical.GlobalMaxCredits = 5;
 
             // Hardy Health defaults
             HardyHealthMiningThreshold = 10;
