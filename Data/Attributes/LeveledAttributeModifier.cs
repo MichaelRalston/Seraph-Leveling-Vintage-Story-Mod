@@ -125,13 +125,13 @@ namespace SeraphLeveling.Data.Attributes
             return Math.Min(progress.TotalCredits, earnableBonus);
         }
 
-        public void ApplyBonusIfExists(IServerPlayer player)
+        public override void ApplyBonusIfExists(IServerPlayer player)
         {
             if (ProgressDictionary.TryGetValue(player.PlayerUID, out var progress))
                 ApplyBonus(player, (PD)progress);
         }
 
-        public void MaxStat(IServerPlayer player)
+        public override void MaxStat(IServerPlayer player)
         {
             var progress = GetDict(player);
             int maxCredits = GetMaxCredits(player.Entity);
@@ -142,7 +142,7 @@ namespace SeraphLeveling.Data.Attributes
             MarkForSave(true);
             ApplyBonus(player, progress);
         }
-        public void ApplyTraitTestSuite1Command(IServerPlayer player)
+        public override void ApplyTraitTestSuite1Command(IServerPlayer player)
         {
             var progress = GetDict(player);
             int oldCredits = progress.TotalCredits;

@@ -41,10 +41,10 @@ namespace SeraphLeveling.Patches
             bool hasVanillaSoldier = ClientHasVanillaTrait(eplr, "soldier", "blackguard");
 
             // Get ranged progression data
-            int rangedLevel = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_RANGED_LEVEL, 0);
-            int rangedDamageBonus = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_RANGED_DAMAGE_BONUS, 0);
-            int rangedAccuracyBonus = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_RANGED_ACCURACY_BONUS, 0);
-            int rangedDistanceBonus = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_RANGED_DISTANCE_BONUS, 0);
+            int rangedLevel = eplr.WatchedAttributes.GetInt(AttributeModifierDefinitions.RangedDamage.WatchedLevel, 0);
+            int rangedDamageBonus = eplr.WatchedAttributes.GetInt(AttributeModifierDefinitions.RangedDamage.WatchedBonus, 0);
+            int rangedAccuracyBonus = eplr.WatchedAttributes.GetInt(AttributeModifierDefinitions.RangedAccuracy.WatchedBonus, 0);
+            int rangedDistanceBonus = eplr.WatchedAttributes.GetInt(AttributeModifierDefinitions.RangedDistance.WatchedBonus, 0);
             bool hasVanillaFocused = ClientHasVanillaTrait(eplr, "focused", "hunter");
 
             // Get walking progression data
@@ -173,13 +173,13 @@ namespace SeraphLeveling.Patches
                 if (hasVanillaFocused)
                 {
                     // Class already has Focused (e.g., Hunter) - update each existing inline value.
-                    int combinedDamage = SeraphLevelingModSystem.VANILLA_FOCUSED_DAMAGE_BONUS + rangedDamageBonus;
+                    int combinedDamage = rangedDamageBonus + AttributeModifierDefinitions.RangedDamage.CalculateLevelFromTraits(eplr);
                     __result = ReplaceVanillaCharAttribute(__result, "rangedWeaponsDamage", 0.2, combinedDamage);
 
-                    int combinedAccuracy = SeraphLevelingModSystem.VANILLA_FOCUSED_ACCURACY_BONUS + rangedAccuracyBonus;
+                    int combinedAccuracy = rangedAccuracyBonus + AttributeModifierDefinitions.RangedAccuracy.CalculateLevelFromTraits(eplr);
                     __result = ReplaceVanillaCharAttribute(__result, "rangedWeaponsAcc", 0.3, combinedAccuracy);
 
-                    int combinedDistance = SeraphLevelingModSystem.VANILLA_FOCUSED_DISTANCE_BONUS + rangedDistanceBonus;
+                    int combinedDistance = rangedDistanceBonus + AttributeModifierDefinitions.RangedDistance.CalculateLevelFromTraits(eplr);
                     __result = ReplaceVanillaCharAttribute(__result, "bowDrawingStrength", 0.2, combinedDistance);
 
                     __result = RemoveOrphanTraitName(__result, plainRangedTraitName);

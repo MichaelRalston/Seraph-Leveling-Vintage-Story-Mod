@@ -9,6 +9,9 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "focused",
             Attributes = [
+                (AttributeModifierDefinitions.RangedDamage, 20),
+                (AttributeModifierDefinitions.RangedAccuracy, 30),
+                (AttributeModifierDefinitions.RangedDistance, 20),
             ]
         };
 
@@ -90,6 +93,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "frail",
             Attributes = [
+                (AttributeModifierDefinitions.RangedDistance, -25)
             ]
         };
 
@@ -165,6 +169,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "nearsighted",
             Attributes = [
+                (AttributeModifierDefinitions.RangedDamage, 15)
             ]
         };
 

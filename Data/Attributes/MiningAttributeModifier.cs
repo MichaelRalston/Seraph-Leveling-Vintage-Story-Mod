@@ -5,7 +5,7 @@ using Vintagestory.API.Server;
 
 namespace SeraphLeveling.Data.Attributes
 {
-    public class MiningAttributeModifierProgressData(MiningAttributeModifierDefinition definition) : LeveledToolAttributeModifierProgressData<MiningAttributeModifierDefinition, MiningAttributeModifierProgressData>(definition)
+    public class MiningAttributeModifierProgressData(MiningAttributeModifierDefinition definition) : LeveledToolAttributeModifierProgressData<MiningAttributeModifierDefinition, MiningAttributeModifierProgressData, int>(definition)
     {
         public override void ReadVersion(byte version, BinaryReader reader)
         {
@@ -34,7 +34,7 @@ namespace SeraphLeveling.Data.Attributes
                     // Migrate single pickaxe progress if it exists
                     if (!string.IsNullOrEmpty(currentPickaxeCode))
                     {
-                        ToolProgress[currentPickaxeCode] = new LevelableTool
+                        ToolProgress[currentPickaxeCode] = new LevelableTool<int>
                         {
                             PartialCredit = partialCredit,
                             CurrentIncrementSize = currentIncrementSize
@@ -48,7 +48,7 @@ namespace SeraphLeveling.Data.Attributes
                     for (int j = 0; j < pickaxeCount; j++)
                     {
                         string pickaxeCode = reader.ReadString();
-                        var pickaxeProgress = new LevelableTool
+                        var pickaxeProgress = new LevelableTool<int>
                         {
                             PartialCredit = reader.ReadInt32(),
                             CurrentIncrementSize = reader.ReadInt32()
@@ -64,7 +64,7 @@ namespace SeraphLeveling.Data.Attributes
                     for (int j = 0; j < pickaxeCount; j++)
                     {
                         string pickaxeCode = reader.ReadString();
-                        var pickaxeProgress = new LevelableTool
+                        var pickaxeProgress = new LevelableTool<int>
                         {
                             PartialCredit = reader.ReadInt32(),
                             CurrentIncrementSize = reader.ReadInt32()
@@ -77,7 +77,7 @@ namespace SeraphLeveling.Data.Attributes
             }
         }
     }
-    public record class MiningAttributeModifierDefinition : LeveledToolAttributeModifierDefinition<MiningAttributeModifierDefinition, MiningAttributeModifierProgressData>, IConstructable<MiningAttributeModifierDefinition, MiningAttributeModifierProgressData>
+    public record class MiningAttributeModifierDefinition : LeveledToolAttributeModifierDefinition<MiningAttributeModifierDefinition, MiningAttributeModifierProgressData, int>, IConstructable<MiningAttributeModifierDefinition, MiningAttributeModifierProgressData>
     {
         public static MiningAttributeModifierProgressData Create(MiningAttributeModifierDefinition definition) { return new MiningAttributeModifierProgressData(definition); }
         public override int GetMaxCredits(EntityPlayer player)
@@ -86,10 +86,6 @@ namespace SeraphLeveling.Data.Attributes
             bool hasVanillaHardy = cache?.HasHardy ?? SeraphLevelingModSystem.PlayerHasVanillaHardy(player);
             int vanillaHardyBonus = hasVanillaHardy ? SeraphLevelingModSystem.VANILLA_HARDY_MINING_BONUS : 0;
             return GlobalMaxCredits - vanillaHardyBonus;
-        }
-        public override int CalculateBonus(EntityPlayer entity, MiningAttributeModifierProgressData progress)
-        {
-            return Math.Min(progress.TotalCredits, GlobalMaxCredits);
         }
         public override int ApplyBonus(IServerPlayer player, MiningAttributeModifierProgressData progressData)
         {

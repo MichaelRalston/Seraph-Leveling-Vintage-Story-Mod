@@ -7,18 +7,20 @@ using Vintagestory.API.Server;
 using Vintagestory.API.Common;
 using Vintagestory.API.Config;
 using SeraphLeveling.Data.Tools;
+using System.Numerics;
+using System.ComponentModel;
 
 namespace SeraphLeveling.Data.Attributes
 {
-    public abstract record class LeveledToolAttributeModifierDefinition<D, PD> : LeveledAttributeModifierDefinition<D, PD> where PD : LeveledToolAttributeModifierProgressData<D, PD> where D : LeveledToolAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
+    public abstract record class LeveledToolAttributeModifierDefinition<D, PD, N> : LeveledAttributeModifierDefinition<D, PD> where PD : LeveledToolAttributeModifierProgressData<D, PD, N> where D : LeveledToolAttributeModifierDefinition<D, PD, N>, IConstructable<D, PD> where N : INumber<N>
     {
         public required ToolDefinition Tool { get; init; }
-        public void ResetProgress(IServerPlayer player)
+        public override void ResetProgress(IServerPlayer player)
         {
             var progress = GetDict(player);
             progress.TotalCredits = 0;
             var toolEntries = progress.ToolProgress.Select(kvp =>
-                (kvp.Key, (double)kvp.Value.PartialCredit, kvp.Value.CurrentIncrementSize)).ToList();
+                (kvp.Key, double.CreateTruncating<N>(kvp.Value.PartialCredit), kvp.Value.CurrentIncrementSize)).ToList();
             progress.LastActivityDay = 0;
             MarkForSave(true);
             ApplyBonus(player, progress);
@@ -47,7 +49,7 @@ namespace SeraphLeveling.Data.Attributes
                 if (ProgressDictionary.TryGetValue(player.PlayerUID, out var progress) && (progress.TotalCredits > 0 || progress.ToolProgress.Count > 0))
                 {
                     var toolEntries = progress.ToolProgress.Select(kvp =>
-                        (kvp.Key, (double)kvp.Value.PartialCredit, kvp.Value.CurrentIncrementSize)).ToList();
+                        (kvp.Key, double.CreateTruncating<N>(kvp.Value.PartialCredit), kvp.Value.CurrentIncrementSize)).ToList();
                     double rawPenalty;
                     if (toolEntries.Count > 0)
                     {
@@ -87,29 +89,39 @@ namespace SeraphLeveling.Data.Attributes
 
     }
 
-    public class LevelableTool
+    public class LevelableTool<N> where N : INumber<N>
     {
         public virtual void WriteOut(BinaryWriter writer)
         {
-            writer.Write(PartialCredit);
+            switch (PartialCredit)
+            {
+                case int i:
+                    writer.Write(i);
+                    break;
+                case float f:
+                    writer.Write(f);
+                    break;
+                default:
+                    throw new NotSupportedException($"Tools with increments of type {typeof(N)} are not supported");
+            }
             writer.Write(CurrentIncrementSize);
         }
         /// <summary>Points accumulated toward the next credit with this tool.</summary>
-        public int PartialCredit { get; set; }
+        public N PartialCredit { get; set; }
 
         /// <summary>Points needed for the next credit with this tool (100, 200, 300, etc.).</summary>
         public int CurrentIncrementSize { get; set; }
 
     }
 
-    public abstract class LeveledToolAttributeModifierProgressData<D, PD>(D def) : LeveledAttributeModifierProgressData<D, PD>(def) where PD : LeveledToolAttributeModifierProgressData<D, PD> where D : LeveledToolAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
+    public abstract class LeveledToolAttributeModifierProgressData<D, PD, N>(D def) : LeveledAttributeModifierProgressData<D, PD>(def) where PD : LeveledToolAttributeModifierProgressData<D, PD, N> where D : LeveledToolAttributeModifierDefinition<D, PD, N>, IConstructable<D, PD> where N : INumber<N>
     {
-        public Dictionary<string, LevelableTool> ToolProgress { get; init; } = new Dictionary<string, LevelableTool>();
-        public LevelableTool GetToolProgress(string toolCode)
+        public Dictionary<string, LevelableTool<N>> ToolProgress { get; init; } = new Dictionary<string, LevelableTool<N>>();
+        public LevelableTool<N> GetToolProgress(string toolCode)
         {
             if (!ToolProgress.TryGetValue(toolCode, out var progress))
             {
-                progress = new LevelableTool()
+                progress = new LevelableTool<N>()
                 {
                     CurrentIncrementSize = Definition.BaseIncrement
                 };
@@ -144,7 +156,7 @@ namespace SeraphLeveling.Data.Attributes
                 {
                     var toolProgress = GetToolProgress(toolName);
                     toolProgress.CurrentIncrementSize = Definition.BaseIncrement + (level * Definition.IncrementStep);
-                    toolProgress.PartialCredit = 0;
+                    toolProgress.PartialCredit = N.Zero;
                 }
 
                 TotalCredits = SeraphLevelingModSystem.RecalculateTotalCreditsFromTools(
@@ -179,6 +191,57 @@ namespace SeraphLeveling.Data.Attributes
         {
             string toolName = (string)args[1];
             return SetLevel(player, level, toolName);
+        }
+        public override void ReadVersion(byte version, BinaryReader reader)
+        {
+            int toolCount;
+            switch (version)
+            {
+                case 1:
+                    TotalCredits = reader.ReadInt32();
+                    toolCount = reader.ReadInt32();
+                    for (int i = 0; i < toolCount; i++)
+                    {
+                        var toolCode = reader.ReadString();
+                        var partialCredit = typeof(N) switch
+                        {
+                            var t when t == typeof(int) => N.CreateTruncating(reader.ReadInt32()),
+                            var t when t == typeof(float) => N.CreateTruncating(reader.ReadSingle()),
+                            _ => throw new NotSupportedException($"Tools with increments of type {typeof(N)} are not supported")
+                        };
+                        var toolProgressRecord = new LevelableTool<N>
+                        {
+                            PartialCredit = partialCredit,
+                            CurrentIncrementSize = reader.ReadInt32()
+                        };
+                        ToolProgress[toolCode] = toolProgressRecord;
+                    }
+                    break;
+                case 2:
+                    TotalCredits = reader.ReadInt32();
+                    LastActivityDay = reader.ReadDouble();
+
+                    toolCount = reader.ReadInt32();
+                    for (int i = 0; i < toolCount; i++)
+                    {
+                        var toolCode = reader.ReadString();
+                        var partialCredit = typeof(N) switch
+                        {
+                            var t when t == typeof(int) => N.CreateTruncating(reader.ReadInt32()),
+                            var t when t == typeof(float) => N.CreateTruncating(reader.ReadSingle()),
+                            _ => throw new NotSupportedException($"Tools with increments of type {typeof(N)} are not supported")
+                        };
+                        var toolProgress = new LevelableTool<N>
+                        {
+                            PartialCredit = partialCredit,
+                            CurrentIncrementSize = reader.ReadInt32()
+                        };
+                        ToolProgress[toolCode] = toolProgress;
+                    }
+                    break;
+                default:
+                    throw new NotSupportedException($"Version {version} is not supported");
+            }
         }
         public override void WriteOut(BinaryWriter writer)
         {
@@ -219,7 +282,7 @@ namespace SeraphLeveling.Data.Attributes
         {
             int oldCredits = TotalCredits;
             var toolEntries = ToolProgress.Select(kvp =>
-                (kvp.Key, (double)kvp.Value.PartialCredit, kvp.Value.CurrentIncrementSize)).ToList();
+                (kvp.Key, double.CreateTruncating(kvp.Value.PartialCredit), kvp.Value.CurrentIncrementSize)).ToList();
 
             if (toolEntries.Count > 0)
             {
@@ -229,12 +292,12 @@ namespace SeraphLeveling.Data.Attributes
                     {
                         if (ToolProgress.TryGetValue(k, out var p))
                         {
-                            p.PartialCredit = (int)Math.Floor(a); p.CurrentIncrementSize = s;
+                            p.PartialCredit = N.CreateTruncating(Math.Floor(a)); p.CurrentIncrementSize = s;
                         }
                     },
                     k => ToolProgress.Remove(k), verboseSb, Definition.Name);
                 TotalCredits = newCr;
-                sb.AppendLine($"  Mining: {oldCredits} \u2192 {newCr} (-{lost} credits, {rawPenalty:F0} pts)");
+                sb.AppendLine($"  {Definition.Description}: {oldCredits} \u2192 {newCr} (-{lost} credits, {rawPenalty:F0} pts)");
                 foreach (var entry in toolEntries)
                 {
                     int oldToolCr = Definition.IncrementStep > 0 ? (entry.Item3 - Definition.BaseIncrement) / Definition.IncrementStep : 0;
@@ -268,23 +331,23 @@ namespace SeraphLeveling.Data.Attributes
             // Skip all processing if already at max - completely invisible
             if (TotalCredits >= maxCredits) return;
 
-            // Get or create progress for this specific pickaxe type
+            // Get or create progress for this specific tool type
             var toolProgress = GetToolProgress(toolCode);
 
             int oldCredits = TotalCredits;
 
             // Apply sleep buff multiplier to points
-            int modifiedPoints = (int)SeraphLevelingModSystem.ApplyXPMultiplier(player.PlayerUID, score);
+            N modifiedPoints = N.CreateTruncating(SeraphLevelingModSystem.ApplyXPMultiplier(player.PlayerUID, score));
 
-            // Add points to THIS pickaxe's progress
+            // Add points to THIS tool's progress
             toolProgress.PartialCredit += modifiedPoints;
 
-            // Check if we've earned any new credits with this pickaxe
-            while (toolProgress.PartialCredit >= toolProgress.CurrentIncrementSize && TotalCredits < maxCredits)
+            // Check if we've earned any new credits with this tool
+            while (toolProgress.PartialCredit >= N.CreateTruncating(toolProgress.CurrentIncrementSize) && TotalCredits < maxCredits)
             {
                 // Earn a credit
                 TotalCredits++;
-                toolProgress.PartialCredit -= toolProgress.CurrentIncrementSize;
+                toolProgress.PartialCredit -= N.CreateTruncating(toolProgress.CurrentIncrementSize);
                 toolProgress.CurrentIncrementSize += Definition.IncrementStep;
 
                 SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Player {player.PlayerName} earned credit {TotalCredits} with {toolCode}, next requires {toolProgress.CurrentIncrementSize} points");
@@ -302,8 +365,9 @@ namespace SeraphLeveling.Data.Attributes
 
                 // Notify player of level up with the level as the bonus (the raw mining speed improvement, etc)
                 // This shows the true progress even when negative traits are still being cancelled
+                ;
                 SeraphLevelingModSystem.NotifyLevelUp(player,
-                    Lang.Get($"seraphleveling:message-{Definition.Description}-level-up", TotalCredits, TotalCredits));
+                    Lang.Get($"seraphleveling:message-{Definition.SkillKey}-level-up", TotalCredits, TotalCredits));
 
                 // Check for trait unlocks that depend on trait level
                 Definition.OnCreditsChanged(player, oldCredits, (PD)this);
