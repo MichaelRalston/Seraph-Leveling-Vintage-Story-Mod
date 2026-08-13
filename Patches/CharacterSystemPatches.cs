@@ -725,7 +725,7 @@ namespace SeraphLeveling.Patches
             }
 
             // Process Improviser unlock trait (sling crafting)
-            bool improviserUnlocked = eplr.WatchedAttributes.GetBool(SeraphLevelingModSystem.WATCHED_IMPROVISER_UNLOCKED, false);
+            bool improviserUnlocked = eplr.WatchedAttributes.GetBool(AttributeModifierDefinitions.Improviser.UnlockedKey, false);
             if (improviserUnlocked && !ClientHasVanillaTrait(eplr, "improviser", "malefactor"))
             {
                 string plainImproviserTraitName = Lang.Get("seraphleveling:trait-sitimprovisermastery");

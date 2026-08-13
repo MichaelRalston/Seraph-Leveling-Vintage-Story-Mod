@@ -102,5 +102,21 @@ namespace SeraphLeveling.Data.Attributes
             GlobalMaxCredits = 50,
             StatName = "miningSpeedMul"
         };
+
+        public static readonly ImproviserAttributeModifierDefinition Improviser = new()
+        {
+            Id = "improviser",
+            SaveKey = "sitImproviserProgress",
+            Description = "improviser",
+            PersistenceHeader = "IMP",
+            Name = "Improviser",
+            ExtraTraitKey = "sitimprovisermastery",
+            UnlockedKey = "sitImproviserUnlocked",
+            NotifyLangKey = "seraphleveling:message-improviser-unlock",
+            GlobalMaxCredits = 300,
+            CreditDescription = "thrown rock damage",
+            WatchedCreditsAttributeKey = "sitImproviserRockDamage",
+            Trait = new(() => Traits.TraitDefinitions.Improviser),
+        };
     }
 }

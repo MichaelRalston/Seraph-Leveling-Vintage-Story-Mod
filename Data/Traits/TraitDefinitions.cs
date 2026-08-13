@@ -79,8 +79,10 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "improviser",
             Attributes = [
+                (AttributeModifierDefinitions.Improviser, 1)
             ],
             Requirements = [
+                new RequiredUnlockedAttribute(AttributeModifierDefinitions.Improviser)
             ]
         };
 

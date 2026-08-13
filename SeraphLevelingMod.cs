@@ -461,21 +461,6 @@ namespace SeraphLeveling
         public static volatile bool pendingHardyHealthProgressSave = false;
 
         // =========================================================================
-        // IMPROVISER TRAIT - Unlocks sling after thrown rock damage
-        // =========================================================================
-        public const string IMPROVISER_STAT_CODE = "sitImproviserBonus";
-        public const string WATCHED_IMPROVISER_UNLOCKED = "sitImproviserUnlocked";
-        public const string WATCHED_IMPROVISER_ROCK_DAMAGE = "sitImproviserRockDamage";
-        public const string IMPROVISER_TRAIT_CODE = "sitimprovisermastery";
-
-        // Improviser unlock threshold
-        public static int ImproviserRockDamageThreshold = 300;       // 300 total thrown rock damage required
-
-        // Storage for improviser progress
-        public static ConcurrentDictionary<string, ImproviserProgressData> ImproviserProgress = new ConcurrentDictionary<string, ImproviserProgressData>();
-        public static volatile bool pendingImproviserProgressSave = false;
-
-        // =========================================================================
         // MERCILESS TRAIT - Unlocks shortsword/shield after armor + melee thresholds
         // =========================================================================
         public const string MERCILESS_STAT_CODE = "sitMercilessBonus";
@@ -1851,8 +1836,7 @@ namespace SeraphLeveling
 
             AttributeModifierDefinitions.Bowyer.GetTraitAllCommandLine(player, sb);
 
-            var improviserProg = ImproviserProgress.GetOrAdd(playerUid, _ => new ImproviserProgressData());
-            sb.AppendLine($"Improviser: {(improviserProg.IsUnlocked ? "UNLOCKED" : $"{improviserProg.TotalRockDamage:F0} rock damage (locked)")}");
+            AttributeModifierDefinitions.Improviser.GetTraitAllCommandLine(player, sb);
 
             AttributeModifierDefinitions.Tinkerer.GetTraitAllCommandLine(player, sb);
 
@@ -2136,7 +2120,7 @@ namespace SeraphLeveling
                 pendingRangedProgressSave = true;
                 var (dmg, acc, dist) = ApplyRangedBonusStatic(player, progress.TotalCredits);
                 TraitDefinitions.Bowyer.CheckUnlocks(player);
-                CheckImproviserUnlock(player);
+                TraitDefinitions.Improviser.CheckUnlocks(player);
                 UpdateSkillActivityDay(playerUid, "ranged");
 
                 return TextCommandResult.Success($"Set {level} credits on {toolName}. Total: {progress.TotalCredits}/{maxCredits} (+{dmg}% damage, +{acc}% accuracy, +{dist}% distance).");
@@ -2152,7 +2136,7 @@ namespace SeraphLeveling
                 pendingRangedProgressSave = true;
                 var (dmg, acc, dist) = ApplyRangedBonusStatic(player, level);
                 TraitDefinitions.Bowyer.CheckUnlocks(player);
-                CheckImproviserUnlock(player);
+                TraitDefinitions.Improviser.CheckUnlocks(player);
                 UpdateSkillActivityDay(playerUid, "ranged");
 
                 return TextCommandResult.Success($"Ranged credits set to {level} (+{dmg}% damage, +{acc}% accuracy, +{dist}% distance). Per-weapon progress reset.");
@@ -4533,12 +4517,7 @@ namespace SeraphLeveling
             AttributeModifierDefinitions.Bowyer.HandleLogin(byPlayer);
 
             // Apply improviser unlock
-            var improviserProg = ImproviserProgress.GetOrAdd(playerUid, _ => new ImproviserProgressData());
-            if (improviserProg.IsUnlocked)
-            {
-                ApplyImproviserBonusStatic(byPlayer, true);
-                ServerApi.Logger.Debug($"[SeraphLeveling] Applied improviser unlock to player {byPlayer.PlayerName}");
-            }
+            AttributeModifierDefinitions.Improviser.HandleLogin(byPlayer);
 
             // Apply tinkerer unlock
             AttributeModifierDefinitions.Tinkerer.HandleLogin(byPlayer);
@@ -5505,10 +5484,8 @@ namespace SeraphLeveling
         {
             if (player?.Entity == null || damage <= 0) return;
 
-            string playerUid = player.PlayerUID;
-
             // Apply sleep buff multiplier if active
-            AttributeModifierDefinitions.Bowyer.AddCredits(player, ApplyXPMultiplier(playerUid, damage));
+            AttributeModifierDefinitions.Bowyer.AddCredits(player, ApplyXPMultiplier(player.PlayerUID, damage));
         }
 
         /// <summary>
@@ -5518,26 +5495,8 @@ namespace SeraphLeveling
         {
             if (player?.Entity == null || damage <= 0) return;
 
-            string playerUid = player.PlayerUID;
-            var progress = ImproviserProgress.GetOrAdd(playerUid, _ => new ImproviserProgressData());
-
-            // Already unlocked
-            if (progress.IsUnlocked) return;
-
             // Apply sleep buff multiplier if active
-            float modifiedDamage = ApplyXPMultiplier(playerUid, damage);
-            progress.TotalRockDamage += modifiedDamage;
-            pendingImproviserProgressSave = true;
-
-            player.Entity.WatchedAttributes.SetFloat(WATCHED_IMPROVISER_ROCK_DAMAGE, progress.TotalRockDamage);
-
-            if (DebugLoggingEnabled)
-            {
-                ServerApi?.Logger?.Debug($"[SeraphLeveling] Improviser rock damage tracked for {player.PlayerName}: +{modifiedDamage:F1} (total {progress.TotalRockDamage:F1}/{ImproviserRockDamageThreshold})");
-            }
-
-            // Check if unlock threshold is reached
-            CheckImproviserUnlock(player);
+            AttributeModifierDefinitions.Improviser.AddCredits(player, ApplyXPMultiplier(player.PlayerUID, damage));
         }
 
         /// <summary>
@@ -5913,10 +5872,6 @@ namespace SeraphLeveling
                 {
                     PersistHardyHealthProgress();
                 }
-                if (pendingImproviserProgressSave || !ImproviserProgress.IsEmpty)
-                {
-                    PersistImproviserProgress();
-                }
                 if (pendingMercilessProgressSave || !MercilessProgress.IsEmpty)
                 {
                     PersistMercilessProgress();
@@ -5992,7 +5947,6 @@ namespace SeraphLeveling
             FurtiveProgress.Clear();
             PreciseProgress.Clear();
             HardyHealthProgress.Clear();
-            ImproviserProgress.Clear();
             MercilessProgress.Clear();
             ClaustrophobicRemovalProgress.Clear();
             lastPlayerPositions.Clear();
@@ -6014,7 +5968,6 @@ namespace SeraphLeveling
             pendingFurtiveProgressSave = false;
             pendingPreciseProgressSave = false;
             pendingHardyHealthProgressSave = false;
-            pendingImproviserProgressSave = false;
             pendingMercilessProgressSave = false;
             pendingClaustrophobicRemovalProgressSave = false;
             base.Dispose();
@@ -6101,12 +6054,6 @@ namespace SeraphLeveling
             {
                 PersistHardyHealthProgress();
                 pendingHardyHealthProgressSave = false;
-            }
-
-            if (pendingImproviserProgressSave || !ImproviserProgress.IsEmpty)
-            {
-                PersistImproviserProgress();
-                pendingImproviserProgressSave = false;
             }
 
             if (pendingMercilessProgressSave || !MercilessProgress.IsEmpty)
@@ -10182,52 +10129,6 @@ namespace SeraphLeveling
         }
 
         /// <summary>
-        /// Check and apply Improviser unlock if threshold is met.
-        /// Requires 300 damage with thrown rocks.
-        /// </summary>
-        private static void CheckImproviserUnlock(IServerPlayer player)
-        {
-            if (player?.Entity == null) return;
-
-            string playerUid = player.PlayerUID;
-            var progress = ImproviserProgress.GetOrAdd(playerUid, _ => new ImproviserProgressData());
-
-            // Already unlocked
-            if (progress.IsUnlocked) return;
-
-            // Check rock damage threshold
-            if (progress.TotalRockDamage < ImproviserRockDamageThreshold) return;
-
-            // Threshold met - unlock Improviser!
-            progress.IsUnlocked = true;
-            pendingImproviserProgressSave = true;
-
-            // Apply the trait
-            ApplyImproviserBonusStatic(player, true);
-
-            // Notify player
-            NotifyLevelUp(player,
-                Lang.Get("seraphleveling:message-improviser-unlock"));
-        }
-
-        /// <summary>
-        /// Apply Improviser trait (unlocks sling crafting).
-        /// Also adds "improviser" to extraTraits to unlock sling recipes.
-        /// </summary>
-        private static void ApplyImproviserBonusStatic(IServerPlayer player, bool unlocked)
-        {
-            player.Entity.WatchedAttributes.SetBool(WATCHED_IMPROVISER_UNLOCKED, unlocked);
-
-            // Update extraTraits to show Improviser trait if unlocked (for UI display)
-            UpdateExtraTraitStatic(player.Entity, IMPROVISER_TRAIT_CODE, unlocked);
-
-            // IMPORTANT: Add "improviser" to extraTraits to unlock sling recipes
-            // The game's recipe system checks extraTraits for dynamically granted traits
-            // that unlock recipes via requiresTrait (e.g., sling requires "improviser")
-            UpdateExtraTraitStatic(player.Entity, "improviser", unlocked);
-        }
-
-        /// <summary>
         /// Check and apply Claustrophobic removal if threshold is met (Hunter only).
         /// Requires 100% mining speed.
         /// </summary>
@@ -11771,17 +11672,7 @@ namespace SeraphLeveling
         /// </summary>
         private TextCommandResult OnTraitImproviserCommand(TextCommandCallingArgs args)
         {
-            IServerPlayer player = args.Caller.Player as IServerPlayer;
-            if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
-
-            string playerUid = player.PlayerUID;
-            var progress = ImproviserProgress.GetOrAdd(playerUid, _ => new ImproviserProgressData());
-
-            var sb = new StringBuilder();
-            sb.AppendLine($"Improviser trait: {(progress.IsUnlocked ? "UNLOCKED" : "Locked")}");
-            sb.AppendLine($"Rock damage: {progress.TotalRockDamage:F0} / {ImproviserRockDamageThreshold} ({(progress.TotalRockDamage >= ImproviserRockDamageThreshold ? "✓" : "✗")})");
-
-            return TextCommandResult.Success(sb.ToString());
+            return TraitDefinitions.Improviser.HandleTraitCommand(args);
         }
 
         /// <summary>
@@ -11877,19 +11768,7 @@ namespace SeraphLeveling
         /// </summary>
         private TextCommandResult OnTraitImproviserUnlockCommand(TextCommandCallingArgs args)
         {
-            IServerPlayer player = args.Caller.Player as IServerPlayer;
-            if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
-
-            bool unlock = (bool)args[0];
-
-            string playerUid = player.PlayerUID;
-            var progress = ImproviserProgress.GetOrAdd(playerUid, _ => new ImproviserProgressData());
-            progress.IsUnlocked = unlock;
-
-            pendingImproviserProgressSave = true;
-            ApplyImproviserBonusStatic(player, unlock);
-
-            return TextCommandResult.Success($"Improviser trait {(unlock ? "unlocked" : "locked")}.");
+            return AttributeModifierDefinitions.Improviser.HandleUnlockCommand(args);
         }
 
         /// <summary>
@@ -12077,13 +11956,7 @@ namespace SeraphLeveling
             AttributeModifierDefinitions.Bowyer.ResetProgress(player);
 
             // Reset Improviser
-            if (ImproviserProgress.TryGetValue(playerUid, out var improviserProg))
-            {
-                improviserProg.IsUnlocked = false;
-                improviserProg.TotalRockDamage = 0;
-                pendingImproviserProgressSave = true;
-            }
-            ApplyImproviserBonusStatic(player, false);
+            AttributeModifierDefinitions.Improviser.ResetProgress(player);
 
             // Reset Tinkerer
             AttributeModifierDefinitions.Tinkerer.ResetProgress(player);
@@ -12170,7 +12043,7 @@ namespace SeraphLeveling
             if (AttributeModifierDefinitions.Technical.ProgressDictionary.TryGetValue(uid, out var technical)) ex.Technical = technical;
             if (HardyHealthProgress.TryGetValue(uid, out var hardy)) ex.HardyHealth = hardy;
             if (AttributeModifierDefinitions.Bowyer.ProgressDictionary.TryGetValue(uid, out var bowyer)) ex.Bowyer = bowyer;
-            if (ImproviserProgress.TryGetValue(uid, out var improviser)) ex.Improviser = improviser;
+            if (AttributeModifierDefinitions.Improviser.ProgressDictionary.TryGetValue(uid, out var improviser)) ex.Improviser = improviser;
             if (AttributeModifierDefinitions.Tinkerer.ProgressDictionary.TryGetValue(uid, out var tinkerer)) ex.Tinkerer = tinkerer;
             if (MercilessProgress.TryGetValue(uid, out var merciless)) ex.Merciless = merciless;
             if (ClaustrophobicRemovalProgress.TryGetValue(uid, out var claustro)) ex.ClaustrophobicRemoval = claustro;
@@ -12198,7 +12071,7 @@ namespace SeraphLeveling
             if (ex.Technical != null) { AttributeModifierDefinitions.Technical.ProgressDictionary[uid] = ex.Technical; AttributeModifierDefinitions.Technical.MarkForSave(true); }
             if (ex.HardyHealth != null) { HardyHealthProgress[uid] = ex.HardyHealth; pendingHardyHealthProgressSave = true; }
             if (ex.Bowyer != null) { AttributeModifierDefinitions.Bowyer.ProgressDictionary[uid] = ex.Bowyer; AttributeModifierDefinitions.Bowyer.MarkForSave(true); }
-            if (ex.Improviser != null) { ImproviserProgress[uid] = ex.Improviser; pendingImproviserProgressSave = true; }
+            if (ex.Improviser != null) { AttributeModifierDefinitions.Improviser.ProgressDictionary[uid] = ex.Improviser; AttributeModifierDefinitions.Improviser.MarkForSave(true); }
             if (ex.Tinkerer != null) { AttributeModifierDefinitions.Tinkerer.ProgressDictionary[uid] = ex.Tinkerer; AttributeModifierDefinitions.Tinkerer.MarkForSave(true); }
             if (ex.Merciless != null) { MercilessProgress[uid] = ex.Merciless; pendingMercilessProgressSave = true; }
             if (ex.ClaustrophobicRemoval != null) { ClaustrophobicRemovalProgress[uid] = ex.ClaustrophobicRemoval; pendingClaustrophobicRemovalProgressSave = true; }
@@ -12408,11 +12281,7 @@ namespace SeraphLeveling
             AttributeModifierDefinitions.Bowyer.Unlock(player);
 
             // Unlock Improviser
-            var improviserProg = ImproviserProgress.GetOrAdd(playerUid, _ => new ImproviserProgressData());
-            improviserProg.IsUnlocked = true;
-            improviserProg.TotalRockDamage = ImproviserRockDamageThreshold;
-            pendingImproviserProgressSave = true;
-            ApplyImproviserBonusStatic(player, true);
+            AttributeModifierDefinitions.Improviser.Unlock(player);
 
             // Unlock Tinkerer
             AttributeModifierDefinitions.Tinkerer.Unlock(player);
@@ -13511,7 +13380,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistImproviserProgress()
         {
-            PersistProgress<ImproviserProgressData>();
+            AttributeModifierDefinitions.Improviser.PersistProgress(ServerApi);
         }
 
         /// <summary>
@@ -13519,7 +13388,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadImproviserProgress()
         {
-            LoadProgress<ImproviserProgressData>();
+            AttributeModifierDefinitions.Improviser.LoadProgress(ServerApi);
         }
 
         // =========================================================================
