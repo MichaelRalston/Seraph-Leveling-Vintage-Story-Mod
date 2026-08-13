@@ -12,8 +12,8 @@ namespace SeraphLeveling.Data.Attributes
             Description = "tinkerer",
             PersistenceHeader = "TNK",
             Name = "Tinkerer",
-            ExtraTraitKey = SeraphLevelingModSystem.TINKERER_TRAIT_CODE,
-            UnlockedKey = SeraphLevelingModSystem.WATCHED_TINKERER_UNLOCKED,
+            ExtraTraitKey = "sittinkerermastery",
+            UnlockedKey = "sitTinkererUnlocked",
             NotifyLangKey = "seraphleveling:message-tinkerer-unlock",
             Trait = new(() => Traits.TraitDefinitions.Tinkerer)
         };
@@ -25,10 +25,10 @@ namespace SeraphLeveling.Data.Attributes
             Description = "technical",
             PersistenceHeader = "TEC",
             Name = "Technical",
-            ExtraTraitKey = SeraphLevelingModSystem.TECHNICAL_TRAIT_CODE,
-            UnlockedKey = SeraphLevelingModSystem.WATCHED_TECHNICAL_UNLOCKED,
+            ExtraTraitKey = "sittechnicalmastery",
+            UnlockedKey = "sitTechnicalUnlocked",
             NotifyLangKey = "seraphleveling:message-technical-unlock",
-            GlobalMaxCredits = SeraphLevelingModSystem.TechnicalRequiredTranslocatorRepairs,
+            GlobalMaxCredits = 5,
             CreditDescription = "translocators",
             Trait = new(() => Traits.TraitDefinitions.Technical),
         };
@@ -40,12 +40,12 @@ namespace SeraphLeveling.Data.Attributes
             Description = "bowyer",
             PersistenceHeader = "BWY",
             Name = "Bowyer",
-            ExtraTraitKey = SeraphLevelingModSystem.BOWYER_TRAIT_CODE,
-            UnlockedKey = SeraphLevelingModSystem.WATCHED_BOWYER_UNLOCKED,
+            ExtraTraitKey = "sitbowyermastery",
+            UnlockedKey = "sitBowyerUnlocked",
             NotifyLangKey = "seraphleveling:message-bowyer-unlock",
-            GlobalMaxCredits = SeraphLevelingModSystem.BowyerBowDamageThreshold,
+            GlobalMaxCredits = 300,
             CreditDescription = "bow damage",
-            WatchedCreditsAttributeKey = SeraphLevelingModSystem.WATCHED_BOWYER_BOW_DAMAGE,
+            WatchedCreditsAttributeKey = "sitBowyerBowDamage",
             Trait = new(() => Traits.TraitDefinitions.Bowyer),
         };
 

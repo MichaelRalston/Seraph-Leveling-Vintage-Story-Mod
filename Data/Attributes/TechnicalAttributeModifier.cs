@@ -26,7 +26,7 @@ namespace SeraphLeveling.Data.Attributes
             // Set the temporal gear repair cost reduction stat
             // -1 means one fewer temporal gear needed to repair translocators
             float gearCostReduction = progress.IsUnlocked ? -1f : 0f;
-            player.Entity.Stats.Set("temporalGearTLRepairCost", SeraphLevelingModSystem.TECHNICAL_STAT_CODE, gearCostReduction, false);
+            player.Entity.Stats.Set("temporalGearTLRepairCost", "sitTechnicalBonus", gearCostReduction, false);
         }
 
         public override void CollectStatus(IPlayer player, StringBuilder sb)

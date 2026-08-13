@@ -1,4 +1,5 @@
 using System;
+using SeraphLeveling.Data.Attributes;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Config;
@@ -617,7 +618,7 @@ namespace SeraphLeveling.Patches
             }
 
             // Process Technical unlock trait (translocator gear cost reduction)
-            bool technicalUnlocked = eplr.WatchedAttributes.GetBool(SeraphLevelingModSystem.WATCHED_TECHNICAL_UNLOCKED, false);
+            bool technicalUnlocked = eplr.WatchedAttributes.GetBool(AttributeModifierDefinitions.Technical.UnlockedKey, false);
             if (technicalUnlocked && !ClientHasVanillaTrait(eplr, "technical", "clockmaker"))
             {
                 string plainTechnicalTraitName = Lang.Get("seraphleveling:trait-sittechnicalmastery");
@@ -694,7 +695,7 @@ namespace SeraphLeveling.Patches
             }
 
             // Process Bowyer unlock trait (crude bow crafting)
-            bool bowyerUnlocked = eplr.WatchedAttributes.GetBool(SeraphLevelingModSystem.WATCHED_BOWYER_UNLOCKED, false);
+            bool bowyerUnlocked = eplr.WatchedAttributes.GetBool(AttributeModifierDefinitions.Bowyer.UnlockedKey, false);
             if (bowyerUnlocked && !ClientHasVanillaTrait(eplr, "bowyer", "hunter"))
             {
                 // Skip if the player's class already shows a vanilla Bowyer line — vanilla covers it.
@@ -752,7 +753,7 @@ namespace SeraphLeveling.Patches
             }
 
             // Process Tinkerer unlock trait (tuning spear crafting)
-            bool tinkererUnlocked = eplr.WatchedAttributes.GetBool(SeraphLevelingModSystem.WATCHED_TINKERER_UNLOCKED, false);
+            bool tinkererUnlocked = eplr.WatchedAttributes.GetBool(AttributeModifierDefinitions.Tinkerer.UnlockedKey, false);
             if (tinkererUnlocked && !ClientHasVanillaTrait(eplr, "tinkerer", "clockmaker"))
             {
                 string plainTinkererTraitName = Lang.Get("seraphleveling:trait-sittinkerermastery");
