@@ -47,6 +47,7 @@
       <ModVersion>$([System.Text.RegularExpressions.Regex]::Match($(ModInfoContent), '"version":\s*"([^"]+)"').Groups[1].Value)</ModVersion>
       <ModZipName>SeraphLeveling_$(ModVersion).zip</ModZipName>
       <ModOutDir>$(ProjectDir)bin\$(Configuration)\$(TargetFramework)</ModOutDir>
+      <VSModData Condition="'$(VSMODDATA)' == ''">$(APPDATA)</VSModData>
     </PropertyGroup>
     <ItemGroup>
       <PackageFiles Include="$(TargetPath)" />
@@ -67,8 +68,8 @@
     <!-- 2. Remove stale deployed versions (best-effort; never fail the build if the
          game is running and holds a lock), then deploy the freshly built zip. -->
     <Delete Files="@(OldZipsDeploy)" ContinueOnError="true" />
-    <Copy SourceFiles="$(ModOutDir)\$(ModZipName)" DestinationFolder="$(APPDATA)\VintagestoryData\Mods\" />
-    <Message Importance="high" Text="Deployed $(ModZipName) to $(APPDATA)\VintagestoryData\Mods\" />
+    <Copy SourceFiles="$(ModOutDir)\$(ModZipName)" DestinationFolder="$(VSModData)\VintagestoryData\Mods\" />
+    <Message Importance="high" Text="Deployed $(ModZipName) to $(VSModData)\VintagestoryData\Mods\" />
   </Target>
 
 </Project>
