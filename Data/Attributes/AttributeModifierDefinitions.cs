@@ -117,6 +117,7 @@ namespace SeraphLeveling.Data.Attributes
             CreditDescription = "thrown rock damage",
             WatchedCreditsAttributeKey = "sitImproviserRockDamage",
             Trait = new(() => Traits.TraitDefinitions.Improviser),
+        };
         public static readonly RangedDamageAttributeModifierDefinition RangedDamage = new ()
         {
             Id = "rangedDamage",
