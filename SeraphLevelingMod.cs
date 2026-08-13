@@ -214,14 +214,12 @@ namespace SeraphLeveling
         // =========================================================================
 
         // Clothier progression configuration
-        public static string[] ClothierBlacklistedItems = null;
-        public static void initializeClothierBlacklistedItems(ICoreAPI api)
+        public static void InitializeClothierBlacklistedItems(ICoreAPI api)
         {
-            bool hasSacredLib = SeraphLevelingModSystem.DetectAnySacredLib(api.ModLoader);
+            bool hasSacredLib = DetectAnySacredLib(api.ModLoader);
             api.Logger.Notification($"[SeraphLeveling] Initializing Clothier Blacklisted Items. Sacred Classes compatibility enabled: {hasSacredLib}");
-            ClothierBlacklistedItems = hasSacredLib ?
-            new string[]
-            {
+            AttributeModifierDefinitions.Clothier.TokenBanList = hasSacredLib ?
+            [
                 // Woodsman
                 "clothes-neck-acorn-amulet", "clothes-waist-sturdy-leather-belt", "clothes-shoulder-patchwork", "clothes-upperbody-survivor", "clothes-foot-high-leather-boots", "clothes-lowerbody-workmans-gown",
                 // Craftsman
@@ -246,9 +244,9 @@ namespace SeraphLeveling
                 "clothes-waist-merchant-belt", "clothes-upperbody-midsummer", "clothes-shoulder-woolen-scarf", "clothes-neck-pomander", "clothes-lowerbody-arcticfisher", "clothes-head-lackey-hat", "clothes-foot-hobnailboots", "clothes-hand-cuffsred", "clothes-arm-tailor-needlepuff",
                 // Zealot
                 "clothes-face-blindfold", "clothes-shoulder-rotwalker", "clothes-upperbody-woolen-shirt", "clothes-lowerbody-rotwalker", "clothes-foot-rusty-ankle-manacles", "clothes-arm-rusty-wrist-manacles"
-            }
+            ]
             :
-            new string[] {
+            [
                 // Hunter
                 "clothes-upperbody-hunter-shirt", "clothes-upperbodyover-hunter-coat", "clothes-shoulder-hunter-poncho",
                 "clothes-lowerbody-hunter-leggings", "clothes-foot-hunter-boots", "clothes-hand-hunter-gloves",
@@ -268,12 +266,9 @@ namespace SeraphLeveling
                 // Commoner
                 "clothes-upperbody-commoner-shirt", "clothes-upperbodyover-commoner-coat",
                 "clothes-lowerbody-commoner-trousers", "clothes-foot-commoner-boots", "clothes-hand-commoner-gloves"
-            };
+            ];
 
         }
-
-        // Tracking currently equipped clothing for each player
-        private static ConcurrentDictionary<string, Dictionary<string, string>> playerEquippedClothing = new ConcurrentDictionary<string, Dictionary<string, string>>();
 
         // =========================================================================
         // MENDER TRAIT - Tracks sewing kit repairs for durability bonus
@@ -5692,9 +5687,12 @@ namespace SeraphLeveling
                 {
                     // A brand new install has no old world settings to fold in, so
                     // stamp it as already migrated.
-                    initializeClothierBlacklistedItems(api);
-                    config = new SeraphLevelingConfig { ConfigVersion = CURRENT_CONFIG_VERSION };
-                    config.ClothierBlacklistedItems = ClothierBlacklistedItems;
+                    InitializeClothierBlacklistedItems(api);
+                    config = new SeraphLevelingConfig
+                    {
+                        ConfigVersion = CURRENT_CONFIG_VERSION,
+                        ClothierBlacklistedItems = [.. AttributeModifierDefinitions.Clothier.TokenBanList]
+                    };
                     api.StoreModConfig(config, CONFIG_FILE_NAME);
                     api.Logger.Notification("[SeraphLeveling] Created default config file: ModConfig/" + CONFIG_FILE_NAME);
                 }
@@ -5756,7 +5754,7 @@ namespace SeraphLeveling
                 AttributeModifierDefinitions.Clothier.RequiredCollectionSize = config.ClothierRequiredUniqueClothes;
                 if (config.ClothierBlacklistedItems != null)
                 {
-                    ClothierBlacklistedItems = config.ClothierBlacklistedItems;
+                    AttributeModifierDefinitions.Clothier.TokenBanList = [.. config.ClothierBlacklistedItems];
                 }
 
                 BaseMenderRepairsPerIncrement = config.MenderBaseRepairsPerIncrement;
@@ -5987,7 +5985,7 @@ namespace SeraphLeveling
                 config.ArmorMaxHealingPercent = MaxArmorHealingPercent;
 
                 config.ClothierRequiredUniqueClothes = AttributeModifierDefinitions.Clothier.RequiredCollectionSize;
-                config.ClothierBlacklistedItems = ClothierBlacklistedItems;
+                config.ClothierBlacklistedItems = AttributeModifierDefinitions.Clothier.TokenBanList.ToArray();
 
                 config.MenderBaseRepairsPerIncrement = BaseMenderRepairsPerIncrement;
                 config.MenderIncrementStep = MenderIncrementStep;
@@ -8679,40 +8677,7 @@ namespace SeraphLeveling
         /// </summary>
         public static bool IsClothingItem(string itemCode)
         {
-            if (string.IsNullOrEmpty(itemCode)) return false;
-            string lowerCode = itemCode.ToLowerInvariant();
-
-            // Check if item is blacklisted (starting class outfits)
-            if (ClothierBlacklistedItems != null)
-            {
-                foreach (string pattern in ClothierBlacklistedItems)
-                {
-                    if (!string.IsNullOrEmpty(pattern) && lowerCode.Contains(pattern.ToLowerInvariant()))
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            // Clothing items include clothes, not armor
-            if (lowerCode.Contains("clothes-")) return true;
-            if (lowerCode.Contains("shirt-")) return true;
-            if (lowerCode.Contains("trousers-")) return true;
-            if (lowerCode.Contains("dress-")) return true;
-            if (lowerCode.Contains("hat-")) return true;
-            if (lowerCode.Contains("cape-")) return true;
-            if (lowerCode.Contains("cloak-")) return true;
-            if (lowerCode.Contains("jacket-")) return true;
-            if (lowerCode.Contains("vest-")) return true;
-            if (lowerCode.Contains("skirt-")) return true;
-            if (lowerCode.Contains("gloves-")) return true;
-            if (lowerCode.Contains("boots-")) return true;
-            if (lowerCode.Contains("shoes-")) return true;
-            if (lowerCode.Contains("headband-")) return true;
-            if (lowerCode.Contains("mask-")) return true;
-            if (lowerCode.Contains("scarf-")) return true;
-
-            return false;
+            return AttributeModifierDefinitions.Clothier.IsItemValid(itemCode);
         }
 
         /// <summary>
@@ -11677,7 +11642,7 @@ namespace SeraphLeveling
 
             // Clothier defaults
             AttributeModifierDefinitions.Clothier.RequiredCollectionSize = 20;
-            initializeClothierBlacklistedItems(api: ServerApi);
+            InitializeClothierBlacklistedItems(api: ServerApi);
 
             // Mender defaults
             BaseMenderRepairsPerIncrement = 5;

@@ -8,11 +8,6 @@ namespace SeraphLeveling.Data.Attributes
         {
             return new ClothierAttributeModifierProgressData(def);
         }
-
-        protected override bool IsItemValid(string itemCode)
-        {
-            return SeraphLevelingModSystem.IsClothingItem(itemCode);
-        }
     }
 
     public class ClothierAttributeModifierProgressData(ClothierAttributeModifierDefinition def) : CollectionUnlockedAttributeModifierProgressData<ClothierAttributeModifierDefinition, ClothierAttributeModifierProgressData>(def)

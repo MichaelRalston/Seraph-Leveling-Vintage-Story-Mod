@@ -132,6 +132,7 @@ namespace SeraphLeveling.Data.Attributes
             RequiredCollectionSize = 20,
             CollectedItemDescription = "clothes worn",
             CollectedItemCountKey = "sitClothierCount",
+            TokenAllowList = [ "clothes-", "shirt-", "trousers-", "dress-", "hat-", "cape-", "cloak-", "jacket-", "vest-", "skirt-", "gloves-", "boots-", "shoes-", "headband-", "mask-", "scarf-" ],
             Trait = new(() => Traits.TraitDefinitions.Clothier),
         };
         

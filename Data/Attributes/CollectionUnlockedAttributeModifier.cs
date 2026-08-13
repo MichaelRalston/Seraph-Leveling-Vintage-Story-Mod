@@ -15,8 +15,34 @@ namespace SeraphLeveling.Data.Attributes
         public required int RequiredCollectionSize { get; set; }
         public required string CollectedItemDescription { get; init; }
         public required string CollectedItemCountKey { get; init; }
+        public HashSet<string> TokenBanList { get; set; } = [];
+        public HashSet<string> TokenAllowList { get; set; } = [];
 
-        protected abstract bool IsItemValid(string itemCode);
+        public virtual bool IsItemValid(string itemCode)
+        {
+            if (string.IsNullOrEmpty(itemCode)) return false;
+
+            // DENY if the item code contains any token in the ban list
+            foreach (string pattern in TokenBanList)
+            {
+                if (!string.IsNullOrEmpty(pattern) && itemCode.Contains(pattern, StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+            }
+
+            // ALLOW if the item code contains any token in the allow list
+            foreach (string pattern in TokenAllowList)
+            {
+                if (!string.IsNullOrEmpty(pattern) && itemCode.Contains(pattern, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            // DENY by default
+            return false;
+        }
 
         public virtual void AddCollectedItem(IServerPlayer player, string toAdd)
         {

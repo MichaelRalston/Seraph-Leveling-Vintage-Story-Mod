@@ -744,39 +744,7 @@ namespace SeraphLeveling.Tests
         // Helper methods that mirror the private methods in the mod
         private static bool IsClothingItemPublic(string itemCode)
         {
-            if (string.IsNullOrEmpty(itemCode)) return false;
-            string lowerCode = itemCode.ToLowerInvariant();
-
-            // Check if item is blacklisted (starting class outfits)
-            if (SeraphLevelingModSystem.ClothierBlacklistedItems != null)
-            {
-                foreach (string pattern in SeraphLevelingModSystem.ClothierBlacklistedItems)
-                {
-                    if (!string.IsNullOrEmpty(pattern) && lowerCode.Contains(pattern.ToLowerInvariant()))
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            if (lowerCode.Contains("clothes-")) return true;
-            if (lowerCode.Contains("shirt-")) return true;
-            if (lowerCode.Contains("trousers-")) return true;
-            if (lowerCode.Contains("dress-")) return true;
-            if (lowerCode.Contains("hat-")) return true;
-            if (lowerCode.Contains("cape-")) return true;
-            if (lowerCode.Contains("cloak-")) return true;
-            if (lowerCode.Contains("jacket-")) return true;
-            if (lowerCode.Contains("vest-")) return true;
-            if (lowerCode.Contains("skirt-")) return true;
-            if (lowerCode.Contains("gloves-")) return true;
-            if (lowerCode.Contains("boots-")) return true;
-            if (lowerCode.Contains("shoes-")) return true;
-            if (lowerCode.Contains("headband-")) return true;
-            if (lowerCode.Contains("mask-")) return true;
-            if (lowerCode.Contains("scarf-")) return true;
-
-            return false;
+            return SeraphLevelingModSystem.IsClothingItem(itemCode);
         }
 
         private static bool IsArmorItemPublic(string itemCode)
