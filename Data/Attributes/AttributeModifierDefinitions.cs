@@ -130,7 +130,7 @@ namespace SeraphLeveling.Data.Attributes
             UnlockedKey = "sitClothierUnlocked",
             NotifyLangKey = "seraphleveling:message-clothier-unlocked",
             RequiredCollectionSize = 20,
-            CollectedItemDescription = "clothes",
+            CollectedItemDescription = "clothes worn",
             CollectedItemCountKey = "sitClothierCount",
             Trait = new(() => Traits.TraitDefinitions.Clothier),
         };

@@ -212,13 +212,8 @@ namespace SeraphLeveling
         // =========================================================================
         // CLOTHIER TRAIT - Tracks unique clothing worn to unlock sewing kit crafting
         // =========================================================================
-        public const string CLOTHIER_STAT_CODE = "sitClothierBonus";
-        public const string WATCHED_CLOTHIER_COUNT = "sitClothierCount";
-        public const string WATCHED_CLOTHIER_UNLOCKED = "sitClothierUnlocked";
-        public const string CLOTHIER_TRAIT_CODE = "sitclothiermastery";
 
         // Clothier progression configuration
-        public static int ClothierRequiredUniqueClothes = 20; // Number of unique clothes to unlock sewing kit
         public static string[] ClothierBlacklistedItems = null;
         public static void initializeClothierBlacklistedItems(ICoreAPI api)
         {
@@ -276,12 +271,6 @@ namespace SeraphLeveling
             };
 
         }
-        // Vanilla Clothier trait (Tailor exclusive)
-        public const int VANILLA_CLOTHIER_BONUS = 0; // No vanilla bonus, this is unlock-based
-
-        // Storage for clothier progress
-        public static ConcurrentDictionary<string, ClothierProgressData> ClothierProgress = new ConcurrentDictionary<string, ClothierProgressData>();
-        public static volatile bool pendingClothierProgressSave = false;
 
         // Tracking currently equipped clothing for each player
         private static ConcurrentDictionary<string, Dictionary<string, string>> playerEquippedClothing = new ConcurrentDictionary<string, Dictionary<string, string>>();
@@ -1773,8 +1762,7 @@ namespace SeraphLeveling
             // Unlock traits
             sb.AppendLine("\n--- Unlock Traits ---");
 
-            var clothierProg = ClothierProgress.GetOrAdd(playerUid, _ => new ClothierProgressData());
-            sb.AppendLine($"Clothier: {clothierProg.UniqueClothesWorn.Count}/{ClothierRequiredUniqueClothes} clothes ({(clothierProg.SewingKitUnlocked ? "UNLOCKED" : "locked")})");
+            AttributeModifierDefinitions.Clothier.GetTraitAllCommandLine(player, sb);
 
             AttributeModifierDefinitions.Technical.GetTraitAllCommandLine(player, sb);
 
@@ -4061,12 +4049,7 @@ namespace SeraphLeveling
             }
 
             // Apply clothier bonus
-            var clothierProg = ClothierProgress.GetOrAdd(playerUid, _ => new ClothierProgressData());
-            ApplyClothierBonusStatic(byPlayer, clothierProg);
-            if (clothierProg.SewingKitUnlocked)
-            {
-                ServerApi.Logger.Debug($"[SeraphLeveling] Applied clothier unlock to player {byPlayer.PlayerName}");
-            }
+            AttributeModifierDefinitions.Clothier.HandleLogin(byPlayer);
 
             // Apply mender bonus
             var menderProg = MenderProgress.GetOrAdd(playerUid, _ => new MenderProgressData
@@ -5298,10 +5281,6 @@ namespace SeraphLeveling
                 {
                     PersistArmorProgress();
                 }
-                if (pendingClothierProgressSave || !ClothierProgress.IsEmpty)
-                {
-                    PersistClothierProgress();
-                }
                 if (pendingMenderProgressSave || !MenderProgress.IsEmpty)
                 {
                     PersistMenderProgress();
@@ -5375,7 +5354,6 @@ namespace SeraphLeveling
 
             MeleeProgress.Clear();
             ArmorProgress.Clear();
-            ClothierProgress.Clear();
             MenderProgress.Clear();
             PilfererProgress.Clear();
             ResourcefulProgress.Clear();
@@ -5395,7 +5373,6 @@ namespace SeraphLeveling
             pendingSleepBuffSave = false;
             pendingMeleeProgressSave = false;
             pendingArmorProgressSave = false;
-            pendingClothierProgressSave = false;
             pendingMenderProgressSave = false;
             pendingPilfererProgressSave = false;
             pendingResourcefulProgressSave = false;
@@ -5435,12 +5412,6 @@ namespace SeraphLeveling
             {
                 PersistArmorProgress();
                 pendingArmorProgressSave = false;
-            }
-
-            if (pendingClothierProgressSave || !ClothierProgress.IsEmpty)
-            {
-                PersistClothierProgress();
-                pendingClothierProgressSave = false;
             }
 
             if (pendingMenderProgressSave || !MenderProgress.IsEmpty)
@@ -5782,7 +5753,7 @@ namespace SeraphLeveling
                 EnableArmorHealingBonus = config.EnableArmorHealingBonus;
                 MaxArmorHealingPercent = config.ArmorMaxHealingPercent;
 
-                ClothierRequiredUniqueClothes = config.ClothierRequiredUniqueClothes;
+                AttributeModifierDefinitions.Clothier.RequiredCollectionSize = config.ClothierRequiredUniqueClothes;
                 if (config.ClothierBlacklistedItems != null)
                 {
                     ClothierBlacklistedItems = config.ClothierBlacklistedItems;
@@ -6015,7 +5986,7 @@ namespace SeraphLeveling
                 config.EnableArmorHealingBonus = EnableArmorHealingBonus;
                 config.ArmorMaxHealingPercent = MaxArmorHealingPercent;
 
-                config.ClothierRequiredUniqueClothes = ClothierRequiredUniqueClothes;
+                config.ClothierRequiredUniqueClothes = AttributeModifierDefinitions.Clothier.RequiredCollectionSize;
                 config.ClothierBlacklistedItems = ClothierBlacklistedItems;
 
                 config.MenderBaseRepairsPerIncrement = BaseMenderRepairsPerIncrement;
@@ -8652,25 +8623,7 @@ namespace SeraphLeveling
         /// </summary>
         private TextCommandResult OnTraitClothierCommand(TextCommandCallingArgs args)
         {
-            IServerPlayer player = args.Caller.Player as IServerPlayer;
-            if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
-
-            var progress = ClothierProgress.GetOrAdd(player.PlayerUID, _ => new ClothierProgressData());
-            int uniqueCount = progress.UniqueClothesWorn.Count;
-            bool unlocked = progress.SewingKitUnlocked;
-
-            var sb = new StringBuilder();
-            sb.AppendLine($"Clothier progression: {uniqueCount} / {ClothierRequiredUniqueClothes} unique clothes worn");
-            if (unlocked)
-            {
-                sb.AppendLine("Status: Sewing kit crafting UNLOCKED!");
-            }
-            else
-            {
-                sb.AppendLine($"Status: Wear {ClothierRequiredUniqueClothes - uniqueCount} more unique clothes to unlock sewing kit");
-            }
-
-            return TextCommandResult.Success(sb.ToString());
+            return TraitDefinitions.Clothier.HandleTraitCommand(args);
         }
 
         /// <summary>
@@ -8678,17 +8631,7 @@ namespace SeraphLeveling
         /// </summary>
         private TextCommandResult OnTraitClothierRequiredCommand(TextCommandCallingArgs args)
         {
-            int? newValue = (int?)args[0];
-
-            if (newValue.HasValue)
-            {
-                if (newValue.Value < 1) return TextCommandResult.Error("Required clothes must be at least 1.");
-                ClothierRequiredUniqueClothes = newValue.Value;
-                pendingConfigSave = true;
-                return TextCommandResult.Success($"Clothier required unique clothes set to {ClothierRequiredUniqueClothes}.");
-            }
-
-            return TextCommandResult.Success($"Current clothier required: {ClothierRequiredUniqueClothes} unique clothes.");
+            return AttributeModifierDefinitions.Clothier.HandleRequiredLevelCommand(args);
         }
 
         /// <summary>
@@ -8697,43 +8640,7 @@ namespace SeraphLeveling
         /// </summary>
         private TextCommandResult OnTraitClothierLevelCommand(TextCommandCallingArgs args)
         {
-            IServerPlayer player = args.Caller.Player as IServerPlayer;
-            if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
-
-            var progress = ClothierProgress.GetOrAdd(player.PlayerUID, _ => new ClothierProgressData());
-
-            int? newLevel = (int?)args[0];
-
-            // If no value provided, show current level
-            if (!newLevel.HasValue)
-            {
-                int currentLevel = progress.UniqueClothesWorn.Count;
-                string status = progress.SewingKitUnlocked ? "Sewing kit UNLOCKED!" : $"{ClothierRequiredUniqueClothes - currentLevel} more needed to unlock.";
-                return TextCommandResult.Success($"Current clothier level: {currentLevel}/{ClothierRequiredUniqueClothes}. {status}");
-            }
-
-            if (newLevel.Value < 0)
-                return TextCommandResult.Error("Level must be 0 or greater.");
-
-            // Clear the existing clothes set
-            progress.UniqueClothesWorn.Clear();
-
-            // Add placeholder entries up to the desired level
-            for (int i = 0; i < newLevel.Value; i++)
-            {
-                progress.UniqueClothesWorn.Add($"__placeholder_cloth_{i}");
-            }
-
-            // Set unlock status based on whether we've reached the required amount
-            progress.SewingKitUnlocked = newLevel.Value >= ClothierRequiredUniqueClothes;
-
-            pendingClothierProgressSave = true;
-
-            // Apply the bonus (this updates WatchedAttributes and extraTraits)
-            ApplyClothierBonusStatic(player, progress);
-
-            string newStatus = progress.SewingKitUnlocked ? "Sewing kit UNLOCKED!" : $"{ClothierRequiredUniqueClothes - newLevel.Value} more needed to unlock.";
-            return TextCommandResult.Success($"Clothier level set to {newLevel.Value}/{ClothierRequiredUniqueClothes}. {newStatus}");
+            return AttributeModifierDefinitions.Clothier.HandleLevelCommand(args);
         }
 
         /// <summary>
@@ -8744,48 +8651,24 @@ namespace SeraphLeveling
             if (ServerApi == null) return;
 
             // Skip clothier progression if disabled
-            if (IsSkillDisabled("clothier")) return;
+            if (IsAttributeModifierDisabled(AttributeModifierDefinitions.Clothier)) return;
 
-            foreach (IServerPlayer player in ServerApi.World.AllOnlinePlayers)
+            foreach (IServerPlayer player in ServerApi.World.AllOnlinePlayers.Cast<IServerPlayer>())
             {
                 if (player?.Entity == null) continue;
                 if (!player.Entity.Alive) continue;
 
-                string playerUid = player.PlayerUID;
-                var clothierProgress = ClothierProgress.GetOrAdd(playerUid, _ => new ClothierProgressData());
-
                 // Skip if already unlocked
-                if (clothierProgress.SewingKitUnlocked) continue;
+                if (AttributeModifierDefinitions.Clothier.IsUnlockedForPlayer(player)) continue;
 
                 // Get the player's currently equipped clothing using character inventory
                 var characterInventory = player.InventoryManager?.GetOwnInventory(GlobalConstants.characterInvClassName);
                 if (characterInventory != null)
                 {
-                    foreach (var slot in characterInventory)
-                    {
-                        if (slot?.Itemstack?.Collectible != null)
-                        {
-                            string itemCode = slot.Itemstack.Collectible.Code?.ToString();
-                            if (IsClothingItem(itemCode))
-                            {
-                                if (clothierProgress.UniqueClothesWorn.Add(itemCode))
-                                {
-                                    // New unique clothing worn
-                                    pendingClothierProgressSave = true;
-                                    ServerApi.Logger.Debug($"[SeraphLeveling] Player {player.PlayerName} wore new clothing: {itemCode} ({clothierProgress.UniqueClothesWorn.Count}/{ClothierRequiredUniqueClothes})");
-
-                                    // Check if unlocked
-                                    if (clothierProgress.UniqueClothesWorn.Count >= ClothierRequiredUniqueClothes && !clothierProgress.SewingKitUnlocked)
-                                    {
-                                        clothierProgress.SewingKitUnlocked = true;
-                                        ApplyClothierBonusStatic(player, clothierProgress);
-                                        NotifyLevelUp(player,
-                                            Lang.Get("seraphleveling:message-clothier-unlocked"));
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    characterInventory
+                        .Where(slot => slot?.Itemstack?.Collectible != null)
+                        .Select(slot => slot.Itemstack.Collectible.Code?.ToString())
+                        .Foreach(itemCode => AttributeModifierDefinitions.Clothier.AddCollectedItem(player, itemCode));
                 }
             }
         }
@@ -8830,27 +8713,6 @@ namespace SeraphLeveling
             if (lowerCode.Contains("scarf-")) return true;
 
             return false;
-        }
-
-        /// <summary>
-        /// Apply clothier bonus (update WatchedAttributes for client sync).
-        /// Also adds "clothier" to extraTraits to unlock sewing kit recipes.
-        /// </summary>
-        private static void ApplyClothierBonusStatic(IServerPlayer player, ClothierProgressData progress)
-        {
-            if (player?.Entity == null) return;
-
-            player.Entity.WatchedAttributes.SetInt(WATCHED_CLOTHIER_COUNT, progress.UniqueClothesWorn.Count);
-            player.Entity.WatchedAttributes.SetBool(WATCHED_CLOTHIER_UNLOCKED, progress.SewingKitUnlocked);
-            player.Entity.WatchedAttributes.MarkPathDirty(WATCHED_CLOTHIER_COUNT);
-
-            // Update extraTraits to show Clothier trait if unlocked (for UI display)
-            UpdateExtraTraitStatic(player.Entity, CLOTHIER_TRAIT_CODE, progress.SewingKitUnlocked);
-
-            // IMPORTANT: Add "clothier" to extraTraits to unlock sewing kit recipes
-            // The game's recipe system checks extraTraits for dynamically granted traits
-            // that unlock recipes via requiresTrait (e.g., the sewing kit requires "clothier")
-            UpdateExtraTraitStatic(player.Entity, "clothier", progress.SewingKitUnlocked);
         }
 
         /// <summary>
@@ -11140,13 +11002,7 @@ namespace SeraphLeveling
             ApplyArmorBonusesStatic(player, 0, 0);
 
             // Reset Clothier
-            if (ClothierProgress.TryGetValue(playerUid, out var clothierProg))
-            {
-                clothierProg.SewingKitUnlocked = false;
-                clothierProg.UniqueClothesWorn.Clear();
-                pendingClothierProgressSave = true;
-            }
-            ApplyClothierBonusStatic(player, clothierProg ?? new ClothierProgressData());
+            AttributeModifierDefinitions.Clothier.ResetProgress(player);
 
             // Reset Mender
             if (MenderProgress.TryGetValue(playerUid, out var menderProg))
@@ -11290,7 +11146,7 @@ namespace SeraphLeveling
             if (AttributeModifierDefinitions.WalkingSpeed.ProgressDictionary.TryGetValue(uid, out var walking)) ex.Walking = walking;
             if (AttributeModifierDefinitions.HungerRate.ProgressDictionary.TryGetValue(uid, out var hunger)) ex.Hunger = hunger;
             if (ArmorProgress.TryGetValue(uid, out var armor)) ex.Armor = armor;
-            if (ClothierProgress.TryGetValue(uid, out var clothier)) ex.Clothier = clothier;
+            if (AttributeModifierDefinitions.Clothier.ProgressDictionary.TryGetValue(uid, out var clothier)) ex.Clothier = clothier;
             if (MenderProgress.TryGetValue(uid, out var mender)) ex.Mender = mender;
             if (PilfererProgress.TryGetValue(uid, out var pilferer)) ex.Pilferer = pilferer;
             if (ResourcefulProgress.TryGetValue(uid, out var resourceful)) ex.Resourceful = resourceful;
@@ -11318,7 +11174,7 @@ namespace SeraphLeveling
             if (ex.Walking != null) { AttributeModifierDefinitions.WalkingSpeed.ProgressDictionary[uid] = ex.Walking; AttributeModifierDefinitions.WalkingSpeed.MarkForSave(true); }
             if (ex.Hunger != null) { AttributeModifierDefinitions.HungerRate.ProgressDictionary[uid] = ex.Walking; AttributeModifierDefinitions.HungerRate.MarkForSave(true); }
             if (ex.Armor != null) { ArmorProgress[uid] = ex.Armor; pendingArmorProgressSave = true; }
-            if (ex.Clothier != null) { ClothierProgress[uid] = ex.Clothier; pendingClothierProgressSave = true; }
+            if (ex.Clothier != null) { AttributeModifierDefinitions.Clothier.ProgressDictionary[uid] = ex.Clothier; AttributeModifierDefinitions.Clothier.MarkForSave(true); }
             if (ex.Mender != null) { MenderProgress[uid] = ex.Mender; pendingMenderProgressSave = true; }
             if (ex.Pilferer != null) { PilfererProgress[uid] = ex.Pilferer; pendingPilfererProgressSave = true; }
             if (ex.Resourceful != null) { ResourcefulProgress[uid] = ex.Resourceful; pendingResourcefulProgressSave = true; }
@@ -11451,12 +11307,6 @@ namespace SeraphLeveling
             pendingArmorProgressSave = true;
             ApplyArmorBonusesStatic(player, maxArmorDurabilityCredits, maxArmorWalkSpeedCredits);
 
-            // Max Clothier (unlock sewing kit)
-            var clothierProg = ClothierProgress.GetOrAdd(playerUid, _ => new ClothierProgressData());
-            clothierProg.SewingKitUnlocked = true;
-            pendingClothierProgressSave = true;
-            ApplyClothierBonusStatic(player, clothierProg);
-
             // Max Mender
             int maxMenderCredits = MaxMenderPercent;
             var menderProg = MenderProgress.GetOrAdd(playerUid, _ => new MenderProgressData());
@@ -11515,9 +11365,6 @@ namespace SeraphLeveling
             hardyHealthProg.IsUnlocked = true;
             pendingHardyHealthProgressSave = true;
             ApplyHardyHealthBonusStatic(player, true);
-
-            // Unlock Improviser
-            AttributeModifierDefinitions.Improviser.Unlock(player);
 
             // Unlock Merciless
             var mercilessProg = MercilessProgress.GetOrAdd(playerUid, _ => new MercilessProgressData());
@@ -11829,7 +11676,7 @@ namespace SeraphLeveling
             MaxArmorWalkSpeedPercent = 50;
 
             // Clothier defaults
-            ClothierRequiredUniqueClothes = 20;
+            AttributeModifierDefinitions.Clothier.RequiredCollectionSize = 20;
             initializeClothierBlacklistedItems(api: ServerApi);
 
             // Mender defaults
@@ -12415,7 +12262,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void PersistClothierProgress()
         {
-            PersistProgress<ClothierProgressData>();
+            AttributeModifierDefinitions.Clothier.PersistProgress(ServerApi);
         }
 
         /// <summary>
@@ -12423,7 +12270,7 @@ namespace SeraphLeveling
         /// </summary>
         private void LoadClothierProgress()
         {
-            LoadProgress<ClothierProgressData>();
+            AttributeModifierDefinitions.Clothier.LoadProgress(ServerApi);
         }
 
         /// <summary>

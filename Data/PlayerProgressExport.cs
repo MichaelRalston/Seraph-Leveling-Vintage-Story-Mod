@@ -28,7 +28,7 @@ namespace SeraphLeveling.Data
         public LeveledPartialAttributeModifierProgressData Walking;
         public LeveledPartialAttributeModifierProgressData Hunger;
         public ArmorProgressData Armor;
-        public ClothierProgressData Clothier;
+        public ClothierAttributeModifierProgressData Clothier;
         public MenderProgressData Mender;
         public PilfererProgressData Pilferer;
         public ResourcefulProgressData Resourceful;

@@ -301,7 +301,7 @@ namespace SeraphLeveling.Patches
             }
 
             // Process Clothier trait (unlocked by wearing 20 unique clothes)
-            bool clothierUnlocked = eplr.WatchedAttributes.GetBool(SeraphLevelingModSystem.WATCHED_CLOTHIER_UNLOCKED, false);
+            bool clothierUnlocked = eplr.WatchedAttributes.GetBool(AttributeModifierDefinitions.Clothier.UnlockedKey, false);
             if (clothierUnlocked && !ClientHasVanillaTrait(eplr, "clothier", "tailor"))
             {
                 string plainClothierTraitName = Lang.Get("seraphleveling:trait-sitclothiermastery");

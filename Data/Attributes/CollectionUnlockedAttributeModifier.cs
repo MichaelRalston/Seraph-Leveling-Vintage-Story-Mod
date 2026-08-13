@@ -12,7 +12,7 @@ namespace SeraphLeveling.Data.Attributes
 {
     public abstract record class CollectionUnlockedAttributeModifierDefinition<D, PD> : UnlockedAttributeModifierDefinition<D, PD> where PD : CollectionUnlockedAttributeModifierProgressData<D, PD> where D : CollectionUnlockedAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
     {
-        public required int RequiredCollectionSize { get; init; }
+        public required int RequiredCollectionSize { get; set; }
         public required string CollectedItemDescription { get; init; }
         public required string CollectedItemCountKey { get; init; }
 
@@ -25,9 +25,6 @@ namespace SeraphLeveling.Data.Attributes
 
             var progress = GetDict(player);
 
-            // Already unlocked - no more progress needed
-            if (progress.IsUnlocked) return;
-
             if (progress.CollectedItems.Add(toAdd))
             {
                 MarkForSave(true);
@@ -37,7 +34,7 @@ namespace SeraphLeveling.Data.Attributes
                     SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Player {player.PlayerName} made progress towards {Name} by collecting {toAdd} ({progress.CollectedItems.Count} / {RequiredCollectionSize})");
                 }
 
-                if (progress.CollectedItems.Count >= RequiredCollectionSize)
+                if (progress.CollectedItems.Count >= RequiredCollectionSize && !progress.IsUnlocked)
                 {
                     bool oldUnlock = progress.IsUnlocked;
                     progress.IsUnlocked = true;
@@ -69,7 +66,56 @@ namespace SeraphLeveling.Data.Attributes
 
         public override void GetTraitAllCommandLine(IPlayer player, StringBuilder sb) {
             var progress = GetDict(player);
-            sb.AppendLine($"{Name}: {progress.CollectedItems.Count}/{RequiredCollectionSize} {CollectedItemDescription} ({(progress.IsUnlocked ? "UNLOCKED" : "locked")})");
+            sb.AppendLine($"{Name}: {progress.CollectedItems.Count}/{RequiredCollectionSize} unique {CollectedItemDescription} ({(progress.IsUnlocked ? "UNLOCKED" : "locked")})");
+        }
+
+        public override void CollectStatus(IPlayer player, StringBuilder sb)
+        {
+            // FIXME Should this method and GetTraitAllCommandLine be combined across attribute classes?
+            var progress = GetDict(player);
+            sb.AppendLine($"{Name} trait: {progress.CollectedItems.Count} / {RequiredCollectionSize} unique {CollectedItemDescription} ({(progress.IsUnlocked ? "UNLOCKED" : "Locked")})");
+        }
+
+        public virtual TextCommandResult HandleLevelCommand(TextCommandCallingArgs args)
+        {
+            var player = args.Caller.Player as IServerPlayer;
+            if (player?.Entity == null)
+            {
+                return TextCommandResult.Error("Could not find player entity");
+            }
+
+            var progress = GetDict(player);
+
+            int? newCredits = (int?)args[0];
+
+            // If no value provided, show current level
+            if (!newCredits.HasValue)
+            {
+                string status = progress.IsUnlocked ? "UNLOCKED!" : $"{RequiredCollectionSize - progress.CollectedItems.Count} more needed to unlock.";
+                return TextCommandResult.Success($"Current {Description} level: {progress.CollectedItems.Count}/{RequiredCollectionSize} ({status})");
+            }
+
+            if (newCredits.Value < 0)
+            {
+                return TextCommandResult.Error("Level cannot be negative");
+            }
+
+            return progress.SetLevelFromCommand(player, newCredits.Value, args);
+        }
+
+        public virtual TextCommandResult HandleRequiredLevelCommand(TextCommandCallingArgs args)
+        {
+            int? newValue = (int?)args[0];
+
+            if (newValue.HasValue)
+            {
+                if (newValue.Value < 1) return TextCommandResult.Error($"Required {CollectedItemDescription} must be at least 1.");
+                RequiredCollectionSize = newValue.Value;
+                MarkForSave(true);
+                return TextCommandResult.Success($"{Name} required unique {CollectedItemDescription} set to {RequiredCollectionSize}.");
+            }
+
+            return TextCommandResult.Success($"Current {Description} required: {RequiredCollectionSize} unique {CollectedItemDescription}.");
         }
     }
 
@@ -94,6 +140,27 @@ namespace SeraphLeveling.Data.Attributes
         {
             writer.Write(IsUnlocked);
             writer.WriteArray(CollectedItems.ToArray());
+        }
+
+        public virtual TextCommandResult SetLevelFromCommand(IServerPlayer player, int newLevel, TextCommandCallingArgs args)
+        {
+            // Clear the existing collection set
+            CollectedItems.Clear();
+
+            // Add placeholder entries up to the desired level
+            for (int i = 0; i < newLevel; i++)
+            {
+                CollectedItems.Add($"__placeholder_{i}");
+            }
+
+            // Set unlock status based on whether we've reached the required amount
+            IsUnlocked = newLevel >= Definition.RequiredCollectionSize;
+
+            Definition.MarkForSave(true);
+            Definition.ApplyUnlock(player, (PD)this);
+
+            string newStatus = IsUnlocked ? "UNLOCKED!" : $"{Definition.RequiredCollectionSize - newLevel} more needed to unlock.";
+            return TextCommandResult.Success($"{Definition.Description} level set to {newLevel}/{Definition.RequiredCollectionSize}. {newStatus}");
         }
     }
 }
