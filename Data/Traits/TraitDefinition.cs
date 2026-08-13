@@ -23,6 +23,11 @@ namespace SeraphLeveling.Data.Traits
             }
         } = [];
 
+        ~TraitDefinition()
+        {
+            Requirements?.ForEach(req => req.SatisfactionChanged -= OnRequirementSatisfactionChanged);
+        }
+
         protected void OnRequirementSatisfactionChanged(IServerPlayer player, bool oldSatisfaction, bool newSatisfaction)
         {
             if (newSatisfaction)

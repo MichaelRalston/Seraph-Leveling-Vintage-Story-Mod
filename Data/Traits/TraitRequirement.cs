@@ -33,6 +33,11 @@ namespace SeraphLeveling.Data.Traits
             Definition.UnlockChanged += OnAttributeUnlockChanged;
         }
 
+        ~RequiredUnlockedAttribute()
+        {
+            Definition.UnlockChanged -= OnAttributeUnlockChanged;
+        }
+
         public event SatisfactionChangedDelegate SatisfactionChanged;
 
         public bool IsSatisfied(IServerPlayer player)
@@ -62,6 +67,11 @@ namespace SeraphLeveling.Data.Traits
             Definition = definition;
             RequiredCredits = requiredCredits;
             Definition.CreditsChanged += OnAttributeCreditsChanged;
+        }
+
+        ~RequiredLeveledAttribute()
+        {
+            Definition.CreditsChanged -= OnAttributeCreditsChanged;
         }
 
         public event SatisfactionChangedDelegate SatisfactionChanged;
