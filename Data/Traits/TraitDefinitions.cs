@@ -34,6 +34,7 @@ namespace SeraphLeveling.Data.Traits
                 (AttributeModifierDefinitions.Bowyer, 1)
             ],
             Requirements = [
+                new RequiredUnlockedAttribute(AttributeModifierDefinitions.Bowyer)
                 // TODO Generic ranged damage 10%
             ]
         };
@@ -111,6 +112,7 @@ namespace SeraphLeveling.Data.Traits
                 (AttributeModifierDefinitions.Technical, 1)
             ],
             Requirements = [
+                new RequiredUnlockedAttribute(AttributeModifierDefinitions.Technical)
             ]
         };
 
