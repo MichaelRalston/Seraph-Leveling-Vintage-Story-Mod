@@ -223,7 +223,7 @@ namespace SeraphLeveling.Data.Attributes
 
                     serverApi.WorldManager.SaveGame.StoreData(SaveKey, data);
                     serverApi.Logger.Debug($"[SeraphLeveling] Persisted {Description} progress for {snapshot.Length} players");
-                    var stringyData = string.Concat(data.Select(b => b >= 32 && b <= 126 ? ((char)b).ToString() : $"[0x{b:X2}]"));
+                    var stringyData = string.Concat(data.Select(b => b >= 32 && b <= 123 ? ((char)b).ToString() : $"[0x{b:X2}]"));
                     serverApi.Logger.Debug($"[SeraphLeveling] {Description} progress was stored as {stringyData}");
                 }
                 catch (Exception ex)
