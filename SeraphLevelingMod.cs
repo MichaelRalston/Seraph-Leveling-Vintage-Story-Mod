@@ -22,6 +22,7 @@ using SeraphLeveling.Data.Traits;
 using SeraphLeveling.Data.Mods;
 using SeraphLeveling.Data.Attributes;
 using SeraphLeveling.Data.Legacy;
+using Vintagestory.API.Util;
 
 namespace SeraphLeveling
 {
@@ -101,12 +102,6 @@ namespace SeraphLeveling
         public const int VANILLA_FOCUSED_DAMAGE_BONUS = 20;
         public const int VANILLA_FOCUSED_ACCURACY_BONUS = 30;
         public const int VANILLA_FOCUSED_DISTANCE_BONUS = 20;
-
-        // Storage for ranged progress - keyed by player UID
-        public static ConcurrentDictionary<string, RangedProgressData> RangedProgress = new ConcurrentDictionary<string, RangedProgressData>();
-
-        // Flag to indicate pending ranged progress save
-        public static volatile bool pendingRangedProgressSave = false;
 
         // Keys for walking speed progression system
         public const string WALKING_STAT_CODE = "sitWalkingBonus";
@@ -982,49 +977,6 @@ namespace SeraphLeveling
                     .RequiresPrivilege(Privilege.controlserver)
                     .HandleWith(OnTraitMeleeIncrementCommand)
                 .EndSubCommand()
-                .BeginSubCommand("ranged")
-                    .WithDescription("View your ranged damage progression stats")
-                    .RequiresPrivilege(Privilege.chat)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitRangedCommand)
-                .EndSubCommand()
-                .BeginSubCommand("rangedbase")
-                    .WithDescription("Get or set the base damage per level (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalInt("damage"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitRangedBaseCommand)
-                .EndSubCommand()
-                .BeginSubCommand("rangedlevel")
-                    .WithDescription("Get or set your ranged level (admin only). Usage: /trait rangedlevel [level] [toolname]")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalInt("level"), api.ChatCommands.Parsers.OptionalWord("toolname"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitRangedLevelCommand)
-                .EndSubCommand()
-                .BeginSubCommand("rangedmax")
-                    .WithDescription("Get or set the max ranged damage bonus percent (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalInt("percent"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitRangedMaxCommand)
-                .EndSubCommand()
-                .BeginSubCommand("rangedmaxacc")
-                    .WithDescription("Get or set the max ranged accuracy bonus percent (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalInt("percent"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitRangedMaxAccuracyCommand)
-                .EndSubCommand()
-                .BeginSubCommand("rangedmaxdist")
-                    .WithDescription("Get or set the max ranged distance bonus percent (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalInt("percent"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitRangedMaxDistanceCommand)
-                .EndSubCommand()
-                .BeginSubCommand("rangedincrement")
-                    .WithDescription("Get or set the ranged increment step per credit (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalInt("step"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitRangedIncrementCommand)
-                .EndSubCommand()
                 .BeginSubCommand("armor")
                     .WithDescription("View your armor progression stats")
                     .RequiresPrivilege(Privilege.chat)
@@ -1570,11 +1522,8 @@ namespace SeraphLeveling
 
             // Load config and progress data after save game is loaded
             api.Event.SaveGameLoaded += LoadConfig;
-            api.Event.SaveGameLoaded += LoadMiningProgress;
+            LoadedAttributes.Foreach(definition => api.Event.SaveGameLoaded += () => definition.LoadProgress(ServerApi));
             api.Event.SaveGameLoaded += LoadMeleeProgress;
-            api.Event.SaveGameLoaded += LoadRangedProgress;
-            api.Event.SaveGameLoaded += LoadWalkingProgress;
-            api.Event.SaveGameLoaded += LoadHungerProgress;
             api.Event.SaveGameLoaded += LoadArmorProgress;
             api.Event.SaveGameLoaded += LoadClothierProgress;
             api.Event.SaveGameLoaded += LoadMenderProgress;
@@ -1583,11 +1532,8 @@ namespace SeraphLeveling
             api.Event.SaveGameLoaded += LoadForagerProgress;
             api.Event.SaveGameLoaded += LoadFurtiveProgress;
             api.Event.SaveGameLoaded += LoadPreciseProgress;
-            api.Event.SaveGameLoaded += LoadTechnicalProgress;
             api.Event.SaveGameLoaded += LoadHardyHealthProgress;
-            api.Event.SaveGameLoaded += LoadBowyerProgress;
             api.Event.SaveGameLoaded += LoadImproviserProgress;
-            api.Event.SaveGameLoaded += LoadTinkererProgress;
             api.Event.SaveGameLoaded += LoadMercilessProgress;
             api.Event.SaveGameLoaded += LoadClaustrophobicRemovalProgress;
             api.Event.SaveGameLoaded += LoadCOProgress;
@@ -1796,8 +1742,9 @@ namespace SeraphLeveling
             var meleeProg = MeleeProgress.GetOrAdd(playerUid, _ => new MeleeProgressData());
             sb.AppendLine($"Melee: {meleeProg.TotalCredits}/{MaxMeleeDamagePercent} (+{meleeProg.TotalCredits}% damage)");
 
-            var rangedProg = RangedProgress.GetOrAdd(playerUid, _ => new RangedProgressData());
-            sb.AppendLine($"Ranged: {rangedProg.TotalCredits}/{MaxRangedDamagePercent} (+{rangedProg.TotalCredits}% dmg, +{rangedProg.TotalCredits}% acc, +{rangedProg.TotalCredits}% dist)");
+            AttributeModifierDefinitions.RangedDamage.GetTraitAllCommandLine(player, sb);
+            AttributeModifierDefinitions.RangedAccuracy.GetTraitAllCommandLine(player, sb);
+            AttributeModifierDefinitions.RangedDistance.GetTraitAllCommandLine(player, sb);
 
             AttributeModifierDefinitions.WalkingSpeed.GetTraitAllCommandLine(player, sb);
             AttributeModifierDefinitions.HungerRate.GetTraitAllCommandLine(player, sb);
@@ -1905,7 +1852,7 @@ namespace SeraphLeveling
                 case "melee":
                     return SetMeleeLevelForPlayer(targetPlayer, level, toolName);
                 case "ranged":
-                    return SetRangedLevelForPlayer(targetPlayer, level, toolName);
+                    return AttributeModifierDefinitions.RangedDamage.GetForPlayer(targetUid).SetLevel(targetPlayer, level, toolName);
                 case "precise":
                     return SetPreciseLevelForPlayer(targetPlayer, level, toolName);
                 case "armor":
@@ -2077,69 +2024,6 @@ namespace SeraphLeveling
                 UpdateSkillActivityDay(playerUid, "melee");
 
                 return TextCommandResult.Success($"Melee credits set to {level} (+{bonusPercent}% melee damage). Per-weapon progress reset.");
-            }
-        }
-
-        /// <summary>
-        /// Sets per-tool credits for ranged.
-        /// </summary>
-        private TextCommandResult SetRangedLevelForPlayer(IServerPlayer player, int level, string toolName)
-        {
-            string playerUid = player.PlayerUID;
-            int maxCredits = GetMaxRangedCredits(player.Entity);
-            var progress = RangedProgress.GetOrAdd(playerUid, _ => new RangedProgressData());
-
-            if (level < 0)
-                return TextCommandResult.Error("Credits cannot be negative.");
-
-            if (toolName != null)
-            {
-                int oldToolCredits = 0;
-                if (progress.WeaponProgress.TryGetValue(toolName, out var existingTool))
-                    oldToolCredits = CalculateToolCredits(existingTool.CurrentIncrementSize, BaseRangedDamagePerIncrement, RangedIncrementStep);
-
-                int projectedTotal = progress.TotalCredits - oldToolCredits + level;
-                if (projectedTotal > maxCredits)
-                    return TextCommandResult.Error($"Setting {level} credits on {toolName} would result in {projectedTotal} total credits, exceeding max ({maxCredits}).");
-
-                if (level == 0)
-                {
-                    progress.WeaponProgress.Remove(toolName);
-                }
-                else
-                {
-                    var weaponProgress = progress.GetWeaponProgress(toolName);
-                    weaponProgress.CurrentIncrementSize = BaseRangedDamagePerIncrement + (level * RangedIncrementStep);
-                    weaponProgress.DamageInIncrement = 0;
-                }
-
-                progress.TotalCredits = RecalculateTotalCreditsFromTools(
-                    progress.WeaponProgress, w => w.CurrentIncrementSize,
-                    BaseRangedDamagePerIncrement, RangedIncrementStep);
-
-                pendingRangedProgressSave = true;
-                var (dmg, acc, dist) = ApplyRangedBonusStatic(player, progress.TotalCredits);
-                TraitDefinitions.Bowyer.CheckUnlocks(player);
-                TraitDefinitions.Improviser.CheckUnlocks(player);
-                UpdateSkillActivityDay(playerUid, "ranged");
-
-                return TextCommandResult.Success($"Set {level} credits on {toolName}. Total: {progress.TotalCredits}/{maxCredits} (+{dmg}% damage, +{acc}% accuracy, +{dist}% distance).");
-            }
-            else
-            {
-                if (level > maxCredits)
-                    return TextCommandResult.Error($"Credits cannot exceed max ({maxCredits}).");
-
-                progress.TotalCredits = level;
-                progress.WeaponProgress.Clear();
-
-                pendingRangedProgressSave = true;
-                var (dmg, acc, dist) = ApplyRangedBonusStatic(player, level);
-                TraitDefinitions.Bowyer.CheckUnlocks(player);
-                TraitDefinitions.Improviser.CheckUnlocks(player);
-                UpdateSkillActivityDay(playerUid, "ranged");
-
-                return TextCommandResult.Success($"Ranged credits set to {level} (+{dmg}% damage, +{acc}% accuracy, +{dist}% distance). Per-weapon progress reset.");
             }
         }
 
@@ -2596,239 +2480,6 @@ namespace SeraphLeveling
             else
             {
                 return TextCommandResult.Success($"Current max melee damage bonus: +{MaxMeleeDamagePercent}%");
-            }
-        }
-
-        /// <summary>
-        /// Handler for /trait ranged command.
-        /// </summary>
-        private TextCommandResult OnTraitRangedCommand(TextCommandCallingArgs args)
-        {
-            var player = args.Caller.Player;
-            if (player?.Entity == null)
-            {
-                return TextCommandResult.Error("Could not find player entity");
-            }
-
-            string playerUid = player.PlayerUID;
-            var progress = RangedProgress.GetOrAdd(playerUid, _ => new RangedProgressData());
-
-            int currentCredits = progress.TotalCredits;
-            var (damageBonus, accuracyBonus, distanceBonus) = CalculateRangedBonusPercents(currentCredits, player.Entity as EntityPlayer);
-            int maxCredits = GetMaxRangedCredits(player.Entity as EntityPlayer);
-
-            var sb = new StringBuilder();
-            sb.AppendLine($"Ranged progression: {currentCredits} credits / {maxCredits} max");
-            sb.AppendLine($"Current bonuses: +{damageBonus}% damage, +{accuracyBonus}% accuracy, +{distanceBonus}% distance");
-
-            if (progress.WeaponProgress.Count > 0)
-            {
-                sb.AppendLine("\nPer-weapon progress:");
-                foreach (var kvp in progress.WeaponProgress.OrderBy(p => p.Value.CurrentIncrementSize))
-                {
-                    string weaponName = kvp.Key;
-                    // Simplify the display name (remove "game:" prefix if present)
-                    weaponName = weaponName.Replace("game:", "");
-
-                    var weaponProgress = kvp.Value;
-                    sb.AppendLine($"  {weaponName}: {weaponProgress.DamageInIncrement:F1}/{weaponProgress.CurrentIncrementSize} damage");
-                }
-            }
-            else
-            {
-                sb.AppendLine("\nNo weapon progress yet. Deal ranged damage with bows or slings to start!");
-            }
-
-            if (currentCredits >= maxCredits)
-            {
-                sb.Insert(0, "=== MAXED OUT ===\n");
-            }
-
-            return TextCommandResult.Success(sb.ToString().TrimEnd());
-        }
-
-        /// <summary>
-        /// Handler for /trait rangedbase command.
-        /// Sets the base damage needed for the first 1% increment.
-        /// </summary>
-        private TextCommandResult OnTraitRangedBaseCommand(TextCommandCallingArgs args)
-        {
-            int? newValue = (int?)args[0];
-
-            if (newValue.HasValue)
-            {
-                if (newValue.Value < 1)
-                {
-                    return TextCommandResult.Error("Base damage per increment must be at least 1");
-                }
-
-                BaseRangedDamagePerIncrement = newValue.Value;
-                pendingConfigSave = true;
-
-                return TextCommandResult.Success($"Base ranged damage per increment set to {BaseRangedDamagePerIncrement}. New weapons will require this much damage for first 1%.");
-            }
-            else
-            {
-                return TextCommandResult.Success($"Current base ranged damage per increment: {BaseRangedDamagePerIncrement}\nIncrement step: +{RangedIncrementStep} per credit");
-            }
-        }
-
-        /// <summary>
-        /// Handler for /trait rangedincrement command.
-        /// Sets how much additional damage is required for each subsequent credit.
-        /// </summary>
-        private TextCommandResult OnTraitRangedIncrementCommand(TextCommandCallingArgs args)
-        {
-            int? newValue = (int?)args[0];
-
-            if (newValue.HasValue)
-            {
-                if (newValue.Value < 0)
-                {
-                    return TextCommandResult.Error("Increment step cannot be negative");
-                }
-
-                RangedIncrementStep = newValue.Value;
-                pendingConfigSave = true;
-
-                return TextCommandResult.Success($"Ranged increment step set to +{RangedIncrementStep} per credit.\nProgression: {BaseRangedDamagePerIncrement}, {BaseRangedDamagePerIncrement + RangedIncrementStep}, {BaseRangedDamagePerIncrement + RangedIncrementStep * 2}...");
-            }
-            else
-            {
-                return TextCommandResult.Success($"Current ranged increment step: +{RangedIncrementStep} per credit\nProgression: {BaseRangedDamagePerIncrement}, {BaseRangedDamagePerIncrement + RangedIncrementStep}, {BaseRangedDamagePerIncrement + RangedIncrementStep * 2}...");
-            }
-        }
-
-        /// <summary>
-        /// Handler for /trait rangedlevel command.
-        /// Gets or sets the player's ranged credits (level) directly.
-        /// Note: Setting resets all per-weapon progress since we're setting credits directly.
-        /// </summary>
-        private TextCommandResult OnTraitRangedLevelCommand(TextCommandCallingArgs args)
-        {
-            var player = args.Caller.Player as IServerPlayer;
-            if (player?.Entity == null)
-            {
-                return TextCommandResult.Error("Could not find player entity");
-            }
-
-            int? newCredits = (int?)args[0];
-
-            // If no value provided, show current level
-            if (!newCredits.HasValue)
-            {
-                int maxCredits = GetMaxRangedCredits(player.Entity);
-                var progress = RangedProgress.GetOrAdd(player.PlayerUID, _ => new RangedProgressData());
-                var (damageBonus, accuracyBonus, distanceBonus) = CalculateRangedBonusPercents(progress.TotalCredits, player.Entity);
-                return TextCommandResult.Success($"Current ranged level: {progress.TotalCredits}/{maxCredits} (+{damageBonus}% damage, +{accuracyBonus}% accuracy, +{distanceBonus}% distance)");
-            }
-
-            string toolName = (string)args[1];
-            return SetRangedLevelForPlayer(player, newCredits.Value, toolName);
-        }
-
-        /// <summary>
-        /// Handler for /trait rangedmax command.
-        /// Gets or sets the maximum ranged damage bonus percent.
-        /// </summary>
-        private TextCommandResult OnTraitRangedMaxCommand(TextCommandCallingArgs args)
-        {
-            int? newValue = (int?)args[0];
-
-            if (newValue.HasValue)
-            {
-                if (newValue.Value < 1)
-                {
-                    return TextCommandResult.Error("Max ranged damage percent must be at least 1");
-                }
-
-                MaxRangedDamagePercent = newValue.Value;
-                pendingConfigSave = true;
-
-                // Recalculate and reapply bonuses for all online players
-                foreach (IServerPlayer player in ServerApi.World.AllOnlinePlayers)
-                {
-                    if (player?.Entity == null) continue;
-                    string playerUid = player.PlayerUID;
-                    var progress = RangedProgress.GetOrAdd(playerUid, _ => new RangedProgressData());
-                    ApplyRangedBonusStatic(player, progress.TotalCredits);
-                }
-
-                return TextCommandResult.Success($"Max ranged damage bonus set to +{MaxRangedDamagePercent}%. All player bonuses recalculated.");
-            }
-            else
-            {
-                return TextCommandResult.Success($"Current max ranged damage bonus: +{MaxRangedDamagePercent}%\nMax accuracy: +{MaxRangedAccuracyPercent}%\nMax distance: +{MaxRangedDistancePercent}%");
-            }
-        }
-
-        /// <summary>
-        /// Handler for /trait rangedmaxacc command.
-        /// Gets or sets the maximum ranged accuracy bonus percent.
-        /// </summary>
-        private TextCommandResult OnTraitRangedMaxAccuracyCommand(TextCommandCallingArgs args)
-        {
-            int? newValue = (int?)args[0];
-
-            if (newValue.HasValue)
-            {
-                if (newValue.Value < 1)
-                {
-                    return TextCommandResult.Error("Max ranged accuracy percent must be at least 1");
-                }
-
-                MaxRangedAccuracyPercent = newValue.Value;
-                pendingConfigSave = true;
-
-                // Recalculate and reapply bonuses for all online players
-                foreach (IServerPlayer player in ServerApi.World.AllOnlinePlayers)
-                {
-                    if (player?.Entity == null) continue;
-                    string playerUid = player.PlayerUID;
-                    var progress = RangedProgress.GetOrAdd(playerUid, _ => new RangedProgressData());
-                    ApplyRangedBonusStatic(player, progress.TotalCredits);
-                }
-
-                return TextCommandResult.Success($"Max ranged accuracy bonus set to +{MaxRangedAccuracyPercent}%. All player bonuses recalculated.");
-            }
-            else
-            {
-                return TextCommandResult.Success($"Current max ranged accuracy bonus: +{MaxRangedAccuracyPercent}%\nMax damage: +{MaxRangedDamagePercent}%\nMax distance: +{MaxRangedDistancePercent}%");
-            }
-        }
-
-        /// <summary>
-        /// Handler for /trait rangedmaxdist command.
-        /// Gets or sets the maximum ranged distance bonus percent.
-        /// </summary>
-        private TextCommandResult OnTraitRangedMaxDistanceCommand(TextCommandCallingArgs args)
-        {
-            int? newValue = (int?)args[0];
-
-            if (newValue.HasValue)
-            {
-                if (newValue.Value < 1)
-                {
-                    return TextCommandResult.Error("Max ranged distance percent must be at least 1");
-                }
-
-                MaxRangedDistancePercent = newValue.Value;
-                pendingConfigSave = true;
-
-                // Recalculate and reapply bonuses for all online players
-                foreach (IServerPlayer player in ServerApi.World.AllOnlinePlayers)
-                {
-                    if (player?.Entity == null) continue;
-                    string playerUid = player.PlayerUID;
-                    var progress = RangedProgress.GetOrAdd(playerUid, _ => new RangedProgressData());
-                    ApplyRangedBonusStatic(player, progress.TotalCredits);
-                }
-
-                return TextCommandResult.Success($"Max ranged distance bonus set to +{MaxRangedDistancePercent}%. All player bonuses recalculated.");
-            }
-            else
-            {
-                return TextCommandResult.Success($"Current max ranged distance bonus: +{MaxRangedDistancePercent}%\nMax damage: +{MaxRangedDamagePercent}%\nMax accuracy: +{MaxRangedAccuracyPercent}%");
             }
         }
 
@@ -4390,8 +4041,7 @@ namespace SeraphLeveling
                 LastDecayCheckDay[playerUid] = currentDay;
             }
 
-            // Apply mining bonus (Stats always applied, WatchedAttributes only sync if changed)
-            AttributeModifierDefinitions.MiningSpeed.HandleLogin(byPlayer);
+            LoadedAttributes.Foreach(definition => definition.HandleLogin(byPlayer));
 
             // Apply melee bonus (Stats always applied, WatchedAttributes only sync if changed)
             var meleeProg = MeleeProgress.GetOrAdd(playerUid, _ => new MeleeProgressData());
@@ -4401,21 +4051,6 @@ namespace SeraphLeveling
             {
                 ServerApi.Logger.Debug($"[SeraphLeveling] Applied melee bonus {meleeCredits}% to player {byPlayer.PlayerName}");
             }
-
-            // Apply ranged bonus (Stats always applied, WatchedAttributes only sync if changed)
-            var rangedProg = RangedProgress.GetOrAdd(playerUid, _ => new RangedProgressData());
-            int rangedCredits = rangedProg.TotalCredits;
-            ApplyRangedBonusStatic(byPlayer, rangedCredits);
-            if (rangedCredits > 0)
-            {
-                ServerApi.Logger.Debug($"[SeraphLeveling] Applied ranged bonus {rangedCredits} credits to player {byPlayer.PlayerName}");
-            }
-
-            // Apply walking bonus (Stats always applied, WatchedAttributes only sync if changed)
-            AttributeModifierDefinitions.WalkingSpeed.HandleLogin(byPlayer);
-
-            // Apply hunger bonus (Stats always applied, WatchedAttributes only sync if changed)
-            AttributeModifierDefinitions.HungerRate.HandleLogin(byPlayer);
 
             // Apply armor bonuses (Stats always applied, WatchedAttributes only sync if changed)
             var armorProg = ArmorProgress.GetOrAdd(playerUid, _ => new ArmorProgressData());
@@ -4502,9 +4137,6 @@ namespace SeraphLeveling
                 ServerApi.Logger.Debug($"[SeraphLeveling] Applied precise bonus +{preciseCredits}% mechanical damage to player {byPlayer.PlayerName}");
             }
 
-            // Apply technical unlock
-            AttributeModifierDefinitions.Technical.HandleLogin(byPlayer);
-
             // Apply hardy health unlock
             var hardyHealthProg = HardyHealthProgress.GetOrAdd(playerUid, _ => new HardyHealthProgressData());
             if (hardyHealthProg.IsUnlocked)
@@ -4513,14 +4145,8 @@ namespace SeraphLeveling
                 ServerApi.Logger.Debug($"[SeraphLeveling] Applied hardy health +{HardyHealthBonus} HP to player {byPlayer.PlayerName}");
             }
 
-            // Apply bowyer unlock
-            AttributeModifierDefinitions.Bowyer.HandleLogin(byPlayer);
-
             // Apply improviser unlock
             AttributeModifierDefinitions.Improviser.HandleLogin(byPlayer);
-
-            // Apply tinkerer unlock
-            AttributeModifierDefinitions.Tinkerer.HandleLogin(byPlayer);
 
             // Apply merciless unlock
             var mercilessProg = MercilessProgress.GetOrAdd(playerUid, _ => new MercilessProgressData());
@@ -5404,54 +5030,12 @@ namespace SeraphLeveling
                 TrackImproviserRockDamage(attackerPlayer, damage);
             }
 
-            // Get or create player progress data
-            var playerProgress = RangedProgress.GetOrAdd(playerUid, _ => new RangedProgressData());
-
-            // Get the player-specific max credits (accounts for Nearsighted/Frail penalties)
-            int maxCredits = GetMaxRangedCredits(attackerPlayer.Entity);
-
-            // Skip remaining credit processing if already at max - completely invisible
-            if (playerProgress.TotalCredits >= maxCredits) return;
-
-            // Get or create progress for this specific weapon combination
-            var weaponProgress = playerProgress.GetWeaponProgress(weaponCombo);
-
-            int oldCredits = playerProgress.TotalCredits;
-
-            // Apply sleep buff multiplier to damage
-            float modifiedDamage = ApplyXPMultiplier(playerUid, damage);
-
-            // Add damage to THIS weapon combination's progress
-            weaponProgress.DamageInIncrement += modifiedDamage;
-
-            // Check if we've earned any new credits with this weapon combination
-            while (weaponProgress.DamageInIncrement >= weaponProgress.CurrentIncrementSize && playerProgress.TotalCredits < maxCredits)
-            {
-                // Earn a credit
-                playerProgress.TotalCredits++;
-                weaponProgress.DamageInIncrement -= weaponProgress.CurrentIncrementSize;
-                weaponProgress.CurrentIncrementSize += RangedIncrementStep;
-
-                ServerApi.Logger.Debug($"[SeraphLeveling] Player {attackerPlayer.PlayerName} earned ranged credit {playerProgress.TotalCredits} with {weaponCombo}, next requires {weaponProgress.CurrentIncrementSize} damage");
-            }
-
-            pendingRangedProgressSave = true;
-
-            // Update last activity day for skill decay
-            UpdateSkillActivityDay(playerUid, "ranged");
-
-            // If credits increased, update the stat and notify player
-            if (playerProgress.TotalCredits > oldCredits)
-            {
-                ApplyRangedBonusStatic(attackerPlayer, playerProgress.TotalCredits);
-
-                // Notify player of level up with raw improvement (shows progress even when cancelling negative traits)
-                NotifyLevelUp(attackerPlayer,
-                    Lang.Get("seraphleveling:message-ranged-level-up", playerProgress.TotalCredits, playerProgress.TotalCredits, playerProgress.TotalCredits, playerProgress.TotalCredits));
-
-                // Check for trait unlocks that depend on ranged damage
-                TraitDefinitions.Bowyer.CheckUnlocks(attackerPlayer);
-            }
+            var damageProgress = AttributeModifierDefinitions.RangedDamage.GetForPlayer(playerUid);
+            damageProgress.DoEvent(attackerPlayer, weaponCombo, damage);
+            var accuracyProgress = AttributeModifierDefinitions.RangedAccuracy.GetForPlayer(playerUid);
+            accuracyProgress.DoEvent(attackerPlayer, weaponCombo, damage);
+            var distanceProgress = AttributeModifierDefinitions.RangedDistance.GetForPlayer(playerUid);
+            distanceProgress.DoEvent(attackerPlayer, weaponCombo, damage);
         }
 
         /// <summary>
@@ -5832,10 +5416,6 @@ namespace SeraphLeveling
                 {
                     PersistMeleeProgress();
                 }
-                if (pendingRangedProgressSave || !RangedProgress.IsEmpty)
-                {
-                    PersistRangedProgress();
-                }
                 if (pendingArmorProgressSave || !ArmorProgress.IsEmpty)
                 {
                     PersistArmorProgress();
@@ -5899,27 +5479,6 @@ namespace SeraphLeveling
                 ServerApi.Event.PlayerDisconnect -= OnPlayerDisconnect;
                 ServerApi.Event.GameWorldSave -= OnGameWorldSave;
                 ServerApi.Event.SaveGameLoaded -= LoadConfig;
-                ServerApi.Event.SaveGameLoaded -= LoadMiningProgress;
-                ServerApi.Event.SaveGameLoaded -= LoadMeleeProgress;
-                ServerApi.Event.SaveGameLoaded -= LoadRangedProgress;
-                ServerApi.Event.SaveGameLoaded -= LoadWalkingProgress;
-                ServerApi.Event.SaveGameLoaded -= LoadHungerProgress;
-                ServerApi.Event.SaveGameLoaded -= LoadArmorProgress;
-                ServerApi.Event.SaveGameLoaded -= LoadClothierProgress;
-                ServerApi.Event.SaveGameLoaded -= LoadMenderProgress;
-                ServerApi.Event.SaveGameLoaded -= LoadPilfererProgress;
-                ServerApi.Event.SaveGameLoaded -= LoadResourcefulProgress;
-                ServerApi.Event.SaveGameLoaded -= LoadForagerProgress;
-                ServerApi.Event.SaveGameLoaded -= LoadFurtiveProgress;
-                ServerApi.Event.SaveGameLoaded -= LoadPreciseProgress;
-                ServerApi.Event.SaveGameLoaded -= LoadTechnicalProgress;
-                ServerApi.Event.SaveGameLoaded -= LoadHardyHealthProgress;
-                ServerApi.Event.SaveGameLoaded -= LoadBowyerProgress;
-                ServerApi.Event.SaveGameLoaded -= LoadImproviserProgress;
-                ServerApi.Event.SaveGameLoaded -= LoadTinkererProgress;
-                ServerApi.Event.SaveGameLoaded -= LoadMercilessProgress;
-                ServerApi.Event.SaveGameLoaded -= LoadClaustrophobicRemovalProgress;
-                ServerApi.Event.SaveGameLoaded -= LoadCOProgress;
                 ServerApi.Event.SaveGameLoaded -= LoadSleepBuffData;
             }
 
@@ -5937,7 +5496,6 @@ namespace SeraphLeveling
             }
 
             MeleeProgress.Clear();
-            RangedProgress.Clear();
             ArmorProgress.Clear();
             ClothierProgress.Clear();
             MenderProgress.Clear();
@@ -5958,7 +5516,6 @@ namespace SeraphLeveling
             LastSleepBuffApplyTick.Clear();
             pendingSleepBuffSave = false;
             pendingMeleeProgressSave = false;
-            pendingRangedProgressSave = false;
             pendingArmorProgressSave = false;
             pendingClothierProgressSave = false;
             pendingMenderProgressSave = false;
@@ -5994,12 +5551,6 @@ namespace SeraphLeveling
             {
                 PersistMeleeProgress();
                 pendingMeleeProgressSave = false;
-            }
-
-            if (pendingRangedProgressSave || !RangedProgress.IsEmpty)
-            {
-                PersistRangedProgress();
-                pendingRangedProgressSave = false;
             }
 
             if (pendingArmorProgressSave || !ArmorProgress.IsEmpty)
@@ -6121,23 +5672,6 @@ namespace SeraphLeveling
         private void LoadMeleeProgress()
         {
             LoadProgress<MeleeProgressData>();
-        }
-
-        /// <summary>
-        /// Persist ranged progress to world save data.
-        /// Version 2 format stores per-weapon progress dictionary + LastActivityDay.
-        /// </summary>
-        public static void PersistRangedProgress()
-        {
-            PersistProgress<RangedProgressData>();
-        }
-
-        /// <summary>
-        /// Load ranged progress from world save data.
-        /// </summary>
-        private void LoadRangedProgress()
-        {
-            LoadProgress<RangedProgressData>();
         }
 
         public static void PersistProgress<T>() where T : ProgressData<T>, IProgressDataContract<T>
@@ -6330,9 +5864,9 @@ namespace SeraphLeveling
 
                 BaseRangedDamagePerIncrement = config.RangedBaseDamagePerIncrement;
                 RangedIncrementStep = config.RangedIncrementStep;
-                MaxRangedDamagePercent = config.RangedMaxDamagePercent;
-                MaxRangedAccuracyPercent = config.RangedMaxAccuracyPercent;
-                MaxRangedDistancePercent = config.RangedMaxDistancePercent;
+                AttributeModifierDefinitions.RangedDamage.GlobalMaxCredits = config.RangedMaxDamagePercent;
+                AttributeModifierDefinitions.RangedAccuracy.GlobalMaxCredits = config.RangedMaxAccuracyPercent;
+                AttributeModifierDefinitions.RangedDistance.GlobalMaxCredits = config.RangedMaxDistancePercent;
 
                 AttributeModifierDefinitions.WalkingSpeed.BaseIncrement = config.WalkingBaseBlocksPerIncrement;
                 AttributeModifierDefinitions.WalkingSpeed.IncrementStep = config.WalkingIncrementStep;
@@ -6783,9 +6317,7 @@ namespace SeraphLeveling
             StringBuilder verboseSb = VerboseDecayLogging ? new StringBuilder() : null;
 
             // --- Per-tool dictionary skills ---
-
-            // Mining
-            totalDecayApplied += AttributeModifierDefinitions.MiningSpeed.ApplyDecay(player, currentDay, sb, verboseSb);
+            LoadedAttributes.Foreach(definition => totalDecayApplied += definition.ApplyDecay(player, currentDay, sb, verboseSb));
 
             // Melee
             if (!DecayExemptSkills.Contains("melee") && !DisabledSkills.Contains("melee"))
@@ -6837,61 +6369,6 @@ namespace SeraphLeveling
                             mProg.TotalCredits -= lost;
                             if (lost > 0) { totalDecayApplied += lost; sb.AppendLine($"  Melee: {oldCredits} \u2192 {mProg.TotalCredits} (-{lost} credits)"); }
                             pendingMeleeProgressSave = true;
-                        }
-                    }
-                }
-            }
-
-            // Ranged
-            if (!DecayExemptSkills.Contains("ranged") && !DisabledSkills.Contains("ranged"))
-            {
-                if (RangedProgress.TryGetValue(playerUid, out var rProg) && (rProg.TotalCredits > 0 || rProg.WeaponProgress.Count > 0))
-                {
-                    var (grace, basePoints, maxPoints) = GetDecayParams("ranged");
-                    int decayCredits = CalculateDecayPoints(rProg.LastActivityDay, currentDay, grace, basePoints, maxPoints);
-                    if (decayCredits > 0)
-                    {
-                        int oldCredits = rProg.TotalCredits;
-                        var toolEntries = rProg.WeaponProgress.Select(kvp =>
-                            (kvp.Key, (double)kvp.Value.DamageInIncrement, kvp.Value.CurrentIncrementSize)).ToList();
-
-                        if (toolEntries.Count > 0)
-                        {
-                            double rawPenalty = (double)decayCredits;
-
-                            var (newCr, lost) = ApplyAbsolutePositionDecay(toolEntries, rawPenalty,
-                                BaseRangedDamagePerIncrement, RangedIncrementStep, oldCredits,
-                                (k, a, s) =>
-                                {
-                                    if (rProg.WeaponProgress.TryGetValue(k, out var p))
-                                    {
-                                        p.DamageInIncrement = (float)a; p.CurrentIncrementSize = s;
-                                    }
-                                },
-                                k => rProg.WeaponProgress.Remove(k), verboseSb, "Ranged");
-                            rProg.TotalCredits = newCr;
-                            if (lost > 0) totalDecayApplied += lost;
-                            sb.AppendLine($"  Ranged: {oldCredits} \u2192 {newCr} (-{lost} credits, {rawPenalty:F0} pts)");
-                            foreach (var entry in toolEntries)
-                            {
-                                int oldToolCr = RangedIncrementStep > 0 ? (entry.Item3 - BaseRangedDamagePerIncrement) / RangedIncrementStep : 0;
-                                if (rProg.WeaponProgress.TryGetValue(entry.Item1, out var after))
-                                {
-                                    int newToolCr = RangedIncrementStep > 0 ? (after.CurrentIncrementSize - BaseRangedDamagePerIncrement) / RangedIncrementStep : 0;
-                                    int toolLost = oldToolCr - newToolCr;
-                                    sb.AppendLine($"    {entry.Item1}: {entry.Item2:F0}/{entry.Item3} \u2192 {after.DamageInIncrement:F0}/{after.CurrentIncrementSize}{(toolLost > 0 ? $" (-{toolLost} cr)" : "")}");
-                                }
-                                else
-                                    sb.AppendLine($"    {entry.Item1}: {entry.Item2:F0}/{entry.Item3} \u2192 removed (-{oldToolCr} cr)");
-                            }
-                            pendingRangedProgressSave = true;
-                        }
-                        else
-                        {
-                            int lost = Math.Min(decayCredits, oldCredits);
-                            rProg.TotalCredits -= lost;
-                            if (lost > 0) { totalDecayApplied += lost; sb.AppendLine($"  Ranged: {oldCredits} \u2192 {rProg.TotalCredits} (-{lost} credits)"); }
-                            pendingRangedProgressSave = true;
                         }
                     }
                 }
@@ -6953,12 +6430,6 @@ namespace SeraphLeveling
             }
 
             // --- Single-accumulator skills ---
-
-            // Walking
-            totalDecayApplied += AttributeModifierDefinitions.WalkingSpeed.ApplyDecay(player, currentDay, sb, verboseSb);
-
-            // Hunger
-            totalDecayApplied += AttributeModifierDefinitions.HungerRate.ApplyDecay(player, currentDay, sb, verboseSb);
 
             // Armor is exempt from decay (leveled by wearing new pieces, not renewable)
 
@@ -7164,14 +6635,9 @@ namespace SeraphLeveling
         private void ReapplyAllBonuses(IServerPlayer player)
         {
             string playerUid = player.PlayerUID;
-
-            AttributeModifierDefinitions.MiningSpeed.ApplyBonusIfExists(player);
+            LoadedAttributes.Foreach(definition => definition.ApplyBonusIfExists(player));
             if (MeleeProgress.TryGetValue(playerUid, out var meleeProg))
                 ApplyMeleeBonusStatic(player, meleeProg.TotalCredits);
-            if (RangedProgress.TryGetValue(playerUid, out var rangedProg))
-                ApplyRangedBonusStatic(player, rangedProg.TotalCredits);
-            AttributeModifierDefinitions.WalkingSpeed.ApplyBonusIfExists(player);
-            AttributeModifierDefinitions.HungerRate.ApplyBonusIfExists(player);
             if (ArmorProgress.TryGetValue(playerUid, out var armorProg))
                 ApplyArmorBonusesStatic(player, armorProg.TotalDurabilityCredits, armorProg.TotalWalkSpeedCredits);
             if (MenderProgress.TryGetValue(playerUid, out var menderProg))
@@ -7205,10 +6671,6 @@ namespace SeraphLeveling
                 case "melee":
                     if (MeleeProgress.TryGetValue(playerUid, out var meleeProg))
                         meleeProg.LastActivityDay = currentDay;
-                    break;
-                case "ranged":
-                    if (RangedProgress.TryGetValue(playerUid, out var rangedProg))
-                        rangedProg.LastActivityDay = currentDay;
                     break;
                 case "armor":
                     if (ArmorProgress.TryGetValue(playerUid, out var armorProg))
@@ -7580,10 +7042,8 @@ namespace SeraphLeveling
             var sb = new StringBuilder();
             int totalCreditsLost = 0;
 
+            LoadedAttributes.Foreach(definition => totalCreditsLost += definition.ApplyDeathPenalty(player, sb));
             // --- Per-tool dictionary skills ---
-
-            // Mining
-            AttributeModifierDefinitions.MiningSpeed.ApplyDeathPenalty(player, sb);
 
             // Melee
             if (!DeathPenaltyExemptSkills.Contains("melee") && !DisabledSkills.Contains("melee"))
@@ -7638,62 +7098,6 @@ namespace SeraphLeveling
                         }
                     }
                     pendingMeleeProgressSave = true;
-                }
-            }
-
-            // Ranged
-            if (!DeathPenaltyExemptSkills.Contains("ranged") && !DisabledSkills.Contains("ranged"))
-            {
-                if (RangedProgress.TryGetValue(playerUid, out var rangedProg) && (rangedProg.TotalCredits > 0 || rangedProg.WeaponProgress.Count > 0))
-                {
-                    int oldCredits = rangedProg.TotalCredits;
-
-                    var toolEntries = rangedProg.WeaponProgress.Select(kvp =>
-                        (kvp.Key, (double)kvp.Value.DamageInIncrement, kvp.Value.CurrentIncrementSize)).ToList();
-
-                    if (toolEntries.Count > 0)
-                    {
-                        double rawPenalty = BaseRangedDamagePerIncrement * DeathPenaltyFraction * Math.Sqrt(Math.Max(1, oldCredits));
-                        var (newCr, _) = ApplyAbsolutePositionDecay(toolEntries, rawPenalty,
-                            BaseRangedDamagePerIncrement, RangedIncrementStep, oldCredits,
-                            (k, a, s) =>
-                            {
-                                if (rangedProg.WeaponProgress.TryGetValue(k, out var p))
-                                {
-                                    p.DamageInIncrement = (float)a; p.CurrentIncrementSize = s;
-                                }
-                            },
-                            k => rangedProg.WeaponProgress.Remove(k), null, "Ranged");
-                        rangedProg.TotalCredits = newCr;
-                        int actualLost = oldCredits - newCr;
-                        if (actualLost > 0) totalCreditsLost += actualLost;
-                        sb.AppendLine($"  Ranged: {oldCredits} \u2192 {newCr} (-{actualLost} credits, {rawPenalty:F0} pts)");
-                        foreach (var entry in toolEntries)
-                        {
-                            int oldToolCr = RangedIncrementStep > 0 ? (entry.Item3 - BaseRangedDamagePerIncrement) / RangedIncrementStep : 0;
-                            if (rangedProg.WeaponProgress.TryGetValue(entry.Item1, out var after))
-                            {
-                                int newToolCr = RangedIncrementStep > 0 ? (after.CurrentIncrementSize - BaseRangedDamagePerIncrement) / RangedIncrementStep : 0;
-                                int toolLost = oldToolCr - newToolCr;
-                                sb.AppendLine($"    {entry.Item1}: {entry.Item2:F0}/{entry.Item3} \u2192 {after.DamageInIncrement:F0}/{after.CurrentIncrementSize}{(toolLost > 0 ? $" (-{toolLost} cr)" : "")}");
-                            }
-                            else
-                                sb.AppendLine($"    {entry.Item1}: {entry.Item2:F0}/{entry.Item3} \u2192 removed (-{oldToolCr} cr)");
-                        }
-                    }
-                    else if (oldCredits > 0)
-                    {
-                        int intendedLoss = (int)Math.Floor(DeathPenaltyFraction * Math.Sqrt(Math.Max(1, oldCredits)));
-                        intendedLoss = Math.Min(intendedLoss, oldCredits);
-                        if (intendedLoss > 0)
-                        {
-                            rangedProg.TotalCredits = Math.Max(0, oldCredits - intendedLoss);
-                            int actualLost = oldCredits - rangedProg.TotalCredits;
-                            totalCreditsLost += actualLost;
-                            sb.AppendLine($"  Ranged: {oldCredits} \u2192 {rangedProg.TotalCredits} (-{actualLost} credits)");
-                        }
-                    }
-                    pendingRangedProgressSave = true;
                 }
             }
 
@@ -7754,11 +7158,6 @@ namespace SeraphLeveling
             }
 
             // --- Single accumulator skills ---
-
-            // Walking
-            totalCreditsLost += AttributeModifierDefinitions.WalkingSpeed.ApplyDeathPenalty(player, sb);
-            // Hunger
-            totalCreditsLost += AttributeModifierDefinitions.HungerRate.ApplyDeathPenalty(player, sb);
 
             // Mender
             if (!DeathPenaltyExemptSkills.Contains("mender") && !DisabledSkills.Contains("mender"))
@@ -8009,7 +7408,11 @@ namespace SeraphLeveling
             AppendDecayStatus(sb, "Melee", "melee", playerUid, currentDay,
                 () => MeleeProgress.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
             AppendDecayStatus(sb, "Ranged", "ranged", playerUid, currentDay,
-                () => RangedProgress.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
+                () => AttributeModifierDefinitions.RangedDamage.ProgressDictionary.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
+            AppendDecayStatus(sb, "Ranged Accuracy", "rangedaccuracy", playerUid, currentDay,
+                () => AttributeModifierDefinitions.RangedAccuracy.ProgressDictionary.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
+            AppendDecayStatus(sb, "Ranged Distance", "rangeddistance", playerUid, currentDay,
+                () => AttributeModifierDefinitions.RangedDistance.ProgressDictionary.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
             AppendDecayStatus(sb, "Precise", "precise", playerUid, currentDay,
                 () => PreciseProgress.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
 
@@ -11837,7 +11240,7 @@ namespace SeraphLeveling
             string playerUid = player.PlayerUID;
 
             // Reset Mining
-            AttributeModifierDefinitions.MiningSpeed.ResetProgress(player);
+            LoadedAttributes.Foreach(definition => definition.ResetProgress(player));
 
             // Reset Melee
             if (MeleeProgress.TryGetValue(playerUid, out var meleeProg))
@@ -11847,21 +11250,6 @@ namespace SeraphLeveling
                 pendingMeleeProgressSave = true;
             }
             ApplyMeleeBonusStatic(player, 0);
-
-            // Reset Ranged
-            if (RangedProgress.TryGetValue(playerUid, out var rangedProg))
-            {
-                rangedProg.TotalCredits = 0;
-                rangedProg.WeaponProgress.Clear();
-                pendingRangedProgressSave = true;
-            }
-            ApplyRangedBonusStatic(player, 0);
-
-            // Reset Walking
-            AttributeModifierDefinitions.WalkingSpeed.ResetProgress(player);
-
-            // Reset Hunger
-            AttributeModifierDefinitions.HungerRate.ResetProgress(player);
 
             // Reset Armor
             if (ArmorProgress.TryGetValue(playerUid, out var armorProg))
@@ -11941,9 +11329,6 @@ namespace SeraphLeveling
             }
             ApplyPreciseBonusStatic(player, 0);
 
-            // Reset Technical
-            AttributeModifierDefinitions.Technical.ResetProgress(player);
-
             // Reset Hardy Health
             if (HardyHealthProgress.TryGetValue(playerUid, out var hardyHealthProg))
             {
@@ -11952,14 +11337,8 @@ namespace SeraphLeveling
             }
             ApplyHardyHealthBonusStatic(player, false);
 
-            // Reset Bowyer
-            AttributeModifierDefinitions.Bowyer.ResetProgress(player);
-
             // Reset Improviser
             AttributeModifierDefinitions.Improviser.ResetProgress(player);
-
-            // Reset Tinkerer
-            AttributeModifierDefinitions.Tinkerer.ResetProgress(player);
 
             // Reset Merciless
             if (MercilessProgress.TryGetValue(playerUid, out var mercilessProg))
@@ -12029,7 +11408,7 @@ namespace SeraphLeveling
 
             if (AttributeModifierDefinitions.MiningSpeed.ProgressDictionary.TryGetValue(uid, out var mining)) ex.Mining = mining;
             if (MeleeProgress.TryGetValue(uid, out var melee)) ex.Melee = melee;
-            if (RangedProgress.TryGetValue(uid, out var ranged)) ex.Ranged = ranged;
+            if (AttributeModifierDefinitions.RangedDamage.ProgressDictionary.TryGetValue(uid, out var ranged)) ex.Ranged = ranged;
             if (AttributeModifierDefinitions.WalkingSpeed.ProgressDictionary.TryGetValue(uid, out var walking)) ex.Walking = walking;
             if (AttributeModifierDefinitions.HungerRate.ProgressDictionary.TryGetValue(uid, out var hunger)) ex.Hunger = hunger;
             if (ArmorProgress.TryGetValue(uid, out var armor)) ex.Armor = armor;
@@ -12057,7 +11436,7 @@ namespace SeraphLeveling
         {
             if (ex.Mining != null) { AttributeModifierDefinitions.MiningSpeed.ProgressDictionary[uid] = ex.Mining; AttributeModifierDefinitions.WalkingSpeed.MarkForSave(true); }
             if (ex.Melee != null) { MeleeProgress[uid] = ex.Melee; pendingMeleeProgressSave = true; }
-            if (ex.Ranged != null) { RangedProgress[uid] = ex.Ranged; pendingRangedProgressSave = true; }
+            if (ex.Ranged != null) { AttributeModifierDefinitions.RangedDamage.ProgressDictionary[uid] = ex.Ranged; AttributeModifierDefinitions.RangedDamage.MarkForSave(true); }
             if (ex.Walking != null) { AttributeModifierDefinitions.WalkingSpeed.ProgressDictionary[uid] = ex.Walking; AttributeModifierDefinitions.WalkingSpeed.MarkForSave(true); }
             if (ex.Hunger != null) { AttributeModifierDefinitions.HungerRate.ProgressDictionary[uid] = ex.Walking; AttributeModifierDefinitions.HungerRate.MarkForSave(true); }
             if (ex.Armor != null) { ArmorProgress[uid] = ex.Armor; pendingArmorProgressSave = true; }
@@ -12173,8 +11552,7 @@ namespace SeraphLeveling
 
             string playerUid = player.PlayerUID;
 
-            // Max Mining
-            AttributeModifierDefinitions.MiningSpeed.MaxStat(player);
+            LoadedAttributes.Foreach(definition => definition.MaxStat(player));
 
             // Max Melee — same fix as Mining (pass raw credits so Farsighted/Nervous penalties
             // don't get subtracted twice and Hunter/Malefactor/Clockmaker can hit +50%).
@@ -12184,20 +11562,6 @@ namespace SeraphLeveling
             meleeProg.WeaponProgress.Clear();
             pendingMeleeProgressSave = true;
             ApplyMeleeBonusStatic(player, maxMeleeCredits);
-
-            // Max Ranged
-            int maxRangedCredits = GetMaxRangedCredits(player.Entity);
-            var rangedProg = RangedProgress.GetOrAdd(playerUid, _ => new RangedProgressData());
-            rangedProg.TotalCredits = maxRangedCredits;
-            rangedProg.WeaponProgress.Clear();
-            pendingRangedProgressSave = true;
-            ApplyRangedBonusStatic(player, maxRangedCredits);
-
-            // Max Walking
-            AttributeModifierDefinitions.WalkingSpeed.MaxStat(player);
-
-            // Max Hunger
-            AttributeModifierDefinitions.HungerRate.MaxStat(player);
 
             // Max Armor
             int maxArmorDurabilityCredits = MaxArmorDurabilityPercent;
@@ -12268,23 +11632,14 @@ namespace SeraphLeveling
             pendingPreciseProgressSave = true;
             ApplyPreciseBonusStatic(player, maxPreciseCredits);
 
-            // Unlock Technical
-            AttributeModifierDefinitions.Technical.Unlock(player);
-
             // Unlock Hardy Health
             var hardyHealthProg = HardyHealthProgress.GetOrAdd(playerUid, _ => new HardyHealthProgressData());
             hardyHealthProg.IsUnlocked = true;
             pendingHardyHealthProgressSave = true;
             ApplyHardyHealthBonusStatic(player, true);
 
-            // Unlock Bowyer
-            AttributeModifierDefinitions.Bowyer.Unlock(player);
-
             // Unlock Improviser
             AttributeModifierDefinitions.Improviser.Unlock(player);
-
-            // Unlock Tinkerer
-            AttributeModifierDefinitions.Tinkerer.Unlock(player);
 
             // Unlock Merciless
             var mercilessProg = MercilessProgress.GetOrAdd(playerUid, _ => new MercilessProgressData());
@@ -12320,8 +11675,7 @@ namespace SeraphLeveling
             string playerUid = player.PlayerUID;
             const int CREDITS = 1;
 
-            // Mining (pass raw credits — Apply* handles negative-trait subtraction internally)
-            AttributeModifierDefinitions.MiningSpeed.ApplyTraitTestSuite1Command(player);
+            LoadedAttributes.Foreach(definition => definition.ApplyTraitTestSuite1Command(player));
 
             // Melee
             var meleeProg = MeleeProgress.GetOrAdd(playerUid, _ => new MeleeProgressData());
@@ -12329,19 +11683,6 @@ namespace SeraphLeveling
             meleeProg.WeaponProgress.Clear();
             pendingMeleeProgressSave = true;
             ApplyMeleeBonusStatic(player, CREDITS);
-
-            // Ranged
-            var rangedProg = RangedProgress.GetOrAdd(playerUid, _ => new RangedProgressData());
-            rangedProg.TotalCredits = CREDITS;
-            rangedProg.WeaponProgress.Clear();
-            pendingRangedProgressSave = true;
-            ApplyRangedBonusStatic(player, CREDITS);
-
-            // Walking
-            AttributeModifierDefinitions.WalkingSpeed.ApplyTraitTestSuite1Command(player);
-
-            // Hunger
-            AttributeModifierDefinitions.HungerRate.ApplyTraitTestSuite1Command(player);
 
             // Armor (both durability and walkspeed tracks)
             var armorProg = ArmorProgress.GetOrAdd(playerUid, _ => new ArmorProgressData());

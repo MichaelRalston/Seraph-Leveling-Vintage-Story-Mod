@@ -64,7 +64,7 @@ namespace SeraphLeveling.Data.Attributes
             sb.AppendLine($"{Name}: {(progress.IsUnlocked ? "UNLOCKED" : "locked")}");
         }
 
-        public virtual void ResetProgress(IServerPlayer player)
+        public override void ResetProgress(IServerPlayer player)
         {
             var progress = GetDict(player);
             bool oldUnlock = progress.IsUnlocked;
@@ -77,6 +77,10 @@ namespace SeraphLeveling.Data.Attributes
             ApplyUnlock(player, progress);
         }
 
+        public override void MaxStat(IServerPlayer player)
+        {
+            Unlock(player);
+        }
         public override void Unlock(IServerPlayer player, bool notify = false)
         {
             var progress = GetDict(player);

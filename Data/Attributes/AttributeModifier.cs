@@ -30,6 +30,14 @@ namespace SeraphLeveling.Data.Attributes
         public void MarkForSave(bool pending);
         public void PersistProgress(ICoreServerAPI serverApi);
         public void ResetProgress();
+        public void ResetProgress(IServerPlayer player);
+        public void ApplyBonusIfExists(IServerPlayer player);
+        public void MaxStat(IServerPlayer player);
+        public void ApplyTraitTestSuite1Command(IServerPlayer player);
+        public int ApplyDeathPenalty(IServerPlayer player, StringBuilder sb);
+        public int ApplyDecay(IServerPlayer player, double currentDay, StringBuilder sb, StringBuilder verboseSb);
+        public void LoadProgress(ICoreServerAPI serverApi);
+        public void HandleLogin(IServerPlayer player);
     }
 
     public interface IConstructable<D, PD>
@@ -51,6 +59,16 @@ namespace SeraphLeveling.Data.Attributes
         {
         }
 
+        public virtual void ApplyBonusIfExists(IServerPlayer player)
+        {
+            
+        }
+
+        public virtual void ApplyTraitTestSuite1Command(IServerPlayer player)
+        {
+            
+        }
+
         public virtual IChatCommand RegisterCommands(ICoreServerAPI _, IChatCommand c) {
             return c;
         }
@@ -70,6 +88,14 @@ namespace SeraphLeveling.Data.Attributes
 
         public bool HasUnsavedProgress() => !ProgressDictionary.IsEmpty;
         public void ResetProgress() => ProgressDictionary.Clear();
+        public virtual void ResetProgress(IServerPlayer player)
+        {
+            
+        }
+        public virtual void MaxStat(IServerPlayer player)
+        {
+            
+        }
 
         public PD CreateProgressData() => D.Create((D)this);
 

@@ -117,6 +117,61 @@ namespace SeraphLeveling.Data.Attributes
             CreditDescription = "thrown rock damage",
             WatchedCreditsAttributeKey = "sitImproviserRockDamage",
             Trait = new(() => Traits.TraitDefinitions.Improviser),
+        public static readonly RangedDamageAttributeModifierDefinition RangedDamage = new ()
+        {
+            Id = "rangedDamage",
+            SaveKey = "sitRangedProgress",
+            Description = "ranged",
+            Name = "Ranged",
+            LongDescription = "ranged damage",
+            Stat = "% ranged damage",
+            SkillKey = "ranged",
+            PersistenceHeader = "SIR",
+            PersistenceVersion = 2,
+            Tool = ToolDefinitions.Weapon,
+            IncrementUnits = "damage",
+            BaseIncrement = 100,
+            IncrementStep = 100,
+            GlobalMaxCredits = 50,
+            StatName = "rangedWeaponsDamage",
+        };
+
+        public static readonly RangedDamageAttributeModifierDefinition RangedAccuracy = new ()
+        {
+            Id = "rangedAccuracy",
+            SaveKey = "sitRangedAccuracyProgress",
+            Description = "ranged",
+            Name = "Ranged",
+            LongDescription = "ranged accuracy",
+            Stat = "% ranged accuracy",
+            SkillKey = "rangedaccuracy",
+            PersistenceHeader = "SIR",
+            PersistenceVersion = 2,
+            Tool = ToolDefinitions.Weapon,
+            IncrementUnits = "damage",
+            BaseIncrement = 100,
+            IncrementStep = 100,
+            GlobalMaxCredits = 50,
+            StatName = "rangedWeaponsAcc",
+        };
+
+        public static readonly RangedDamageAttributeModifierDefinition RangedDistance = new()
+        {
+            Id = "rangedDistance",
+            SaveKey = "sitRangedDistanceProgress",
+            Description = "ranged",
+            Name = "Ranged",
+            LongDescription = "ranged distance",
+            Stat = "% ranged distance",
+            SkillKey = "rangeddistance",
+            PersistenceHeader = "SIR",
+            PersistenceVersion = 2,
+            Tool = ToolDefinitions.Weapon,
+            IncrementUnits = "damage",
+            BaseIncrement = 100,
+            IncrementStep = 100,
+            GlobalMaxCredits = 50,
+            StatName = "bowDrawingStrength",
         };
     }
 }

@@ -653,13 +653,13 @@ namespace SeraphLeveling.Tests
             }
 
             // PERS-005: Ranged data exists in dictionary
-            bool hasRangedData = SeraphLevelingModSystem.RangedProgress.ContainsKey(playerUid);
+            bool hasRangedData = AttributeModifierDefinitions.RangedDamage.ProgressDictionary.ContainsKey(playerUid);
             AssertTrue("PERS-005", "Ranged data exists in dictionary", hasRangedData, "exists", "missing");
 
             // PERS-006: Ranged WatchedAttributes matches dictionary
             if (hasRangedData)
             {
-                var rangedData = SeraphLevelingModSystem.RangedProgress[playerUid];
+                var rangedData = AttributeModifierDefinitions.RangedDamage.ProgressDictionary[playerUid];
                 int watchedLevel = watchedAttrs.GetInt(SeraphLevelingModSystem.WATCHED_RANGED_LEVEL, -999);
                 AssertEqual("PERS-006", "Ranged level synced to WatchedAttributes", rangedData.TotalCredits, watchedLevel);
             }
@@ -724,9 +724,9 @@ namespace SeraphLeveling.Tests
             // PERS-016: Ranged data structure integrity
             if (hasRangedData)
             {
-                var rangedData = SeraphLevelingModSystem.RangedProgress[playerUid];
+                var rangedData = AttributeModifierDefinitions.RangedDamage.ProgressDictionary[playerUid];
                 bool creditsValid = rangedData.TotalCredits >= 0;
-                bool weaponProgressValid = rangedData.WeaponProgress != null;
+                bool weaponProgressValid = rangedData.ToolProgress != null;
                 AssertTrue("PERS-016", "Ranged data structure valid", creditsValid && weaponProgressValid, "valid", "corrupted");
             }
 

@@ -65,11 +65,5 @@ namespace SeraphLeveling.Data.Attributes
 
             return bonusPercent;
         }
-        public override int CalculateBonus(EntityPlayer entity, LeveledPartialAttributeModifierProgressData progress)
-        {
-            int maxCredits = GetMaxCredits(entity);
-            return Math.Min(progress.TotalCredits, maxCredits);
-
-        }
     }
 }
