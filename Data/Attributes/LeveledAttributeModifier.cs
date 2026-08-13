@@ -49,6 +49,13 @@ namespace SeraphLeveling.Data.Attributes
         public required string IncrementUnits { get; init; }
 
         public event CreditsChangedDelegate CreditsChanged;
+        public void OnCreditsChanged(IServerPlayer player, int oldCredits, PD progress)
+        {
+            if (oldCredits != progress.TotalCredits)
+            {
+                CreditsChanged?.Invoke(player, oldCredits, progress.TotalCredits);
+            }
+        }
 
         public int GetCreditsForPlayer(IPlayer player)
         {
@@ -124,23 +131,13 @@ namespace SeraphLeveling.Data.Attributes
                 ApplyBonus(player, (PD)progress);
         }
 
-        /// <summary>
-        /// Check and apply unlock if all requirements are met.
-        /// </summary>
-        public override void CheckUnlocks(IServerPlayer player)
-        {
-        }
-
         public void MaxStat(IServerPlayer player)
         {
             var progress = GetDict(player);
             int maxCredits = GetMaxCredits(player.Entity);
             int oldCredits = progress.TotalCredits;
             progress.TotalCredits = maxCredits;
-            if (oldCredits != progress.TotalCredits)
-            {
-                CreditsChanged?.Invoke(player, oldCredits, progress.TotalCredits);
-            }
+            OnCreditsChanged(player, oldCredits, progress);
             progress.ZeroPartialCredit();
             MarkForSave(true);
             ApplyBonus(player, progress);
@@ -150,10 +147,7 @@ namespace SeraphLeveling.Data.Attributes
             var progress = GetDict(player);
             int oldCredits = progress.TotalCredits;
             progress.TotalCredits = 1;
-            if (oldCredits != progress.TotalCredits)
-            {
-                CreditsChanged?.Invoke(player, oldCredits, progress.TotalCredits);
-            }
+            OnCreditsChanged(player, oldCredits, progress);
             progress.ZeroPartialCredit();
             MarkForSave(true);
             ApplyBonus(player, progress);
@@ -266,10 +260,7 @@ namespace SeraphLeveling.Data.Attributes
             if (level > maxLevel) return TextCommandResult.Error($"Level cannot exceed max ({maxLevel}).");
             int oldCredits = progress.TotalCredits;
             progress.TotalCredits = level;
-            if (oldCredits != progress.TotalCredits)
-            {
-                CreditsChanged?.Invoke(player, oldCredits, progress.TotalCredits);
-            }
+            OnCreditsChanged(player, oldCredits, progress);
             MarkForSave(true);
             ApplyBonus(player, progress);
             progress.UpdateSkillActivityDay();

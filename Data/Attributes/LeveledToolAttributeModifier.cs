@@ -121,6 +121,7 @@ namespace SeraphLeveling.Data.Attributes
         public TextCommandResult SetLevel(IServerPlayer player, int level, string toolName)
         {
             int maxCredits = Definition.GetMaxCredits(player.Entity);
+            int oldCredits = TotalCredits;
             if (level < 0)
                 return TextCommandResult.Error("Credits cannot be negative.");
 
@@ -152,7 +153,7 @@ namespace SeraphLeveling.Data.Attributes
 
                 Definition.MarkForSave(true);
                 int bonusPercent = Definition.ApplyBonus(player, (PD)this);
-                Definition.CheckUnlocks(player);
+                Definition.OnCreditsChanged(player, oldCredits, (PD)this);
                 UpdateSkillActivityDay();
 
                 return TextCommandResult.Success($"Set {level} credits on {toolName}. Total: {TotalCredits}/{maxCredits} ({Definition.Direction}{bonusPercent}{Definition.Stat}).");
@@ -168,7 +169,7 @@ namespace SeraphLeveling.Data.Attributes
 
                 Definition.MarkForSave(true);
                 int bonusPercent = Definition.ApplyBonus(player, (PD)this);
-                Definition.CheckUnlocks(player);
+                Definition.OnCreditsChanged(player, oldCredits, (PD)this);
                 UpdateSkillActivityDay();
 
                 return TextCommandResult.Success($"{Definition.Name} credits set to {level} (+{bonusPercent}{Definition.Stat}). Per-tool progress reset.");
@@ -299,13 +300,13 @@ namespace SeraphLeveling.Data.Attributes
             {
                 Definition.ApplyBonus(player, (PD)this);
 
-                // Notify player of level up with the level as the bonus (the raw mining speed improvement)
+                // Notify player of level up with the level as the bonus (the raw mining speed improvement, etc)
                 // This shows the true progress even when negative traits are still being cancelled
                 SeraphLevelingModSystem.NotifyLevelUp(player,
                     Lang.Get($"seraphleveling:message-{Definition.Description}-level-up", TotalCredits, TotalCredits));
 
-                // Check for trait unlocks that depend on mining level
-                Definition.CheckUnlocks(player);
+                // Check for trait unlocks that depend on trait level
+                Definition.OnCreditsChanged(player, oldCredits, (PD)this);
             }
         }
     }

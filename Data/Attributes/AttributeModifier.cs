@@ -14,11 +14,6 @@ namespace SeraphLeveling.Data.Attributes
         public string Id { get; }
 
         /// <summary>
-        /// Check and apply unlock if all requirements are met.
-        /// </summary>
-        public abstract void CheckUnlocks(IServerPlayer player);
-
-        /// <summary>
         /// Unlock the attribute if it can be unlocked
         /// </summary>
         public abstract void Unlock(IServerPlayer player, bool notify = false);
@@ -50,8 +45,6 @@ namespace SeraphLeveling.Data.Attributes
         public virtual string Direction { get; init; } = "+";
         public required string PersistenceHeader { get; init; }
         public virtual byte PersistenceVersion { get; init; } = 1;
-
-        public abstract void CheckUnlocks(IServerPlayer player);
         public abstract void CollectStatus(IPlayer player, StringBuilder sb);
 
         public virtual void Unlock(IServerPlayer player, bool notify = false)

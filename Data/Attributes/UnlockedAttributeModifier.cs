@@ -77,12 +77,6 @@ namespace SeraphLeveling.Data.Attributes
             ApplyUnlock(player, progress);
         }
 
-        public override void CheckUnlocks(IServerPlayer player)
-        {
-            // Prerequisite checks are performed at the trait level, not attribute
-            Unlock(player, true);
-        }
-
         public override void Unlock(IServerPlayer player, bool notify = false)
         {
             var progress = GetDict(player);
