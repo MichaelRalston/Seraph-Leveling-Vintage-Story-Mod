@@ -3033,10 +3033,19 @@ namespace SeraphLeveling
         }
 
         /// <summary>
-        /// Checks if the player's class has the given defined trait.
+        /// Reliable check for whether the player has a vanilla trait. Reads from
+        /// `characterTraits` and `characterClass` watched attributes (both reliably synced by
+        /// vanilla VS) instead of our own `sitHasVanillaX` bools, which depend on a MarkPathDirty
+        /// call that doesn't always cover sibling attributes and can leave the client reading
+        /// the default `false` even when the player's class genuinely has the trait.
         /// </summary>
         public static bool PlayerHasTrait(EntityPlayer entity, TraitDefinition traitDefinition)
         {
+            if (entity == null)
+            {
+                return false;
+            }
+
             string[] classTraits = entity.WatchedAttributes.GetStringArray("characterTraits", []);
             foreach (string trait in classTraits)
             {

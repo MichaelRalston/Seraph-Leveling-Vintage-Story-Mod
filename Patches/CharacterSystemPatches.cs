@@ -1,5 +1,6 @@
 using System;
 using SeraphLeveling.Data.Attributes;
+using SeraphLeveling.Data.Traits;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Config;
@@ -39,31 +40,31 @@ namespace SeraphLeveling.Patches
             // Get mining progression data
             int miningLevel = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_MINING_LEVEL, 0);
             int miningBonus = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_MINING_BONUS, 0);
-            bool hasVanillaHardy = ClientHasVanillaTrait(eplr, "hardy", "blackguard");
+            bool hasVanillaHardy = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Hardy);
 
             // Get melee progression data
             int meleeLevel = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_MELEE_LEVEL, 0);
             int meleeBonus = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_MELEE_BONUS, 0);
-            bool hasVanillaSoldier = ClientHasVanillaTrait(eplr, "soldier", "blackguard");
+            bool hasVanillaSoldier = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Soldier);
 
             // Get ranged progression data
             int rangedLevel = eplr.WatchedAttributes.GetInt(AttributeModifierDefinitions.RangedDamage.WatchedLevel, 0);
             int rangedDamageBonus = eplr.WatchedAttributes.GetInt(AttributeModifierDefinitions.RangedDamage.WatchedBonus, 0);
             int rangedAccuracyBonus = eplr.WatchedAttributes.GetInt(AttributeModifierDefinitions.RangedAccuracy.WatchedBonus, 0);
             int rangedDistanceBonus = eplr.WatchedAttributes.GetInt(AttributeModifierDefinitions.RangedDistance.WatchedBonus, 0);
-            bool hasVanillaFocused = ClientHasVanillaTrait(eplr, "focused", "hunter");
+            bool hasVanillaFocused = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Focused);
 
             // Get walking progression data
             int walkingLevel = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_WALKING_LEVEL, 0);
             int walkingBonus = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_WALKING_BONUS, 0);
-            bool hasVanillaFleetfooted = ClientHasVanillaTrait(eplr, "fleetfooted", "hunter", "clockmaker");
+            bool hasVanillaFleetfooted = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Fleetfooted);
 
             // Get armor progression data
             int armorDurabilityLevel = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_ARMOR_DURABILITY_LEVEL, 0);
             int armorDurabilityBonus = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_ARMOR_DURABILITY_BONUS, 0);
             int armorWalkSpeedLevel = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_ARMOR_WALKSPEED_LEVEL, 0);
             int armorWalkSpeedBonus = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_ARMOR_WALKSPEED_BONUS, 0);
-            bool hasVanillaSoldierArmor = ClientHasVanillaTrait(eplr, "soldier", "blackguard");
+            bool hasVanillaSoldierArmor = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Soldier);
 
             ClientApi.Logger.Debug($"[SeraphLeveling] getClassTraitText postfix called. Mining: Level={miningLevel}, Bonus={miningBonus}%, HasHardy={hasVanillaHardy} | Melee: Level={meleeLevel}, Bonus={meleeBonus}%, HasSoldier={hasVanillaSoldier} | Ranged: Level={rangedLevel}, HasFocused={hasVanillaFocused} | Walking: Level={walkingLevel}, HasFleetfooted={hasVanillaFleetfooted} | Armor: Dur={armorDurabilityLevel}, Walk={armorWalkSpeedLevel}");
 
@@ -280,7 +281,7 @@ namespace SeraphLeveling.Patches
 
             // Process Clothier trait (unlocked by wearing 20 unique clothes)
             bool clothierUnlocked = eplr.WatchedAttributes.GetBool(AttributeModifierDefinitions.Clothier.UnlockedKey, false);
-            if (clothierUnlocked && !ClientHasVanillaTrait(eplr, "clothier", "tailor"))
+            if (clothierUnlocked && !SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Clothier))
             {
                 string plainClothierTraitName = Lang.Get("seraphleveling:trait-sitclothiermastery");
                 string dynamicClothierTrait = BuildLocalizedTraitLine("clothier", "seraphleveling:trait-clothier-dynamic");
@@ -305,7 +306,7 @@ namespace SeraphLeveling.Patches
             // Process Mender trait (improves armor/clothing durability)
             int menderLevel = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_MENDER_LEVEL, 0);
             int menderBonus = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_MENDER_BONUS, 0);
-            bool hasVanillaMender = ClientHasVanillaTrait(eplr, "mender", "tailor");
+            bool hasVanillaMender = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Mender);
             if (menderLevel > 0)
             {
                 string plainMenderTraitName = Lang.Get("seraphleveling:trait-sitmendermastery");
@@ -342,7 +343,7 @@ namespace SeraphLeveling.Patches
             int pilfererVesselBonus = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_PILFERER_VESSEL_BONUS, 0);
             int pilfererRustyBonus = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_PILFERER_RUSTY_BONUS, 0);
             int pilfererWholeBonus = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_PILFERER_WHOLE_BONUS, 0);
-            bool hasVanillaPilferer = ClientHasVanillaTrait(eplr, "pilferer", "malefactor");
+            bool hasVanillaPilferer = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Pilferer);
             // Only show Pilferer when any per-stat bonus > 0 (after Heavyhanded vessel penalty is cancelled for vessel)
             if (pilfererVesselBonus > 0 || pilfererRustyBonus > 0 || pilfererWholeBonus > 0)
             {
@@ -389,7 +390,7 @@ namespace SeraphLeveling.Patches
             int resourcefulLevel = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_RESOURCEFUL_LEVEL, 0);
             int resourcefulLootBonus = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_RESOURCEFUL_LOOT_BONUS, 0);
             int resourcefulSpeedBonus = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_RESOURCEFUL_SPEED_BONUS, 0);
-            bool hasVanillaResourceful = ClientHasVanillaTrait(eplr, "resourceful", "hunter", "malefactor");
+            bool hasVanillaResourceful = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Resourceful);
             // Only show Resourceful when any bonus > 0 (after Kind penalty is cancelled)
             if (resourcefulLootBonus > 0 || resourcefulSpeedBonus > 0)
             {
@@ -427,7 +428,7 @@ namespace SeraphLeveling.Patches
             int foragerLevel = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_FORAGER_LEVEL, 0);
             int foragerLootBonus = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_FORAGER_LOOT_BONUS, 0);
             int foragerWildCropBonus = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_FORAGER_WILD_CROP_BONUS, 0);
-            bool hasVanillaForager = ClientHasVanillaTrait(eplr, "forager", "hunter", "malefactor");
+            bool hasVanillaForager = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Forager);
             // Only show Forager when any bonus > 0 (after Civil/Heavyhanded penalties are cancelled)
             if (foragerLootBonus > 0 || foragerWildCropBonus > 0)
             {
@@ -464,7 +465,7 @@ namespace SeraphLeveling.Patches
             // Process Furtive trait (reduces animal detection range)
             int furtiveLevel = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_FURTIVE_LEVEL, 0);
             int furtiveBonus = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_FURTIVE_BONUS, 0);
-            bool hasVanillaFurtive = ClientHasVanillaTrait(eplr, "furtive", "malefactor");
+            bool hasVanillaFurtive = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Furtive);
             if (furtiveLevel > 0)
             {
                 string plainFurtiveTraitName = Lang.Get("seraphleveling:trait-sitfurtivemastery");
@@ -497,7 +498,7 @@ namespace SeraphLeveling.Patches
             // Process Precise trait (improves damage to mechanicals)
             int preciseLevel = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_PRECISE_LEVEL, 0);
             int preciseBonus = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_PRECISE_BONUS, 0);
-            bool hasVanillaPrecise = ClientHasVanillaTrait(eplr, "precise", "clockmaker");
+            bool hasVanillaPrecise = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Precise);
             if (preciseLevel > 0)
             {
                 string plainPreciseTraitName = Lang.Get("seraphleveling:trait-sitprecisemastery");
@@ -537,7 +538,7 @@ namespace SeraphLeveling.Patches
             // value so all classes converge on the same visible cap (-25% at maxall).
             int hungerLevel = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_HUNGER_LEVEL, 0);
             int hungerBonus = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_HUNGER_BONUS, 0);
-            bool hasRavenousForHunger = ClientHasVanillaTrait(eplr, "ravenous", "blackguard");
+            bool hasRavenousForHunger = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Ravenous);
             int displayedHungerReduction = hasRavenousForHunger
                 ? Math.Max(0, hungerBonus - SeraphLevelingModSystem.VANILLA_RAVENOUS_HUNGER_PENALTY)
                 : hungerBonus;
@@ -565,7 +566,7 @@ namespace SeraphLeveling.Patches
 
             // Process Technical unlock trait (translocator gear cost reduction)
             bool technicalUnlocked = eplr.WatchedAttributes.GetBool(AttributeModifierDefinitions.Technical.UnlockedKey, false);
-            if (technicalUnlocked && !ClientHasVanillaTrait(eplr, "technical", "clockmaker"))
+            if (technicalUnlocked && !SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Technical))
             {
                 string plainTechnicalTraitName = Lang.Get("seraphleveling:trait-sittechnicalmastery");
                 string dynamicTechnicalTrait = BuildLocalizedTraitLine("technical", "seraphleveling:trait-technical-dynamic");
@@ -634,7 +635,7 @@ namespace SeraphLeveling.Patches
 
             // Process Bowyer unlock trait (crude bow crafting)
             bool bowyerUnlocked = eplr.WatchedAttributes.GetBool(AttributeModifierDefinitions.Bowyer.UnlockedKey, false);
-            if (bowyerUnlocked && !ClientHasVanillaTrait(eplr, "bowyer", "hunter"))
+            if (bowyerUnlocked && !SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Bowyer))
             {
                 // Skip if the player's class already shows a vanilla Bowyer line — vanilla covers it.
                 // (The unlock stat is still applied via ApplyBowyerBonusStatic; this only controls display.)
@@ -660,7 +661,7 @@ namespace SeraphLeveling.Patches
 
             // Process Improviser unlock trait (sling crafting)
             bool improviserUnlocked = eplr.WatchedAttributes.GetBool(AttributeModifierDefinitions.Improviser.UnlockedKey, false);
-            if (improviserUnlocked && !ClientHasVanillaTrait(eplr, "improviser", "malefactor"))
+            if (improviserUnlocked && !SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Improviser))
             {
                 string plainImproviserTraitName = Lang.Get("seraphleveling:trait-sitimprovisermastery");
                 string dynamicImproviserTrait = BuildLocalizedTraitLine("improviser", "seraphleveling:trait-improviser-dynamic");
@@ -684,7 +685,7 @@ namespace SeraphLeveling.Patches
 
             // Process Tinkerer unlock trait (tuning spear crafting)
             bool tinkererUnlocked = eplr.WatchedAttributes.GetBool(AttributeModifierDefinitions.Tinkerer.UnlockedKey, false);
-            if (tinkererUnlocked && !ClientHasVanillaTrait(eplr, "tinkerer", "clockmaker"))
+            if (tinkererUnlocked && !SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Tinkerer))
             {
                 string plainTinkererTraitName = Lang.Get("seraphleveling:trait-sittinkerermastery");
                 string dynamicTinkererTrait = BuildLocalizedTraitLine("tinkerer", "seraphleveling:trait-tinkerer-dynamic");
@@ -708,7 +709,7 @@ namespace SeraphLeveling.Patches
 
             // Process Merciless unlock trait (shortsword/shield crafting)
             bool mercilessUnlocked = eplr.WatchedAttributes.GetBool(SeraphLevelingModSystem.WATCHED_MERCILESS_UNLOCKED, false);
-            if (mercilessUnlocked && !ClientHasVanillaTrait(eplr, "merciless", "blackguard"))
+            if (mercilessUnlocked && !SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Merciless))
             {
                 string plainMercilessTraitName = Lang.Get("seraphleveling:trait-sitmercilessmastery");
                 string dynamicMercilessTrait = BuildLocalizedTraitLine("merciless", "seraphleveling:trait-merciless-dynamic");
@@ -740,7 +741,7 @@ namespace SeraphLeveling.Patches
             // =========================================================================
 
             // Civil trait (Tailor) - foraging loot penalty
-            bool hasCivil = ClientHasVanillaTrait(eplr, "civil", "tailor");
+            bool hasCivil = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Civil);
             int civilRemaining = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_CIVIL_REMAINING, 0);
             if (hasCivil)
             {
@@ -757,7 +758,7 @@ namespace SeraphLeveling.Patches
 
             // Weak trait (Tailor) - HP and mining speed penalty.
             // Both penalties cancelled together at mining level 10.
-            bool hasWeak = ClientHasVanillaTrait(eplr, "weak", "tailor");
+            bool hasWeak = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Weak);
             int weakMiningRemaining = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_WEAK_MINING_REMAINING, 0);
             int weakHpRemaining = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_WEAK_HP_REMAINING, 0);
             if (hasWeak)
@@ -774,7 +775,7 @@ namespace SeraphLeveling.Patches
             }
 
             // Kind trait (Tailor) - animal loot and harvesting speed penalty.
-            bool hasKind = ClientHasVanillaTrait(eplr, "kind", "tailor");
+            bool hasKind = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Kind);
             int kindLootRemaining = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_KIND_LOOT_REMAINING, 0);
             int kindSpeedRemaining = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_KIND_SPEED_REMAINING, 0);
             if (hasKind)
@@ -803,7 +804,7 @@ namespace SeraphLeveling.Patches
             }
 
             // Farsighted trait (Hunter) - melee damage penalty
-            bool hasFarsighted = ClientHasVanillaTrait(eplr, "farsighted", "hunter");
+            bool hasFarsighted = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Farsighted);
             int farsightedRemaining = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_FARSIGHTED_REMAINING, 0);
             if (hasFarsighted)
             {
@@ -819,7 +820,7 @@ namespace SeraphLeveling.Patches
             }
 
             // Nervous trait (Malefactor, Clockmaker) - melee damage penalty
-            bool hasNervous = ClientHasVanillaTrait(eplr, "nervous", "malefactor", "clockmaker");
+            bool hasNervous = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Nervous);
             int nervousRemaining = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_NERVOUS_REMAINING, 0);
             if (hasNervous)
             {
@@ -835,7 +836,7 @@ namespace SeraphLeveling.Patches
             }
 
             // Nearsighted trait (Blackguard) - ranged damage penalty
-            bool hasNearsighted = ClientHasVanillaTrait(eplr, "nearsighted", "blackguard");
+            bool hasNearsighted = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Nearsighted);
             int nearsightedRemaining = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_NEARSIGHTED_REMAINING, 0);
             if (hasNearsighted)
             {
@@ -852,7 +853,7 @@ namespace SeraphLeveling.Patches
 
             // Frail trait (Malefactor, Clockmaker) - HP and ranged distance penalty.
             // Both penalties cancelled together at ranged level 25.
-            bool hasFrail = ClientHasVanillaTrait(eplr, "frail", "malefactor", "clockmaker");
+            bool hasFrail = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Frail);
             int frailDistanceRemaining = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_FRAIL_DISTANCE_REMAINING, 0);
             float frailHpRemaining = eplr.WatchedAttributes.GetFloat(SeraphLevelingModSystem.WATCHED_FRAIL_HP_REMAINING, 0f);
             if (hasFrail)
@@ -869,7 +870,7 @@ namespace SeraphLeveling.Patches
             }
 
             // Heavyhanded trait (Blackguard) - vessel, foraging, wild crop penalties.
-            bool hasHeavyhanded = ClientHasVanillaTrait(eplr, "heavyhanded", "blackguard");
+            bool hasHeavyhanded = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Heavyhanded);
             int heavyhandedVesselRemaining = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_HEAVYHANDED_VESSEL_REMAINING, 0);
             int heavyhandedForagingRemaining = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_HEAVYHANDED_FORAGING_REMAINING, 0);
             int heavyhandedWildCropRemaining = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_HEAVYHANDED_WILD_CROP_REMAINING, 0);
@@ -907,7 +908,7 @@ namespace SeraphLeveling.Patches
             }
 
             // Ravenous trait (Blackguard) - hunger rate penalty
-            bool hasRavenous = ClientHasVanillaTrait(eplr, "ravenous", "blackguard");
+            bool hasRavenous = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Ravenous);
             int ravenousRemaining = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_RAVENOUS_REMAINING, 0);
             if (hasRavenous)
             {
@@ -925,7 +926,7 @@ namespace SeraphLeveling.Patches
             // Claustrophobic trait (Hunter) - ore drop and mining speed penalties.
             // Mining penalty decreases progressively with mining level (1-10).
             // At level 10, both mining and ore penalties are cancelled, and Hardy bonus shows instead.
-            bool hasClaustrophobic = ClientHasVanillaTrait(eplr, "claustrophobic", "hunter");
+            bool hasClaustrophobic = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Claustrophobic);
             int claustrophobicMiningRemaining = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_CLAUSTROPHOBIC_MINING_REMAINING, 0);
 
             if (hasClaustrophobic)
@@ -1254,40 +1255,6 @@ namespace SeraphLeveling.Patches
         {
             if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(plainName)) return text;
             return GetOrphanTraitPattern(plainName).Replace(text, "");
-        }
-
-        /// <summary>
-        /// Reliable client-side check for whether the player has a vanilla trait. Reads from
-        /// `characterTraits` and `characterClass` watched attributes (both reliably synced by
-        /// vanilla VS) instead of our own `sitHasVanillaX` bools, which depend on a MarkPathDirty
-        /// call that doesn't always cover sibling attributes and can leave the client reading
-        /// the default `false` even when the player's class genuinely has the trait.
-        /// </summary>
-        private static bool ClientHasVanillaTrait(EntityPlayer eplr, string traitCode, params string[] classFallbacks)
-        {
-            if (eplr == null) return false;
-
-            string[] traits = eplr.WatchedAttributes.GetStringArray("characterTraits", null);
-            if (traits != null)
-            {
-                for (int i = 0; i < traits.Length; i++)
-                {
-                    if (string.Equals(traits[i], traitCode, StringComparison.OrdinalIgnoreCase))
-                        return true;
-                }
-            }
-
-            if (classFallbacks != null && classFallbacks.Length > 0)
-            {
-                string charClass = eplr.WatchedAttributes.GetString("characterClass", "")?.ToLowerInvariant() ?? "";
-                for (int i = 0; i < classFallbacks.Length; i++)
-                {
-                    if (string.Equals(charClass, classFallbacks[i], StringComparison.OrdinalIgnoreCase))
-                        return true;
-                }
-            }
-
-            return false;
         }
 
         // Cache for locale-aware vanilla trait line regexes. Built lazily per trait code from
