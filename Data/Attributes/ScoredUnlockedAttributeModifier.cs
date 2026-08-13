@@ -33,7 +33,6 @@ namespace SeraphLeveling.Data.Attributes
                 SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Player {player.PlayerName} made progress towards {Name} ({progress.TotalCredits:F0} / {GlobalMaxCredits:F0})");
             }
 
-            // TODO Also check any requirements on the enclosing trait (e.g. ranged damage 10% for bowyer)
             if (progress.TotalCredits >= GlobalMaxCredits)
             {
                 bool oldUnlock = progress.IsUnlocked;

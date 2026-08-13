@@ -108,6 +108,8 @@ namespace SeraphLeveling.Data.Attributes
 
         public virtual void ApplyUnlock(IServerPlayer player, PD progress)
         {
+            if (player?.Entity == null) return;
+
             player.Entity.WatchedAttributes.SetBool(UnlockedKey, progress.IsUnlocked);
 
             // Update extraTraits to show trait if unlocked (for UI display)

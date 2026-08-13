@@ -9513,7 +9513,7 @@ namespace SeraphLeveling
         /// Check if an item code represents clothing (not armor) and is not blacklisted.
         /// Starting class outfits are blacklisted by default to prevent easy Clothier progression.
         /// </summary>
-        private static bool IsClothingItem(string itemCode)
+        public static bool IsClothingItem(string itemCode)
         {
             if (string.IsNullOrEmpty(itemCode)) return false;
             string lowerCode = itemCode.ToLowerInvariant();

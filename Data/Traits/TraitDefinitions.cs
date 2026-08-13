@@ -179,8 +179,10 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "clothier",
             Attributes = [
+                (AttributeModifierDefinitions.Clothier, 1)
             ],
             Requirements = [
+                new RequiredUnlockedAttribute(AttributeModifierDefinitions.Clothier)
             ]
         };
 

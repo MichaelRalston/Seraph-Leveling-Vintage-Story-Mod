@@ -118,5 +118,21 @@ namespace SeraphLeveling.Data.Attributes
             WatchedCreditsAttributeKey = "sitImproviserRockDamage",
             Trait = new(() => Traits.TraitDefinitions.Improviser),
         };
+
+        public static readonly ClothierAttributeModifierDefinition Clothier = new()
+        {
+            Id = "clothier",
+            SaveKey = "sitClothierProgress",
+            Description = "clothier",
+            PersistenceHeader = "CLT",
+            Name = "Clothier",
+            ExtraTraitKey = "sitclothiermastery",
+            UnlockedKey = "sitClothierUnlocked",
+            NotifyLangKey = "seraphleveling:message-clothier-unlocked",
+            RequiredCollectionSize = 20,
+            CollectedItemDescription = "clothes",
+            CollectedItemCountKey = "sitClothierCount",
+            Trait = new(() => Traits.TraitDefinitions.Clothier),
+        };
     }
 }
