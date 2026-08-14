@@ -1506,7 +1506,7 @@ namespace SeraphLeveling
 
             // Load config and progress data after save game is loaded
             api.Event.SaveGameLoaded += LoadConfig;
-            LoadedAttributes.Foreach(definition => api.Event.SaveGameLoaded += () => definition.LoadProgress(ServerApi));
+            api.Event.SaveGameLoaded += LoadAllProgress;
             api.Event.SaveGameLoaded += LoadMeleeProgress;
             api.Event.SaveGameLoaded += LoadArmorProgress;
             api.Event.SaveGameLoaded += LoadClothierProgress;
@@ -4033,7 +4033,10 @@ namespace SeraphLeveling
                 LastDecayCheckDay[playerUid] = currentDay;
             }
 
-            LoadedAttributes.Foreach(definition => definition.HandleLogin(byPlayer));
+            foreach (var definition in LoadedAttributes)
+            {
+                definition.HandleLogin(byPlayer);
+            }
 
             // Apply melee bonus (Stats always applied, WatchedAttributes only sync if changed)
             var meleeProg = MeleeProgress.GetOrAdd(playerUid, _ => new MeleeProgressData());
@@ -5340,6 +5343,7 @@ namespace SeraphLeveling
                 ServerApi.Event.PlayerDisconnect -= OnPlayerDisconnect;
                 ServerApi.Event.GameWorldSave -= OnGameWorldSave;
                 ServerApi.Event.SaveGameLoaded -= LoadConfig;
+                ServerApi.Event.SaveGameLoaded -= LoadAllProgress;
                 ServerApi.Event.SaveGameLoaded -= LoadSleepBuffData;
             }
 
@@ -5583,6 +5587,13 @@ namespace SeraphLeveling
             AttributeModifierDefinitions.WalkingSpeed.PersistProgress(ServerApi);
         }
 
+        private void LoadAllProgress()
+        {
+            foreach (var definition in LoadedAttributes)
+            {
+                definition.LoadProgress(ServerApi);
+            }
+        }
         private void LoadProgress<T>() where T : ProgressData<T>, IProgressDataContract<T>
         {
             var progress = T.ProgressDictionary();
@@ -6173,7 +6184,10 @@ namespace SeraphLeveling
             StringBuilder verboseSb = VerboseDecayLogging ? new StringBuilder() : null;
 
             // --- Per-tool dictionary skills ---
-            LoadedAttributes.Foreach(definition => totalDecayApplied += definition.ApplyDecay(player, currentDay, sb, verboseSb));
+            foreach (var definition in LoadedAttributes)
+            {
+                totalDecayApplied += definition.ApplyDecay(player, currentDay, sb, verboseSb);
+            }
 
             // Melee
             if (!DecayExemptSkills.Contains("melee") && !DisabledSkills.Contains("melee"))
@@ -6491,7 +6505,10 @@ namespace SeraphLeveling
         private void ReapplyAllBonuses(IServerPlayer player)
         {
             string playerUid = player.PlayerUID;
-            LoadedAttributes.Foreach(definition => definition.ApplyBonusIfExists(player));
+            foreach (var definition in LoadedAttributes)
+            {
+                definition.ApplyBonusIfExists(player);
+            }
             if (MeleeProgress.TryGetValue(playerUid, out var meleeProg))
                 ApplyMeleeBonusStatic(player, meleeProg.TotalCredits);
             if (ArmorProgress.TryGetValue(playerUid, out var armorProg))
@@ -6898,7 +6915,10 @@ namespace SeraphLeveling
             var sb = new StringBuilder();
             int totalCreditsLost = 0;
 
-            LoadedAttributes.Foreach(definition => totalCreditsLost += definition.ApplyDeathPenalty(player, sb));
+            foreach (var definition in LoadedAttributes)
+            {
+                totalCreditsLost += definition.ApplyDeathPenalty(player, sb);
+            }
             // --- Per-tool dictionary skills ---
 
             // Melee
@@ -10954,7 +10974,10 @@ namespace SeraphLeveling
             string playerUid = player.PlayerUID;
 
             // Reset Mining
-            LoadedAttributes.Foreach(definition => definition.ResetProgress(player));
+            foreach (var definition in LoadedAttributes)
+            {
+                definition.ResetProgress(player);
+            }
 
             // Reset Melee
             if (MeleeProgress.TryGetValue(playerUid, out var meleeProg))
@@ -11260,7 +11283,10 @@ namespace SeraphLeveling
 
             string playerUid = player.PlayerUID;
 
-            LoadedAttributes.Foreach(definition => definition.MaxStat(player));
+            foreach (var definition in LoadedAttributes)
+            {
+                definition.MaxStat(player);
+            }
 
             // Max Melee — same fix as Mining (pass raw credits so Farsighted/Nervous penalties
             // don't get subtracted twice and Hunter/Malefactor/Clockmaker can hit +50%).
@@ -11374,8 +11400,10 @@ namespace SeraphLeveling
             string playerUid = player.PlayerUID;
             const int CREDITS = 1;
 
-            LoadedAttributes.Foreach(definition => definition.ApplyTraitTestSuite1Command(player));
-
+            foreach (var definition in LoadedAttributes)
+            {
+                definition.ApplyTraitTestSuite1Command(player);
+            }
             // Melee
             var meleeProg = MeleeProgress.GetOrAdd(playerUid, _ => new MeleeProgressData());
             meleeProg.TotalCredits = CREDITS;
