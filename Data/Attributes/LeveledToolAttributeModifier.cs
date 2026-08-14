@@ -19,8 +19,7 @@ namespace SeraphLeveling.Data.Attributes
         {
             var progress = GetDict(player);
             progress.TotalCredits = 0;
-            var toolEntries = progress.ToolProgress.Select(kvp =>
-                (kvp.Key, double.CreateTruncating<N>(kvp.Value.PartialCredit), kvp.Value.CurrentIncrementSize)).ToList();
+            progress.ToolProgress.Clear();
             progress.LastActivityDay = 0;
             PendingSave = true;
             ApplyBonus(player, progress);
