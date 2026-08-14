@@ -15,7 +15,7 @@ namespace SeraphLeveling.Data.Traits
     {
         public required string Id { get; init; }
         public required Dictionary<ISaveableAttribute, int> Attributes { get; init; }
-        public List<IRequiredAttribute> Requirements
+        public List<IRequirement> Requirements
         {
             get;
             init
@@ -33,6 +33,11 @@ namespace SeraphLeveling.Data.Traits
         {
             get => field ??= $"seraphleveling:trait-{Id}-dynamic"; init;
         }
+
+        /// <summary>
+        /// Registers a method to be called every time the unlock status for this attribute changes for a player
+        /// </summary>
+        public event UnlockChangedDelegate UnlockChanged;
 
         ~TraitDefinition()
         {
@@ -54,10 +59,14 @@ namespace SeraphLeveling.Data.Traits
         {
             if (player?.Entity == null) return;
 
+            // If the player already has the trait, do nothing
+            if (HasVanillaTrait(player.Entity)) return;
+
             // Check prerequisites
             if (Requirements.All(attr => attr.IsSatisfied(player)))
             {
                 Attributes.Select(kvp => kvp.Key).Foreach(attr => attr.Unlock(player, true));
+                UnlockChanged?.Invoke(player, false, true);
             }
         }
 
@@ -77,7 +86,7 @@ namespace SeraphLeveling.Data.Traits
             return TextCommandResult.Success(sb.ToString().TrimEnd());
         }
 
-        protected virtual bool HasVanillaTrait(EntityPlayer player)
+        public virtual bool HasVanillaTrait(EntityPlayer player)
         {
             return SeraphLevelingModSystem.PlayerHasTrait(player, this);
         }

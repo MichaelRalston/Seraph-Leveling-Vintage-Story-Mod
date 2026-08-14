@@ -18,9 +18,15 @@ namespace SeraphLeveling.Data.Attributes
         /// Registers a method to be called every time the credit total for this attribute changes for a player
         /// </summary>
         public event CreditsChangedDelegate CreditsChanged;
+
+        /// <summary>
+        /// Registers a method to be called every time the bonus percentage for this attribute changes for a player
+        /// </summary>
+        public event BonusChangedDelegate BonusChanged;
     }
 
     public delegate void CreditsChangedDelegate(IServerPlayer player, int oldCredits, int newCredits);
+    public delegate void BonusChangedDelegate(IServerPlayer player, int oldBonus, int newBonus);
 
     public abstract record class LeveledAttributeModifierDefinition<D, PD> : AttributeModifierDefinition<D, PD>, ILeveledAttributeModifierDefinition where PD : LeveledAttributeModifierProgressData<D, PD> where D : LeveledAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
     {
@@ -57,6 +63,15 @@ namespace SeraphLeveling.Data.Attributes
             if (oldCredits != progress.TotalCredits)
             {
                 CreditsChanged?.Invoke(player, oldCredits, progress.TotalCredits);
+            }
+        }
+
+        public event BonusChangedDelegate BonusChanged;
+        public void OnBonusChanged(IServerPlayer player, int oldBonus, int newBonus)
+        {
+            if (oldBonus != newBonus)
+            {
+                BonusChanged?.Invoke(player, oldBonus, newBonus);
             }
         }
 
@@ -112,6 +127,8 @@ namespace SeraphLeveling.Data.Attributes
                 // Sync level and bonus to WatchedAttributes for client-side display
                 watchedAttrs.SetInt(WatchedLevel, progressData.TotalCredits);
                 watchedAttrs.SetInt(WatchedBonus, bonusPercent);
+
+                OnBonusChanged(player, oldBonus, bonusPercent);
 
                 SeraphLevelingModSystem.UpdateExtraTraitStatic(player.Entity, TraitCode, progressData.TotalCredits > 0);
 
