@@ -50,7 +50,7 @@ namespace SeraphLeveling.Data.Attributes
     {
         static abstract PD Create(D def);
     }
-    
+
     public abstract record class AttributeModifierDefinition<D, PD> : ISaveableAttribute where D : AttributeModifierDefinition<D, PD>, IConstructable<D, PD> where PD : AttributeModifierProgressData<D, PD>
     {
         public required string Id { get; init; }
@@ -68,15 +68,16 @@ namespace SeraphLeveling.Data.Attributes
 
         public virtual void ApplyBonusIfExists(IServerPlayer player)
         {
-            
+
         }
 
         public virtual void ApplyTraitTestSuite1Command(IServerPlayer player)
         {
-            
+
         }
 
-        public virtual IChatCommand RegisterCommands(ICoreServerAPI _, IChatCommand c) {
+        public virtual IChatCommand RegisterCommands(ICoreServerAPI _, IChatCommand c)
+        {
             return c;
         }
 
@@ -88,18 +89,19 @@ namespace SeraphLeveling.Data.Attributes
         public void ResetProgress() => ProgressDictionary.Clear();
         public virtual void ResetProgress(IServerPlayer player)
         {
-            
+
         }
         public virtual void MaxStat(IServerPlayer player)
         {
-            
+
         }
 
         public PD CreateProgressData() => D.Create((D)this);
 
         public PD GetForPlayer(string playerUid)
         {
-            return ProgressDictionary.GetOrAdd(playerUid, _ => {
+            return ProgressDictionary.GetOrAdd(playerUid, _ =>
+            {
                 SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] No {Description} progress data found for {playerUid}, creating new progress dictionary for them.");
                 return CreateProgressData();
             });
@@ -124,8 +126,10 @@ namespace SeraphLeveling.Data.Attributes
                     return;
                 }
                 else {
-                    var stringyData = string.Concat(data.Select(b => b >= 32 && b <= 126 ? ((char)b).ToString() : $"[0x{b:X2}]"));
-                    serverApi.Logger.Debug($"[SeraphLeveling] {Description} progress data found: {stringyData} in world save");
+                    #if SPAMMYDEBUG
+                        var stringyData = string.Concat(data.Select(b => b >= 32 && b <= 123 ? ((char)b).ToString() : $"[0x{b:X2}]"));
+                        serverApi.Logger.Debug($"[SeraphLeveling] {Description} progress data found: {stringyData} in world save");
+                    #endif
                 }
 
                 using (var ms = new MemoryStream(data))
@@ -147,7 +151,9 @@ namespace SeraphLeveling.Data.Attributes
                             try
                             {
                                 string playerUid = reader.ReadString();
-                                serverApi.Logger.Debug($"[SeraphLeveling] {Description} progress contains progress for {playerUid}");
+                                #if SPAMMYDEBUG
+                                    serverApi.Logger.Debug($"[SeraphLeveling] {Description} progress contains progress for {playerUid}");
+                                #endif
                                 progressData.ReadVersion(version, reader);
                                 progress[playerUid] = progressData;
                             }
@@ -157,13 +163,15 @@ namespace SeraphLeveling.Data.Attributes
                                 break;
                             }
                         }
-                        if (version != PersistenceVersion) {
+                        if (version != PersistenceVersion)
+                        {
                             PendingSave = true;
                         }
                     }
                 }
-
-                serverApi.Logger.Notification($"[SeraphLeveling] Loaded {Description} progress for {progress.Count} players");
+                #if SPAMMYDEBUG
+                    serverApi.Logger.Notification($"[SeraphLeveling] Loaded {Description} progress for {progress.Count} players");
+                #endif
             }
             catch (Exception ex)
             {
@@ -175,8 +183,9 @@ namespace SeraphLeveling.Data.Attributes
         {
             if (serverApi == null) return;
             var progress = ProgressDictionary;
-            serverApi.Logger.Debug($"[SeraphLeveling] Entering PersistProgress for {Description} progress to go to {SaveKey}.");
-
+            #if SPAMMYDEBUG
+                serverApi.Logger.Debug($"[SeraphLeveling] Entering PersistProgress for {Description} progress to go to {SaveKey}.");
+            #endif
             lock (SeraphLevelingModSystem.persistLock)
             {
                 if (progress.IsEmpty)
@@ -187,9 +196,12 @@ namespace SeraphLeveling.Data.Attributes
                 try
                 {
                     var snapshot = progress.ToArray();
-                    foreach (var playerKvp in snapshot) {
-                        serverApi.Logger.Debug($"[SeraphLeveling] {Description} progress contains progress for {playerKvp.Key}");
-                    }
+                    #if SPAMMYDEBUG
+                        foreach (var playerKvp in snapshot)
+                        {
+                            serverApi.Logger.Debug($"[SeraphLeveling] {Description} progress contains progress for {playerKvp.Key}");
+                        }
+                    #endif
 
                     byte[] data;
                     using (var ms = new MemoryStream())
@@ -212,9 +224,11 @@ namespace SeraphLeveling.Data.Attributes
                     }
 
                     serverApi.WorldManager.SaveGame.StoreData(SaveKey, data);
-                    serverApi.Logger.Debug($"[SeraphLeveling] Persisted {Description} progress for {snapshot.Length} players");
-                    var stringyData = string.Concat(data.Select(b => b >= 32 && b <= 123 ? ((char)b).ToString() : $"[0x{b:X2}]"));
-                    serverApi.Logger.Debug($"[SeraphLeveling] {Description} progress was stored as {stringyData}");
+                    #if SPAMMYDEBUG
+                        serverApi.Logger.Debug($"[SeraphLeveling] Persisted {Description} progress for {snapshot.Length} players");
+                        var stringyData = string.Concat(data.Select(b => b >= 32 && b <= 123 ? ((char)b).ToString() : $"[0x{b:X2}]"));
+                        serverApi.Logger.Debug($"[SeraphLeveling] {Description} progress was stored as {stringyData}");
+                    #endif
                 }
                 catch (Exception ex)
                 {
@@ -251,7 +265,8 @@ namespace SeraphLeveling.Data.Attributes
             return 0;
         }
 
-        protected PD GetDict(IPlayer player) {
+        protected PD GetDict(IPlayer player)
+        {
             return ProgressDictionary.GetOrAdd(player.PlayerUID, _ => CreateProgressData());
         }
 
@@ -262,7 +277,7 @@ namespace SeraphLeveling.Data.Attributes
     {
 
     }
-    
+
     public abstract class AttributeModifierProgressData<D, PD> : IAttributeModifierProgressData where PD : AttributeModifierProgressData<D, PD> where D : AttributeModifierDefinition<D, PD>, IConstructable<D, PD>
     {
         protected D Definition { get; init; }
