@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Collections.Generic;
+using System.Reflection;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -23,6 +24,7 @@ using SeraphLeveling.Data.Mods;
 using SeraphLeveling.Data.Attributes;
 using SeraphLeveling.Data.Legacy;
 using Vintagestory.API.Util;
+using Microsoft.CSharp.RuntimeBinder;
 
 namespace SeraphLeveling
 {
@@ -1759,16 +1761,43 @@ namespace SeraphLeveling
                 return TextCommandResult.Error($"Could not find online player matching '{playerName}'.");
 
             string targetUid = targetPlayer.PlayerUID;
+            foreach (var definition in LoadedAttributes)
+            {
+                Type type = definition.GetType();
+                PropertyInfo property = type.GetProperty("SkillKey", BindingFlags.Public | BindingFlags.Instance);
+                if (property != null && ((string)property.GetValue(definition) == traitName))
+                {
+                    Type[] getParams = [typeof(string)];
+                    dynamic progress = type.GetMethod("GetForPlayer", BindingFlags.Public | BindingFlags.Instance, null, getParams, null).Invoke(definition, [(object)targetUid]);
+                    if (progress != null)
+                    {
+                        try
+                        {
+                            return (TextCommandResult)progress.SetLevel(targetPlayer, level, toolName);
+                        }
+                        catch (RuntimeBinderException)
+                        {
+                            if (toolName != null)
+                            {
+                                return TextCommandResult.Error($"The '{traitName}' trait does not support per-tool level setting.");
+                            }
+                            try {
+                                return (TextCommandResult)((dynamic)definition).SetLevel(targetPlayer, level);
+                            }
+                            catch (RuntimeBinderException)
+                            {
+                                return TextCommandResult.Error($"The '{traitName}' trait does not support level setting.");
+                            }
+                        }
+                    }
+                }
+            }
 
             // Traits with per-tool support delegate to shared helpers
             switch (traitName)
             {
-                case "mining":
-                    return AttributeModifierDefinitions.MiningSpeed.GetForPlayer(targetUid).SetLevel(targetPlayer, level, toolName);
                 case "melee":
                     return SetMeleeLevelForPlayer(targetPlayer, level, toolName);
-                case "ranged":
-                    return AttributeModifierDefinitions.RangedDamage.GetForPlayer(targetUid).SetLevel(targetPlayer, level, toolName);
                 case "precise":
                     return SetPreciseLevelForPlayer(targetPlayer, level, toolName);
                 case "armor":
@@ -1783,14 +1812,6 @@ namespace SeraphLeveling
 
             switch (traitName)
             {
-                case "walking":
-                    {
-                        return AttributeModifierDefinitions.WalkingSpeed.SetLevel(targetPlayer, level);
-                    }
-                case "hunger":
-                    {
-                        return AttributeModifierDefinitions.HungerRate.SetLevel(targetPlayer, level);
-                    }
                 case "mender":
                     {
                         if (level > MaxMenderPercent) return TextCommandResult.Error($"Level cannot exceed max ({MaxMenderPercent}).");
