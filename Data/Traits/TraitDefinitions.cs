@@ -77,6 +77,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "furtive",
             Attributes = [
+                (AttributeModifierDefinitions.Furtive, 35)
             ]
         };
 

@@ -66,6 +66,24 @@ namespace SeraphLeveling.Data.Attributes
             StatName = "walkspeed",
         };
 
+        public static readonly FurtiveAttributeModifierDefinition Furtive = new()
+        {
+            Id = "furtive",
+            SaveKey = "sitFurtiveProgress",
+            Description = "furtive",
+            PersistenceHeader = "FUR",
+            SkillKey = "furtive",
+            Name = "Furtive",
+            Stat = "% animal detection range",
+            LongDescription = "furtive",
+            IncrementUnits = "blocks",
+            StatName = "animalSeekingRange",
+            Direction = "-",
+            BaseIncrement = 100,
+            IncrementStep = 100,
+            GlobalMaxCredits = 35,
+        };
+
         public static readonly HungerAttributeModifierDefinition HungerRate = new()
         {
             Id = "hungerRate",
@@ -132,11 +150,11 @@ namespace SeraphLeveling.Data.Attributes
             RequiredCollectionSize = 20,
             CollectedItemDescription = "clothes worn",
             CollectedItemCountKey = "sitClothierCount",
-            TokenAllowList = [ "clothes-", "shirt-", "trousers-", "dress-", "hat-", "cape-", "cloak-", "jacket-", "vest-", "skirt-", "gloves-", "boots-", "shoes-", "headband-", "mask-", "scarf-" ],
+            TokenAllowList = ["clothes-", "shirt-", "trousers-", "dress-", "hat-", "cape-", "cloak-", "jacket-", "vest-", "skirt-", "gloves-", "boots-", "shoes-", "headband-", "mask-", "scarf-"],
             Trait = new(() => Traits.TraitDefinitions.Clothier),
         };
-        
-        public static readonly RangedDamageAttributeModifierDefinition RangedDamage = new ()
+
+        public static readonly RangedDamageAttributeModifierDefinition RangedDamage = new()
         {
             Id = "rangedDamage",
             SaveKey = "sitRangedProgress",
@@ -155,7 +173,7 @@ namespace SeraphLeveling.Data.Attributes
             StatName = "rangedWeaponsDamage",
         };
 
-        public static readonly RangedDamageAttributeModifierDefinition RangedAccuracy = new ()
+        public static readonly RangedDamageAttributeModifierDefinition RangedAccuracy = new()
         {
             Id = "rangedAccuracy",
             SaveKey = "sitRangedAccuracyProgress",

@@ -97,7 +97,7 @@ namespace SeraphLeveling.Data.Attributes
             int bonusPercent = (int)(bonus * 100);
 
             // Always apply stats (they're not persistent)
-            player.Entity.Stats.Set(StatName, StatCode, bonus, false);
+            player.Entity.Stats.Set(StatName, StatCode, Direction=="-"?-bonus:bonus, false);
 
             // Check if any values have changed before updating WatchedAttributes
             var watchedAttrs = player.Entity.WatchedAttributes;

@@ -385,23 +385,13 @@ namespace SeraphLeveling
         // =========================================================================
         // FURTIVE TRAIT - Tracks sneaking blocks for animal detection range reduction
         // =========================================================================
-        public const string FURTIVE_STAT_CODE = "sitFurtiveBonus";
         public const string WATCHED_FURTIVE_LEVEL = "sitFurtiveLevel";
         public const string WATCHED_FURTIVE_BONUS = "sitFurtiveBonusPercent";
-        public const string FURTIVE_TRAIT_CODE = "sitfurtivemastery";
-
-        // Furtive progression configuration
-        public static int BaseFurtiveSneakBlocksPerIncrement = 100;  // Base sneaking blocks for first credit
-        public static int FurtiveIncrementStep = 100;                 // Increment step per credit
-        public static int MaxFurtivePercent = 35;                     // 35% max animal detection range reduction
 
         // Vanilla Furtive trait bonus (Malefactor)
         public const int VANILLA_FURTIVE_DETECTION_REDUCTION = 35;
 
         // Storage for furtive progress
-        public static ConcurrentDictionary<string, FurtiveProgressData> FurtiveProgress = new ConcurrentDictionary<string, FurtiveProgressData>();
-        public static volatile bool pendingFurtiveProgressSave = false;
-
         // Tracking last known positions for sneaking distance calculation (using Position2D to avoid Vec3d allocations)
         private static ConcurrentDictionary<string, Position2D> lastSneakingPositions = new ConcurrentDictionary<string, Position2D>();
 
@@ -1122,20 +1112,6 @@ namespace SeraphLeveling
                     .RequiresPrivilege(Privilege.controlserver)
                     .HandleWith(OnTraitForagerMaxCommand)
                 .EndSubCommand()
-                // Furtive trait commands
-                .BeginSubCommand("furtive")
-                    .WithDescription("View your furtive (sneaking) progression stats")
-                    .RequiresPrivilege(Privilege.chat)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitFurtiveCommand)
-                .EndSubCommand()
-                .BeginSubCommand("furtivelevel")
-                    .WithDescription("Get or set your furtive level (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalInt("level"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitFurtiveLevelCommand)
-                .EndSubCommand()
                 // Precise trait commands
                 .BeginSubCommand("precise")
                     .WithDescription("View your precise (mechanical damage) progression stats")
@@ -1450,7 +1426,6 @@ namespace SeraphLeveling
             api.Event.SaveGameLoaded += LoadPilfererProgress;
             api.Event.SaveGameLoaded += LoadResourcefulProgress;
             api.Event.SaveGameLoaded += LoadForagerProgress;
-            api.Event.SaveGameLoaded += LoadFurtiveProgress;
             api.Event.SaveGameLoaded += LoadPreciseProgress;
             api.Event.SaveGameLoaded += LoadHardyHealthProgress;
             api.Event.SaveGameLoaded += LoadImproviserProgress;
@@ -1679,9 +1654,6 @@ namespace SeraphLeveling
             var foragerProg = ForagerProgress.GetOrAdd(playerUid, _ => new ForagerProgressData { CurrentIncrementSize = BaseForagerCropsPerIncrement });
             sb.AppendLine($"Forager: {foragerProg.TotalCredits}/{MaxForagerLootPercent} (+{foragerProg.TotalCredits}% foraging loot)");
 
-            var furtiveProg = FurtiveProgress.GetOrAdd(playerUid, _ => new FurtiveProgressData { CurrentIncrementSize = BaseFurtiveSneakBlocksPerIncrement });
-            sb.AppendLine($"Furtive: {furtiveProg.TotalCredits}/{MaxFurtivePercent} (-{furtiveProg.TotalCredits}% detection range)");
-
             var preciseProg = PreciseProgress.GetOrAdd(playerUid, _ => new PreciseProgressData());
             sb.AppendLine($"Precise: {preciseProg.TotalCredits}/{MaxPrecisePercent} (+{preciseProg.TotalCredits}% mechanical dmg)");
 
@@ -1844,17 +1816,6 @@ namespace SeraphLeveling
                         ApplyForagerBonusStatic(targetPlayer, level);
                         UpdateSkillActivityDay(targetUid, "forager");
                         result = $"Forager level set to {level} for {targetPlayer.PlayerName}.";
-                        break;
-                    }
-                case "furtive":
-                    {
-                        if (level > MaxFurtivePercent) return TextCommandResult.Error($"Level cannot exceed max ({MaxFurtivePercent}).");
-                        var progress = FurtiveProgress.GetOrAdd(targetUid, _ => new FurtiveProgressData { CurrentIncrementSize = BaseFurtiveSneakBlocksPerIncrement });
-                        progress.TotalCredits = level;
-                        pendingFurtiveProgressSave = true;
-                        ApplyFurtiveBonusStatic(targetPlayer, level);
-                        UpdateSkillActivityDay(targetUid, "furtive");
-                        result = $"Furtive level set to {level} (-{level}% detection) for {targetPlayer.PlayerName}.";
                         break;
                     }
                 default:
@@ -3999,9 +3960,6 @@ namespace SeraphLeveling
                 ServerApi.Logger.Debug($"[SeraphLeveling] Applied armor bonuses: +{armorProg.TotalDurabilityCredits}% durability, -{armorProg.TotalWalkSpeedCredits}% walk speed penalty to player {byPlayer.PlayerName}");
             }
 
-            // Apply clothier bonus
-            AttributeModifierDefinitions.Clothier.HandleLogin(byPlayer);
-
             // Apply mender bonus
             var menderProg = MenderProgress.GetOrAdd(playerUid, _ => new MenderProgressData
             {
@@ -4050,18 +4008,6 @@ namespace SeraphLeveling
                 ServerApi.Logger.Debug($"[SeraphLeveling] Applied forager bonus +{foragerCredits}% to player {byPlayer.PlayerName}");
             }
 
-            // Apply furtive bonus
-            var furtiveProg = FurtiveProgress.GetOrAdd(playerUid, _ => new FurtiveProgressData
-            {
-                CurrentIncrementSize = BaseFurtiveSneakBlocksPerIncrement
-            });
-            int furtiveCredits = furtiveProg.TotalCredits;
-            ApplyFurtiveBonusStatic(byPlayer, furtiveCredits);
-            if (furtiveCredits > 0)
-            {
-                ServerApi.Logger.Debug($"[SeraphLeveling] Applied furtive bonus -{furtiveCredits}% detection to player {byPlayer.PlayerName}");
-            }
-
             // Apply precise bonus
             var preciseProg = PreciseProgress.GetOrAdd(playerUid, _ => new PreciseProgressData());
             int preciseCredits = preciseProg.TotalCredits;
@@ -4078,9 +4024,6 @@ namespace SeraphLeveling
                 ApplyHardyHealthBonusStatic(byPlayer, true);
                 ServerApi.Logger.Debug($"[SeraphLeveling] Applied hardy health +{HardyHealthBonus} HP to player {byPlayer.PlayerName}");
             }
-
-            // Apply improviser unlock
-            AttributeModifierDefinitions.Improviser.HandleLogin(byPlayer);
 
             // Apply merciless unlock
             var mercilessProg = MercilessProgress.GetOrAdd(playerUid, _ => new MercilessProgressData());
@@ -5248,10 +5191,6 @@ namespace SeraphLeveling
                 {
                     PersistForagerProgress();
                 }
-                if (pendingFurtiveProgressSave || !FurtiveProgress.IsEmpty)
-                {
-                    PersistFurtiveProgress();
-                }
                 if (pendingPreciseProgressSave || !PreciseProgress.IsEmpty)
                 {
                     PersistPreciseProgress();
@@ -5310,7 +5249,6 @@ namespace SeraphLeveling
             PilfererProgress.Clear();
             ResourcefulProgress.Clear();
             ForagerProgress.Clear();
-            FurtiveProgress.Clear();
             PreciseProgress.Clear();
             HardyHealthProgress.Clear();
             MercilessProgress.Clear();
@@ -5329,7 +5267,6 @@ namespace SeraphLeveling
             pendingPilfererProgressSave = false;
             pendingResourcefulProgressSave = false;
             pendingForagerProgressSave = false;
-            pendingFurtiveProgressSave = false;
             pendingPreciseProgressSave = false;
             pendingHardyHealthProgressSave = false;
             pendingMercilessProgressSave = false;
@@ -5388,12 +5325,6 @@ namespace SeraphLeveling
             {
                 PersistForagerProgress();
                 pendingForagerProgressSave = false;
-            }
-
-            if (pendingFurtiveProgressSave || !FurtiveProgress.IsEmpty)
-            {
-                PersistFurtiveProgress();
-                pendingFurtiveProgressSave = false;
             }
 
             if (pendingPreciseProgressSave || !PreciseProgress.IsEmpty)
@@ -5739,9 +5670,9 @@ namespace SeraphLeveling
                 MaxForagerLootPercent = config.ForagerMaxLootPercent;
                 MaxForagerWildCropPercent = config.ForagerMaxWildCropPercent;
 
-                BaseFurtiveSneakBlocksPerIncrement = config.FurtiveBaseSneakBlocksPerIncrement;
-                FurtiveIncrementStep = config.FurtiveIncrementStep;
-                MaxFurtivePercent = config.FurtiveMaxPercent;
+                AttributeModifierDefinitions.Furtive.BaseIncrement = config.FurtiveBaseSneakBlocksPerIncrement;
+                AttributeModifierDefinitions.Furtive.IncrementStep = config.FurtiveIncrementStep;
+                AttributeModifierDefinitions.Furtive.GlobalMaxCredits = config.FurtiveMaxPercent;
 
                 BasePreciseDamagePerIncrement = config.PreciseBaseDamagePerIncrement;
                 PreciseIncrementStep = config.PreciseIncrementStep;
@@ -5969,9 +5900,9 @@ namespace SeraphLeveling
                 config.ForagerMaxLootPercent = MaxForagerLootPercent;
                 config.ForagerMaxWildCropPercent = MaxForagerWildCropPercent;
 
-                config.FurtiveBaseSneakBlocksPerIncrement = BaseFurtiveSneakBlocksPerIncrement;
-                config.FurtiveIncrementStep = FurtiveIncrementStep;
-                config.FurtiveMaxPercent = MaxFurtivePercent;
+                config.FurtiveBaseSneakBlocksPerIncrement = AttributeModifierDefinitions.Furtive.BaseIncrement;
+                config.FurtiveIncrementStep = AttributeModifierDefinitions.Furtive.IncrementStep;
+                config.FurtiveMaxPercent = AttributeModifierDefinitions.Furtive.GlobalMaxCredits;
 
                 config.PreciseBaseDamagePerIncrement = BasePreciseDamagePerIncrement;
                 config.PreciseIncrementStep = PreciseIncrementStep;
@@ -6339,29 +6270,6 @@ namespace SeraphLeveling
                 }
             }
 
-            // Furtive
-            if (!DecayExemptSkills.Contains("furtive") && !DisabledSkills.Contains("furtive"))
-            {
-                if (FurtiveProgress.TryGetValue(playerUid, out var fuProg) && (fuProg.TotalCredits > 0 || fuProg.BlocksInIncrement > 0))
-                {
-                    var (grace, basePoints, maxPoints) = GetDecayParams("furtive");
-                    int decayCredits = CalculateDecayPoints(fuProg.LastActivityDay, currentDay, grace, basePoints, maxPoints);
-                    if (decayCredits > 0)
-                    {
-                        int oldCredits = fuProg.TotalCredits;
-                        float oldAcc = fuProg.BlocksInIncrement; int oldInc = fuProg.CurrentIncrementSize;
-                        double rawPenalty = (double)decayCredits;
-                        var (newCr, newAcc, newInc, lost) = ApplySingleAccumulatorDecay(
-                            oldAcc, oldInc, oldCredits,
-                            rawPenalty, BaseFurtiveSneakBlocksPerIncrement, FurtiveIncrementStep, verboseSb, "Furtive");
-                        fuProg.TotalCredits = newCr; fuProg.BlocksInIncrement = (float)newAcc; fuProg.CurrentIncrementSize = newInc;
-                        if (lost > 0) totalDecayApplied += lost;
-                        sb.AppendLine($"  Furtive: {oldCredits} \u2192 {newCr} (-{lost} credits, {rawPenalty:F0} pts), {oldAcc:F0}/{oldInc} \u2192 {(int)newAcc}/{newInc}");
-                        pendingFurtiveProgressSave = true;
-                    }
-                }
-            }
-
             // CO Proficiency (per-proficiency absolute-position drain + SteadyAim direct)
             if (!DecayExemptSkills.Contains("coproficiency") && !DisabledSkills.Contains("coproficiency") && IsCOCompatEnabled)
             {
@@ -6465,8 +6373,6 @@ namespace SeraphLeveling
                 ApplyResourcefulBonusStatic(player, resourcefulProg.TotalCredits);
             if (ForagerProgress.TryGetValue(playerUid, out var foragerProg))
                 ApplyForagerBonusStatic(player, foragerProg.TotalCredits);
-            if (FurtiveProgress.TryGetValue(playerUid, out var furtiveProg))
-                ApplyFurtiveBonusStatic(player, furtiveProg.TotalCredits);
             if (PreciseProgress.TryGetValue(playerUid, out var preciseProg))
                 ApplyPreciseBonusStatic(player, preciseProg.TotalCredits);
             if (IsCOCompatEnabled && COProgress.TryGetValue(playerUid, out var coProg))
@@ -6508,10 +6414,6 @@ namespace SeraphLeveling
                 case "forager":
                     if (ForagerProgress.TryGetValue(playerUid, out var foragerProg))
                         foragerProg.LastActivityDay = currentDay;
-                    break;
-                case "furtive":
-                    if (FurtiveProgress.TryGetValue(playerUid, out var furtiveProg))
-                        furtiveProg.LastActivityDay = currentDay;
                     break;
                 case "precise":
                     if (PreciseProgress.TryGetValue(playerUid, out var preciseProg))
@@ -7047,23 +6949,6 @@ namespace SeraphLeveling
                 }
             }
 
-            // Furtive
-            if (!DeathPenaltyExemptSkills.Contains("furtive") && !DisabledSkills.Contains("furtive"))
-            {
-                if (FurtiveProgress.TryGetValue(playerUid, out var furtiveProg) && (furtiveProg.TotalCredits > 0 || furtiveProg.BlocksInIncrement > 0))
-                {
-                    int oldCredits = furtiveProg.TotalCredits;
-                    float oldAcc = furtiveProg.BlocksInIncrement; int oldInc = furtiveProg.CurrentIncrementSize;
-                    double rawPenalty = BaseFurtiveSneakBlocksPerIncrement * DeathPenaltyFraction * Math.Sqrt(Math.Max(1, oldCredits));
-                    var (newCr, newAcc, newInc, lost) = ApplySingleAccumulatorDecay(
-                        oldAcc, oldInc, oldCredits, rawPenalty, BaseFurtiveSneakBlocksPerIncrement, FurtiveIncrementStep, null, "Furtive");
-                    furtiveProg.TotalCredits = newCr; furtiveProg.BlocksInIncrement = (float)newAcc; furtiveProg.CurrentIncrementSize = newInc;
-                    if (lost > 0) totalCreditsLost += lost;
-                    pendingFurtiveProgressSave = true;
-                    sb.AppendLine($"  Furtive: {oldCredits} \u2192 {newCr} (-{lost} credits, {rawPenalty:F0} pts), {oldAcc:F0}/{oldInc} \u2192 {(int)newAcc}/{newInc}");
-                }
-            }
-
             // --- CO Proficiency (per-proficiency subcredit drain) ---
             if (!DeathPenaltyExemptSkills.Contains("coproficiency") && !DisabledSkills.Contains("coproficiency") && IsCOCompatEnabled)
             {
@@ -7243,7 +7128,7 @@ namespace SeraphLeveling
             AppendDecayStatus(sb, "Hunger", "hunger", playerUid, currentDay,
                 () => AttributeModifierDefinitions.HungerRate.ProgressDictionary.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
             AppendDecayStatus(sb, "Furtive", "furtive", playerUid, currentDay,
-                () => FurtiveProgress.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
+                () => AttributeModifierDefinitions.Furtive.ProgressDictionary.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
 
             // Utility skills
             sb.AppendLine("--- Utility ---");
@@ -8827,114 +8712,11 @@ namespace SeraphLeveling
                 // Skip if no movement or teleportation (too far)
                 if (distance < 0.01f || distance > MAX_DISTANCE_PER_TICK) continue;
 
-                // Get or create player progress data
-                var playerProgress = FurtiveProgress.GetOrAdd(playerUid, _ => new FurtiveProgressData
-                {
-                    CurrentIncrementSize = BaseFurtiveSneakBlocksPerIncrement
-                });
-
-                // Skip all processing if already at max
-                if (playerProgress.TotalCredits >= MaxFurtivePercent) continue;
-
-                int oldCredits = playerProgress.TotalCredits;
-
-                // Apply sleep buff multiplier to distance
-                float modifiedDistance = ApplyXPMultiplier(playerUid, distance);
-
-                // Add distance to progress
-                playerProgress.BlocksInIncrement += modifiedDistance;
-
-                // Check if we've earned any new credits
-                while (playerProgress.BlocksInIncrement >= playerProgress.CurrentIncrementSize && playerProgress.TotalCredits < MaxFurtivePercent)
-                {
-                    // Earn a credit
-                    playerProgress.TotalCredits++;
-                    playerProgress.BlocksInIncrement -= playerProgress.CurrentIncrementSize;
-                    playerProgress.CurrentIncrementSize += FurtiveIncrementStep;
-
-                    ServerApi.Logger.Debug($"[SeraphLeveling] Player {player.PlayerName} earned furtive credit {playerProgress.TotalCredits}, next requires {playerProgress.CurrentIncrementSize} blocks");
-                }
-
-                // Mark for saving if any progress was made
-                if (playerProgress.BlocksInIncrement > 0 || playerProgress.TotalCredits > oldCredits)
-                {
-                    pendingFurtiveProgressSave = true;
-                }
-
-                // If credits increased, update the stat and notify player
-                if (playerProgress.TotalCredits > oldCredits)
-                {
-                    UpdateSkillActivityDay(playerUid, "furtive");
-                    ApplyFurtiveBonusStatic(player, playerProgress.TotalCredits);
-
-                    // Notify player of level up with raw improvement (shows progress even when capped)
-                    NotifyLevelUp(player,
-                        Lang.Get("seraphleveling:message-furtive-level-up", playerProgress.TotalCredits, playerProgress.TotalCredits));
-                }
+                var playerProgress = AttributeModifierDefinitions.Furtive.GetForPlayer(playerUid);
+                playerProgress.DoEvent(player, distance);
             }
         }
 
-        /// <summary>
-        /// Apply the Furtive bonus to a player based on their earned credits.
-        /// The bonus reduces animal detection range.
-        /// </summary>
-        private static int ApplyFurtiveBonusStatic(IServerPlayer player, int credits)
-        {
-            // Check if player has vanilla Furtive trait (Malefactor)
-            bool hasVanillaFurtive = PlayerHasVanillaFurtiveStatic(player.Entity);
-
-            // Calculate effective cap (vanilla trait already gives max, so no additional bonus possible)
-            int effectiveMax = hasVanillaFurtive ? 0 : MaxFurtivePercent;
-
-            // Clamp credits to effective max
-            int effectiveCredits = Math.Min(credits, effectiveMax);
-
-            // Calculate bonus percent (reduction in detection range)
-            int bonusPercent = effectiveCredits;
-
-            // animalSeekingRange blends as WeightedSum over a base of 1, so each
-            // stat value is a delta, not a multiplier. Vanilla Furtive stores
-            // -0.35 and ends up at 0.65, meaning animals see you at 65% of the
-            // normal range. Writing 0.65 here would blend to 1.65 and let them
-            // see you 65% further away, so the bonus has to be negative.
-            if (bonusPercent > 0)
-            {
-                float statValue = -(bonusPercent / 100f);
-                player.Entity.Stats.Set("animalSeekingRange", FURTIVE_STAT_CODE, statValue, false);
-            }
-            else
-            {
-                player.Entity.Stats.Remove("animalSeekingRange", FURTIVE_STAT_CODE);
-            }
-
-            // Update WatchedAttributes for client sync
-            player.Entity.WatchedAttributes.SetInt(WATCHED_FURTIVE_LEVEL, credits);
-            player.Entity.WatchedAttributes.SetInt(WATCHED_FURTIVE_BONUS, bonusPercent);
-            player.Entity.WatchedAttributes.SetBool("sitHasVanillaFurtive", hasVanillaFurtive);
-
-            // Update extraTraits for character sheet display
-            UpdateExtraTraitStatic(player.Entity, FURTIVE_TRAIT_CODE, credits > 0 && !hasVanillaFurtive);
-
-            return bonusPercent;
-        }
-
-        /// <summary>
-        /// Check if player has the vanilla Furtive trait (Malefactor).
-        /// </summary>
-        private static bool PlayerHasVanillaFurtiveStatic(EntityPlayer entity)
-        {
-            if (entity == null) return false;
-
-            // Check if player class is Malefactor
-            var classTree = entity.WatchedAttributes.GetTreeAttribute("charClass");
-            if (classTree != null)
-            {
-                string classCode = classTree.GetString("code", "").ToLowerInvariant();
-                return classCode == "malefactor";
-            }
-
-            return false;
-        }
 
         // =========================================================================
         // PRECISE TRAIT IMPLEMENTATION
@@ -10568,77 +10350,6 @@ namespace SeraphLeveling
         // =========================================================================
 
         /// <summary>
-        /// Handler for /trait furtive command.
-        /// </summary>
-        private TextCommandResult OnTraitFurtiveCommand(TextCommandCallingArgs args)
-        {
-            IServerPlayer player = args.Caller.Player as IServerPlayer;
-            if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
-
-            string playerUid = player.PlayerUID;
-            var progress = FurtiveProgress.GetOrAdd(playerUid, _ => new FurtiveProgressData());
-
-            bool hasVanillaFurtive = PlayerHasVanillaFurtiveStatic(player.Entity);
-            int bonusPercent = hasVanillaFurtive ? 0 : progress.TotalCredits;
-
-            var sb = new StringBuilder();
-            sb.AppendLine($"Furtive progression: Level {progress.TotalCredits} / {MaxFurtivePercent}");
-            sb.AppendLine($"Current bonus: -{bonusPercent}% animal detection range");
-            if (hasVanillaFurtive)
-            {
-                sb.AppendLine($"Vanilla Furtive trait active: -{VANILLA_FURTIVE_DETECTION_REDUCTION}% detection (max reached)");
-            }
-            else if (progress.TotalCredits < MaxFurtivePercent)
-            {
-                float remaining = progress.CurrentIncrementSize - progress.BlocksInIncrement;
-                sb.AppendLine($"Progress: {progress.BlocksInIncrement:F1} / {progress.CurrentIncrementSize} blocks sneaked");
-            }
-            else
-            {
-                sb.AppendLine("Maximum level reached!");
-            }
-
-            return TextCommandResult.Success(sb.ToString());
-        }
-
-        /// <summary>
-        /// Handler for /trait furtivelevel command.
-        /// Gets or sets the player's furtive level.
-        /// </summary>
-        private TextCommandResult OnTraitFurtiveLevelCommand(TextCommandCallingArgs args)
-        {
-            IServerPlayer player = args.Caller.Player as IServerPlayer;
-            if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
-
-            string playerUid = player.PlayerUID;
-            var progress = FurtiveProgress.GetOrAdd(playerUid, _ => new FurtiveProgressData());
-
-            int? newLevel = (int?)args[0];
-
-            // If no value provided, show current level
-            if (!newLevel.HasValue)
-            {
-                bool hasVanillaFurtive = PlayerHasVanillaFurtiveStatic(player.Entity);
-                int currentBonus = hasVanillaFurtive ? VANILLA_FURTIVE_DETECTION_REDUCTION : progress.TotalCredits;
-                return TextCommandResult.Success($"Current furtive level: {progress.TotalCredits}/{MaxFurtivePercent} (-{currentBonus}% detection)");
-            }
-
-            if (newLevel.Value < 0 || newLevel.Value > MaxFurtivePercent)
-                return TextCommandResult.Error($"Level must be between 0 and {MaxFurtivePercent}.");
-
-            progress.TotalCredits = newLevel.Value;
-            progress.BlocksInIncrement = 0;
-            progress.CurrentIncrementSize = BaseFurtiveSneakBlocksPerIncrement + (newLevel.Value * FurtiveIncrementStep);
-
-            pendingFurtiveProgressSave = true;
-            int bonusPercent = ApplyFurtiveBonusStatic(player, newLevel.Value);
-
-            UpdateSkillActivityDay(player.PlayerUID, "furtive");
-
-            return TextCommandResult.Success($"Furtive level set to {newLevel.Value} (-{bonusPercent}% detection).");
-        }
-
-        /// <summary>
         /// Handler for /trait precise command.
         /// </summary>
         private TextCommandResult OnTraitPreciseCommand(TextCommandCallingArgs args)
@@ -10985,16 +10696,6 @@ namespace SeraphLeveling
             }
             ApplyForagerBonusStatic(player, 0);
 
-            // Reset Furtive
-            if (FurtiveProgress.TryGetValue(playerUid, out var furtiveProg))
-            {
-                furtiveProg.TotalCredits = 0;
-                furtiveProg.BlocksInIncrement = 0;
-                furtiveProg.CurrentIncrementSize = 100; // Default base
-                pendingFurtiveProgressSave = true;
-            }
-            ApplyFurtiveBonusStatic(player, 0);
-
             // Reset Precise
             if (PreciseProgress.TryGetValue(playerUid, out var preciseProg))
             {
@@ -11092,7 +10793,7 @@ namespace SeraphLeveling
             if (PilfererProgress.TryGetValue(uid, out var pilferer)) ex.Pilferer = pilferer;
             if (ResourcefulProgress.TryGetValue(uid, out var resourceful)) ex.Resourceful = resourceful;
             if (ForagerProgress.TryGetValue(uid, out var forager)) ex.Forager = forager;
-            if (FurtiveProgress.TryGetValue(uid, out var furtive)) ex.Furtive = furtive;
+            if (AttributeModifierDefinitions.Furtive.ProgressDictionary.TryGetValue(uid, out var furtive)) ex.Furtive = furtive;
             if (PreciseProgress.TryGetValue(uid, out var precise)) ex.Precise = precise;
             if (AttributeModifierDefinitions.Technical.ProgressDictionary.TryGetValue(uid, out var technical)) ex.Technical = technical;
             if (HardyHealthProgress.TryGetValue(uid, out var hardy)) ex.HardyHealth = hardy;
@@ -11120,7 +10821,7 @@ namespace SeraphLeveling
             if (ex.Pilferer != null) { PilfererProgress[uid] = ex.Pilferer; pendingPilfererProgressSave = true; }
             if (ex.Resourceful != null) { ResourcefulProgress[uid] = ex.Resourceful; pendingResourcefulProgressSave = true; }
             if (ex.Forager != null) { ForagerProgress[uid] = ex.Forager; pendingForagerProgressSave = true; }
-            if (ex.Furtive != null) { FurtiveProgress[uid] = ex.Furtive; pendingFurtiveProgressSave = true; }
+            if (ex.Furtive != null) { AttributeModifierDefinitions.Furtive.ProgressDictionary[uid] = ex.Furtive; AttributeModifierDefinitions.Furtive.PendingSave = true; }
             if (ex.Precise != null) { PreciseProgress[uid] = ex.Precise; pendingPreciseProgressSave = true; }
             if (ex.Technical != null) { AttributeModifierDefinitions.Technical.ProgressDictionary[uid] = ex.Technical; AttributeModifierDefinitions.Technical.PendingSave = true; }
             if (ex.HardyHealth != null) { HardyHealthProgress[uid] = ex.HardyHealth; pendingHardyHealthProgressSave = true; }
@@ -11287,15 +10988,6 @@ namespace SeraphLeveling
             pendingForagerProgressSave = true;
             ApplyForagerBonusStatic(player, maxForagerCredits);
 
-            // Max Furtive
-            int maxFurtiveCredits = MaxFurtivePercent;
-            var furtiveProg = FurtiveProgress.GetOrAdd(playerUid, _ => new FurtiveProgressData());
-            furtiveProg.TotalCredits = maxFurtiveCredits;
-            furtiveProg.BlocksInIncrement = 0;
-            furtiveProg.CurrentIncrementSize = BaseFurtiveSneakBlocksPerIncrement;
-            pendingFurtiveProgressSave = true;
-            ApplyFurtiveBonusStatic(player, maxFurtiveCredits);
-
             // Max Precise
             int maxPreciseCredits = MaxPrecisePercent;
             var preciseProg = PreciseProgress.GetOrAdd(playerUid, _ => new PreciseProgressData());
@@ -11394,14 +11086,6 @@ namespace SeraphLeveling
             foragerProg.CurrentIncrementSize = BaseForagerCropsPerIncrement;
             pendingForagerProgressSave = true;
             ApplyForagerBonusStatic(player, CREDITS);
-
-            // Furtive
-            var furtiveProg = FurtiveProgress.GetOrAdd(playerUid, _ => new FurtiveProgressData());
-            furtiveProg.TotalCredits = CREDITS;
-            furtiveProg.BlocksInIncrement = 0;
-            furtiveProg.CurrentIncrementSize = BaseFurtiveSneakBlocksPerIncrement;
-            pendingFurtiveProgressSave = true;
-            ApplyFurtiveBonusStatic(player, CREDITS);
 
             // Precise
             var preciseProg = PreciseProgress.GetOrAdd(playerUid, _ => new PreciseProgressData());
@@ -11648,9 +11332,9 @@ namespace SeraphLeveling
             MaxForagerWildCropPercent = 20;
 
             // Furtive defaults
-            BaseFurtiveSneakBlocksPerIncrement = 100;
-            FurtiveIncrementStep = 100;
-            MaxFurtivePercent = 35;
+            AttributeModifierDefinitions.Furtive.BaseIncrement = 100;
+            AttributeModifierDefinitions.Furtive.IncrementStep = 100;
+            AttributeModifierDefinitions.Furtive.GlobalMaxCredits = 35;
 
             // Precise defaults
             BasePreciseDamagePerIncrement = 100;
@@ -12281,26 +11965,6 @@ namespace SeraphLeveling
         private void LoadForagerProgress()
         {
             LoadProgress<ForagerProgressData>();
-        }
-
-        // =========================================================================
-        // FURTIVE TRAIT PERSISTENCE
-        // =========================================================================
-
-        /// <summary>
-        /// Persist furtive progress to world save data.
-        /// </summary>
-        public static void PersistFurtiveProgress()
-        {
-            PersistProgress<FurtiveProgressData>();
-        }
-
-        /// <summary>
-        /// Load furtive progress from world save data.
-        /// </summary>
-        private void LoadFurtiveProgress()
-        {
-            LoadProgress<FurtiveProgressData>();
         }
 
         // =========================================================================
