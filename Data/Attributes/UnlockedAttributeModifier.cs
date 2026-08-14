@@ -44,18 +44,11 @@ namespace SeraphLeveling.Data.Attributes
         public override IChatCommand RegisterCommands(ICoreServerAPI api, IChatCommand command)
         {
             return base.RegisterCommands(api, command)
-            .BeginSubCommand(Description)
-                .WithDescription($"View your {Description} trait progress")
+            .BeginSubCommand(SkillKey)
+                .WithDescription($"View your {SkillKey} trait progress")
                 .RequiresPrivilege(Privilege.chat)
                 .RequiresPlayer()
                 .HandleWith(Trait.Value.HandleTraitCommand)
-            .EndSubCommand()
-            .BeginSubCommand($"{Description}unlock")
-                .WithDescription($"Manually unlock or lock {Description} trait (admin only)")
-                .WithArgs(api.ChatCommands.Parsers.Bool("unlock"))
-                .RequiresPrivilege(Privilege.controlserver)
-                .RequiresPlayer()
-                .HandleWith(HandleUnlockCommand)
             .EndSubCommand();
         }
 
@@ -131,16 +124,16 @@ namespace SeraphLeveling.Data.Attributes
             ApplyUnlock(player, progress);
             if (progress.IsUnlocked)
             {
-                SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Applied {Description} unlock to player {player.PlayerName}");
+                SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Applied {LongDescription} unlock to player {player.PlayerName}");
             }
         }
 
-        public TextCommandResult HandleUnlockCommand(TextCommandCallingArgs args)
+        public override TextCommandResult HandleUnlockCommand(TextCommandCallingArgs args, int indexOffset)
         {
             IServerPlayer player = args.Caller.Player as IServerPlayer;
             if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
 
-            bool unlock = (bool)args[0];
+            bool unlock = (bool)args[0+indexOffset];
 
             var progress = GetDict(player);
             bool oldUnlock = progress.IsUnlocked;

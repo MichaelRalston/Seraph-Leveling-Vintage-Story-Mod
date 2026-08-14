@@ -102,7 +102,7 @@ namespace SeraphLeveling.Data.Attributes
             sb.AppendLine($"{Name} trait: {progress.CollectedItems.Count} / {RequiredCollectionSize} unique {CollectedItemDescription} ({(progress.IsUnlocked ? "UNLOCKED" : "Locked")})");
         }
 
-        public virtual TextCommandResult HandleLevelCommand(TextCommandCallingArgs args)
+        public override TextCommandResult HandleLevelCommand(TextCommandCallingArgs args, int indexOffset)
         {
             var player = args.Caller.Player as IServerPlayer;
             if (player?.Entity == null)
@@ -112,13 +112,13 @@ namespace SeraphLeveling.Data.Attributes
 
             var progress = GetDict(player);
 
-            int? newCredits = (int?)args[0];
+            int? newCredits = (int?)args[0+indexOffset];
 
             // If no value provided, show current level
             if (!newCredits.HasValue)
             {
                 string status = progress.IsUnlocked ? "UNLOCKED!" : $"{RequiredCollectionSize - progress.CollectedItems.Count} more needed to unlock.";
-                return TextCommandResult.Success($"Current {Description} level: {progress.CollectedItems.Count}/{RequiredCollectionSize} ({status})");
+                return TextCommandResult.Success($"Current {LongDescription} level: {progress.CollectedItems.Count}/{RequiredCollectionSize} ({status})");
             }
 
             if (newCredits.Value < 0)
@@ -126,7 +126,7 @@ namespace SeraphLeveling.Data.Attributes
                 return TextCommandResult.Error("Level cannot be negative");
             }
 
-            return progress.SetLevelFromCommand(player, newCredits.Value, args);
+            return progress.SetLevelFromCommand(player, newCredits.Value, args, indexOffset);
         }
 
         public virtual TextCommandResult HandleRequiredLevelCommand(TextCommandCallingArgs args)
@@ -141,7 +141,7 @@ namespace SeraphLeveling.Data.Attributes
                 return TextCommandResult.Success($"{Name} required unique {CollectedItemDescription} set to {RequiredCollectionSize}.");
             }
 
-            return TextCommandResult.Success($"Current {Description} required: {RequiredCollectionSize} unique {CollectedItemDescription}.");
+            return TextCommandResult.Success($"Current {LongDescription} required: {RequiredCollectionSize} unique {CollectedItemDescription}.");
         }
     }
 
@@ -168,7 +168,7 @@ namespace SeraphLeveling.Data.Attributes
             writer.WriteArray(CollectedItems.ToArray());
         }
 
-        public virtual TextCommandResult SetLevelFromCommand(IServerPlayer player, int newLevel, TextCommandCallingArgs args)
+        public virtual TextCommandResult SetLevelFromCommand(IServerPlayer player, int newLevel, TextCommandCallingArgs args, int indexOffset)
         {
             // Clear the existing collection set
             CollectedItems.Clear();
@@ -186,7 +186,7 @@ namespace SeraphLeveling.Data.Attributes
             Definition.ApplyUnlock(player, (PD)this);
 
             string newStatus = IsUnlocked ? "UNLOCKED!" : $"{Definition.RequiredCollectionSize - newLevel} more needed to unlock.";
-            return TextCommandResult.Success($"{Definition.Description} level set to {newLevel}/{Definition.RequiredCollectionSize}. {newStatus}");
+            return TextCommandResult.Success($"{Definition.LongDescription} level set to {newLevel}/{Definition.RequiredCollectionSize}. {newStatus}");
         }
     }
 }

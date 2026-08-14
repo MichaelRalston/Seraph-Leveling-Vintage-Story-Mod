@@ -9,7 +9,7 @@ namespace SeraphLeveling.Data.Attributes
         {
             Id = "tinkerer",
             SaveKey = "sitTinkererProgress",
-            Description = "tinkerer",
+            SkillKey = "tinkerer",
             PersistenceHeader = "TNK",
             Name = "Tinkerer",
             ExtraTraitKey = "sittinkerermastery",
@@ -22,7 +22,7 @@ namespace SeraphLeveling.Data.Attributes
         {
             Id = "technical",
             SaveKey = "sitTechnicalProgress",
-            Description = "technical",
+            SkillKey = "technical",
             PersistenceHeader = "TEC",
             Name = "Technical",
             ExtraTraitKey = "sittechnicalmastery",
@@ -37,7 +37,7 @@ namespace SeraphLeveling.Data.Attributes
         {
             Id = "bowyer",
             SaveKey = "sitBowyerProgress",
-            Description = "bowyer",
+            SkillKey = "bowyer",
             PersistenceHeader = "BWY",
             Name = "Bowyer",
             ExtraTraitKey = "sitbowyermastery",
@@ -53,9 +53,8 @@ namespace SeraphLeveling.Data.Attributes
         {
             Id = "walkingSpeed",
             SaveKey = "sitWalkingProgress",
-            Description = "walking",
-            PersistenceHeader = "SIW",
             SkillKey = "walking",
+            PersistenceHeader = "SIW",
             Name = "Walking",
             Stat = "% speed",
             LongDescription = "walking speed",
@@ -70,9 +69,8 @@ namespace SeraphLeveling.Data.Attributes
         {
             Id = "furtive",
             SaveKey = "sitFurtiveProgress",
-            Description = "furtive",
-            PersistenceHeader = "FUR",
             SkillKey = "furtive",
+            PersistenceHeader = "FUR",
             Name = "Furtive",
             Stat = "% animal detection range",
             LongDescription = "furtive",
@@ -88,9 +86,8 @@ namespace SeraphLeveling.Data.Attributes
         {
             Id = "hungerRate",
             SaveKey = "sitHungerProgress",
-            Description = "hunger",
-            PersistenceHeader = "SIH",
             SkillKey = "hunger",
+            PersistenceHeader = "SIH",
             Name = "Hunger",
             Direction = "-",
             IncrementUnits = "seconds",
@@ -106,7 +103,6 @@ namespace SeraphLeveling.Data.Attributes
         {
             Id = "miningSpeed",
             SaveKey = "sitMiningProgress",
-            Description = "mining",
             SkillKey = "mining",
             Name = "Mining",
             Stat = "% mining speed",
@@ -125,7 +121,7 @@ namespace SeraphLeveling.Data.Attributes
         {
             Id = "improviser",
             SaveKey = "sitImproviserProgress",
-            Description = "improviser",
+            SkillKey = "improviser",
             PersistenceHeader = "IMP",
             Name = "Improviser",
             ExtraTraitKey = "sitimprovisermastery",
@@ -141,7 +137,7 @@ namespace SeraphLeveling.Data.Attributes
         {
             Id = "clothier",
             SaveKey = "sitClothierProgress",
-            Description = "clothier",
+            SkillKey = "clothier",
             PersistenceHeader = "CLT",
             Name = "Clothier",
             ExtraTraitKey = "sitclothiermastery",
@@ -158,7 +154,6 @@ namespace SeraphLeveling.Data.Attributes
         {
             Id = "rangedDamage",
             SaveKey = "sitRangedProgress",
-            Description = "ranged",
             Name = "Ranged",
             LongDescription = "ranged damage",
             Stat = "% ranged damage",
@@ -177,7 +172,6 @@ namespace SeraphLeveling.Data.Attributes
         {
             Id = "rangedAccuracy",
             SaveKey = "sitRangedAccuracyProgress",
-            Description = "ranged",
             Name = "Ranged",
             LongDescription = "ranged accuracy",
             Stat = "% ranged accuracy",
@@ -196,7 +190,6 @@ namespace SeraphLeveling.Data.Attributes
         {
             Id = "rangedDistance",
             SaveKey = "sitRangedDistanceProgress",
-            Description = "ranged",
             Name = "Ranged",
             LongDescription = "ranged distance",
             Stat = "% ranged distance",

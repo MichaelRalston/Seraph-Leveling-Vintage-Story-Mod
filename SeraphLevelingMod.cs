@@ -910,11 +910,25 @@ namespace SeraphLeveling
             DetectLoadedMods(api.ModLoader);
 
             // Register /trait command with subcommands
-            var command = api.ChatCommands.Create("trait")
+            IChatCommand command = null;
+            command = api.ChatCommands.Create("trait")
                 .WithDescription("Manage and view trait progression")
                 .RequiresPrivilege(Privilege.chat)
                 .RequiresPlayer()
-                .HandleWith(OnTraitHelpCommand);
+                .HandleWith((args) =>
+                {
+                    StringBuilder sb = new StringBuilder();
+                    sb.AppendLine("**Available subcommands for /trait:**");
+
+                    // Loop over the command's own registered subcommands automatically
+                    foreach (IChatCommand sub in args.Command.Subcommands)
+                    {
+                        // Format example:  • /trait add [name] - Gives a trait to the player
+                        sb.AppendLine($"• **/trait {sub.Name}** - {sub.Description}");
+                    }
+
+                    return TextCommandResult.Success(sb.ToString());
+                });
             foreach (var definition in LoadedAttributes)
             {
                 definition.RegisterCommands(api, command);
@@ -1402,7 +1416,39 @@ namespace SeraphLeveling
                     .WithArgs(api.ChatCommands.Parsers.Word("playername"), api.ChatCommands.Parsers.Word("trait"), api.ChatCommands.Parsers.Int("level"), api.ChatCommands.Parsers.OptionalWord("toolname"))
                     .RequiresPrivilege(Privilege.controlserver)
                     .HandleWith(OnTraitSetPlayerCommand)
-                .EndSubCommand();
+                .EndSubCommand()
+                .BeginSubCommand("max")
+                    .WithDescription("View or set the max bonus percent for a trait. (admin only) Usage: /trait max &lt;trait&gt; [level]")
+                    .WithArgs(api.ChatCommands.Parsers.Word("trait"), api.ChatCommands.Parsers.OptionalInt("level"))
+                    .RequiresPrivilege(Privilege.controlserver)
+                    .HandleWith(OnTraitSetMaxCommand)
+                .EndSubCommand()
+                .BeginSubCommand("increment")
+                    .WithDescription("View or set the increment step per credit for a trait. (admin only) Usage: /trait increment &lt;trait&gt; [step]")
+                    .WithArgs(api.ChatCommands.Parsers.Word("trait"), api.ChatCommands.Parsers.OptionalInt("step"))
+                    .RequiresPrivilege(Privilege.controlserver)
+                    .HandleWith(OnTraitSetIncrementCommand)
+                .EndSubCommand()
+                .BeginSubCommand("base")
+                    .WithDescription("View or set the base step per credit for a trait. (admin only) Usage: /trait base &lt;trait&gt; [step]")
+                    .WithArgs(api.ChatCommands.Parsers.Word("trait"), api.ChatCommands.Parsers.OptionalInt("step"))
+                    .RequiresPrivilege(Privilege.controlserver)
+                    .HandleWith(OnTraitSetBaseCommand)
+                .EndSubCommand()
+                .BeginSubCommand("level")
+                    .WithDescription("View or set your level for a trait. (admin only) Usage: /trait level &lt;trait&gt; [level]")
+                    .WithArgs(api.ChatCommands.Parsers.Word("trait"), api.ChatCommands.Parsers.OptionalInt("step"))
+                    .RequiresPrivilege(Privilege.controlserver)
+                    .HandleWith(OnTraitLevelCommand)
+                .EndSubCommand()
+                .BeginSubCommand("unlock")
+                    .WithDescription("Manually lock or unlock an unlockable trait. (admin only) Usage: /trait unlock &lt;trait&gt; &lt;unlock&gt;")
+                    .WithArgs(api.ChatCommands.Parsers.Word("trait"), api.ChatCommands.Parsers.Bool("unlock", "unlocked"))
+                    .RequiresPrivilege(Privilege.controlserver)
+                    .HandleWith(OnTraitUnlockCommand)
+                .EndSubCommand()
+
+                    ;
 
             // Hook into block breaking for mining progression
             api.Event.DidBreakBlock += OnBlockBroken;
@@ -1468,55 +1514,6 @@ namespace SeraphLeveling
             api.Logger.Notification("[SeraphLeveling] Mod loaded");
         }
 
-        /// <summary>
-        /// Handler for /trait command (shows help).
-        /// </summary>
-        private TextCommandResult OnTraitHelpCommand(TextCommandCallingArgs args)
-        {
-            return TextCommandResult.Success(
-                "Usage:\n" +
-                "  /trait mining - View your mining progression stats\n" +
-                "  /trait miningbase [value] - Get or set base points for first credit (admin)\n" +
-                "  /trait miningincrement [value] - Get or set increment step per credit (admin)\n" +
-                "  /trait mininglevel [level] [toolname] - Get or set your mining level (admin)\n" +
-                "  /trait miningmax [percent] - Get or set max mining speed bonus (admin)\n" +
-                "  /trait melee - View your melee damage progression stats\n" +
-                "  /trait meleebase [value] - Get or set base damage for first credit (admin)\n" +
-                "  /trait meleeincrement [value] - Get or set melee increment step per credit (admin)\n" +
-                "  /trait meleelevel [level] [toolname] - Get or set your melee level (admin)\n" +
-                "  /trait meleemax [percent] - Get or set max melee damage bonus (admin)\n" +
-                "  /trait ranged - View your ranged damage progression stats\n" +
-                "  /trait rangedbase [value] - Get or set base damage for first credit (admin)\n" +
-                "  /trait rangedincrement [value] - Get or set ranged increment step per credit (admin)\n" +
-                "  /trait rangedlevel [level] [toolname] - Get or set your ranged level (admin)\n" +
-                "  /trait rangedmax [percent] - Get or set max ranged damage bonus (admin)\n" +
-                "  /trait rangedmaxacc [percent] - Get or set max ranged accuracy bonus (admin)\n" +
-                "  /trait rangedmaxdist [percent] - Get or set max ranged distance bonus (admin)\n" +
-                "  /trait walking - View your walking speed progression stats\n" +
-                "  /trait walkingbase [value] - Get or set base blocks for first credit (admin)\n" +
-                "  /trait walkingincrement [value] - Get or set walking increment step per credit (admin)\n" +
-                "  /trait walkinglevel [level] - Get or set your walking level (admin)\n" +
-                "  /trait walkingmax [percent] - Get or set max walking speed bonus (admin)\n" +
-                "  /trait hunger - View your hunger rate progression stats\n" +
-                "  /trait hungerbase [value] - Get or set base seconds for first credit (admin)\n" +
-                "  /trait hungerincrement [value] - Get or set hunger increment step per credit (admin)\n" +
-                "  /trait hungerlevel [level] - Get or set your hunger level (admin)\n" +
-                "  /trait hungermax [percent] - Get or set max hunger rate reduction (admin)\n" +
-                "  /trait armor - View your armor progression stats\n" +
-                "  /trait armorlevel [level] [armorpiece] - Get or set your armor durability level (admin)\n" +
-                "  /trait armorwalkspeedlevel [level] - Get or set walk speed penalty reduction level (admin)\n" +
-                "  /trait armordurabilitymax [percent] - Get or set max durability bonus (admin)\n" +
-                "  /trait armorwalkspeedmax [percent] - Get or set max walk speed reduction (admin)\n" +
-                "  /trait all - View all trait progression at once\n" +
-                "  /trait soundvolume [0.0-1.0] - Get or set the level-up ding volume (admin)\n" +
-                "  /trait testsound [0.0-1.0] - Play the level-up ding once for testing (admin)\n" +
-                "  /trait setplayer &lt;name&gt; &lt;trait&gt; &lt;level&gt; [toolname] - Set trait level for another player (admin)\n" +
-                "  /trait reset - Reset all trait progression to 0 (admin)\n" +
-                "  /trait resetconfig - Reset all config values to defaults (admin)\n" +
-                "  /trait reloadconfig - Re-read ModConfig/SeraphLeveling.json without restarting (admin)\n" +
-                "  /trait verify - Show what each stat this mod writes is actually made of (admin)\n" +
-                "  /trait maxall - Set all trait progression to maximum for testing (admin)");
-        }
 
         /// <summary>
         /// Handler for /trait soundvolume command.
@@ -1705,8 +1702,95 @@ namespace SeraphLeveling
         }
 
         /// <summary>
+        /// Handler for /trait max command. Sets the max earnable credits for a trait.
+        /// Usage: /trait max <trait> [level]
+        /// </summary>
+        private TextCommandResult OnTraitSetMaxCommand(TextCommandCallingArgs args)
+        {
+            string traitName = ((string)args[1]).ToLowerInvariant();
+            foreach (var definition in LoadedAttributes)
+            {
+                if (definition.SkillKey == traitName)
+                {
+                    return definition.HandleMaxCommand(args, 2);
+                }
+            }
+            return TextCommandResult.Error($"No '{traitName}' trait found.");
+        }
+
+        /// <summary>
+        /// Handler for /trait increment command. Sets the increment units per step for a trait.
+        /// Usage: /trait increment <trait> [units]
+        /// </summary>
+        private TextCommandResult OnTraitSetIncrementCommand(TextCommandCallingArgs args)
+        {
+            string traitName = ((string)args[1]).ToLowerInvariant();
+            foreach (var definition in LoadedAttributes)
+            {
+                if (definition.SkillKey == traitName)
+                {
+                    return definition.HandleIncrementCommand(args, 2);
+                }
+            }
+            return TextCommandResult.Error($"No '{traitName}' trait found.");
+        }
+
+        /// <summary>
+        /// Handler for /trait base command. Sets the base units per step for a trait.
+        /// Usage: /trait base <trait> [units]
+        /// </summary>
+        private TextCommandResult OnTraitSetBaseCommand(TextCommandCallingArgs args)
+        {
+            string traitName = ((string)args[1]).ToLowerInvariant();
+            foreach (var definition in LoadedAttributes)
+            {
+                if (definition.SkillKey == traitName)
+                {
+                    return definition.HandleBaseCommand(args, 2);
+                }
+            }
+            return TextCommandResult.Error($"No '{traitName}' trait found.");
+        }
+
+        /// <summary>
+        /// Handler for /trait level command. Sets the user's level for a trait.
+        /// Usage: /trait level <trait> [level]
+        /// </summary>
+        private TextCommandResult OnTraitLevelCommand(TextCommandCallingArgs args)
+        {
+            string traitName = ((string)args[1]).ToLowerInvariant();
+            foreach (var definition in LoadedAttributes)
+            {
+                if (definition.SkillKey == traitName)
+                {
+                    return definition.HandleLevelCommand(args, 2);
+                }
+            }
+            return TextCommandResult.Error($"No '{traitName}' trait found.");
+        }
+
+        /// <summary>
+        /// Handler for /trait max command. Sets the max earnable credits for a trait.
+        /// Usage: /trait max <trait> [level]
+        /// </summary>
+        private TextCommandResult OnTraitUnlockCommand(TextCommandCallingArgs args)
+        {
+            string traitName = ((string)args[1]).ToLowerInvariant();
+            foreach (var definition in LoadedAttributes)
+            {
+                if (definition.SkillKey == traitName)
+                {
+                    return definition.HandleUnlockCommand(args, 2);
+                }
+            }
+            return TextCommandResult.Error($"No '{traitName}' trait found.");
+        }
+
+
+
+        /// <summary>
         /// Handler for /trait setplayer command. Sets a trait level for a target player.
-        /// Usage: /trait setplayer PlayerName trait level
+        /// Usage: /trait setplayer <PlayerName> <trait> <level>
         /// </summary>
         private TextCommandResult OnTraitSetPlayerCommand(TextCommandCallingArgs args)
         {
@@ -1725,12 +1809,10 @@ namespace SeraphLeveling
             string targetUid = targetPlayer.PlayerUID;
             foreach (var definition in LoadedAttributes)
             {
-                Type type = definition.GetType();
-                PropertyInfo property = type.GetProperty("SkillKey", BindingFlags.Public | BindingFlags.Instance);
-                if (property != null && ((string)property.GetValue(definition) == traitName))
+                if (definition.SkillKey == traitName)
                 {
                     Type[] getParams = [typeof(string)];
-                    dynamic progress = type.GetMethod("GetForPlayer", BindingFlags.Public | BindingFlags.Instance, null, getParams, null).Invoke(definition, [(object)targetUid]);
+                    dynamic progress = definition.GetType().GetMethod("GetForPlayer", BindingFlags.Public | BindingFlags.Instance, null, getParams, null).Invoke(definition, [(object)targetUid]);
                     if (progress != null)
                     {
                         try
@@ -1743,7 +1825,8 @@ namespace SeraphLeveling
                             {
                                 return TextCommandResult.Error($"The '{traitName}' trait does not support per-tool level setting.");
                             }
-                            try {
+                            try
+                            {
                                 return (TextCommandResult)((dynamic)definition).SetLevel(targetPlayer, level);
                             }
                             catch (RuntimeBinderException)
@@ -2132,16 +2215,6 @@ namespace SeraphLeveling
             float bonus = CalculateCOProficiencyBonus(finalCredits, GetCOProficiencyMax(proficiencyStat));
             string toolSuffix = toolName != null ? $" on {toolName}. Total: {finalCredits}" : $" to {credits}";
             return TextCommandResult.Success($"Set {GetCOProficiencyDisplayName(proficiencyStat)}{toolSuffix} credits (+{bonus * 100:F0}%).");
-        }
-
-        /// <summary>
-        /// Handler for /trait mininglevel command.
-        /// Gets or sets the player's mining credits (level) directly.
-        /// Optionally specify a tool name to set credits on a specific pickaxe without clearing other progress.
-        /// </summary>
-        private TextCommandResult OnTraitMiningLevelCommand(TextCommandCallingArgs args)
-        {
-            return AttributeModifierDefinitions.MiningSpeed.HandleLevelCommand(args);
         }
 
         /// <summary>
@@ -8475,31 +8548,6 @@ namespace SeraphLeveling
         // =========================================================================
 
         /// <summary>
-        /// Handler for /trait clothier command.
-        /// </summary>
-        private TextCommandResult OnTraitClothierCommand(TextCommandCallingArgs args)
-        {
-            return TraitDefinitions.Clothier.HandleTraitCommand(args);
-        }
-
-        /// <summary>
-        /// Handler for /trait clothierrequired command.
-        /// </summary>
-        private TextCommandResult OnTraitClothierRequiredCommand(TextCommandCallingArgs args)
-        {
-            return AttributeModifierDefinitions.Clothier.HandleRequiredLevelCommand(args);
-        }
-
-        /// <summary>
-        /// Handler for /trait clothierlevel command.
-        /// Gets or sets the player's clothier progress (unique clothes count).
-        /// </summary>
-        private TextCommandResult OnTraitClothierLevelCommand(TextCommandCallingArgs args)
-        {
-            return AttributeModifierDefinitions.Clothier.HandleLevelCommand(args);
-        }
-
-        /// <summary>
         /// Tick handler for clothing tracking.
         /// </summary>
         private void OnClothingTick(float dt)
@@ -10545,22 +10593,6 @@ namespace SeraphLeveling
             ApplyHardyHealthBonusStatic(player, unlock);
 
             return TextCommandResult.Success($"Hardy Health trait {(unlock ? "unlocked" : "locked")}.");
-        }
-
-        /// <summary>
-        /// Handler for /trait bowyerunlock command.
-        /// </summary>
-        private TextCommandResult OnTraitBowyerUnlockCommand(TextCommandCallingArgs args)
-        {
-            return AttributeModifierDefinitions.Bowyer.HandleUnlockCommand(args);
-        }
-
-        /// <summary>
-        /// Handler for /trait improviserunlock command.
-        /// </summary>
-        private TextCommandResult OnTraitImproviserUnlockCommand(TextCommandCallingArgs args)
-        {
-            return AttributeModifierDefinitions.Improviser.HandleUnlockCommand(args);
         }
 
         /// <summary>
