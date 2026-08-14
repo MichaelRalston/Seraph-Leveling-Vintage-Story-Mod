@@ -52,7 +52,7 @@ namespace SeraphLeveling.Data.Attributes
                 PartialCredit -= float.CreateTruncating(CurrentIncrementSize);
                 CurrentIncrementSize += incrementStep;
 
-                SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Player {player.PlayerName} earned {Definition.Description} credit {TotalCredits}, next requires {CurrentIncrementSize} {units}");
+                SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Player {player.PlayerName} earned {Definition.LongDescription} credit {TotalCredits}, next requires {CurrentIncrementSize} {units}");
             }
 
             // Mark for saving if any progress was made
@@ -69,7 +69,7 @@ namespace SeraphLeveling.Data.Attributes
 
                 // Notify player of level up with raw improvement (shows progress even when capped)
                 SeraphLevelingModSystem.NotifyLevelUp(player,
-                    Lang.Get($"seraphleveling:message-{Definition.Description}-level-up", TotalCredits, TotalCredits));
+                    Lang.Get($"seraphleveling:message-{Definition.SkillKey}-level-up", TotalCredits, TotalCredits));
             }
         }
         public override void WriteIncrementLine(StringBuilder sb)

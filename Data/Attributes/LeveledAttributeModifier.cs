@@ -24,10 +24,8 @@ namespace SeraphLeveling.Data.Attributes
 
     public abstract record class LeveledAttributeModifierDefinition<D, PD> : AttributeModifierDefinition<D, PD>, ILeveledAttributeModifierDefinition where PD : LeveledAttributeModifierProgressData<D, PD> where D : LeveledAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
     {
-        public required string SkillKey { get; init; }
         public required string Name { get; init; }
         public required string Stat { get; init; }
-        public required string LongDescription { get; init; }
         public required int GlobalMaxCredits { get; set; }
         public override byte PersistenceVersion { get; init; } = 2;
         public virtual string StatCode
@@ -186,31 +184,6 @@ namespace SeraphLeveling.Data.Attributes
                 .RequiresPlayer()
                 .HandleWith(HandleTraitCommand)
             .EndSubCommand()
-            .BeginSubCommand($"{SkillKey}level")
-                .WithDescription($"Get or set your {Description} level (admin only)")
-                .WithArgs(api.ChatCommands.Parsers.OptionalInt("level"))
-                .RequiresPrivilege(Privilege.controlserver)
-                .RequiresPlayer()
-                .HandleWith(HandleLevelCommand)
-            .EndSubCommand()
-            .BeginSubCommand($"{SkillKey}max")
-                .WithDescription($"Get or set the max {LongDescription} bonus percent (admin only)")
-                .WithArgs(api.ChatCommands.Parsers.OptionalInt("percent"))
-                .RequiresPrivilege(Privilege.controlserver)
-                .HandleWith(HandleMaxCommand)
-            .EndSubCommand()
-            .BeginSubCommand($"{SkillKey}base")
-                .WithDescription($"Get or set the base {IncrementUnits} per level (admin only)")
-                .WithArgs(api.ChatCommands.Parsers.OptionalInt(IncrementUnits))
-                .RequiresPrivilege(Privilege.controlserver)
-                .HandleWith(OnTraitBaseCommand)
-            .EndSubCommand()
-            .BeginSubCommand($"{SkillKey}increment")
-                .WithDescription($"Get or set the {Description} increment step per credit (admin only)")
-                .WithArgs(api.ChatCommands.Parsers.OptionalInt("step"))
-                .RequiresPrivilege(Privilege.controlserver)
-                .HandleWith(OnTraitIncrementCommand)
-            .EndSubCommand();
             ;
         }
 
@@ -228,7 +201,7 @@ namespace SeraphLeveling.Data.Attributes
             return TextCommandResult.Success(sb.ToString().TrimEnd());
         }
 
-        public TextCommandResult HandleLevelCommand(TextCommandCallingArgs args)
+        public override TextCommandResult HandleLevelCommand(TextCommandCallingArgs args, int indexOffset)
         {
             var player = args.Caller.Player as IServerPlayer;
             if (player?.Entity == null)
@@ -238,14 +211,14 @@ namespace SeraphLeveling.Data.Attributes
 
             var progress = GetDict(player);
 
-            int? newCredits = (int?)args[0];
+            int? newCredits = (int?)args[0+indexOffset];
             int maxCredits = GetMaxCredits(player.Entity);
 
             // If no value provided, show current level
             if (!newCredits.HasValue)
             {
                 int currentBonus = CalculateBonus(player.Entity, progress);
-                return TextCommandResult.Success($"Current {Description} level: {progress.TotalCredits}/{maxCredits} ({Direction}{currentBonus}{Stat})");
+                return TextCommandResult.Success($"Current {LongDescription} level: {progress.TotalCredits}/{maxCredits} ({Direction}{currentBonus}{Stat})");
             }
 
             if (newCredits.Value < 0)
@@ -258,7 +231,7 @@ namespace SeraphLeveling.Data.Attributes
                 return TextCommandResult.Error($"Credits cannot exceed max ({maxCredits})");
             }
 
-            return progress.SetLevelFromCommand(player, newCredits.Value, args);
+            return progress.SetLevelFromCommand(player, newCredits.Value, args, indexOffset);
         }
 
         public TextCommandResult SetLevel(IServerPlayer player, int level)
@@ -275,9 +248,9 @@ namespace SeraphLeveling.Data.Attributes
             return TextCommandResult.Success($"{Name} level set to {level} ({Direction}{level}{Stat}) for {player.PlayerName}.");
         }
 
-        public TextCommandResult OnTraitIncrementCommand(TextCommandCallingArgs args)
+        public override TextCommandResult HandleIncrementCommand(TextCommandCallingArgs args, int indexOffset)
         {
-            int? newValue = (int?)args[0];
+            int? newValue = (int?)args[0+indexOffset];
 
             if (newValue.HasValue)
             {
@@ -293,14 +266,13 @@ namespace SeraphLeveling.Data.Attributes
             }
             else
             {
-                return TextCommandResult.Success($"Current {Description} increment step: +{IncrementStep} per credit\nProgression: {BaseIncrement}, {BaseIncrement + IncrementStep}, {BaseIncrement + IncrementStep * 2}...");
+                return TextCommandResult.Success($"Current {LongDescription} increment step: +{IncrementStep} per credit\nProgression: {BaseIncrement}, {BaseIncrement + IncrementStep}, {BaseIncrement + IncrementStep * 2}...");
             }
         }
 
-        public TextCommandResult OnTraitBaseCommand(TextCommandCallingArgs args)
+        public override TextCommandResult HandleBaseCommand(TextCommandCallingArgs args, int indexOffset)
         {
-            int? newValue = (int?)args[0];
-
+            int? newValue = (int?)args[0+indexOffset];
             if (newValue.HasValue)
             {
                 if (newValue.Value < 1)
@@ -319,9 +291,9 @@ namespace SeraphLeveling.Data.Attributes
             }
         }
 
-        public TextCommandResult HandleMaxCommand(TextCommandCallingArgs args)
+        public override TextCommandResult HandleMaxCommand(TextCommandCallingArgs args, int indexOffset)
         {
-            int? newValue = (int?)args[0];
+            int? newValue = (int?)args[0+indexOffset];
 
             if (newValue.HasValue)
             {
@@ -355,7 +327,7 @@ namespace SeraphLeveling.Data.Attributes
             ApplyBonus(player, progress);
             if (progress.TotalCredits > 0)
             {
-                SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Applied {Description} bonus {Direction}{progress.TotalCredits}% to player {player.PlayerName}");
+                SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Applied {LongDescription} bonus {Direction}{progress.TotalCredits}% to player {player.PlayerName}");
             }
         }
 
@@ -390,7 +362,7 @@ namespace SeraphLeveling.Data.Attributes
             LastActivityDay = SeraphLevelingModSystem.ServerApi.World.Calendar.TotalDays;
         }
 
-        public virtual TextCommandResult SetLevelFromCommand(IServerPlayer player, int newCredits, TextCommandCallingArgs args)
+        public virtual TextCommandResult SetLevelFromCommand(IServerPlayer player, int newCredits, TextCommandCallingArgs args, int indexOffset)
         {
             // Set the player's progress
             TotalCredits = newCredits;

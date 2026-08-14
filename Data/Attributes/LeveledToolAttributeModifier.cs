@@ -65,9 +65,9 @@ namespace SeraphLeveling.Data.Attributes
             }
             return 0;
         }
-        public new TextCommandResult OnTraitBaseCommand(TextCommandCallingArgs args)
+        public override TextCommandResult HandleBaseCommand(TextCommandCallingArgs args, int indexOffset)
         {
-            int? newValue = (int?)args[0];
+            int? newValue = (int?)args[0+indexOffset];
 
             if (newValue.HasValue)
             {
@@ -187,9 +187,9 @@ namespace SeraphLeveling.Data.Attributes
                 return TextCommandResult.Success($"{Definition.Name} credits set to {level} (+{bonusPercent}{Definition.Stat}). Per-tool progress reset.");
             }
         }
-        public override TextCommandResult SetLevelFromCommand(IServerPlayer player, int level, TextCommandCallingArgs args)
+        public override TextCommandResult SetLevelFromCommand(IServerPlayer player, int level, TextCommandCallingArgs args, int indexOffset)
         {
-            string toolName = (string)args[1];
+            string toolName = (string)args[1+indexOffset];
             return SetLevel(player, level, toolName);
         }
         public override void ReadVersion(byte version, BinaryReader reader)
@@ -297,7 +297,7 @@ namespace SeraphLeveling.Data.Attributes
                     },
                     k => ToolProgress.Remove(k), verboseSb, Definition.Name);
                 TotalCredits = newCr;
-                sb.AppendLine($"  {Definition.Description}: {oldCredits} \u2192 {newCr} (-{lost} credits, {rawPenalty:F0} pts)");
+                sb.AppendLine($"  {Definition.LongDescription}: {oldCredits} \u2192 {newCr} (-{lost} credits, {rawPenalty:F0} pts)");
                 foreach (var entry in toolEntries)
                 {
                     int oldToolCr = Definition.IncrementStep > 0 ? (entry.Item3 - Definition.BaseIncrement) / Definition.IncrementStep : 0;

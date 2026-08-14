@@ -37,6 +37,7 @@ namespace SeraphLeveling.Data.Attributes
         public void PersistProgress(ICoreServerAPI serverApi);
         public void ResetProgress();
         public bool PendingSave { get; set; }
+        public string SkillKey { get; init; }
         public void ResetProgress(IServerPlayer player);
         public void ApplyBonusIfExists(IServerPlayer player);
         public void MaxStat(IServerPlayer player);
@@ -47,6 +48,12 @@ namespace SeraphLeveling.Data.Attributes
         public int ApplyDecay(IServerPlayer player, double currentDay, StringBuilder sb, StringBuilder verboseSb);
         public void LoadProgress(ICoreServerAPI serverApi);
         public void HandleLogin(IServerPlayer player);
+        public TextCommandResult HandleBaseCommand(TextCommandCallingArgs args, int indexOffset = 0);
+        public TextCommandResult HandleLevelCommand(TextCommandCallingArgs args, int indexOffset = 0);
+
+        public TextCommandResult HandleMaxCommand(TextCommandCallingArgs args, int indexOffset = 0);
+        public TextCommandResult HandleUnlockCommand(TextCommandCallingArgs args, int indexOffset = 0);
+        public TextCommandResult HandleIncrementCommand(TextCommandCallingArgs args, int indexOffset = 0);
         public IChatCommand RegisterCommands(ICoreServerAPI serverApi, IChatCommand c);
     }
 
@@ -59,7 +66,8 @@ namespace SeraphLeveling.Data.Attributes
     {
         public required string Id { get; init; }
         public required string SaveKey { get; init; }
-        public required string Description { get; init; }
+        public required string SkillKey { get; init; }
+        public virtual string LongDescription { get => field??SkillKey; init; }
         public virtual string Direction { get; init; } = "+";
         public required string PersistenceHeader { get; init; }
         public virtual byte PersistenceVersion { get; init; } = 1;
@@ -96,6 +104,29 @@ namespace SeraphLeveling.Data.Attributes
             return c;
         }
 
+        public virtual TextCommandResult HandleBaseCommand(TextCommandCallingArgs args, int indexSkip)
+        {
+            return TextCommandResult.Error($"{SkillKey} trait does not support setting base increment.");
+        }
+
+        public virtual TextCommandResult HandleLevelCommand(TextCommandCallingArgs args, int indexSkip)
+        {
+            return TextCommandResult.Error($"{SkillKey} trait does not support setting level.");
+        }
+
+        public virtual TextCommandResult HandleMaxCommand(TextCommandCallingArgs args, int indexSkip)
+        {
+            return TextCommandResult.Error($"{SkillKey} trait does not support setting max level.");
+        }
+        public virtual TextCommandResult HandleIncrementCommand(TextCommandCallingArgs args, int indexSkip)
+        {
+            return TextCommandResult.Error($"{SkillKey} trait does not support setting increment step.");
+        }
+        public virtual TextCommandResult HandleUnlockCommand(TextCommandCallingArgs args, int indexSkip)
+        {
+            return TextCommandResult.Error($"{SkillKey} trait does not support unlocking.");
+        }
+
         public byte[] PersistenceHeaderBytes => Encoding.ASCII.GetBytes(PersistenceHeader);
         public ConcurrentDictionary<string, PD> ProgressDictionary { get; init; } = new ConcurrentDictionary<string, PD>();
         public bool PendingSave { get; set; } = false;
@@ -117,7 +148,7 @@ namespace SeraphLeveling.Data.Attributes
         {
             return ProgressDictionary.GetOrAdd(playerUid, _ =>
             {
-                SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] No {Description} progress data found for {playerUid}, creating new progress dictionary for them.");
+                SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] No {SkillKey} progress data found for {playerUid}, creating new progress dictionary for them.");
                 return CreateProgressData();
             });
         }
@@ -137,13 +168,13 @@ namespace SeraphLeveling.Data.Attributes
                 byte[] data = serverApi.WorldManager.SaveGame.GetData(SaveKey);
                 if (data == null || data.Length == 0)
                 {
-                    serverApi.Logger.Debug($"[SeraphLeveling] No {Description} progress data found in world save");
+                    serverApi.Logger.Debug($"[SeraphLeveling] No {SkillKey} progress data found in world save");
                     return;
                 }
                 else {
                     #if SPAMMYDEBUG
                         var stringyData = string.Concat(data.Select(b => b >= 32 && b <= 123 ? ((char)b).ToString() : $"[0x{b:X2}]"));
-                        serverApi.Logger.Debug($"[SeraphLeveling] {Description} progress data found: {stringyData} in world save");
+                        serverApi.Logger.Debug($"[SeraphLeveling] {SkillKey} progress data found: {stringyData} in world save");
                     #endif
                 }
 
@@ -153,7 +184,7 @@ namespace SeraphLeveling.Data.Attributes
                     {
                         if (!ReadHeader(reader))
                         {
-                            serverApi.Logger.Warning($"[SeraphLeveling] Invalid {Description} progress data format");
+                            serverApi.Logger.Warning($"[SeraphLeveling] Invalid {SkillKey} progress data format");
                             return;
                         }
 
@@ -167,14 +198,14 @@ namespace SeraphLeveling.Data.Attributes
                             {
                                 string playerUid = reader.ReadString();
                                 #if SPAMMYDEBUG
-                                    serverApi.Logger.Debug($"[SeraphLeveling] {Description} progress contains progress for {playerUid}");
+                                    serverApi.Logger.Debug($"[SeraphLeveling] {SkillKey} progress contains progress for {playerUid}");
                                 #endif
                                 progressData.ReadVersion(version, reader);
                                 progress[playerUid] = progressData;
                             }
                             catch (Exception innerEx)
                             {
-                                serverApi.Logger.Warning($"[SeraphLeveling] Skipping corrupt player entry {i + 1}/{playerCount} in {Description} data: {innerEx.Message}");
+                                serverApi.Logger.Warning($"[SeraphLeveling] Skipping corrupt player entry {i + 1}/{playerCount} in {SkillKey} data: {innerEx.Message}");
                                 break;
                             }
                         }
@@ -185,12 +216,12 @@ namespace SeraphLeveling.Data.Attributes
                     }
                 }
                 #if SPAMMYDEBUG
-                    serverApi.Logger.Notification($"[SeraphLeveling] Loaded {Description} progress for {progress.Count} players");
+                    serverApi.Logger.Notification($"[SeraphLeveling] Loaded {SkillKey} progress for {progress.Count} players");
                 #endif
             }
             catch (Exception ex)
             {
-                serverApi.Logger.Error($"[SeraphLeveling] Failed to load {Description} progress: {ex.Message}");
+                serverApi.Logger.Error($"[SeraphLeveling] Failed to load {SkillKey} progress: {ex.Message}");
             }
         }
 
@@ -199,7 +230,7 @@ namespace SeraphLeveling.Data.Attributes
             if (serverApi == null) return;
             var progress = ProgressDictionary;
             #if SPAMMYDEBUG
-                serverApi.Logger.Debug($"[SeraphLeveling] Entering PersistProgress for {Description} progress to go to {SaveKey}.");
+                serverApi.Logger.Debug($"[SeraphLeveling] Entering PersistProgress for {SkillKey} progress to go to {SaveKey}.");
             #endif
             lock (SeraphLevelingModSystem.persistLock)
             {
@@ -214,7 +245,7 @@ namespace SeraphLeveling.Data.Attributes
                     #if SPAMMYDEBUG
                         foreach (var playerKvp in snapshot)
                         {
-                            serverApi.Logger.Debug($"[SeraphLeveling] {Description} progress contains progress for {playerKvp.Key}");
+                            serverApi.Logger.Debug($"[SeraphLeveling] {SkillKey} progress contains progress for {playerKvp.Key}");
                         }
                     #endif
 
@@ -240,14 +271,14 @@ namespace SeraphLeveling.Data.Attributes
 
                     serverApi.WorldManager.SaveGame.StoreData(SaveKey, data);
                     #if SPAMMYDEBUG
-                        serverApi.Logger.Debug($"[SeraphLeveling] Persisted {Description} progress for {snapshot.Length} players");
+                        serverApi.Logger.Debug($"[SeraphLeveling] Persisted {SkillKey} progress for {snapshot.Length} players");
                         var stringyData = string.Concat(data.Select(b => b >= 32 && b <= 123 ? ((char)b).ToString() : $"[0x{b:X2}]"));
-                        serverApi.Logger.Debug($"[SeraphLeveling] {Description} progress was stored as {stringyData}");
+                        serverApi.Logger.Debug($"[SeraphLeveling] {SkillKey} progress was stored as {stringyData}");
                     #endif
                 }
                 catch (Exception ex)
                 {
-                    serverApi.Logger.Error($"[SeraphLeveling] Failed to persist {Description} progress: {ex.Message}");
+                    serverApi.Logger.Error($"[SeraphLeveling] Failed to persist {SkillKey} progress: {ex.Message}");
                 }
             }
         }
