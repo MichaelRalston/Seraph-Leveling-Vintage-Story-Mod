@@ -32,9 +32,9 @@ namespace SeraphLeveling.Data.Attributes
     public interface ISaveableAttribute : IAttribute
     {
         public bool HasUnsavedProgress();
-        public void MarkForSave(bool pending);
         public void PersistProgress(ICoreServerAPI serverApi);
         public void ResetProgress();
+        public bool PendingSave { get; set; }
         public void ResetProgress(IServerPlayer player);
         public void ApplyBonusIfExists(IServerPlayer player);
         public void MaxStat(IServerPlayer player);
@@ -81,19 +81,10 @@ namespace SeraphLeveling.Data.Attributes
         }
 
         public byte[] PersistenceHeaderBytes => Encoding.ASCII.GetBytes(PersistenceHeader);
-        public ConcurrentDictionary<string, PD> ProgressDictionary
-        {
-            get
-            {
-                var innerDict = SeraphLevelingModSystem.ProgressData.GetOrAdd(
-                    this,
-                    _ => new ConcurrentDictionary<string, PD>()
-                );
-                return (ConcurrentDictionary<string, PD>)innerDict;
-            }
-        }
+        public ConcurrentDictionary<string, PD> ProgressDictionary { get; init; } = new ConcurrentDictionary<string, PD>();
+        public bool PendingSave { get; set; } = false;
 
-        public bool HasUnsavedProgress() => !ProgressDictionary.IsEmpty;
+        public bool HasUnsavedProgress() => PendingSave || !ProgressDictionary.IsEmpty;
         public void ResetProgress() => ProgressDictionary.Clear();
         public virtual void ResetProgress(IServerPlayer player)
         {
@@ -108,18 +99,10 @@ namespace SeraphLeveling.Data.Attributes
 
         public PD GetForPlayer(string playerUid)
         {
-            return ProgressDictionary.GetOrAdd(playerUid, _ => CreateProgressData());
-        }
-
-
-        public bool IsSavePending()
-        {
-            return SeraphLevelingModSystem.PendingSaves.GetValueOrDefault(this, false);
-        }
-
-        public void MarkForSave(bool pending)
-        {
-            SeraphLevelingModSystem.PendingSaves.AddOrUpdate(this, pending, (_, _) => pending);
+            return ProgressDictionary.GetOrAdd(playerUid, _ => {
+                SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] No {Description} progress data found for {playerUid}, creating new progress dictionary for them.");
+                return CreateProgressData();
+            });
         }
 
         public virtual void LoadProgress(ICoreServerAPI serverApi)
@@ -175,7 +158,7 @@ namespace SeraphLeveling.Data.Attributes
                             }
                         }
                         if (version != PersistenceVersion) {
-                            MarkForSave(true);
+                            PendingSave = true;
                         }
                     }
                 }

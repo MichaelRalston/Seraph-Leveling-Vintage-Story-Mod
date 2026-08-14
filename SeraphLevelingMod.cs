@@ -550,10 +550,6 @@ namespace SeraphLeveling
         // MULTI-MOD COMPATIBILITY
         // =========================================================================
 
-        // This is actually ConcurrentDictionary<ISaveableAttribute, ConcurrentDictionary<ISaveableAttribute, IAttributeModifierProgressData>>, but . . .
-        public readonly static ConcurrentDictionary<ISaveableAttribute, object> ProgressData = [];
-        public readonly static ConcurrentDictionary<ISaveableAttribute, bool> PendingSaves = [];
-
         public static ImmutableDictionary<string, ImmutableList<(TraitDefinition Trait, int Value)>> TraitsForAttributes { get; private set; } = ImmutableDictionary<string, ImmutableList<(TraitDefinition, int)>>.Empty;
         public static HashSet<ISaveableAttribute> LoadedAttributes { get; internal set; } = [];
 
@@ -5211,7 +5207,7 @@ namespace SeraphLeveling
             {
                 foreach (var def in LoadedAttributes)
                 {
-                    if (PendingSaves.GetValueOrDefault(def, false) || def.HasUnsavedProgress())
+                    if (def.HasUnsavedProgress())
                     {
                         def.PersistProgress(ServerApi);
                     }
@@ -5294,7 +5290,7 @@ namespace SeraphLeveling
             foreach (var def in LoadedAttributes)
             {
                 def.ResetProgress();
-                def.MarkForSave(false); // TODO Just clear PendingSaves once all traits are converted
+                def.PendingSave = false;
             }
 
             MeleeProgress.Clear();
@@ -5340,10 +5336,10 @@ namespace SeraphLeveling
 
             foreach (var def in LoadedAttributes)
             {
-                if (PendingSaves.GetValueOrDefault(def, false) || def.HasUnsavedProgress())
+                if (def.HasUnsavedProgress())
                 {
                     def.PersistProgress(ServerApi);
-                    PendingSaves.AddOrUpdate(def, false, (_, _) => false);
+                    def.PendingSave = false;
                 }
             }
 
@@ -11102,24 +11098,24 @@ namespace SeraphLeveling
         /// <summary>Install imported progression under a UID and flag each system for save.</summary>
         private void ApplyImportedProgress(string uid, PlayerProgressExport ex)
         {
-            if (ex.Mining != null) { AttributeModifierDefinitions.MiningSpeed.ProgressDictionary[uid] = ex.Mining; AttributeModifierDefinitions.WalkingSpeed.MarkForSave(true); }
+            if (ex.Mining != null) { AttributeModifierDefinitions.MiningSpeed.ProgressDictionary[uid] = ex.Mining; AttributeModifierDefinitions.WalkingSpeed.PendingSave = true; }
             if (ex.Melee != null) { MeleeProgress[uid] = ex.Melee; pendingMeleeProgressSave = true; }
-            if (ex.Ranged != null) { AttributeModifierDefinitions.RangedDamage.ProgressDictionary[uid] = ex.Ranged; AttributeModifierDefinitions.RangedDamage.MarkForSave(true); }
-            if (ex.Walking != null) { AttributeModifierDefinitions.WalkingSpeed.ProgressDictionary[uid] = ex.Walking; AttributeModifierDefinitions.WalkingSpeed.MarkForSave(true); }
-            if (ex.Hunger != null) { AttributeModifierDefinitions.HungerRate.ProgressDictionary[uid] = ex.Walking; AttributeModifierDefinitions.HungerRate.MarkForSave(true); }
+            if (ex.Ranged != null) { AttributeModifierDefinitions.RangedDamage.ProgressDictionary[uid] = ex.Ranged; AttributeModifierDefinitions.RangedDamage.PendingSave = true; }
+            if (ex.Walking != null) { AttributeModifierDefinitions.WalkingSpeed.ProgressDictionary[uid] = ex.Walking; AttributeModifierDefinitions.WalkingSpeed.PendingSave = true; }
+            if (ex.Hunger != null) { AttributeModifierDefinitions.HungerRate.ProgressDictionary[uid] = ex.Walking; AttributeModifierDefinitions.HungerRate.PendingSave = true; }
             if (ex.Armor != null) { ArmorProgress[uid] = ex.Armor; pendingArmorProgressSave = true; }
-            if (ex.Clothier != null) { AttributeModifierDefinitions.Clothier.ProgressDictionary[uid] = ex.Clothier; AttributeModifierDefinitions.Clothier.MarkForSave(true); }
+            if (ex.Clothier != null) { AttributeModifierDefinitions.Clothier.ProgressDictionary[uid] = ex.Clothier; AttributeModifierDefinitions.Clothier.PendingSave = true; }
             if (ex.Mender != null) { MenderProgress[uid] = ex.Mender; pendingMenderProgressSave = true; }
             if (ex.Pilferer != null) { PilfererProgress[uid] = ex.Pilferer; pendingPilfererProgressSave = true; }
             if (ex.Resourceful != null) { ResourcefulProgress[uid] = ex.Resourceful; pendingResourcefulProgressSave = true; }
             if (ex.Forager != null) { ForagerProgress[uid] = ex.Forager; pendingForagerProgressSave = true; }
             if (ex.Furtive != null) { FurtiveProgress[uid] = ex.Furtive; pendingFurtiveProgressSave = true; }
             if (ex.Precise != null) { PreciseProgress[uid] = ex.Precise; pendingPreciseProgressSave = true; }
-            if (ex.Technical != null) { AttributeModifierDefinitions.Technical.ProgressDictionary[uid] = ex.Technical; AttributeModifierDefinitions.Technical.MarkForSave(true); }
+            if (ex.Technical != null) { AttributeModifierDefinitions.Technical.ProgressDictionary[uid] = ex.Technical; AttributeModifierDefinitions.Technical.PendingSave = true; }
             if (ex.HardyHealth != null) { HardyHealthProgress[uid] = ex.HardyHealth; pendingHardyHealthProgressSave = true; }
-            if (ex.Bowyer != null) { AttributeModifierDefinitions.Bowyer.ProgressDictionary[uid] = ex.Bowyer; AttributeModifierDefinitions.Bowyer.MarkForSave(true); }
-            if (ex.Improviser != null) { AttributeModifierDefinitions.Improviser.ProgressDictionary[uid] = ex.Improviser; AttributeModifierDefinitions.Improviser.MarkForSave(true); }
-            if (ex.Tinkerer != null) { AttributeModifierDefinitions.Tinkerer.ProgressDictionary[uid] = ex.Tinkerer; AttributeModifierDefinitions.Tinkerer.MarkForSave(true); }
+            if (ex.Bowyer != null) { AttributeModifierDefinitions.Bowyer.ProgressDictionary[uid] = ex.Bowyer; AttributeModifierDefinitions.Bowyer.PendingSave = true; }
+            if (ex.Improviser != null) { AttributeModifierDefinitions.Improviser.ProgressDictionary[uid] = ex.Improviser; AttributeModifierDefinitions.Improviser.PendingSave = true; }
+            if (ex.Tinkerer != null) { AttributeModifierDefinitions.Tinkerer.ProgressDictionary[uid] = ex.Tinkerer; AttributeModifierDefinitions.Tinkerer.PendingSave = true; }
             if (ex.Merciless != null) { MercilessProgress[uid] = ex.Merciless; pendingMercilessProgressSave = true; }
             if (ex.ClaustrophobicRemoval != null) { ClaustrophobicRemovalProgress[uid] = ex.ClaustrophobicRemoval; pendingClaustrophobicRemovalProgressSave = true; }
             if (ex.CombatOverhaul != null) { COProgress[uid] = ex.CombatOverhaul; pendingCOProgressSave = true; }

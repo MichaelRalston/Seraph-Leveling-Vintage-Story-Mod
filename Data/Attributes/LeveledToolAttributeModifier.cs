@@ -22,7 +22,7 @@ namespace SeraphLeveling.Data.Attributes
             var toolEntries = progress.ToolProgress.Select(kvp =>
                 (kvp.Key, double.CreateTruncating<N>(kvp.Value.PartialCredit), kvp.Value.CurrentIncrementSize)).ToList();
             progress.LastActivityDay = 0;
-            MarkForSave(true);
+            PendingSave = true;
             ApplyBonus(player, progress);
         }
         public override int ApplyDecay(IServerPlayer player, double currentDay, StringBuilder sb, StringBuilder verboseSb)
@@ -163,7 +163,7 @@ namespace SeraphLeveling.Data.Attributes
                     ToolProgress, p => p.CurrentIncrementSize,
                     Definition.BaseIncrement, Definition.IncrementStep);
 
-                Definition.MarkForSave(true);
+                Definition.PendingSave = true;
                 int bonusPercent = Definition.ApplyBonus(player, (PD)this);
                 Definition.OnCreditsChanged(player, oldCredits, (PD)this);
                 UpdateSkillActivityDay();
@@ -179,7 +179,7 @@ namespace SeraphLeveling.Data.Attributes
                 TotalCredits = level;
                 ToolProgress.Clear();
 
-                Definition.MarkForSave(true);
+                Definition.PendingSave = true;
                 int bonusPercent = Definition.ApplyBonus(player, (PD)this);
                 Definition.OnCreditsChanged(player, oldCredits, (PD)this);
                 UpdateSkillActivityDay();
@@ -310,7 +310,7 @@ namespace SeraphLeveling.Data.Attributes
                     else
                         sb.AppendLine($"    {entry.Item1}: {(int)entry.Item2}/{entry.Item3} \u2192 removed (-{oldToolCr} cr)");
                 }
-                Definition.MarkForSave(true);
+                Definition.PendingSave = true;
                 if (lost > 0) return lost;
             }
             else
@@ -318,7 +318,7 @@ namespace SeraphLeveling.Data.Attributes
                 int lost = Math.Min((int)rawPenalty, oldCredits);
                 TotalCredits -= lost;
                 if (lost > 0) { sb.AppendLine($"  {Definition.Name}: {oldCredits} \u2192 {TotalCredits} (-{lost} credits)"); }
-                Definition.MarkForSave(true);
+                Definition.PendingSave = true;
                 return lost;
             }
             return 0;
@@ -353,7 +353,7 @@ namespace SeraphLeveling.Data.Attributes
                 SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Player {player.PlayerName} earned credit {TotalCredits} with {toolCode}, next requires {toolProgress.CurrentIncrementSize} points");
             }
 
-            Definition.MarkForSave(true);
+            Definition.PendingSave = true;
 
             // Update last activity day for skill decay
             UpdateSkillActivityDay();

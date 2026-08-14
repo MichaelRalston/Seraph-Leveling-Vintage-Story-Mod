@@ -17,7 +17,7 @@ namespace SeraphLeveling.Data.Attributes
             progress.PartialCredit = 0;
             progress.CurrentIncrementSize = BaseIncrement;
             progress.LastActivityDay = 0;
-            MarkForSave(true);
+            PendingSave = true;
             ApplyBonus(player, progress);
         }
     }
@@ -58,7 +58,7 @@ namespace SeraphLeveling.Data.Attributes
             // Mark for saving if any progress was made
             if (PartialCredit > 0f || TotalCredits > oldCredits)
             {
-                Definition.MarkForSave(true);
+                Definition.PendingSave = true;
             }
 
             // If credits increased, update the stat and notify player
@@ -89,7 +89,7 @@ namespace SeraphLeveling.Data.Attributes
                 rawPenalty, Definition.BaseIncrement, Definition.IncrementStep, verboseSb, Definition.SkillKey);
             TotalCredits = newCr; PartialCredit = (float)newAcc; CurrentIncrementSize = newInc;
             sb.AppendLine($"  {Definition.Name}: {oldCredits} \u2192 {newCr} (-{lost} credits, {rawPenalty:F0} pts), {oldAcc:F0}/{oldInc} \u2192 {(int)newAcc}/{newInc}");
-            Definition.MarkForSave(true);
+            Definition.PendingSave = true;
             if (lost > 0) return lost;
             return 0;
         }

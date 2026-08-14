@@ -21,7 +21,7 @@ namespace SeraphLeveling.Data.Attributes
             if (progress.IsUnlocked) return;
 
             progress.TotalCredits += toAdd;
-            MarkForSave(true);
+            PendingSave = true;
 
             if (!string.IsNullOrWhiteSpace(WatchedCreditsAttributeKey))
             {

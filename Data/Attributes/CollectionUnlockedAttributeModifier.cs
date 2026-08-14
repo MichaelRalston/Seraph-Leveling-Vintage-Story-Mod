@@ -53,7 +53,7 @@ namespace SeraphLeveling.Data.Attributes
 
             if (progress.CollectedItems.Add(toAdd))
             {
-                MarkForSave(true);
+                PendingSave = true;
 
                 if (SeraphLevelingModSystem.DebugLoggingEnabled)
                 {
@@ -137,7 +137,7 @@ namespace SeraphLeveling.Data.Attributes
             {
                 if (newValue.Value < 1) return TextCommandResult.Error($"Required {CollectedItemDescription} must be at least 1.");
                 RequiredCollectionSize = newValue.Value;
-                MarkForSave(true);
+                PendingSave = true;
                 return TextCommandResult.Success($"{Name} required unique {CollectedItemDescription} set to {RequiredCollectionSize}.");
             }
 
@@ -182,7 +182,7 @@ namespace SeraphLeveling.Data.Attributes
             // Set unlock status based on whether we've reached the required amount
             IsUnlocked = newLevel >= Definition.RequiredCollectionSize;
 
-            Definition.MarkForSave(true);
+            Definition.PendingSave = true;
             Definition.ApplyUnlock(player, (PD)this);
 
             string newStatus = IsUnlocked ? "UNLOCKED!" : $"{Definition.RequiredCollectionSize - newLevel} more needed to unlock.";

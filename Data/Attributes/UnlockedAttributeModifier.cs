@@ -73,7 +73,7 @@ namespace SeraphLeveling.Data.Attributes
             {
                 FireUnlockChangedEvent(player, oldUnlock, progress.IsUnlocked);
             }
-            MarkForSave(true);
+            PendingSave = true;
             ApplyUnlock(player, progress);
         }
 
@@ -90,7 +90,7 @@ namespace SeraphLeveling.Data.Attributes
 
             // Perform the unlock
             UnlockInner(player, progress);
-            MarkForSave(true);
+            PendingSave = true;
             ApplyUnlock(player, progress);
 
             // Notify player
@@ -150,7 +150,7 @@ namespace SeraphLeveling.Data.Attributes
                 FireUnlockChangedEvent(player, oldUnlock, progress.IsUnlocked);
             }
 
-            MarkForSave(true);
+            PendingSave = true;
             ApplyUnlock(player, progress);
 
             return TextCommandResult.Success($"{Name} trait {(unlock ? "unlocked" : "locked")}.");

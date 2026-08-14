@@ -139,7 +139,7 @@ namespace SeraphLeveling.Data.Attributes
             progress.TotalCredits = maxCredits;
             OnCreditsChanged(player, oldCredits, progress);
             progress.ZeroPartialCredit();
-            MarkForSave(true);
+            PendingSave = true;
             ApplyBonus(player, progress);
         }
         public override void ApplyTraitTestSuite1Command(IServerPlayer player)
@@ -149,7 +149,7 @@ namespace SeraphLeveling.Data.Attributes
             progress.TotalCredits = 1;
             OnCreditsChanged(player, oldCredits, progress);
             progress.ZeroPartialCredit();
-            MarkForSave(true);
+            PendingSave = true;
             ApplyBonus(player, progress);
         }
 
@@ -261,7 +261,7 @@ namespace SeraphLeveling.Data.Attributes
             int oldCredits = progress.TotalCredits;
             progress.TotalCredits = level;
             OnCreditsChanged(player, oldCredits, progress);
-            MarkForSave(true);
+            PendingSave = true;
             ApplyBonus(player, progress);
             progress.UpdateSkillActivityDay();
             return TextCommandResult.Success($"{Name} level set to {level} ({Direction}{level}{Stat}) for {player.PlayerName}.");
@@ -323,7 +323,7 @@ namespace SeraphLeveling.Data.Attributes
                 }
 
                 GlobalMaxCredits = newValue.Value;
-                MarkForSave(true);
+                PendingSave = true;
 
                 // Recalculate and reapply bonuses for all online players
                 foreach (IServerPlayer player in SeraphLevelingModSystem.ServerApi.World.AllOnlinePlayers)
@@ -385,7 +385,7 @@ namespace SeraphLeveling.Data.Attributes
             ZeroPartialCredit();
             CalculateIncrementSize();
 
-            Definition.MarkForSave(true);
+            Definition.PendingSave = true;
             int bonusPercent = Definition.ApplyBonus(player, (PD)this);
             UpdateSkillActivityDay();
 
