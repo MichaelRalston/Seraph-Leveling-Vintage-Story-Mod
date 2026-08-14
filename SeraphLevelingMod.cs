@@ -1437,7 +1437,7 @@ namespace SeraphLeveling
                 .EndSubCommand()
                 .BeginSubCommand("level")
                     .WithDescription("View or set your level for a trait. (admin only) Usage: /trait level &lt;trait&gt; [level]")
-                    .WithArgs(api.ChatCommands.Parsers.Word("trait"), api.ChatCommands.Parsers.OptionalInt("step"))
+                    .WithArgs(api.ChatCommands.Parsers.Word("trait"), api.ChatCommands.Parsers.OptionalInt("step"), api.ChatCommands.Parsers.OptionalWord("tool"))
                     .RequiresPrivilege(Privilege.controlserver)
                     .HandleWith(OnTraitLevelCommand)
                 .EndSubCommand()
@@ -1707,12 +1707,12 @@ namespace SeraphLeveling
         /// </summary>
         private TextCommandResult OnTraitSetMaxCommand(TextCommandCallingArgs args)
         {
-            string traitName = ((string)args[1]).ToLowerInvariant();
+            string traitName = ((string)args[0]).ToLowerInvariant();
             foreach (var definition in LoadedAttributes)
             {
                 if (definition.SkillKey == traitName)
                 {
-                    return definition.HandleMaxCommand(args, 2);
+                    return definition.HandleMaxCommand(args, 1);
                 }
             }
             return TextCommandResult.Error($"No '{traitName}' trait found.");
@@ -1724,12 +1724,12 @@ namespace SeraphLeveling
         /// </summary>
         private TextCommandResult OnTraitSetIncrementCommand(TextCommandCallingArgs args)
         {
-            string traitName = ((string)args[1]).ToLowerInvariant();
+            string traitName = ((string)args[0]).ToLowerInvariant();
             foreach (var definition in LoadedAttributes)
             {
                 if (definition.SkillKey == traitName)
                 {
-                    return definition.HandleIncrementCommand(args, 2);
+                    return definition.HandleIncrementCommand(args, 1);
                 }
             }
             return TextCommandResult.Error($"No '{traitName}' trait found.");
@@ -1741,12 +1741,12 @@ namespace SeraphLeveling
         /// </summary>
         private TextCommandResult OnTraitSetBaseCommand(TextCommandCallingArgs args)
         {
-            string traitName = ((string)args[1]).ToLowerInvariant();
+            string traitName = ((string)args[0]).ToLowerInvariant();
             foreach (var definition in LoadedAttributes)
             {
                 if (definition.SkillKey == traitName)
                 {
-                    return definition.HandleBaseCommand(args, 2);
+                    return definition.HandleBaseCommand(args, 1);
                 }
             }
             return TextCommandResult.Error($"No '{traitName}' trait found.");
@@ -1754,16 +1754,16 @@ namespace SeraphLeveling
 
         /// <summary>
         /// Handler for /trait level command. Sets the user's level for a trait.
-        /// Usage: /trait level <trait> [level]
+        /// Usage: /trait level <trait> [level] [tool]
         /// </summary>
         private TextCommandResult OnTraitLevelCommand(TextCommandCallingArgs args)
         {
-            string traitName = ((string)args[1]).ToLowerInvariant();
+            string traitName = ((string)args[0]).ToLowerInvariant();
             foreach (var definition in LoadedAttributes)
             {
                 if (definition.SkillKey == traitName)
                 {
-                    return definition.HandleLevelCommand(args, 2);
+                    return definition.HandleLevelCommand(args, 1);
                 }
             }
             return TextCommandResult.Error($"No '{traitName}' trait found.");
@@ -1775,12 +1775,12 @@ namespace SeraphLeveling
         /// </summary>
         private TextCommandResult OnTraitUnlockCommand(TextCommandCallingArgs args)
         {
-            string traitName = ((string)args[1]).ToLowerInvariant();
+            string traitName = ((string)args[0]).ToLowerInvariant();
             foreach (var definition in LoadedAttributes)
             {
                 if (definition.SkillKey == traitName)
                 {
-                    return definition.HandleUnlockCommand(args, 2);
+                    return definition.HandleUnlockCommand(args, 1);
                 }
             }
             return TextCommandResult.Error($"No '{traitName}' trait found.");
