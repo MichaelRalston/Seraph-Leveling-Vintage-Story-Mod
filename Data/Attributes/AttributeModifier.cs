@@ -41,6 +41,8 @@ namespace SeraphLeveling.Data.Attributes
         public void ApplyBonusIfExists(IServerPlayer player);
         public void MaxStat(IServerPlayer player);
         public void ApplyTraitTestSuite1Command(IServerPlayer player);
+        public void GetTraitAllCommandLine(IPlayer player, StringBuilder sb); // Only implement this or GetTraitUnlockableCommandLine.
+        public void GetTraitUnlockableCommandLine(IPlayer player, StringBuilder sb); // Only implement this or GetTraitUnlockableCommandLine.
         public int ApplyDeathPenalty(IServerPlayer player, StringBuilder sb);
         public int ApplyDecay(IServerPlayer player, double currentDay, StringBuilder sb, StringBuilder verboseSb);
         public void LoadProgress(ICoreServerAPI serverApi);
@@ -75,6 +77,16 @@ namespace SeraphLeveling.Data.Attributes
         }
 
         public virtual void ApplyTraitTestSuite1Command(IServerPlayer player)
+        {
+
+        }
+
+        public virtual void GetTraitAllCommandLine(IPlayer player, StringBuilder sb)
+        {
+
+        }
+
+        public virtual void GetTraitUnlockableCommandLine(IPlayer player, StringBuilder sb)
         {
 
         }

@@ -1654,19 +1654,14 @@ namespace SeraphLeveling
             string playerUid = player.PlayerUID;
             var sb = new StringBuilder();
             sb.AppendLine("=== All Trait Progression ===");
+            foreach (var definition in LoadedAttributes)
+            {
+                definition.GetTraitAllCommandLine(player, sb);
+            }
 
             // Progression traits
-            AttributeModifierDefinitions.MiningSpeed.GetTraitAllCommandLine(player, sb);
-
             var meleeProg = MeleeProgress.GetOrAdd(playerUid, _ => new MeleeProgressData());
             sb.AppendLine($"Melee: {meleeProg.TotalCredits}/{MaxMeleeDamagePercent} (+{meleeProg.TotalCredits}% damage)");
-
-            AttributeModifierDefinitions.RangedDamage.GetTraitAllCommandLine(player, sb);
-            AttributeModifierDefinitions.RangedAccuracy.GetTraitAllCommandLine(player, sb);
-            AttributeModifierDefinitions.RangedDistance.GetTraitAllCommandLine(player, sb);
-
-            AttributeModifierDefinitions.WalkingSpeed.GetTraitAllCommandLine(player, sb);
-            AttributeModifierDefinitions.HungerRate.GetTraitAllCommandLine(player, sb);
 
             var armorProg = ArmorProgress.GetOrAdd(playerUid, _ => new ArmorProgressData());
             sb.AppendLine($"Armor: +{armorProg.TotalDurabilityCredits}/{MaxArmorDurabilityPercent}% durability, -{armorProg.TotalWalkSpeedCredits}/{MaxArmorWalkSpeedPercent}% walk penalty");
@@ -1691,19 +1686,13 @@ namespace SeraphLeveling
 
             // Unlock traits
             sb.AppendLine("\n--- Unlock Traits ---");
-
-            AttributeModifierDefinitions.Clothier.GetTraitAllCommandLine(player, sb);
-
-            AttributeModifierDefinitions.Technical.GetTraitAllCommandLine(player, sb);
+            foreach (var definition in LoadedAttributes)
+            {
+                definition.GetTraitUnlockableCommandLine(player, sb);
+            }
 
             var hardyHealthProg = HardyHealthProgress.GetOrAdd(playerUid, _ => new HardyHealthProgressData());
             sb.AppendLine($"Hardy Health: {(hardyHealthProg.IsUnlocked ? "UNLOCKED" : "locked")}");
-
-            AttributeModifierDefinitions.Bowyer.GetTraitAllCommandLine(player, sb);
-
-            AttributeModifierDefinitions.Improviser.GetTraitAllCommandLine(player, sb);
-
-            AttributeModifierDefinitions.Tinkerer.GetTraitAllCommandLine(player, sb);
 
             var mercilessProg = MercilessProgress.GetOrAdd(playerUid, _ => new MercilessProgressData());
             sb.AppendLine($"Merciless: {(mercilessProg.IsUnlocked ? "UNLOCKED" : "locked")}");

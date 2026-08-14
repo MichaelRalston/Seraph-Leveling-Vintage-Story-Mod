@@ -59,7 +59,7 @@ namespace SeraphLeveling.Data.Attributes
             .EndSubCommand();
         }
 
-        public virtual void GetTraitAllCommandLine(IPlayer player, StringBuilder sb) {
+        public override void GetTraitUnlockableCommandLine(IPlayer player, StringBuilder sb) {
             var progress = GetDict(player);
             sb.AppendLine($"{Name}: {(progress.IsUnlocked ? "UNLOCKED" : "locked")}");
         }

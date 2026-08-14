@@ -156,6 +156,11 @@ namespace SeraphLeveling.Data.Attributes
             ApplyBonus(player, progress);
         }
 
+        public override void GetTraitAllCommandLine(IPlayer player, StringBuilder sb)
+        {
+            var progress = GetDict(player);
+            sb.AppendLine($"{Name}: {progress.TotalCredits}/{GetMaxCredits(player.Entity)} ({Direction}{progress.TotalCredits}{Stat})");
+        }
         public override void CollectStatus(IPlayer player, StringBuilder sb)
         {
             var progress = GetDict(player);
@@ -342,12 +347,6 @@ namespace SeraphLeveling.Data.Attributes
             {
                 return TextCommandResult.Success($"Current max {LongDescription} bonus: {Direction}{GlobalMaxCredits}%");
             }
-        }
-
-        public void GetTraitAllCommandLine(IPlayer player, StringBuilder sb)
-        {
-            var progress = GetDict(player);
-            sb.AppendLine($"{Name}: {progress.TotalCredits}/{GetMaxCredits(player.Entity)} ({Direction}{progress.TotalCredits}{Stat})");
         }
 
         public override void HandleLogin(IServerPlayer player)

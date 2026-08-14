@@ -10,7 +10,7 @@ namespace SeraphLeveling.Data.Attributes
             return new BowyerAttributeModifierProgressData(def);
         }
 
-        public override void GetTraitAllCommandLine(IPlayer player, StringBuilder sb) {
+        public override void GetTraitUnlockableCommandLine(IPlayer player, StringBuilder sb) {
             var progress = GetDict(player);
             sb.AppendLine($"{Name}: {progress.TotalCredits:F0}/{GlobalMaxCredits:F0} {CreditDescription} ({(progress.IsUnlocked ? "UNLOCKED" : "locked")})");
         }

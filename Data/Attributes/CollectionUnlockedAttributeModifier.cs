@@ -90,7 +90,7 @@ namespace SeraphLeveling.Data.Attributes
             base.ResetProgress(player);
         }
 
-        public override void GetTraitAllCommandLine(IPlayer player, StringBuilder sb) {
+        public override void GetTraitUnlockableCommandLine(IPlayer player, StringBuilder sb) {
             var progress = GetDict(player);
             sb.AppendLine($"{Name}: {progress.CollectedItems.Count}/{RequiredCollectionSize} unique {CollectedItemDescription} ({(progress.IsUnlocked ? "UNLOCKED" : "locked")})");
         }
