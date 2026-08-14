@@ -6,7 +6,7 @@ using Vintagestory.API.Common;
 
 namespace SeraphLeveling.Data.Attributes
 {
-    public record class TinkererAttributeModifierDefinition : UnlockedAttributeModifierDefinition<TinkererAttributeModifierDefinition, TinkererAttributeModifierProgressData>, IConstructable<TinkererAttributeModifierDefinition, TinkererAttributeModifierProgressData>
+    public class TinkererAttributeModifierDefinition : UnlockedAttributeModifierDefinition<TinkererAttributeModifierDefinition, TinkererAttributeModifierProgressData>, IConstructable<TinkererAttributeModifierDefinition, TinkererAttributeModifierProgressData>
     {
         public static TinkererAttributeModifierProgressData Create(TinkererAttributeModifierDefinition def)
         {

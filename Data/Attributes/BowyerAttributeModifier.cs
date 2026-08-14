@@ -3,7 +3,7 @@ using Vintagestory.API.Common;
 
 namespace SeraphLeveling.Data.Attributes
 {
-    public record class BowyerAttributeModifierDefinition : ScoredUnlockedAttributeModifierDefinition<BowyerAttributeModifierDefinition, BowyerAttributeModifierProgressData>, IConstructable<BowyerAttributeModifierDefinition, BowyerAttributeModifierProgressData>
+    public class BowyerAttributeModifierDefinition : ScoredUnlockedAttributeModifierDefinition<BowyerAttributeModifierDefinition, BowyerAttributeModifierProgressData>, IConstructable<BowyerAttributeModifierDefinition, BowyerAttributeModifierProgressData>
     {
         public static BowyerAttributeModifierProgressData Create(BowyerAttributeModifierDefinition def)
         {

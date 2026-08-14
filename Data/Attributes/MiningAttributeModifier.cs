@@ -77,7 +77,7 @@ namespace SeraphLeveling.Data.Attributes
             }
         }
     }
-    public record class MiningAttributeModifierDefinition : LeveledToolAttributeModifierDefinition<MiningAttributeModifierDefinition, MiningAttributeModifierProgressData, int>, IConstructable<MiningAttributeModifierDefinition, MiningAttributeModifierProgressData>
+    public class MiningAttributeModifierDefinition : LeveledToolAttributeModifierDefinition<MiningAttributeModifierDefinition, MiningAttributeModifierProgressData, int>, IConstructable<MiningAttributeModifierDefinition, MiningAttributeModifierProgressData>
     {
         public static MiningAttributeModifierProgressData Create(MiningAttributeModifierDefinition definition) { return new MiningAttributeModifierProgressData(definition); }
         public override int GetMaxCredits(EntityPlayer player)

@@ -4,7 +4,7 @@ using Vintagestory.API.Server;
 
 namespace SeraphLeveling.Data.Attributes
 {
-    public record class HungerAttributeModifierDefinition : LeveledPartialAttributeModifierDefinition
+    public class HungerAttributeModifierDefinition : LeveledPartialAttributeModifierDefinition
     {
         public override int GetMaxCredits(EntityPlayer entity)
         {

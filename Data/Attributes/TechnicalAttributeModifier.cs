@@ -7,7 +7,7 @@ using SeraphLeveling.Data.Traits;
 
 namespace SeraphLeveling.Data.Attributes
 {
-    public record class TechnicalAttributeModifierDefinition : ScoredUnlockedAttributeModifierDefinition<TechnicalAttributeModifierDefinition, TechnicalAttributeModifierProgressData>, IConstructable<TechnicalAttributeModifierDefinition, TechnicalAttributeModifierProgressData>
+    public class TechnicalAttributeModifierDefinition : ScoredUnlockedAttributeModifierDefinition<TechnicalAttributeModifierDefinition, TechnicalAttributeModifierProgressData>, IConstructable<TechnicalAttributeModifierDefinition, TechnicalAttributeModifierProgressData>
     {
         public static TechnicalAttributeModifierProgressData Create(TechnicalAttributeModifierDefinition def)
         {

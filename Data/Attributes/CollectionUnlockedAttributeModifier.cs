@@ -10,7 +10,7 @@ using Vintagestory.API.Util;
 
 namespace SeraphLeveling.Data.Attributes
 {
-    public abstract record class CollectionUnlockedAttributeModifierDefinition<D, PD> : UnlockedAttributeModifierDefinition<D, PD> where PD : CollectionUnlockedAttributeModifierProgressData<D, PD> where D : CollectionUnlockedAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
+    public abstract class CollectionUnlockedAttributeModifierDefinition<D, PD> : UnlockedAttributeModifierDefinition<D, PD> where PD : CollectionUnlockedAttributeModifierProgressData<D, PD> where D : CollectionUnlockedAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
     {
         public required int RequiredCollectionSize { get; set; }
         public required string CollectedItemDescription { get; init; }

@@ -3,7 +3,7 @@ using Vintagestory.API.Common;
 
 namespace SeraphLeveling.Data.Attributes
 {
-    public record class ImproviserAttributeModifierDefinition : ScoredUnlockedAttributeModifierDefinition<ImproviserAttributeModifierDefinition, ImproviserAttributeModifierProgressData>, IConstructable<ImproviserAttributeModifierDefinition, ImproviserAttributeModifierProgressData>
+    public class ImproviserAttributeModifierDefinition : ScoredUnlockedAttributeModifierDefinition<ImproviserAttributeModifierDefinition, ImproviserAttributeModifierProgressData>, IConstructable<ImproviserAttributeModifierDefinition, ImproviserAttributeModifierProgressData>
     {
         public static ImproviserAttributeModifierProgressData Create(ImproviserAttributeModifierDefinition def)
         {

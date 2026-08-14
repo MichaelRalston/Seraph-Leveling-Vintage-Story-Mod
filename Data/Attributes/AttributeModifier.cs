@@ -62,7 +62,7 @@ namespace SeraphLeveling.Data.Attributes
         static abstract PD Create(D def);
     }
 
-    public abstract record class AttributeModifierDefinition<D, PD> : ISaveableAttribute where D : AttributeModifierDefinition<D, PD>, IConstructable<D, PD> where PD : AttributeModifierProgressData<D, PD>
+    public abstract class AttributeModifierDefinition<D, PD> : ISaveableAttribute where D : AttributeModifierDefinition<D, PD>, IConstructable<D, PD> where PD : AttributeModifierProgressData<D, PD>
     {
         public required string Id { get; init; }
         public required string SaveKey { get; init; }

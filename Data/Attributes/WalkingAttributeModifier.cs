@@ -4,7 +4,7 @@ using Vintagestory.API.Server;
 
 namespace SeraphLeveling.Data.Attributes
 {
-    public record class WalkingAttributeModifierDefinition : LeveledPartialAttributeModifierDefinition
+    public class WalkingAttributeModifierDefinition : LeveledPartialAttributeModifierDefinition
     {
     }
 }

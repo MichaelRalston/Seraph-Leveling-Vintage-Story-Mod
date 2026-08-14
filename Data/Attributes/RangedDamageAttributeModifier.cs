@@ -9,7 +9,7 @@ namespace SeraphLeveling.Data.Attributes
     {
         
     }
-    public record class RangedDamageAttributeModifierDefinition : LeveledToolAttributeModifierDefinition<RangedDamageAttributeModifierDefinition, RangedDamageAttributeModifierProgressData, float>, IConstructable<RangedDamageAttributeModifierDefinition, RangedDamageAttributeModifierProgressData>
+    public class RangedDamageAttributeModifierDefinition : LeveledToolAttributeModifierDefinition<RangedDamageAttributeModifierDefinition, RangedDamageAttributeModifierProgressData, float>, IConstructable<RangedDamageAttributeModifierDefinition, RangedDamageAttributeModifierProgressData>
     {
         public static RangedDamageAttributeModifierProgressData Create(RangedDamageAttributeModifierDefinition definition) { return new RangedDamageAttributeModifierProgressData(definition); }
     }

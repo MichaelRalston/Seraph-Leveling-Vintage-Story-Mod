@@ -12,7 +12,7 @@ using System.ComponentModel;
 
 namespace SeraphLeveling.Data.Attributes
 {
-    public abstract record class LeveledToolAttributeModifierDefinition<D, PD, N> : LeveledAttributeModifierDefinition<D, PD> where PD : LeveledToolAttributeModifierProgressData<D, PD, N> where D : LeveledToolAttributeModifierDefinition<D, PD, N>, IConstructable<D, PD> where N : INumber<N>
+    public abstract class LeveledToolAttributeModifierDefinition<D, PD, N> : LeveledAttributeModifierDefinition<D, PD> where PD : LeveledToolAttributeModifierProgressData<D, PD, N> where D : LeveledToolAttributeModifierDefinition<D, PD, N>, IConstructable<D, PD> where N : INumber<N>
     {
         public required ToolDefinition Tool { get; init; }
         public override void ResetProgress(IServerPlayer player)

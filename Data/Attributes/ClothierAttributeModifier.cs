@@ -2,7 +2,7 @@ using Vintagestory.API.Server;
 
 namespace SeraphLeveling.Data.Attributes
 {
-    public record class ClothierAttributeModifierDefinition : CollectionUnlockedAttributeModifierDefinition<ClothierAttributeModifierDefinition, ClothierAttributeModifierProgressData>, IConstructable<ClothierAttributeModifierDefinition, ClothierAttributeModifierProgressData>
+    public class ClothierAttributeModifierDefinition : CollectionUnlockedAttributeModifierDefinition<ClothierAttributeModifierDefinition, ClothierAttributeModifierProgressData>, IConstructable<ClothierAttributeModifierDefinition, ClothierAttributeModifierProgressData>
     {
         public static ClothierAttributeModifierProgressData Create(ClothierAttributeModifierDefinition def)
         {

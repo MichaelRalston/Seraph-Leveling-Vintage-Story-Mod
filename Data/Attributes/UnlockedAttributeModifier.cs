@@ -21,7 +21,7 @@ namespace SeraphLeveling.Data.Attributes
 
     public delegate void UnlockChangedDelegate(IServerPlayer player, bool oldUnlock, bool newUnlock);
 
-    public abstract record class UnlockedAttributeModifierDefinition<D, PD> : AttributeModifierDefinition<D, PD>, IUnlockedAttributeModifierDefinition where PD : UnlockedAttributeModifierProgressData<D, PD> where D : UnlockedAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
+    public abstract class UnlockedAttributeModifierDefinition<D, PD> : AttributeModifierDefinition<D, PD>, IUnlockedAttributeModifierDefinition where PD : UnlockedAttributeModifierProgressData<D, PD> where D : UnlockedAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
     {
         public required string Name { get; init; }
         public required string ExtraTraitKey { get; init; }

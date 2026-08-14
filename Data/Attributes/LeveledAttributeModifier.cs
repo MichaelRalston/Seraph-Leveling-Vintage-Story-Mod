@@ -28,7 +28,7 @@ namespace SeraphLeveling.Data.Attributes
     public delegate void CreditsChangedDelegate(IServerPlayer player, int oldCredits, int newCredits);
     public delegate void BonusChangedDelegate(IServerPlayer player, int oldBonus, int newBonus);
 
-    public abstract record class LeveledAttributeModifierDefinition<D, PD> : AttributeModifierDefinition<D, PD>, ILeveledAttributeModifierDefinition where PD : LeveledAttributeModifierProgressData<D, PD> where D : LeveledAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
+    public abstract class LeveledAttributeModifierDefinition<D, PD> : AttributeModifierDefinition<D, PD>, ILeveledAttributeModifierDefinition where PD : LeveledAttributeModifierProgressData<D, PD> where D : LeveledAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
     {
         public required string Name { get; init; }
         public required string Stat { get; init; }
