@@ -561,10 +561,10 @@ namespace SeraphLeveling
             var flatAttributeMappings = activeMods
                     .SelectMany(mod => mod.CharacterClasses)
                     .SelectMany(charClass => charClass.Traits)
-                    .SelectMany(trait => trait.Attributes, (trait, attrRef) => new
+                    .SelectMany(trait => trait.Attributes, (trait, attrKvp) => new
                     {
-                        Attribute = attrRef.Item1,
-                        TraitTuple = (Trait: trait, Value: attrRef.Item2)
+                        Attribute = attrKvp.Key,
+                        TraitTuple = (Trait: trait, Value: attrKvp.Value)
                     })
                     .DistinctBy(x => x.TraitTuple.Trait.Id);
 

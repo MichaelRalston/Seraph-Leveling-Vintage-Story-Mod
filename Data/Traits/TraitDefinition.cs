@@ -14,7 +14,7 @@ namespace SeraphLeveling.Data.Traits
     public record class TraitDefinition
     {
         public required string Id { get; init; }
-        public required List<(ISaveableAttribute, int)> Attributes { get; init; }
+        public required Dictionary<ISaveableAttribute, int> Attributes { get; init; }
         public List<IRequiredAttribute> Requirements
         {
             get;
@@ -57,7 +57,7 @@ namespace SeraphLeveling.Data.Traits
             // Check prerequisites
             if (Requirements.All(attr => attr.IsSatisfied(player)))
             {
-                Attributes.Select(tuple => tuple.Item1).Foreach(attr => attr.Unlock(player, true));
+                Attributes.Select(kvp => kvp.Key).Foreach(attr => attr.Unlock(player, true));
             }
         }
 
@@ -67,7 +67,7 @@ namespace SeraphLeveling.Data.Traits
             if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
 
             var sb = new StringBuilder();
-            Attributes.Select(tuple => tuple.Item1).Foreach(attr => attr.CollectStatus(player, sb));
+            Attributes.Select(kvp => kvp.Key).Foreach(attr => attr.CollectStatus(player, sb));
             if (Requirements.Count > 0)
             {
                 sb.AppendLine($"Requirements:");
@@ -84,7 +84,12 @@ namespace SeraphLeveling.Data.Traits
 
         protected virtual bool ShouldDisplay(EntityPlayer player)
         {
-            return Attributes.Any(a => a.Item1.ShouldDisplay(player)) && (MergeWithVanilla || !HasVanillaTrait(player));
+            return Attributes.Any(a => a.Key.ShouldDisplay(player)) && (MergeWithVanilla || !HasVanillaTrait(player));
+        }
+
+        private int GetVanillaValue(ILeveledAttributeModifierDefinition attr)
+        {
+            return Attributes.TryGetValue(attr, out int val) ? val : 0;
         }
 
         public virtual void AppendTraitText(EntityPlayer player, ref string result)
@@ -100,7 +105,7 @@ namespace SeraphLeveling.Data.Traits
                     var combinedBonuses = GetCombinedAttributeBonuses(player);
                     foreach (var key in combinedBonuses.Keys)
                     {
-                        result = CharacterSystemPatches.ReplaceVanillaCharAttribute(result, key.StatName, 0.01D * Attributes.First(tuple => tuple.Item1 == key).Item2, combinedBonuses[key]);
+                        result = CharacterSystemPatches.ReplaceVanillaCharAttribute(result, key.StatName, 0.01D * GetVanillaValue(key), combinedBonuses[key]);
                         result = CharacterSystemPatches.RemoveOrphanTraitName(result, plainTraitName);
                     }
                 }
@@ -124,10 +129,15 @@ namespace SeraphLeveling.Data.Traits
 
         protected virtual Dictionary<ILeveledAttributeModifierDefinition, int> GetCombinedAttributeBonuses(EntityPlayer player)
         {
-            return Attributes
-                    .Select(tuple => tuple.Item1 is ILeveledAttributeModifierDefinition leveledAttr ? (leveledAttr, tuple.Item2) : (null, 0))
-                    .Where(tuple => tuple.leveledAttr != null)
-                    .ToDictionary(tuple => tuple.leveledAttr, tuple => tuple.Item2 + tuple.leveledAttr.GetBonusPercent(player));
+            Dictionary<ILeveledAttributeModifierDefinition, int> retVal = [];
+            foreach (var kvp in Attributes)
+            {
+                if (kvp.Key is ILeveledAttributeModifierDefinition leveledAttr)
+                {
+                    retVal[leveledAttr] = kvp.Value + leveledAttr.GetBonusPercent(player);
+                }
+            }
+            return retVal;
         }
 
         /// <summary>
@@ -147,7 +157,7 @@ namespace SeraphLeveling.Data.Traits
 
         protected virtual object[] GetLocalizedTraitTextParams(EntityPlayer player)
         {
-            return Attributes.Select(tuple => tuple.Item1.GetLocalizedTraitTextParam(player)).Where(param => param != null).ToArray();
+            return Attributes.Select(kvp => kvp.Key.GetLocalizedTraitTextParam(player)).Where(param => param != null).ToArray();
         }
     }
 }

@@ -6,7 +6,7 @@ using Vintagestory.API.Server;
 
 namespace SeraphLeveling.Data.Attributes
 {
-    public interface ILeveledAttributeModifierDefinition
+    public interface ILeveledAttributeModifierDefinition : ISaveableAttribute
     {
         public string Name { get; }
         public string StatName { get; }

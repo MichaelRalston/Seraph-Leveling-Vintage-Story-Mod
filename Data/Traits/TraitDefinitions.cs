@@ -8,11 +8,12 @@ namespace SeraphLeveling.Data.Traits
         public static readonly TraitDefinition Focused = new()
         {
             Id = "focused",
-            Attributes = [
-                (AttributeModifierDefinitions.RangedDamage, 20),
-                (AttributeModifierDefinitions.RangedAccuracy, 30),
-                (AttributeModifierDefinitions.RangedDistance, 20),
-            ]
+            Attributes = new()
+            {
+                [AttributeModifierDefinitions.RangedDamage] = 20,
+                [AttributeModifierDefinitions.RangedAccuracy] = 30,
+                [AttributeModifierDefinitions.RangedDistance] = 20,
+            }
         };
 
         public static readonly TraitDefinition Resourceful = new()
@@ -27,17 +28,19 @@ namespace SeraphLeveling.Data.Traits
             Id = "fleetfooted",
             PlainTraitNameKey = "seraphleveling:trait-sitwalkingmastery",
             MergeWithVanilla = true,
-            Attributes = [ 
-                (AttributeModifierDefinitions.WalkingSpeed, 10)
-            ]
+            Attributes = new()
+            {
+                [AttributeModifierDefinitions.WalkingSpeed] = 10,
+            }
         };
 
         public static readonly TraitDefinition Bowyer = new()
         {
             Id = "bowyer",
-            Attributes = [
-                (AttributeModifierDefinitions.Bowyer, 1)
-            ],
+            Attributes = new()
+            {
+                [AttributeModifierDefinitions.Bowyer] = 1,
+            },
             Requirements = [
                 new RequiredUnlockedAttribute(AttributeModifierDefinitions.Bowyer)
                 // TODO Generic ranged damage 10%
@@ -54,9 +57,10 @@ namespace SeraphLeveling.Data.Traits
         public static readonly TraitDefinition Claustrophobic = new()
         {
             Id = "claustrophobic",
-            Attributes = [
-                (AttributeModifierDefinitions.MiningSpeed, -10)
-            ]
+            Attributes = new()
+            {
+                [AttributeModifierDefinitions.MiningSpeed] = -10,
+            },
         };
 
         public static readonly TraitDefinition Forager = new()
@@ -76,17 +80,19 @@ namespace SeraphLeveling.Data.Traits
         public static readonly TraitDefinition Furtive = new()
         {
             Id = "furtive",
-            Attributes = [
-                (AttributeModifierDefinitions.Furtive, 35)
-            ]
+            Attributes = new()
+            {
+                [AttributeModifierDefinitions.Furtive] = 35,
+            },
         };
 
         public static readonly TraitDefinition Improviser = new()
         {
             Id = "improviser",
-            Attributes = [
-                (AttributeModifierDefinitions.Improviser, 1)
-            ],
+            Attributes = new()
+            {
+                [AttributeModifierDefinitions.Improviser] = 1,
+            },
             Requirements = [
                 new RequiredUnlockedAttribute(AttributeModifierDefinitions.Improviser)
             ]
@@ -95,9 +101,10 @@ namespace SeraphLeveling.Data.Traits
         public static readonly TraitDefinition Frail = new()
         {
             Id = "frail",
-            Attributes = [
-                (AttributeModifierDefinitions.RangedDistance, -25)
-            ]
+            Attributes = new()
+            {
+                [AttributeModifierDefinitions.RangedDistance] = -25,
+            },
         };
 
         public static readonly TraitDefinition Nervous = new()
@@ -117,9 +124,10 @@ namespace SeraphLeveling.Data.Traits
         public static readonly TraitDefinition Technical = new()
         {
             Id = "technical",
-            Attributes = [
-                (AttributeModifierDefinitions.Technical, 1)
-            ],
+            Attributes = new()
+            {
+                [AttributeModifierDefinitions.Technical] = 1,
+            },
             Requirements = [
                 new RequiredUnlockedAttribute(AttributeModifierDefinitions.Technical)
             ]
@@ -128,9 +136,10 @@ namespace SeraphLeveling.Data.Traits
         public static readonly TraitDefinition Tinkerer = new()
         {
             Id = "tinkerer",
-            Attributes = [
-                (AttributeModifierDefinitions.Tinkerer, 1)
-            ],
+            Attributes = new()
+            {
+                [AttributeModifierDefinitions.Tinkerer] = 1,
+            },
             Requirements = [
                 new RequiredUnlockedAttribute(AttributeModifierDefinitions.Technical),
                 // TODO Precise 10%
@@ -163,17 +172,19 @@ namespace SeraphLeveling.Data.Traits
         public static readonly TraitDefinition Ravenous = new()
         {
             Id = "ravenous",
-            Attributes = [
-                (AttributeModifierDefinitions.HungerRate, -30)
-            ]
+            Attributes = new()
+            {
+                [AttributeModifierDefinitions.HungerRate] = -30,
+            },
         };
 
         public static readonly TraitDefinition Nearsighted = new()
         {
             Id = "nearsighted",
-            Attributes = [
-                (AttributeModifierDefinitions.RangedDamage, 15)
-            ]
+            Attributes = new()
+            {
+                [AttributeModifierDefinitions.RangedDamage] = -15,
+            },
         };
 
         public static readonly TraitDefinition Heavyhanded = new()
@@ -186,9 +197,10 @@ namespace SeraphLeveling.Data.Traits
         public static readonly TraitDefinition Clothier = new()
         {
             Id = "clothier",
-            Attributes = [
-                (AttributeModifierDefinitions.Clothier, 1)
-            ],
+            Attributes = new()
+            {
+                [AttributeModifierDefinitions.Clothier] = 1,
+            },
             Requirements = [
                 new RequiredUnlockedAttribute(AttributeModifierDefinitions.Clothier)
             ]
@@ -211,9 +223,10 @@ namespace SeraphLeveling.Data.Traits
         public static readonly TraitDefinition Weak = new()
         {
             Id = "weak",
-            Attributes = [
-                (AttributeModifierDefinitions.MiningSpeed, -10)
-            ]
+            Attributes = new()
+            {
+                [AttributeModifierDefinitions.MiningSpeed] = -10,
+            },
         };
 
         public static readonly TraitDefinition Kind = new()
@@ -384,9 +397,10 @@ namespace SeraphLeveling.Data.Traits
         public static readonly TraitDefinition Stonespeaker = new()
         {
             Id = "stonespeaker",
-            Attributes = [
-                (AttributeModifierDefinitions.MiningSpeed, 220)
-            ]
+            Attributes = new()
+            {
+                [AttributeModifierDefinitions.MiningSpeed] = 220,
+            },
         };
 
         public static readonly TraitDefinition CaveExplorer = new()
@@ -457,9 +471,10 @@ namespace SeraphLeveling.Data.Traits
         public static readonly TraitDefinition StrongArmed = new()
         {
             Id = "strongarmed",
-            Attributes = [
-                (AttributeModifierDefinitions.MiningSpeed, 100)
-            ]
+            Attributes = new()
+            {
+                [AttributeModifierDefinitions.MiningSpeed] = 100,
+            },
         };
 
         public static readonly TraitDefinition HeavyHands = new()

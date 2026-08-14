@@ -8,7 +8,7 @@ using Vintagestory.API.Server;
 
 namespace SeraphLeveling.Data.Attributes
 {
-    public interface IUnlockedAttributeModifierDefinition
+    public interface IUnlockedAttributeModifierDefinition : ISaveableAttribute
     {
         public string Name { get; }
         public bool IsUnlockedForPlayer(IPlayer player);
