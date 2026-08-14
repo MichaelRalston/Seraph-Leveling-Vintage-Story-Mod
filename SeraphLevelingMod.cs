@@ -24,6 +24,7 @@ using SeraphLeveling.Data.Mods;
 using SeraphLeveling.Data.Attributes;
 using SeraphLeveling.Data.Legacy;
 using Vintagestory.API.Util;
+using Microsoft.CSharp.RuntimeBinder;
 
 namespace SeraphLeveling
 {
@@ -1766,30 +1767,28 @@ namespace SeraphLeveling
                 PropertyInfo property = type.GetProperty("SkillKey", BindingFlags.Public | BindingFlags.Instance);
                 if (property != null && ((string)property.GetValue(definition) == traitName))
                 {
-                    Type[] getParams = new Type[] { typeof(string) };
+                    Type[] getParams = [typeof(string)];
                     dynamic progress = type.GetMethod("GetForPlayer", BindingFlags.Public | BindingFlags.Instance, null, getParams, null).Invoke(definition, [(object)targetUid]);
                     if (progress != null)
                     {
-                        Type PDType = progress.GetType();
-                        Type[] tripleParamTypes = [typeof(IServerPlayer), typeof(int), typeof(string)];
-                        MethodInfo setLevel3 = PDType.GetMethod("SetLevel", BindingFlags.Public | BindingFlags.Instance, null, tripleParamTypes, null);
-                        if (setLevel3 != null)
+                        try
                         {
-                            object[] tripleParams = [(object)targetPlayer, (object)level, (object)toolName];
-                            return (TextCommandResult)setLevel3.Invoke(progress, tripleParams);
+                            return (TextCommandResult)progress.SetLevel(targetPlayer, level, toolName);
                         }
-                        if (toolName != null)
+                        catch (RuntimeBinderException)
                         {
-                            return TextCommandResult.Error($"The '{traitName}' trait does not support per-tool level setting.");
+                            if (toolName != null)
+                            {
+                                return TextCommandResult.Error($"The '{traitName}' trait does not support per-tool level setting.");
+                            }
+                            try {
+                                return (TextCommandResult)((dynamic)definition).SetLevel(targetPlayer, level);
+                            }
+                            catch (RuntimeBinderException)
+                            {
+                                return TextCommandResult.Error($"The '{traitName}' trait does not support level setting.");
+                            }
                         }
-                        Type[] doubleParamTypes = [typeof(IServerPlayer), typeof(int)];
-                        MethodInfo setLevel2 = PDType.GetMethod("SetLevel", BindingFlags.Public | BindingFlags.Instance, null, doubleParamTypes, null);
-                        if (setLevel2 != null)
-                        {
-                            object[] doubleParams = [(object)targetPlayer, (object)level];
-                            return (TextCommandResult)setLevel2.Invoke(progress, doubleParams);
-                        }
-                        return TextCommandResult.Error($"The '{traitName}' trait does not support level setting.");
                     }
                 }
             }
