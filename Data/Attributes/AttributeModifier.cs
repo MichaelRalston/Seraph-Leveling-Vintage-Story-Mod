@@ -43,6 +43,7 @@ namespace SeraphLeveling.Data.Attributes
         public int ApplyDecay(IServerPlayer player, double currentDay, StringBuilder sb, StringBuilder verboseSb);
         public void LoadProgress(ICoreServerAPI serverApi);
         public void HandleLogin(IServerPlayer player);
+        public IChatCommand RegisterCommands(ICoreServerAPI serverApi, IChatCommand c);
     }
 
     public interface IConstructable<D, PD>

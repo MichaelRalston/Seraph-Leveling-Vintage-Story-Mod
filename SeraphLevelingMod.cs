@@ -926,9 +926,10 @@ namespace SeraphLeveling
                 .RequiresPrivilege(Privilege.chat)
                 .RequiresPlayer()
                 .HandleWith(OnTraitHelpCommand);
-            AttributeModifierDefinitions.WalkingSpeed.RegisterCommands(api, command);
-            AttributeModifierDefinitions.HungerRate.RegisterCommands(api, command);
-            AttributeModifierDefinitions.MiningSpeed.RegisterCommands(api, command);
+            foreach (var definition in LoadedAttributes)
+            {
+                definition.RegisterCommands(api, command);
+            }
             command
                 .BeginSubCommand("melee")
                     .WithDescription("View your melee damage progression stats")
@@ -1017,26 +1018,6 @@ namespace SeraphLeveling
                     .RequiresPrivilege(Privilege.controlserver)
                     .RequiresPlayer()
                     .HandleWith(OnTraitTestWalkSpeedCommand)
-                .EndSubCommand()
-                // Clothier trait commands
-                .BeginSubCommand("clothier")
-                    .WithDescription("View your clothier progression stats")
-                    .RequiresPrivilege(Privilege.chat)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitClothierCommand)
-                .EndSubCommand()
-                .BeginSubCommand("clothierrequired")
-                    .WithDescription("Get or set the required unique clothes to unlock sewing kit (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalInt("count"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitClothierRequiredCommand)
-                .EndSubCommand()
-                .BeginSubCommand("clothierlevel")
-                    .WithDescription("Get or set your clothier progress (unique clothes count) (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalInt("level"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitClothierLevelCommand)
                 .EndSubCommand()
                 // Mender trait commands
                 .BeginSubCommand("mender")
@@ -1169,9 +1150,7 @@ namespace SeraphLeveling
                     .RequiresPrivilege(Privilege.controlserver)
                     .RequiresPlayer()
                     .HandleWith(OnTraitPreciseLevelCommand)
-                .EndSubCommand();
-            AttributeModifierDefinitions.Technical.RegisterCommands(api, command);
-            command
+                .EndSubCommand()
                 // Hardy health trait commands
                 .BeginSubCommand("hardyhealth")
                     .WithDescription("View your hardy health unlock progress")
@@ -1185,48 +1164,6 @@ namespace SeraphLeveling
                     .RequiresPrivilege(Privilege.controlserver)
                     .RequiresPlayer()
                     .HandleWith(OnTraitHardyHealthUnlockCommand)
-                .EndSubCommand()
-                // Bowyer trait commands
-                .BeginSubCommand("bowyer")
-                    .WithDescription("View your bowyer unlock progress")
-                    .RequiresPrivilege(Privilege.chat)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitBowyerCommand)
-                .EndSubCommand()
-                .BeginSubCommand("bowyerunlock")
-                    .WithDescription("Manually unlock or lock bowyer trait (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.Bool("unlock"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitBowyerUnlockCommand)
-                .EndSubCommand()
-                // Improviser trait commands
-                .BeginSubCommand("improviser")
-                    .WithDescription("View your improviser unlock progress")
-                    .RequiresPrivilege(Privilege.chat)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitImproviserCommand)
-                .EndSubCommand()
-                .BeginSubCommand("improviserunlock")
-                    .WithDescription("Manually unlock or lock improviser trait (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.Bool("unlock"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitImproviserUnlockCommand)
-                .EndSubCommand()
-                // Tinkerer trait commands
-                .BeginSubCommand("tinkerer")
-                    .WithDescription("View your tinkerer unlock progress")
-                    .RequiresPrivilege(Privilege.chat)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitTinkererCommand)
-                .EndSubCommand()
-                .BeginSubCommand("tinkererunlock")
-                    .WithDescription("Manually unlock or lock tinkerer trait (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.Bool("unlock"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .RequiresPlayer()
-                    .HandleWith(AttributeModifierDefinitions.Tinkerer.HandleUnlockCommand)
                 .EndSubCommand()
                 // Merciless trait commands
                 .BeginSubCommand("merciless")
