@@ -575,7 +575,8 @@ namespace SeraphLeveling
                     {
                         Attribute = attrRef.Item1,
                         TraitTuple = (Trait: trait, Value: attrRef.Item2)
-                    });
+                    })
+                    .DistinctBy(x => x.TraitTuple.Trait.Id);
 
             // 3. Extract the unique attributes
             LoadedAttributes = flatAttributeMappings

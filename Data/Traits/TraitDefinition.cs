@@ -94,18 +94,14 @@ namespace SeraphLeveling.Data.Traits
                 string plainTraitName = Lang.Get(PlainTraitNameKey);
                 string dynamicTraitText = BuildLocalizedTraitLine(player);
                 bool hasVanillaTrait = SeraphLevelingModSystem.PlayerHasTrait(player, this);
-                CharacterSystemPatches.ClientApi?.Logger?.Debug($"[Verdus] Calling AppendTraitText for trait {Id}: MergeWithVanilla={MergeWithVanilla}, hasVanillaTrait={hasVanillaTrait}");
                 if (MergeWithVanilla && hasVanillaTrait)
                 {
                     // Class already has vanilla trait - update the inline walk speed value (locale-aware).
                     var combinedBonuses = GetCombinedAttributeBonuses(player);
-                    CharacterSystemPatches.ClientApi?.Logger?.Debug($"   [Verdus] Combined bonuses for trait {Id}: {string.Join(Environment.NewLine, combinedBonuses.ToDictionary(kvp => kvp.Key.Name, kvp => kvp.Value))}");
                     foreach (var key in combinedBonuses.Keys)
                     {
-                        result = CharacterSystemPatches.ReplaceVanillaCharAttribute(result, key.StatName, 0.01D * key.GetBonusPercent(player), combinedBonuses[key]);
-                        CharacterSystemPatches.ClientApi?.Logger?.Debug($"      [Verdus] Result after replacing vanilla char attribute {key.Name}: {result}");
+                        result = CharacterSystemPatches.ReplaceVanillaCharAttribute(result, key.StatName, 0.01D * Attributes.First(tuple => tuple.Item1 == key).Item2, combinedBonuses[key]);
                         result = CharacterSystemPatches.RemoveOrphanTraitName(result, plainTraitName);
-                        CharacterSystemPatches.ClientApi?.Logger?.Debug($"      [Verdus] Result after removing orphan trait name {key.Name}: {result}");
                     }
                 }
                 else if (CharacterSystemPatches.HasNoTraits(result))

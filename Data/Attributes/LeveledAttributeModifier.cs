@@ -367,9 +367,7 @@ namespace SeraphLeveling.Data.Attributes
 
         public virtual int GetBonusPercent(EntityPlayer player)
         {
-            var retVal = player.WatchedAttributes.GetInt(WatchedBonus, 0);
-            CharacterSystemPatches.ClientApi?.Logger?.Debug($"   [Verdus] Found bonus percent for attribute {Id}: {retVal}");
-            return retVal;
+            return player.WatchedAttributes.GetInt(WatchedBonus, 0);
         }
 
         public override object GetLocalizedTraitTextParam(EntityPlayer player)
