@@ -154,7 +154,7 @@ namespace SeraphLeveling.Data.Attributes
         {
             Id = "rangedDamage",
             SaveKey = "sitRangedProgress",
-            Name = "Ranged",
+            Name = "RangedDamage",
             LongDescription = "ranged damage",
             Stat = "% ranged damage",
             SkillKey = "ranged",
@@ -172,7 +172,7 @@ namespace SeraphLeveling.Data.Attributes
         {
             Id = "rangedAccuracy",
             SaveKey = "sitRangedAccuracyProgress",
-            Name = "Ranged",
+            Name = "RangedAccuracy",
             LongDescription = "ranged accuracy",
             Stat = "% ranged accuracy",
             SkillKey = "rangedaccuracy",
@@ -190,7 +190,7 @@ namespace SeraphLeveling.Data.Attributes
         {
             Id = "rangedDistance",
             SaveKey = "sitRangedDistanceProgress",
-            Name = "Ranged",
+            Name = "RangedDistance",
             LongDescription = "ranged distance",
             Stat = "% ranged distance",
             SkillKey = "rangeddistance",
