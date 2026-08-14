@@ -59,7 +59,7 @@ namespace SeraphLeveling.Data.Attributes
             progress.TotalCredits = GlobalMaxCredits;
         }
 
-        public override void GetTraitAllCommandLine(IPlayer player, StringBuilder sb) {
+        public override void GetTraitUnlockableCommandLine(IPlayer player, StringBuilder sb) {
             var progress = GetDict(player);
             sb.AppendLine($"{Name}: {progress.TotalCredits}/{GlobalMaxCredits} {CreditDescription} ({(progress.IsUnlocked ? "UNLOCKED" : "locked")})");
         }

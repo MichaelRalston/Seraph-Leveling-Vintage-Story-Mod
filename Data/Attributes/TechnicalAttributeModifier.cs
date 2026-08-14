@@ -14,7 +14,7 @@ namespace SeraphLeveling.Data.Attributes
             return new TechnicalAttributeModifierProgressData(def);
         }
 
-        public override void GetTraitAllCommandLine(IPlayer player, StringBuilder sb) {
+        public override void GetTraitUnlockableCommandLine(IPlayer player, StringBuilder sb) {
             var progress = GetDict(player);
             sb.AppendLine($"{Name}: {progress.TotalCredits}/{GlobalMaxCredits} translocators ({(progress.IsUnlocked ? "UNLOCKED" : "locked")})");
         }
