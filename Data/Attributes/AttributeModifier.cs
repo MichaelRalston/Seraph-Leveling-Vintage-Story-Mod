@@ -22,6 +22,11 @@ namespace SeraphLeveling.Data.Attributes
         /// Get a status string for the attribute to return for the attribute when the player uses the /trait command
         /// </summary>
         public abstract void CollectStatus(IPlayer player, StringBuilder sb);
+
+        /// <summary>
+        /// Determine whether this attribute should be shown in trait text on the character screen
+        /// </summary>
+        public abstract bool ShouldDisplay(EntityPlayer player);
     }
 
     public interface ISaveableAttribute : IAttribute
@@ -54,6 +59,7 @@ namespace SeraphLeveling.Data.Attributes
         public required string PersistenceHeader { get; init; }
         public virtual byte PersistenceVersion { get; init; } = 1;
         public abstract void CollectStatus(IPlayer player, StringBuilder sb);
+        public abstract bool ShouldDisplay(EntityPlayer player);
 
         public virtual void Unlock(IServerPlayer player, bool notify = false)
         {

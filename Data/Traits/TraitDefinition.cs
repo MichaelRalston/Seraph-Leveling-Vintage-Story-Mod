@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using SeraphLeveling.Data.Attributes;
+using SeraphLeveling.Patches;
 using Vintagestory.API.Common;
+using Vintagestory.API.Config;
 using Vintagestory.API.Server;
 using Vintagestory.API.Util;
 
@@ -22,6 +24,14 @@ namespace SeraphLeveling.Data.Traits
                 field?.ForEach(req => req.SatisfactionChanged += OnRequirementSatisfactionChanged);
             }
         } = [];
+        public virtual string PlainTraitNameKey
+        {
+            get => field ??= $"seraphleveling:trait-sit{Id}mastery"; init;
+        }
+        public virtual string DynamicTraitTextKey
+        {
+            get => field ??= $"seraphleveling:trait-{Id}-dynamic"; init;
+        }
 
         ~TraitDefinition()
         {
@@ -64,6 +74,57 @@ namespace SeraphLeveling.Data.Traits
             }
             
             return TextCommandResult.Success(sb.ToString().TrimEnd());
+        }
+
+        protected virtual bool HasVanillaTrait(EntityPlayer player)
+        {
+            return SeraphLevelingModSystem.PlayerHasTrait(player, this);
+        }
+
+        protected virtual bool ShouldDisplay(EntityPlayer player)
+        {
+            return Attributes.Any(a => a.Item1.ShouldDisplay(player)) && !HasVanillaTrait(player);
+        }
+
+        public virtual void AppendTraitText(EntityPlayer player, ref string result)
+        {
+            if (ShouldDisplay(player))
+            {
+                string plainTraitName = Lang.Get(PlainTraitNameKey);
+                string dynamicTraitText = BuildLocalizedTraitLine();
+                if (CharacterSystemPatches.HasNoTraits(result))
+                {
+                    result = dynamicTraitText;
+                }
+                else if (CharacterSystemPatches.ContainsOrphanTraitName(result, plainTraitName))
+                {
+                    result = CharacterSystemPatches.ReplaceOrphanTraitName(result, plainTraitName, dynamicTraitText);
+                }
+                else
+                {
+                    result = result + "\n" + dynamicTraitText;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Builds a fully localized trait line `{traitName} <font opacity="0.6">({desc})</font>`
+        /// using vanilla's `traitwithattributes` template, with the trait name pulled from the
+        /// vanilla `trait-{code}` lang key (so it shows up in the player's locale: "Hardy" in EN,
+        /// "Robuste" in FR, etc.) and the description from one of our `seraphleveling:` lang
+        /// values. The seraphleveling lang values store only the inner description text — the
+        /// trait label and font wrapper come from this helper.
+        /// </summary>
+        protected virtual string BuildLocalizedTraitLine()
+        {
+            string traitName = Lang.Get("trait-" + Id);
+            string desc = Lang.Get(DynamicTraitTextKey, GetLocalizedTraitTextParams());
+            return Lang.Get("traitwithattributes", traitName, desc);
+        }
+
+        protected virtual object[] GetLocalizedTraitTextParams()
+        {
+            return [];
         }
     }
 }

@@ -32,7 +32,7 @@ namespace SeraphLeveling.Data.Traits
 
         public static readonly TraitDefinition Bowyer = new()
         {
-            Id = "focused",
+            Id = "bowyer",
             Attributes = [
                 (AttributeModifierDefinitions.Bowyer, 1)
             ],

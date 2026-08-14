@@ -356,6 +356,11 @@ namespace SeraphLeveling.Data.Attributes
                 SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Applied {Description} bonus {Direction}{progress.TotalCredits}% to player {player.PlayerName}");
             }
         }
+
+        public override bool ShouldDisplay(EntityPlayer player)
+        {
+            return player.WatchedAttributes.GetInt(WatchedLevel, 0) > 0;
+        }
     }
 
     public abstract class LeveledAttributeModifierProgressData<D, PD>(D definition) : AttributeModifierProgressData<D, PD>(definition) where PD : LeveledAttributeModifierProgressData<D, PD> where D : LeveledAttributeModifierDefinition<D, PD>, IConstructable<D, PD>

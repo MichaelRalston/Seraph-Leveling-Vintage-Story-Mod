@@ -280,28 +280,7 @@ namespace SeraphLeveling.Patches
             }
 
             // Process Clothier trait (unlocked by wearing 20 unique clothes)
-            bool clothierUnlocked = eplr.WatchedAttributes.GetBool(AttributeModifierDefinitions.Clothier.UnlockedKey, false);
-            if (clothierUnlocked && !SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Clothier))
-            {
-                string plainClothierTraitName = Lang.Get("seraphleveling:trait-sitclothiermastery");
-                string dynamicClothierTrait = BuildLocalizedTraitLine("clothier", "seraphleveling:trait-clothier-dynamic");
-
-                // Re-check hasNoTraits after armor processing
-                hasNoTraits = HasNoTraits(__result);
-
-                if (hasNoTraits)
-                {
-                    __result = dynamicClothierTrait;
-                }
-                else if (ContainsOrphanTraitName(__result, plainClothierTraitName))
-                {
-                    __result = ReplaceOrphanTraitName(__result, plainClothierTraitName, dynamicClothierTrait);
-                }
-                else
-                {
-                    __result = __result + "\n" + dynamicClothierTrait;
-                }
-            }
+            TraitDefinitions.Clothier.AppendTraitText(eplr, ref __result);
 
             // Process Mender trait (improves armor/clothing durability)
             int menderLevel = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_MENDER_LEVEL, 0);
@@ -565,28 +544,7 @@ namespace SeraphLeveling.Patches
             }
 
             // Process Technical unlock trait (translocator gear cost reduction)
-            bool technicalUnlocked = eplr.WatchedAttributes.GetBool(AttributeModifierDefinitions.Technical.UnlockedKey, false);
-            if (technicalUnlocked && !SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Technical))
-            {
-                string plainTechnicalTraitName = Lang.Get("seraphleveling:trait-sittechnicalmastery");
-                string dynamicTechnicalTrait = BuildLocalizedTraitLine("technical", "seraphleveling:trait-technical-dynamic");
-
-                // Re-check hasNoTraits
-                hasNoTraits = HasNoTraits(__result);
-
-                if (hasNoTraits)
-                {
-                    __result = dynamicTechnicalTrait;
-                }
-                else if (ContainsOrphanTraitName(__result, plainTechnicalTraitName))
-                {
-                    __result = ReplaceOrphanTraitName(__result, plainTechnicalTraitName, dynamicTechnicalTrait);
-                }
-                else
-                {
-                    __result = __result + "\n" + dynamicTechnicalTrait;
-                }
-            }
+            TraitDefinitions.Technical.AppendTraitText(eplr, ref __result);
 
             // Process Hardy Health unlock trait (+5 HP)
             bool hardyHealthUnlocked = eplr.WatchedAttributes.GetBool(SeraphLevelingModSystem.WATCHED_HARDY_HEALTH_UNLOCKED, false);
@@ -634,78 +592,13 @@ namespace SeraphLeveling.Patches
             }
 
             // Process Bowyer unlock trait (crude bow crafting)
-            bool bowyerUnlocked = eplr.WatchedAttributes.GetBool(AttributeModifierDefinitions.Bowyer.UnlockedKey, false);
-            if (bowyerUnlocked && !SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Bowyer))
-            {
-                // Skip if the player's class already shows a vanilla Bowyer line — vanilla covers it.
-                // (The unlock stat is still applied via ApplyBowyerBonusStatic; this only controls display.)
-                string plainBowyerTraitName = Lang.Get("seraphleveling:trait-sitbowyermastery");
-                string dynamicBowyerTrait = BuildLocalizedTraitLine("bowyer", "seraphleveling:trait-bowyer-dynamic");
-
-                // Re-check hasNoTraits
-                hasNoTraits = HasNoTraits(__result);
-
-                if (hasNoTraits)
-                {
-                    __result = dynamicBowyerTrait;
-                }
-                else if (ContainsOrphanTraitName(__result, plainBowyerTraitName))
-                {
-                    __result = ReplaceOrphanTraitName(__result, plainBowyerTraitName, dynamicBowyerTrait);
-                }
-                else
-                {
-                    __result = __result + "\n" + dynamicBowyerTrait;
-                }
-            }
+            TraitDefinitions.Bowyer.AppendTraitText(eplr, ref __result);
 
             // Process Improviser unlock trait (sling crafting)
-            bool improviserUnlocked = eplr.WatchedAttributes.GetBool(AttributeModifierDefinitions.Improviser.UnlockedKey, false);
-            if (improviserUnlocked && !SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Improviser))
-            {
-                string plainImproviserTraitName = Lang.Get("seraphleveling:trait-sitimprovisermastery");
-                string dynamicImproviserTrait = BuildLocalizedTraitLine("improviser", "seraphleveling:trait-improviser-dynamic");
-
-                // Re-check hasNoTraits
-                hasNoTraits = HasNoTraits(__result);
-
-                if (hasNoTraits)
-                {
-                    __result = dynamicImproviserTrait;
-                }
-                else if (ContainsOrphanTraitName(__result, plainImproviserTraitName))
-                {
-                    __result = ReplaceOrphanTraitName(__result, plainImproviserTraitName, dynamicImproviserTrait);
-                }
-                else
-                {
-                    __result = __result + "\n" + dynamicImproviserTrait;
-                }
-            }
+            TraitDefinitions.Improviser.AppendTraitText(eplr, ref __result);
 
             // Process Tinkerer unlock trait (tuning spear crafting)
-            bool tinkererUnlocked = eplr.WatchedAttributes.GetBool(AttributeModifierDefinitions.Tinkerer.UnlockedKey, false);
-            if (tinkererUnlocked && !SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Tinkerer))
-            {
-                string plainTinkererTraitName = Lang.Get("seraphleveling:trait-sittinkerermastery");
-                string dynamicTinkererTrait = BuildLocalizedTraitLine("tinkerer", "seraphleveling:trait-tinkerer-dynamic");
-
-                // Re-check hasNoTraits
-                hasNoTraits = HasNoTraits(__result);
-
-                if (hasNoTraits)
-                {
-                    __result = dynamicTinkererTrait;
-                }
-                else if (ContainsOrphanTraitName(__result, plainTinkererTraitName))
-                {
-                    __result = ReplaceOrphanTraitName(__result, plainTinkererTraitName, dynamicTinkererTrait);
-                }
-                else
-                {
-                    __result = __result + "\n" + dynamicTinkererTrait;
-                }
-            }
+            TraitDefinitions.Tinkerer.AppendTraitText(eplr, ref __result);
 
             // Process Merciless unlock trait (shortsword/shield crafting)
             bool mercilessUnlocked = eplr.WatchedAttributes.GetBool(SeraphLevelingModSystem.WATCHED_MERCILESS_UNLOCKED, false);
@@ -1230,7 +1123,7 @@ namespace SeraphLeveling.Patches
         /// Returns true if plainName appears as a standalone entry in text
         /// (followed by a newline or end-of-string), not as a substring of a longer vanilla line.
         /// </summary>
-        private static bool ContainsOrphanTraitName(string text, string plainName)
+        public static bool ContainsOrphanTraitName(string text, string plainName)
         {
             if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(plainName)) return false;
             return GetOrphanTraitPattern(plainName).IsMatch(text);
@@ -1240,7 +1133,7 @@ namespace SeraphLeveling.Patches
         /// Replaces standalone occurrences of plainName with the given replacement.
         /// Preserves the leading newline if matched. Vanilla lines are left untouched.
         /// </summary>
-        private static string ReplaceOrphanTraitName(string text, string plainName, string replacement)
+        public static string ReplaceOrphanTraitName(string text, string plainName, string replacement)
         {
             if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(plainName)) return text;
             return GetOrphanTraitPattern(plainName).Replace(text, m =>
@@ -1404,7 +1297,7 @@ namespace SeraphLeveling.Patches
             return text;
         }
 
-        private static bool HasNoTraits(string text)
+        public static bool HasNoTraits(string text)
         {
             // Get the "no traits" message - vanilla uses this for classes like Commoner.
             // The actual vanilla lang key is the literal phrase "No positive or negative traits"

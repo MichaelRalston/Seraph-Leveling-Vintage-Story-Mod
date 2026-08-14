@@ -161,6 +161,11 @@ namespace SeraphLeveling.Data.Attributes
             var progress = GetDict(player);
             sb.AppendLine($"{Name} trait: {(progress.IsUnlocked ? "UNLOCKED" : "Locked")}");
         }
+
+        public override bool ShouldDisplay(EntityPlayer player)
+        {
+            return player.WatchedAttributes.GetBool(UnlockedKey, false);
+        }
     }
 
     public interface IUnlockedAttributeModifierProgressData
