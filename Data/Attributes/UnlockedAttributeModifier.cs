@@ -166,6 +166,12 @@ namespace SeraphLeveling.Data.Attributes
         {
             return player.WatchedAttributes.GetBool(UnlockedKey, false);
         }
+
+        public override object GetLocalizedTraitTextParam(EntityPlayer player)
+        {
+            // Unlocked attributes don't have numeric parameters to be included dynamically in the trait text
+            return null;
+        }
     }
 
     public interface IUnlockedAttributeModifierProgressData

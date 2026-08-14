@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using SeraphLeveling.Patches;
 using Vintagestory.API.Common;
 using Vintagestory.API.Server;
 
@@ -8,8 +9,10 @@ namespace SeraphLeveling.Data.Attributes
     public interface ILeveledAttributeModifierDefinition
     {
         public string Name { get; }
+        public string StatName { get; }
         public int GetCreditsForPlayer(IPlayer player);
         public bool IsLeveledForPlayer(IPlayer player, int requiredCredits) => GetCreditsForPlayer(player) >= requiredCredits;
+        public int GetBonusPercent(EntityPlayer player);
 
         /// <summary>
         /// Registers a method to be called every time the credit total for this attribute changes for a player
@@ -360,6 +363,18 @@ namespace SeraphLeveling.Data.Attributes
         public override bool ShouldDisplay(EntityPlayer player)
         {
             return player.WatchedAttributes.GetInt(WatchedLevel, 0) > 0;
+        }
+
+        public virtual int GetBonusPercent(EntityPlayer player)
+        {
+            var retVal = player.WatchedAttributes.GetInt(WatchedBonus, 0);
+            CharacterSystemPatches.ClientApi?.Logger?.Debug($"   [Verdus] Found bonus percent for attribute {Id}: {retVal}");
+            return retVal;
+        }
+
+        public override object GetLocalizedTraitTextParam(EntityPlayer player)
+        {
+            return player?.Player == null ? null : GetDict(player.Player).TotalCredits;
         }
     }
 

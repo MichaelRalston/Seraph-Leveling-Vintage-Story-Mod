@@ -25,6 +25,8 @@ namespace SeraphLeveling.Data.Traits
         public static readonly TraitDefinition Fleetfooted = new()
         {
             Id = "fleetfooted",
+            PlainTraitNameKey = "seraphleveling:trait-sitwalkingmastery",
+            MergeWithVanilla = true,
             Attributes = [ 
                 (AttributeModifierDefinitions.WalkingSpeed, 10)
             ]

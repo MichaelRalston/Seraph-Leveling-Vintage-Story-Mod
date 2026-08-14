@@ -24,6 +24,7 @@ namespace SeraphLeveling.Data.Traits
                 field?.ForEach(req => req.SatisfactionChanged += OnRequirementSatisfactionChanged);
             }
         } = [];
+        public bool MergeWithVanilla { get; init; } = false;
         public virtual string PlainTraitNameKey
         {
             get => field ??= $"seraphleveling:trait-sit{Id}mastery"; init;
@@ -83,7 +84,7 @@ namespace SeraphLeveling.Data.Traits
 
         protected virtual bool ShouldDisplay(EntityPlayer player)
         {
-            return Attributes.Any(a => a.Item1.ShouldDisplay(player)) && !HasVanillaTrait(player);
+            return Attributes.Any(a => a.Item1.ShouldDisplay(player)) && (MergeWithVanilla || !HasVanillaTrait(player));
         }
 
         public virtual void AppendTraitText(EntityPlayer player, ref string result)
@@ -91,20 +92,46 @@ namespace SeraphLeveling.Data.Traits
             if (ShouldDisplay(player))
             {
                 string plainTraitName = Lang.Get(PlainTraitNameKey);
-                string dynamicTraitText = BuildLocalizedTraitLine();
-                if (CharacterSystemPatches.HasNoTraits(result))
+                string dynamicTraitText = BuildLocalizedTraitLine(player);
+                bool hasVanillaTrait = SeraphLevelingModSystem.PlayerHasTrait(player, this);
+                CharacterSystemPatches.ClientApi?.Logger?.Debug($"[Verdus] Calling AppendTraitText for trait {Id}: MergeWithVanilla={MergeWithVanilla}, hasVanillaTrait={hasVanillaTrait}");
+                if (MergeWithVanilla && hasVanillaTrait)
                 {
+                    // Class already has vanilla trait - update the inline walk speed value (locale-aware).
+                    var combinedBonuses = GetCombinedAttributeBonuses(player);
+                    CharacterSystemPatches.ClientApi?.Logger?.Debug($"   [Verdus] Combined bonuses for trait {Id}: {string.Join(Environment.NewLine, combinedBonuses.ToDictionary(kvp => kvp.Key.Name, kvp => kvp.Value))}");
+                    foreach (var key in combinedBonuses.Keys)
+                    {
+                        result = CharacterSystemPatches.ReplaceVanillaCharAttribute(result, key.StatName, 0.01D * key.GetBonusPercent(player), combinedBonuses[key]);
+                        CharacterSystemPatches.ClientApi?.Logger?.Debug($"      [Verdus] Result after replacing vanilla char attribute {key.Name}: {result}");
+                        result = CharacterSystemPatches.RemoveOrphanTraitName(result, plainTraitName);
+                        CharacterSystemPatches.ClientApi?.Logger?.Debug($"      [Verdus] Result after removing orphan trait name {key.Name}: {result}");
+                    }
+                }
+                else if (CharacterSystemPatches.HasNoTraits(result))
+                {
+                    // Commoner or other class with no traits - replace entirely with our dynamic trait text
                     result = dynamicTraitText;
                 }
                 else if (CharacterSystemPatches.ContainsOrphanTraitName(result, plainTraitName))
                 {
+                    // We have our dynamic trait but no vanilla trait - replace orphan plain name with dynamic version
                     result = CharacterSystemPatches.ReplaceOrphanTraitName(result, plainTraitName, dynamicTraitText);
                 }
                 else
                 {
+                    // Has other traits but no vanilla trait at all - append our dynamic trait text
                     result = result + "\n" + dynamicTraitText;
                 }
             }
+        }
+
+        protected virtual Dictionary<ILeveledAttributeModifierDefinition, int> GetCombinedAttributeBonuses(EntityPlayer player)
+        {
+            return Attributes
+                    .Select(tuple => tuple.Item1 is ILeveledAttributeModifierDefinition leveledAttr ? (leveledAttr, tuple.Item2) : (null, 0))
+                    .Where(tuple => tuple.leveledAttr != null)
+                    .ToDictionary(tuple => tuple.leveledAttr, tuple => tuple.Item2 + tuple.leveledAttr.GetBonusPercent(player));
         }
 
         /// <summary>
@@ -115,16 +142,16 @@ namespace SeraphLeveling.Data.Traits
         /// values. The seraphleveling lang values store only the inner description text — the
         /// trait label and font wrapper come from this helper.
         /// </summary>
-        protected virtual string BuildLocalizedTraitLine()
+        protected virtual string BuildLocalizedTraitLine(EntityPlayer player)
         {
             string traitName = Lang.Get("trait-" + Id);
-            string desc = Lang.Get(DynamicTraitTextKey, GetLocalizedTraitTextParams());
+            string desc = Lang.Get(DynamicTraitTextKey, GetLocalizedTraitTextParams(player));
             return Lang.Get("traitwithattributes", traitName, desc);
         }
 
-        protected virtual object[] GetLocalizedTraitTextParams()
+        protected virtual object[] GetLocalizedTraitTextParams(EntityPlayer player)
         {
-            return [];
+            return Attributes.Select(tuple => tuple.Item1.GetLocalizedTraitTextParam(player)).Where(param => param != null).ToArray();
         }
     }
 }

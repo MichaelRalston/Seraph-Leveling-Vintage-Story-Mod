@@ -27,6 +27,8 @@ namespace SeraphLeveling.Data.Attributes
         /// Determine whether this attribute should be shown in trait text on the character screen
         /// </summary>
         public abstract bool ShouldDisplay(EntityPlayer player);
+
+        public abstract object GetLocalizedTraitTextParam(EntityPlayer player);
     }
 
     public interface ISaveableAttribute : IAttribute
@@ -61,6 +63,7 @@ namespace SeraphLeveling.Data.Attributes
         public virtual byte PersistenceVersion { get; init; } = 1;
         public abstract void CollectStatus(IPlayer player, StringBuilder sb);
         public abstract bool ShouldDisplay(EntityPlayer player);
+        public abstract object GetLocalizedTraitTextParam(EntityPlayer player);
 
         public virtual void Unlock(IServerPlayer player, bool notify = false)
         {

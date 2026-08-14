@@ -190,38 +190,7 @@ namespace SeraphLeveling.Patches
             }
 
             // Process walking progression (Fleetfooted trait)
-            if (walkingLevel > 0)
-            {
-                string plainWalkingTraitName = Lang.Get("seraphleveling:trait-sitwalkingmastery");
-
-                // Re-check hasNoTraits after ranged processing
-                hasNoTraits = HasNoTraits(__result);
-
-                if (hasVanillaFleetfooted)
-                {
-                    // Class already has Fleetfooted - update the inline walk speed value (locale-aware).
-                    int combinedBonus = SeraphLevelingModSystem.VANILLA_FLEETFOOTED_WALK_BONUS + walkingBonus;
-                    __result = ReplaceVanillaCharAttribute(__result, "walkspeed", 0.1, combinedBonus);
-
-                    __result = RemoveOrphanTraitName(__result, plainWalkingTraitName);
-                }
-                else if (hasNoTraits)
-                {
-                    // Commoner or other class with no traits - replace entirely with our dynamic Fleetfooted
-                    __result = BuildLocalizedTraitLine("fleetfooted", "seraphleveling:trait-fleetfooted-dynamic", walkingBonus);
-                }
-                else if (ContainsOrphanTraitName(__result, plainWalkingTraitName))
-                {
-                    // We have our trait but no vanilla Fleetfooted - replace orphan plain name with dynamic version
-                    __result = ReplaceOrphanTraitName(__result, plainWalkingTraitName,
-                        BuildLocalizedTraitLine("fleetfooted", "seraphleveling:trait-fleetfooted-dynamic", walkingBonus));
-                }
-                else
-                {
-                    // Has other traits but no Fleetfooted at all - append our dynamic Fleetfooted
-                    __result = __result + "\n" + BuildLocalizedTraitLine("fleetfooted", "seraphleveling:trait-fleetfooted-dynamic", walkingBonus);
-                }
-            }
+            TraitDefinitions.Fleetfooted.AppendTraitText(eplr, ref __result);
 
             // Process armor progression (Soldier trait - armor durability and speed penalty)
             if (armorDurabilityLevel > 0 || armorWalkSpeedLevel > 0)
@@ -1144,7 +1113,7 @@ namespace SeraphLeveling.Patches
         /// Removes standalone occurrences of plainName (and the preceding newline if present).
         /// Vanilla lines are left untouched.
         /// </summary>
-        private static string RemoveOrphanTraitName(string text, string plainName)
+        public static string RemoveOrphanTraitName(string text, string plainName)
         {
             if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(plainName)) return text;
             return GetOrphanTraitPattern(plainName).Replace(text, "");
@@ -1214,7 +1183,7 @@ namespace SeraphLeveling.Patches
         /// (e.g., Blackguard's Hardy +10% mining speed) and we want to combine it with our
         /// progression bonus inline rather than replacing the whole line.
         /// </summary>
-        private static string ReplaceVanillaCharAttribute(string text, string statKey, double baseValue, int newPercent)
+        public static string ReplaceVanillaCharAttribute(string text, string statKey, double baseValue, int newPercent)
         {
             string baseLangKey = "charattribute-" + statKey + "-" +
                 baseValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
