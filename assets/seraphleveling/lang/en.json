@@ -135,5 +135,11 @@
   "message-ravenous-removed": "Ravenous overcome! Your hunger is now under control.",
 
   "trait-claustrophobic-dynamic": "-{0}% ore drop rate, -{1}% mining speed",
-  "trait-claustrophobic-mining-only-dynamic": "<font color=\"#ff8484\">• Claustrophobic </font> <font opacity=\"0.6\">(-{0}% mining speed)</font>"
+  "trait-claustrophobic-mining-only-dynamic": "<font color=\"#ff8484\">• Claustrophobic </font> <font opacity=\"0.6\">(-{0}% mining speed)</font>",
+
+  "attribute-maxhealth-contents": "{0} health points",
+  "attribute-rangedaccuracy-contents": "{0}% ranged accuracy",
+  "attribute-rangeddamage-contents": "{0}% ranged damage",
+  "attribute-rangeddistance-contents": "{0}% ranged distance",
+  "attribute-walkingspeed-contents": "{0}% walk speed"
 }

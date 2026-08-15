@@ -21,6 +21,8 @@ namespace SeraphLeveling.Patches
         // localization check.
         public const string NO_TRAITS_KEY = "No positive or negative traits";
 
+        public const string FULL_TRAIT_MESSAGE_KEY = "traitwithattributes";
+
         /// <summary>
         /// Postfix for getClassTraitText - adds dynamic mining and melee progression info.
         /// The method has NO parameters - it's an instance method on CharacterSystem.
@@ -150,47 +152,10 @@ namespace SeraphLeveling.Patches
 
             // Process ranged progression (Focused trait)
             // Only show Focused when any bonus > 0 (after negative traits are cancelled for that stat)
-            if (rangedDamageBonus > 0 || rangedAccuracyBonus > 0 || rangedDistanceBonus > 0)
-            {
-                string plainRangedTraitName = Lang.Get("seraphleveling:trait-sitrangedmastery");
-
-                // Re-check hasNoTraits after melee processing
-                hasNoTraits = HasNoTraits(__result);
-
-                if (hasVanillaFocused)
-                {
-                    // Class already has Focused (e.g., Hunter) - update each existing inline value.
-                    int combinedDamage = rangedDamageBonus + AttributeModifierDefinitions.RangedDamage.CalculateLevelFromTraits(eplr);
-                    __result = ReplaceVanillaCharAttribute(__result, "rangedWeaponsDamage", 0.2, combinedDamage);
-
-                    int combinedAccuracy = rangedAccuracyBonus + AttributeModifierDefinitions.RangedAccuracy.CalculateLevelFromTraits(eplr);
-                    __result = ReplaceVanillaCharAttribute(__result, "rangedWeaponsAcc", 0.3, combinedAccuracy);
-
-                    int combinedDistance = rangedDistanceBonus + AttributeModifierDefinitions.RangedDistance.CalculateLevelFromTraits(eplr);
-                    __result = ReplaceVanillaCharAttribute(__result, "bowDrawingStrength", 0.2, combinedDistance);
-
-                    __result = RemoveOrphanTraitName(__result, plainRangedTraitName);
-                }
-                else if (hasNoTraits)
-                {
-                    // Commoner or other class with no traits - replace entirely with our dynamic Focused
-                    __result = BuildLocalizedTraitLine("focused", "seraphleveling:trait-focused-dynamic", rangedDamageBonus, rangedAccuracyBonus, rangedDistanceBonus);
-                }
-                else if (ContainsOrphanTraitName(__result, plainRangedTraitName))
-                {
-                    // We have our trait but no vanilla Focused - replace orphan plain name with dynamic version
-                    __result = ReplaceOrphanTraitName(__result, plainRangedTraitName,
-                        BuildLocalizedTraitLine("focused", "seraphleveling:trait-focused-dynamic", rangedDamageBonus, rangedAccuracyBonus, rangedDistanceBonus));
-                }
-                else
-                {
-                    // Has other traits but no Focused at all - append our dynamic Focused
-                    __result = __result + "\n" + BuildLocalizedTraitLine("focused", "seraphleveling:trait-focused-dynamic", rangedDamageBonus, rangedAccuracyBonus, rangedDistanceBonus);
-                }
-            }
+            TraitDefinitions.Focused.BuildTraitText(eplr, ref __result);
 
             // Process walking progression (Fleetfooted trait)
-            TraitDefinitions.Fleetfooted.AppendTraitText(eplr, ref __result);
+            TraitDefinitions.Fleetfooted.BuildTraitText(eplr, ref __result);
 
             // Process armor progression (Soldier trait - armor durability and speed penalty)
             if (armorDurabilityLevel > 0 || armorWalkSpeedLevel > 0)
@@ -249,7 +214,7 @@ namespace SeraphLeveling.Patches
             }
 
             // Process Clothier trait (unlocked by wearing 20 unique clothes)
-            TraitDefinitions.Clothier.AppendTraitText(eplr, ref __result);
+            TraitDefinitions.Clothier.BuildTraitText(eplr, ref __result);
 
             // Process Mender trait (improves armor/clothing durability)
             int menderLevel = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_MENDER_LEVEL, 0);
@@ -513,7 +478,7 @@ namespace SeraphLeveling.Patches
             }
 
             // Process Technical unlock trait (translocator gear cost reduction)
-            TraitDefinitions.Technical.AppendTraitText(eplr, ref __result);
+            TraitDefinitions.Technical.BuildTraitText(eplr, ref __result);
 
             // Process Hardy Health unlock trait (+5 HP)
             bool hardyHealthUnlocked = eplr.WatchedAttributes.GetBool(SeraphLevelingModSystem.WATCHED_HARDY_HEALTH_UNLOCKED, false);
@@ -561,13 +526,13 @@ namespace SeraphLeveling.Patches
             }
 
             // Process Bowyer unlock trait (crude bow crafting)
-            TraitDefinitions.Bowyer.AppendTraitText(eplr, ref __result);
+            TraitDefinitions.Bowyer.BuildTraitText(eplr, ref __result);
 
             // Process Improviser unlock trait (sling crafting)
-            TraitDefinitions.Improviser.AppendTraitText(eplr, ref __result);
+            TraitDefinitions.Improviser.BuildTraitText(eplr, ref __result);
 
             // Process Tinkerer unlock trait (tuning spear crafting)
-            TraitDefinitions.Tinkerer.AppendTraitText(eplr, ref __result);
+            TraitDefinitions.Tinkerer.BuildTraitText(eplr, ref __result);
 
             // Process Merciless unlock trait (shortsword/shield crafting)
             bool mercilessUnlocked = eplr.WatchedAttributes.GetBool(SeraphLevelingModSystem.WATCHED_MERCILESS_UNLOCKED, false);
@@ -715,21 +680,7 @@ namespace SeraphLeveling.Patches
 
             // Frail trait (Malefactor, Clockmaker) - HP and ranged distance penalty.
             // Both penalties cancelled together at ranged level 25.
-            bool hasFrail = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Frail);
-            int frailDistanceRemaining = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_FRAIL_DISTANCE_REMAINING, 0);
-            float frailHpRemaining = eplr.WatchedAttributes.GetFloat(SeraphLevelingModSystem.WATCHED_FRAIL_HP_REMAINING, 0f);
-            if (hasFrail)
-            {
-                if (frailDistanceRemaining > 0 || frailHpRemaining > 0)
-                {
-                    string dynamicFrailTrait = BuildLocalizedTraitLine("frail", "seraphleveling:trait-frail-dynamic", frailHpRemaining, frailDistanceRemaining);
-                    __result = ReplaceVanillaTraitLine(__result, "frail", dynamicFrailTrait);
-                }
-                else
-                {
-                    __result = RemoveVanillaTraitLine(__result, "frail");
-                }
-            }
+            TraitDefinitions.Frail.BuildTraitText(eplr, ref __result);
 
             // Heavyhanded trait (Blackguard) - vessel, foraging, wild crop penalties.
             bool hasHeavyhanded = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Heavyhanded);
@@ -1157,7 +1108,7 @@ namespace SeraphLeveling.Patches
         /// leading newline if matched (so adjacent trait entries stay separated). No-op if the
         /// line isn't found.
         /// </summary>
-        private static string ReplaceVanillaTraitLine(string text, string traitCode, string replacement)
+        public static string ReplaceVanillaTraitLine(string text, string traitCode, string replacement)
         {
             var regex = GetVanillaTraitLineRegex(traitCode);
             if (regex == null) return text;
@@ -1168,7 +1119,7 @@ namespace SeraphLeveling.Patches
         /// Removes the entire vanilla trait line, including the leading newline if matched.
         /// No-op if the line isn't found.
         /// </summary>
-        private static string RemoveVanillaTraitLine(string text, string traitCode)
+        public static string RemoveVanillaTraitLine(string text, string traitCode)
         {
             var regex = GetVanillaTraitLineRegex(traitCode);
             if (regex == null) return text;

@@ -557,8 +557,8 @@ namespace SeraphLeveling
                     .DistinctBy(trait => trait.Id)
                     .SelectMany(trait => trait.Attributes, (trait, attrKvp) => new
                     {
-                        Attribute = attrKvp.Key,
-                        TraitTuple = (Trait: trait, Value: attrKvp.Value)
+                        Attribute = attrKvp.Attribute,
+                        TraitTuple = (Trait: trait, Value: attrKvp.ModifierValue)
                     });
 
             // 3. Extract the unique attributes

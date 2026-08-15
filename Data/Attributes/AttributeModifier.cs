@@ -6,6 +6,7 @@ using System.Text;
 using Vintagestory.API.Server;
 using Vintagestory.API.Common;
 using System.Linq;
+using SeraphLeveling.Patches;
 
 namespace SeraphLeveling.Data.Attributes
 {
@@ -339,5 +340,116 @@ namespace SeraphLeveling.Data.Attributes
 
         public abstract void ReadVersion(byte version, BinaryReader reader);
         public abstract void WriteOut(BinaryWriter writer);
+    }
+
+    public delegate void ActiveStatusUpdatedDelegate(IServerPlayer player, bool newValue);
+
+    public interface IAttributeModifier
+    {
+        public ISaveableAttribute Attribute { get; }
+        public int ModifierValue { get; }
+        public bool HasRequirements { get; }
+        public string DynamicAttributeContentsKey { get; }
+
+        public event ActiveStatusUpdatedDelegate ActiveStatusUpdated;
+
+        public bool IsActive(IPlayer player);
+
+        /// <summary>
+        /// Get a status string for the attribute modifier's requirements when the player uses the /trait command
+        /// </summary>
+        public abstract void CollectRequirementStatus(IPlayer player, StringBuilder sb);
+
+        public static IAttributeModifier Bonus(ISaveableAttribute attribute, int absModifierValue, List<IAttributeRequirement> unlockWith = null)
+        {
+            if (absModifierValue <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(absModifierValue), absModifierValue, "Modifier value must be given as a positive");
+            }
+            return new Instance(attribute, absModifierValue, unlockWith, null);
+        }
+
+        public static IAttributeModifier Penalty(ISaveableAttribute attribute, int absModifierValue, List<IAttributeRequirement> removeWith = null)
+        {
+            if (absModifierValue <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(absModifierValue), absModifierValue, "Modifier value must be given as a positive");
+            }
+            return new Instance(attribute, -absModifierValue, null, removeWith);
+        }
+
+        private record class Instance : IAttributeModifier
+        {
+            public Instance(ISaveableAttribute attribute, int modifierValue, List<IAttributeRequirement> unlockWith = null, List<IAttributeRequirement> removeWith = null)
+            {
+                Attribute = attribute;
+                ModifierValue = modifierValue;
+                UnlockWith = unlockWith ?? [];
+                UnlockWith.ForEach(req => req.SatisfactionChanged += OnRequirementSatisfactionChanged);
+                RemoveWith = removeWith ?? [];
+                RemoveWith.ForEach(req => req.SatisfactionChanged += OnRequirementSatisfactionChanged);
+            }
+
+            public ISaveableAttribute Attribute { get; init; }
+
+            public int ModifierValue { get; init; }
+            private List<IAttributeRequirement> UnlockWith { get; init; }
+            private List<IAttributeRequirement> RemoveWith { get; init; }
+            public bool HasRequirements => UnlockWith.Count > 0 || RemoveWith.Count > 0;
+            public string DynamicAttributeContentsKey
+            {
+                get => field ??= $"seraphleveling:attribute-{Attribute.Id}-contents"; init;
+            }
+
+            public event ActiveStatusUpdatedDelegate ActiveStatusUpdated;
+
+            public void CollectRequirementStatus(IPlayer player, StringBuilder sb)
+            {
+                // Requirement output is specifically for unlocking bonus traits, not removing penalties
+                UnlockWith.ForEach(req => req.CollectStatus(player, sb));
+            }
+
+            public bool IsActive(IPlayer player)
+            {
+                CharacterSystemPatches.ClientApi.Logger.Debug($"   [Verdus] Calling IsActive for remove requirements for attrmod {Attribute.Id}");
+                foreach (var req in RemoveWith)
+                {
+                    CharacterSystemPatches.ClientApi.Logger.Debug($"      [Verdus] Req for attribute {req.AttributeId}: curval={req.CurrentValue(player)}, reqval={req.RequiredValue}, satisfied={req.IsSatisfied(player)}");
+                }
+                CharacterSystemPatches.ClientApi.Logger.Debug($"   [Verdus] Calling IsActive for unlock requirements for attrmod {Attribute.Id}");
+                foreach (var req in UnlockWith)
+                {
+                    CharacterSystemPatches.ClientApi.Logger.Debug($"      [Verdus] Req for attribute {req.AttributeId}: curval={req.CurrentValue(player)}, reqval={req.RequiredValue}, satisfied={req.IsSatisfied(player)}");
+                }
+
+                bool retVal;
+                if (player?.Entity == null)
+                {
+                    retVal = false;
+                }
+                else if (RemoveWith.Any(req => !req.IsSatisfied(player)))
+                {
+                    // If at least one removal requirement is present and any are unsatisfied, then the modifier is deactivated
+                    retVal = false;
+                }
+                else if (UnlockWith.All(req => req.IsSatisfied(player)))
+                {
+                    // If all unlock requirements are met, or none are specified, then the modifier becomes active
+                    retVal = Attribute.ShouldDisplay(player.Entity);
+                }
+                else
+                {
+                    // Otherwise, the modifier is inactive
+                    retVal = false;
+                }
+                CharacterSystemPatches.ClientApi.Logger.Debug($"[Verdus] Finished calling IsActive for attrmod {Attribute.Id}, active={retVal}");
+                return retVal;
+            }
+
+            private void OnRequirementSatisfactionChanged(IServerPlayer player, bool oldValue, bool newValue)
+            {
+                ActiveStatusUpdated?.Invoke(player, IsActive(player));
+            }
+        }
     }
 }
