@@ -30,7 +30,6 @@ namespace SeraphLeveling.Data.Attributes
 
     public abstract class LeveledAttributeModifierDefinition<D, PD> : AttributeModifierDefinition<D, PD>, ILeveledAttributeModifierDefinition where PD : LeveledAttributeModifierProgressData<D, PD> where D : LeveledAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
     {
-        public required string Name { get; init; }
         public required string Stat { get; init; }
         public required int GlobalMaxCredits { get; set; }
         public override byte PersistenceVersion { get; init; } = 2;
@@ -45,10 +44,6 @@ namespace SeraphLeveling.Data.Attributes
         public virtual string WatchedBonus
         {
             get => field ??= $"sit{Name}BonusPercent"; init;
-        }
-        public virtual string TraitCode
-        {
-            get => field ??= $"sit{SkillKey}mastery"; init;
         }
         public required string StatName { get; init; }
         public required int BaseIncrement { get; set; }

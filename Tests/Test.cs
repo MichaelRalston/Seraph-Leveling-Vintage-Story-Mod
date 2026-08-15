@@ -540,13 +540,13 @@ namespace SeraphLeveling.Tests
             }
 
             // PERS-003: Melee data exists in dictionary
-            bool hasMeleeData = SeraphLevelingModSystem.MeleeProgress.ContainsKey(playerUid);
+            bool hasMeleeData = AttributeModifierDefinitions.MeleeDamage.ProgressDictionary.ContainsKey(playerUid);
             AssertTrue("PERS-003", "Melee data exists in dictionary", hasMeleeData, "exists", "missing");
 
             // PERS-004: Melee WatchedAttributes matches dictionary
             if (hasMeleeData)
             {
-                var meleeData = SeraphLevelingModSystem.MeleeProgress[playerUid];
+                var meleeData = AttributeModifierDefinitions.MeleeDamage.ProgressDictionary[playerUid];
                 int watchedLevel = watchedAttrs.GetInt(SeraphLevelingModSystem.WATCHED_MELEE_LEVEL, -999);
                 AssertEqual("PERS-004", "Melee level synced to WatchedAttributes", meleeData.TotalCredits, watchedLevel);
             }
@@ -614,9 +614,9 @@ namespace SeraphLeveling.Tests
             // PERS-015: Melee data structure integrity
             if (hasMeleeData)
             {
-                var meleeData = SeraphLevelingModSystem.MeleeProgress[playerUid];
+                var meleeData = AttributeModifierDefinitions.MeleeDamage.ProgressDictionary[playerUid];
                 bool creditsValid = meleeData.TotalCredits >= 0;
-                bool weaponProgressValid = meleeData.WeaponProgress != null;
+                bool weaponProgressValid = meleeData.ToolProgress != null;
                 AssertTrue("PERS-015", "Melee data structure valid", creditsValid && weaponProgressValid, "valid", "corrupted");
             }
 

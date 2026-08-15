@@ -23,8 +23,8 @@ namespace SeraphLeveling.Data
         public double ExportedGameDay;
 
         public MiningAttributeModifierProgressData Mining;
-        public MeleeProgressData Melee;
-        public RangedDamageAttributeModifierProgressData Ranged;
+        public DamageAttributeModifierProgressData Melee;
+        public DamageAttributeModifierProgressData Ranged;
         public LeveledPartialAttributeModifierProgressData Walking;
         public LeveledPartialAttributeModifierProgressData Hunger;
         public ArmorProgressData Armor;

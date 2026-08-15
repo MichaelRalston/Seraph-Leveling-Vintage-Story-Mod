@@ -50,8 +50,10 @@ namespace SeraphLeveling.Data.Traits
         public static readonly TraitDefinition Farsighted = new()
         {
             Id = "farsighted",
-            Attributes = [
-            ]
+            Attributes = new()
+            {
+                [AttributeModifierDefinitions.MeleeDamage] = -15,
+            },
         };
 
         public static readonly TraitDefinition Claustrophobic = new()
@@ -110,8 +112,10 @@ namespace SeraphLeveling.Data.Traits
         public static readonly TraitDefinition Nervous = new()
         {
             Id = "nervous",
-            Attributes = [
-            ]
+            Attributes = new()
+            {
+                [AttributeModifierDefinitions.MeleeDamage] = -15,
+            },
         };
 
         public static readonly TraitDefinition Precise = new()
@@ -149,8 +153,10 @@ namespace SeraphLeveling.Data.Traits
         public static readonly TraitDefinition Soldier = new()
         {
             Id = "soldier",
-            Attributes = [
-            ]
+            Attributes = new()
+            {
+                [AttributeModifierDefinitions.MeleeDamage] = 30,
+            },
         };
 
         public static readonly TraitDefinition Hardy = new()
