@@ -39,7 +39,7 @@ namespace SeraphLeveling.Data.Traits
         }
         public virtual string DynamicTraitHeaderKey
         {
-            get => field ??= $"seraphleveling:trait-{Id}-header"; init;
+            get => field ??= $"trait-{Id}"; init;
         }
 
         /// <summary>
@@ -131,12 +131,10 @@ namespace SeraphLeveling.Data.Traits
                     CharacterSystemPatches.ClientApi.Logger.Debug($"      [Verdus] Calling BuildTraitText for trait {Id}: attr={mod.Attribute.Id}, key={mod.DynamicAttributeContentsKey}, lang token={retVal}");
                     return retVal == modKey ? null : retVal;
                 }).Where(token => token != null));
-                string dynamicContents = Lang.Get(CharacterSystemPatches.DYNAMIC_CONTENTS_MESSAGE_KEY, contentText);
-                string fullMessage = string.IsNullOrEmpty(contentText) ? "" : Lang.Get(CharacterSystemPatches.FULL_TRAIT_MESSAGE_KEY, headerText, dynamicContents);
+                string fullMessage = string.IsNullOrEmpty(contentText) ? "" : Lang.Get(CharacterSystemPatches.FULL_TRAIT_MESSAGE_KEY, headerText, contentText);
                 bool messageComplete = fullMessage != CharacterSystemPatches.FULL_TRAIT_MESSAGE_KEY;
                 CharacterSystemPatches.ClientApi.Logger.Debug($"   [Verdus] Calling BuildTraitText for trait {Id}: headerText={headerText}");
                 CharacterSystemPatches.ClientApi.Logger.Debug($"   [Verdus] Calling BuildTraitText for trait {Id}: contentText={contentText}");
-                CharacterSystemPatches.ClientApi.Logger.Debug($"   [Verdus] Calling BuildTraitText for trait {Id}: dynamicContents={dynamicContents}");
                 CharacterSystemPatches.ClientApi.Logger.Debug($"   [Verdus] Calling BuildTraitText for trait {Id}: fullMessage={fullMessage}");
                 if (messageComplete)
                 {

@@ -21,8 +21,7 @@ namespace SeraphLeveling.Patches
         // localization check.
         public const string NO_TRAITS_KEY = "No positive or negative traits";
 
-        public const string FULL_TRAIT_MESSAGE_KEY = "seraphleveling:trait-full-message";
-        public const string DYNAMIC_CONTENTS_MESSAGE_KEY = "seraphleveling:trait-dynamic-contents";
+        public const string FULL_TRAIT_MESSAGE_KEY = "traitwithattributes";
 
         /// <summary>
         /// Postfix for getClassTraitText - adds dynamic mining and melee progression info.

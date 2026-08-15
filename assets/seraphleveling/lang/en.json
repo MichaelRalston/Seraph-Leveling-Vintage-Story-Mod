@@ -137,13 +137,6 @@
   "trait-claustrophobic-dynamic": "-{0}% ore drop rate, -{1}% mining speed",
   "trait-claustrophobic-mining-only-dynamic": "<font color=\"#ff8484\">• Claustrophobic </font> <font opacity=\"0.6\">(-{0}% mining speed)</font>",
 
-  "trait-full-message": "{0} {1}",
-  "trait-dynamic-contents": "<font opacity=\"0.6\">({0})</font>",
-
-  "trait-fleetfooted-header": "<font color=\"#84ff84\">• Fleetfooted </font>",
-  "trait-focused-header": "<font color=\"#84ff84\">• Focused </font>",
-  "trait-frail-header": "<font color=\"#ff8484\">• Frail </font>",
-  
   "attribute-maxhealth-contents": "{0} health points",
   "attribute-rangedaccuracy-contents": "{0}% ranged accuracy",
   "attribute-rangeddamage-contents": "{0}% ranged damage",
