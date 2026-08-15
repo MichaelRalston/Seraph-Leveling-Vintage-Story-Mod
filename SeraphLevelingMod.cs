@@ -25,6 +25,9 @@ using SeraphLeveling.Data.Attributes;
 using SeraphLeveling.Data.Legacy;
 using Vintagestory.API.Util;
 using Microsoft.CSharp.RuntimeBinder;
+using System.Text.Json;
+using Newtonsoft.Json.Serialization;
+using Newtonsoft.Json;
 
 namespace SeraphLeveling
 {
@@ -551,12 +554,12 @@ namespace SeraphLeveling
             var flatAttributeMappings = activeMods
                     .SelectMany(mod => mod.CharacterClasses)
                     .SelectMany(charClass => charClass.Traits)
+                    .DistinctBy(trait => trait.Id)
                     .SelectMany(trait => trait.Attributes, (trait, attrKvp) => new
                     {
                         Attribute = attrKvp.Key,
                         TraitTuple = (Trait: trait, Value: attrKvp.Value)
-                    })
-                    .DistinctBy(x => x.TraitTuple.Trait.Id);
+                    });
 
             // 3. Extract the unique attributes
             LoadedAttributes = flatAttributeMappings
@@ -4650,6 +4653,7 @@ namespace SeraphLeveling
         {
             // Guard against persisting empty data after Dispose() has cleared dictionaries
             if (isDisposed) return;
+            PersistModList();
 
             foreach (var def in LoadedAttributes)
             {
@@ -4775,8 +4779,124 @@ namespace SeraphLeveling
                 }
             }
         }
+
+        const string MOD_LIST_SAVE_KEY = "sitModListData";
+        const string MOD_LIST_HEADER = "SML";
+        private static bool savedModList = false;
+        private void LoadModList()
+        {
+            byte[] data = ServerApi.WorldManager.SaveGame.GetData(MOD_LIST_SAVE_KEY);
+            if (data == null || data.Length == 0)
+            {
+                ServerApi.Logger.Debug($"[SeraphLeveling] No mod list data found in world save; either a fresh world or a port of the old Seraph Leveling.");
+                var legacyRangedDamage = new DamageAttributeModifierDefinition
+                {
+                    Id = AttributeModifierDefinitions.RangedDamage.Id,
+                    Name = "Ranged",
+                    PersistenceHeader = "SIR",
+                    SkillKey = "rangedlegacy",
+                    GlobalMaxCredits = AttributeModifierDefinitions.RangedDamage.GlobalMaxCredits,
+                    Stat = AttributeModifierDefinitions.RangedDamage.Stat,
+                    BaseIncrement = AttributeModifierDefinitions.RangedDamage.BaseIncrement,
+                    StatName = AttributeModifierDefinitions.RangedDamage.StatName,
+                    IncrementStep = AttributeModifierDefinitions.RangedDamage.IncrementStep,
+                    IncrementUnits = AttributeModifierDefinitions.RangedDamage.IncrementUnits,
+                    Tool = AttributeModifierDefinitions.RangedDamage.Tool
+                };
+                legacyRangedDamage.LoadProgress(ServerApi);
+                AttributeModifierDefinitions.RangedDamage.LoadProgress(ServerApi);
+                AttributeModifierDefinitions.RangedAccuracy.LoadProgress(ServerApi);
+                AttributeModifierDefinitions.RangedDistance.LoadProgress(ServerApi);
+                // These three were the same in the old mod, so if you only have damage... clone it.
+                if (!legacyRangedDamage.ProgressDictionary.IsEmpty && AttributeModifierDefinitions.RangedDamage.ProgressDictionary.IsEmpty && AttributeModifierDefinitions.RangedAccuracy.ProgressDictionary.IsEmpty && AttributeModifierDefinitions.RangedDistance.ProgressDictionary.IsEmpty)
+                {
+                    var snapshot = legacyRangedDamage.ProgressDictionary.ToArray();
+                    var options = new JsonSerializerSettings
+                    {
+                        // Forces serialization to include private fields
+                        ContractResolver = new DefaultContractResolver
+                        {
+                            IgnoreSerializableAttribute = true
+                        },
+                        // Allows it to bind to your existing parameterized/private constructors smoothly
+                        ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
+                        ObjectCreationHandling = ObjectCreationHandling.Replace
+                    };
+                    foreach (var kvp in snapshot)
+                    {
+                        string json = JsonConvert.SerializeObject(kvp.Value, options);
+                        ServerApi.Logger.Debug($"[SeraphLeveling] Porting legacy ranged damage for {kvp.Key}");
+                        AttributeModifierDefinitions.RangedDamage.ProgressDictionary.TryAdd(kvp.Key, JsonConvert.DeserializeObject<DamageAttributeModifierProgressData>(json, options));
+                        AttributeModifierDefinitions.RangedDamage.PersistProgress(ServerApi);
+                        AttributeModifierDefinitions.RangedAccuracy.ProgressDictionary.TryAdd(kvp.Key, JsonConvert.DeserializeObject<DamageAttributeModifierProgressData>(json, options));
+                        AttributeModifierDefinitions.RangedAccuracy.PersistProgress(ServerApi);
+                        AttributeModifierDefinitions.RangedDistance.ProgressDictionary.TryAdd(kvp.Key, JsonConvert.DeserializeObject<DamageAttributeModifierProgressData>(json, options));
+                        AttributeModifierDefinitions.RangedDistance.PersistProgress(ServerApi);
+                    }
+                }
+            }
+            else
+            {
+                using (var ms = new MemoryStream(data))
+                {
+                    using (var reader = new BinaryReader(ms))
+                    {
+                        var bytes = Encoding.ASCII.GetBytes(MOD_LIST_HEADER);
+                        bool hasProblem = false;
+                        foreach (var b in bytes)
+                        {
+                            byte bin = reader.ReadByte();
+                            hasProblem |= (bin != b);
+                        }
+                        if (hasProblem)
+                        {
+                            ServerApi.Logger.Warning($"[SeraphLeveling] Invalid mod list data format");
+                            return;
+                        }
+
+                        byte version = reader.ReadByte();
+                        if (version != 0x1)
+                        {
+                            ServerApi.Logger.Warning($"[SeraphLeveling] Unknown mod list data version");
+                        }
+                        // TODO: actually care about the contents, lol.
+                    }
+                }
+            }
+        }
+
+        private void PersistModList()
+        {
+            if (savedModList) return;
+            var snapshot = LoadedMods.ToArray();
+            byte[] data;
+            using (var ms = new MemoryStream())
+            {
+                using (var writer = new BinaryWriter(ms))
+                {
+                    var bytes = Encoding.ASCII.GetBytes(MOD_LIST_HEADER);
+                    foreach (var b in bytes)
+                    {
+                        writer.Write(b);
+                    }
+                    writer.Write((byte)0x1); // version.
+                    writer.Write(snapshot.Length);
+                    foreach (var mod in snapshot)
+                    {
+                        writer.Write(mod.ModId);
+                    }
+                }
+                data = ms.ToArray();
+            }
+
+            ServerApi.WorldManager.SaveGame.StoreData(MOD_LIST_HEADER, data);
+            savedModList = true;
+            ServerApi.Logger.Debug($"[SeraphLeveling] Persisted mod list.");
+        }
+
         private void LoadAllProgress()
         {
+            LoadModList();
             foreach (var definition in LoadedAttributes)
             {
                 definition.LoadProgress(ServerApi);
@@ -9803,7 +9923,7 @@ namespace SeraphLeveling
             {
                 definition.ApplyTraitTestSuite1Command(player);
             }
-            
+
             // Armor (both durability and walkspeed tracks)
             var armorProg = ArmorProgress.GetOrAdd(playerUid, _ => new ArmorProgressData());
             armorProg.TotalDurabilityCredits = CREDITS;
@@ -10638,14 +10758,6 @@ namespace SeraphLeveling
         // =========================================================================
 
         /// <summary>
-        /// Persist clothier progress to world save data.
-        /// </summary>
-        public static void PersistClothierProgress()
-        {
-            AttributeModifierDefinitions.Clothier.PersistProgress(ServerApi);
-        }
-
-        /// <summary>
         /// Load clothier progress from world save data.
         /// </summary>
         private void LoadClothierProgress()
@@ -10735,26 +10847,6 @@ namespace SeraphLeveling
         private void LoadHardyHealthProgress()
         {
             LoadProgress<HardyHealthProgressData>();
-        }
-
-        // =========================================================================
-        // BOWYER TRAIT PERSISTENCE
-        // =========================================================================
-
-        /// <summary>
-        /// Persist bowyer progress to world save data.
-        /// </summary>
-        public static void PersistBowyerProgress()
-        {
-            AttributeModifierDefinitions.Bowyer.PersistProgress(ServerApi);
-        }
-
-        /// <summary>
-        /// Load bowyer progress from world save data.
-        /// </summary>
-        private void LoadBowyerProgress()
-        {
-            AttributeModifierDefinitions.Bowyer.LoadProgress(ServerApi);
         }
 
         // =========================================================================
