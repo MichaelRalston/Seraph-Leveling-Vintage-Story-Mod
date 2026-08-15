@@ -45,7 +45,7 @@
     <PropertyGroup>
       <ModInfoContent>$([System.IO.File]::ReadAllText('$(ProjectDir)modinfo.json'))</ModInfoContent>
       <ModVersion>$([System.Text.RegularExpressions.Regex]::Match($(ModInfoContent), '"version":\s*"([^"]+)"').Groups[1].Value)</ModVersion>
-      <ModZipName>SeraphLeveling_$(ModVersion).zip</ModZipName>
+      <ModZipName>SeraphLevelingReClassed_$(ModVersion).zip</ModZipName>
       <ModOutDir>$(ProjectDir)bin\$(Configuration)\$(TargetFramework)</ModOutDir>
       <VSModData Condition="'$(VSMODDATA)' == ''">$(APPDATA)</VSModData>
     </PropertyGroup>
@@ -57,8 +57,8 @@
            alongside the current one (same modid = the game loads an arbitrary one).
            The trailing underscore means this does NOT match the separate
            SeraphLevelingExperimental_*.zip mod. -->
-      <OldZipsBin Include="$(ModOutDir)\SeraphLeveling_*.zip" />
-      <OldZipsDeploy Include="$(APPDATA)\VintagestoryData\Mods\SeraphLeveling_*.zip" />
+      <OldZipsBin Include="$(ModOutDir)\SeraphLevelingReClassed_*.zip" />
+      <OldZipsDeploy Include="$(APPDATA)\VintagestoryData\Mods\SeraphLevelingReClassed_*.zip" />
     </ItemGroup>
     <!-- 1. Clean old bin zips (bin is never locked) and build the new zip -->
     <Delete Files="@(OldZipsBin)" />
