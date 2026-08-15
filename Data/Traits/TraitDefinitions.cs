@@ -26,7 +26,6 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "fleetfooted",
             PlainTraitNameKey = "seraphleveling:trait-sitwalkingmastery",
-            MergeWithVanilla = true,
             Attributes = [
                 IAttributeModifier.Bonus(AttributeModifierDefinitions.WalkingSpeed, 10),
             ],

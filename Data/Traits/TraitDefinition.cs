@@ -28,7 +28,6 @@ namespace SeraphLeveling.Data.Traits
             get;
             init;
         } = [];
-        public bool MergeWithVanilla { get; init; } = false;
         public virtual string PlainTraitNameKey
         {
             get => field ??= $"seraphleveling:trait-sit{Id}mastery"; init;
