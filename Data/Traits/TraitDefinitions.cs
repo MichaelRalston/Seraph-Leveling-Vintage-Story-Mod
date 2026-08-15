@@ -121,8 +121,10 @@ namespace SeraphLeveling.Data.Traits
         public static readonly TraitDefinition Precise = new()
         {
             Id = "precise",
-            Attributes = [
-            ]
+            Attributes = new()
+            {
+                [AttributeModifierDefinitions.Precise] = 25,
+            }
         };
 
         public static readonly TraitDefinition Technical = new()

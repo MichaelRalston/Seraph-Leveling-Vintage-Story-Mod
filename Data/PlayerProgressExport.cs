@@ -34,7 +34,7 @@ namespace SeraphLeveling.Data
         public ResourcefulProgressData Resourceful;
         public ForagerProgressData Forager;
         public LeveledPartialAttributeModifierProgressData Furtive;
-        public PreciseProgressData Precise;
+        public DamageAttributeModifierProgressData Precise;
         public TechnicalAttributeModifierProgressData Technical;
         public HardyHealthProgressData HardyHealth;
         public BowyerAttributeModifierProgressData Bowyer;

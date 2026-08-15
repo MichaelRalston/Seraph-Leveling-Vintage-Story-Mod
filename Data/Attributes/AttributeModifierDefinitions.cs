@@ -189,5 +189,21 @@ namespace SeraphLeveling.Data.Attributes
             GlobalMaxCredits = 50,
             StatName = "meleeWeaponsDamage",
         };
+
+        public static readonly DamageAttributeModifierDefinition Precise = new()
+        {
+            Id = "precise",
+            Name = "Precise",
+            LongDescription = "mechanical damage",
+            Stat = "% mechanical damage",
+            SkillKey = "precise",
+            PersistenceHeader = "PRC",
+            Tool = ToolDefinitions.Weapon,
+            IncrementUnits = "damage",
+            BaseIncrement = 100,
+            IncrementStep = 100,
+            GlobalMaxCredits = 30,
+            StatName = "mechanicalsDamage",
+        };
     }
 }
