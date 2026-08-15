@@ -149,11 +149,16 @@ namespace SeraphLeveling.Data.Traits
         protected virtual Dictionary<ISaveableAttribute, int> GetCombinedAttributeBonuses(EntityPlayer player)
         {
             Dictionary<ISaveableAttribute, int> retVal = [];
+            bool hasVanillaTrait = HasVanillaTrait(player);
             foreach (var kvp in Attributes)
             {
                 if (kvp.Attribute is ILeveledAttributeModifierDefinition leveledAttr)
                 {
-                    retVal[leveledAttr] = kvp.ModifierValue + leveledAttr.GetBonusPercent(player);
+                    retVal[leveledAttr] = leveledAttr.GetBonusPercent(player);
+                    if (hasVanillaTrait)
+                    {
+                        retVal[leveledAttr] += kvp.ModifierValue;
+                    }
                 }
             }
             return retVal;
