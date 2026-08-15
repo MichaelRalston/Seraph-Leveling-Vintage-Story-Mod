@@ -38,7 +38,7 @@ namespace SeraphLeveling.Data.Traits
             Attributes = [
                 IAttributeModifier.Bonus(AttributeModifierDefinitions.Bowyer, 1, [
                     new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Bowyer },
-                    new LeveledAttributeRequirement { Attribute = AttributeModifierDefinitions.RangedDamage, ThresholdPercentage = 10 },
+                    new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.RangedDamage, ThresholdPercentage = 10 },
                 ])
             ],
             Requirements = [
@@ -58,7 +58,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "claustrophobic",
             Attributes = [
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.MiningSpeed, 10, [ new LeveledAttributeRequirement() { Attribute = AttributeModifierDefinitions.MiningSpeed, ThresholdPercentage = 0 }]),
+                IAttributeModifier.Penalty(AttributeModifierDefinitions.MiningSpeed, 10, [ new LeveledAttributeMaximumRequirement() { Attribute = AttributeModifierDefinitions.MiningSpeed, ThresholdPercentage = 0 }]),
                 // TODO Ore drop rate penalty
             ],
         };
@@ -97,7 +97,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "frail",
             Attributes = [
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.RangedDistance, 25, [ new LeveledAttributeRequirement() { Attribute = AttributeModifierDefinitions.RangedDistance, ThresholdPercentage = 0 }]),
+                IAttributeModifier.Penalty(AttributeModifierDefinitions.RangedDistance, 25, [ new LeveledAttributeMaximumRequirement { Attribute = AttributeModifierDefinitions.RangedDistance, ThresholdPercentage = 0 }]),
                 // TODO Ore drop rate penalty
             ],
         };
@@ -162,7 +162,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "ravenous",
             Attributes = [
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.HungerRate, 30, [ new LeveledAttributeRequirement { Attribute = AttributeModifierDefinitions.HungerRate, ThresholdPercentage = 0 }])
+                IAttributeModifier.Penalty(AttributeModifierDefinitions.HungerRate, 30, [ new LeveledAttributeMaximumRequirement { Attribute = AttributeModifierDefinitions.HungerRate, ThresholdPercentage = 0 }])
             ],
         };
 
@@ -170,7 +170,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "nearsighted",
             Attributes = [
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.RangedDamage, 15, [ new LeveledAttributeRequirement { Attribute = AttributeModifierDefinitions.RangedDamage, ThresholdPercentage = 0 }])
+                IAttributeModifier.Penalty(AttributeModifierDefinitions.RangedDamage, 15, [ new LeveledAttributeMaximumRequirement { Attribute = AttributeModifierDefinitions.RangedDamage, ThresholdPercentage = 0 }])
             ],
         };
 
@@ -207,7 +207,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "weak",
             Attributes = [
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.MiningSpeed, 10, [ new LeveledAttributeRequirement { Attribute = AttributeModifierDefinitions.MiningSpeed, ThresholdPercentage = 0 } ]),
+                IAttributeModifier.Penalty(AttributeModifierDefinitions.MiningSpeed, 10, [ new LeveledAttributeMaximumRequirement { Attribute = AttributeModifierDefinitions.MiningSpeed, ThresholdPercentage = 0 } ]),
                 // TODO Health penalty
             ],
         };

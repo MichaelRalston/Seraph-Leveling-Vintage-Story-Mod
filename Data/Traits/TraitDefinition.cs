@@ -104,6 +104,11 @@ namespace SeraphLeveling.Data.Traits
             return SeraphLevelingModSystem.PlayerHasTrait(player, this);
         }
 
+        protected virtual bool HasEarnedProgress(EntityPlayer player)
+        {
+            return Attributes.Any(mod => mod.Attribute.ShouldDisplay(player));
+        }
+
         protected virtual bool ShouldDisplay(EntityPlayer player)
         {
             return Attributes.Any(a => a.IsActive(player.Player));
@@ -112,6 +117,7 @@ namespace SeraphLeveling.Data.Traits
         public virtual void BuildTraitText(EntityPlayer player, ref string result)
         {
             bool shouldDisplay = ShouldDisplay(player);
+            bool hasEarnedProgress = HasEarnedProgress(player);
             bool hasVanillaTrait = HasVanillaTrait(player);
 
             CharacterSystemPatches.ClientApi.Logger.Debug($"[Verdus] Calling BuildTraitText for trait {Id}: shouldDisplay={shouldDisplay}, hasVanillaTrait={hasVanillaTrait}");
@@ -143,6 +149,10 @@ namespace SeraphLeveling.Data.Traits
                         result = result + "\n" + fullMessage;
                     }
                 }
+            }
+            else if (hasVanillaTrait && hasEarnedProgress)
+            {
+                result = CharacterSystemPatches.RemoveVanillaTraitLine(result, Id);
             }
         }
 

@@ -6,6 +6,7 @@ using System.Text;
 using Vintagestory.API.Server;
 using Vintagestory.API.Common;
 using System.Linq;
+using SeraphLeveling.Patches;
 
 namespace SeraphLeveling.Data.Attributes
 {
@@ -406,25 +407,39 @@ namespace SeraphLeveling.Data.Attributes
 
             public bool IsActive(IPlayer player)
             {
+                CharacterSystemPatches.ClientApi.Logger.Debug($"   [Verdus] Calling IsActive for remove requirements for attrmod {Attribute.Id}");
+                foreach (var req in RemoveWith)
+                {
+                    CharacterSystemPatches.ClientApi.Logger.Debug($"      [Verdus] Req for attribute {req.AttributeId}: curval={req.CurrentValue(player)}, reqval={req.RequiredValue}, satisfied={req.IsSatisfied(player)}");
+                }
+                CharacterSystemPatches.ClientApi.Logger.Debug($"   [Verdus] Calling IsActive for unlock requirements for attrmod {Attribute.Id}");
+                foreach (var req in UnlockWith)
+                {
+                    CharacterSystemPatches.ClientApi.Logger.Debug($"      [Verdus] Req for attribute {req.AttributeId}: curval={req.CurrentValue(player)}, reqval={req.RequiredValue}, satisfied={req.IsSatisfied(player)}");
+                }
+
+                bool retVal;
                 if (player?.Entity == null)
                 {
-                    return false;
+                    retVal = false;
                 }
                 else if (RemoveWith.Any(req => !req.IsSatisfied(player)))
                 {
-                    // If at least one removal requirement is present and any are unsatisfied, then the modifier remains active
-                    return Attribute.ShouldDisplay(player.Entity);
+                    // If at least one removal requirement is present and any are unsatisfied, then the modifier is deactivated
+                    retVal = false;
                 }
                 else if (UnlockWith.All(req => req.IsSatisfied(player)))
                 {
                     // If all unlock requirements are met, or none are specified, then the modifier becomes active
-                    return Attribute.ShouldDisplay(player.Entity);
+                    retVal = Attribute.ShouldDisplay(player.Entity);
                 }
                 else
                 {
                     // Otherwise, the modifier is inactive
-                    return false;
+                    retVal = false;
                 }
+                CharacterSystemPatches.ClientApi.Logger.Debug($"[Verdus] Finished calling IsActive for attrmod {Attribute.Id}, active={retVal}");
+                return retVal;
             }
 
             private void OnRequirementSatisfactionChanged(IServerPlayer player, bool oldValue, bool newValue)
