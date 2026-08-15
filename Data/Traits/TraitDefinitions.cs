@@ -129,7 +129,7 @@ namespace SeraphLeveling.Data.Traits
             Id = "tinkerer",
             Attributes = [
                 IAttributeModifier.Bonus(AttributeModifierDefinitions.Tinkerer, 1, [
-                    new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Tinkerer },
+                    new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Technical },
                     // TODO Precise 10%
                 ])
             ],
