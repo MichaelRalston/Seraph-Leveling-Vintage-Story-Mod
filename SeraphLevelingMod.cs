@@ -4822,10 +4822,10 @@ namespace SeraphLeveling
                         ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
                         ObjectCreationHandling = ObjectCreationHandling.Replace
                     };
+                    ServerApi.Logger.Debug($"[SeraphLeveling] Porting legacy ranged damage for {snapshot.Length} players.");
                     foreach (var kvp in snapshot)
                     {
                         string json = JsonConvert.SerializeObject(kvp.Value, options);
-                        ServerApi.Logger.Debug($"[SeraphLeveling] Porting legacy ranged damage for {kvp.Key}");
                         AttributeModifierDefinitions.RangedDamage.ProgressDictionary.TryAdd(kvp.Key, JsonConvert.DeserializeObject<DamageAttributeModifierProgressData>(json, options));
                         AttributeModifierDefinitions.RangedDamage.PersistProgress(ServerApi);
                         AttributeModifierDefinitions.RangedAccuracy.ProgressDictionary.TryAdd(kvp.Key, JsonConvert.DeserializeObject<DamageAttributeModifierProgressData>(json, options));
@@ -4834,6 +4834,7 @@ namespace SeraphLeveling
                         AttributeModifierDefinitions.RangedDistance.PersistProgress(ServerApi);
                     }
                 }
+                PersistModList();
             }
             else
             {
@@ -4889,7 +4890,7 @@ namespace SeraphLeveling
                 data = ms.ToArray();
             }
 
-            ServerApi.WorldManager.SaveGame.StoreData(MOD_LIST_HEADER, data);
+            ServerApi.WorldManager.SaveGame.StoreData(MOD_LIST_SAVE_KEY, data);
             savedModList = true;
             ServerApi.Logger.Debug($"[SeraphLeveling] Persisted mod list.");
         }
