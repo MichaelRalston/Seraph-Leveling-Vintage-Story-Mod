@@ -49,10 +49,9 @@ namespace SeraphLeveling.Data.Traits
         public static readonly TraitDefinition Farsighted = new()
         {
             Id = "farsighted",
-            Attributes = new()
-            {
-                [AttributeModifierDefinitions.MeleeDamage] = -15,
-            },
+            Attributes = [
+                IAttributeModifier.Penalty(AttributeModifierDefinitions.MeleeDamage, 15, [ new LeveledAttributeMaximumRequirement { Attribute = AttributeModifierDefinitions.MeleeDamage, ThresholdPercentage = 0 }]),
+            ],
         };
 
         public static readonly TraitDefinition Claustrophobic = new()
@@ -106,19 +105,17 @@ namespace SeraphLeveling.Data.Traits
         public static readonly TraitDefinition Nervous = new()
         {
             Id = "nervous",
-            Attributes = new()
-            {
-                [AttributeModifierDefinitions.MeleeDamage] = -15,
-            },
+            Attributes = [
+                IAttributeModifier.Penalty(AttributeModifierDefinitions.MeleeDamage, 15, [ new LeveledAttributeMaximumRequirement { Attribute = AttributeModifierDefinitions.MeleeDamage, ThresholdPercentage = 0 }]),
+            ],
         };
 
         public static readonly TraitDefinition Precise = new()
         {
             Id = "precise",
-            Attributes = new()
-            {
-                [AttributeModifierDefinitions.Precise] = 25,
-            }
+            Attributes = [
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.Precise, 25),
+            ],
         };
 
         public static readonly TraitDefinition Technical = new()
@@ -143,10 +140,9 @@ namespace SeraphLeveling.Data.Traits
         public static readonly TraitDefinition Soldier = new()
         {
             Id = "soldier",
-            Attributes = new()
-            {
-                [AttributeModifierDefinitions.MeleeDamage] = 30,
-            },
+            Attributes = [
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.MeleeDamage, 30),
+            ],
         };
 
         public static readonly TraitDefinition Hardy = new()
