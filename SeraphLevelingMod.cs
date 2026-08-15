@@ -563,8 +563,8 @@ namespace SeraphLeveling
                     .SelectMany(charClass => charClass.Traits)
                     .SelectMany(trait => trait.Attributes, (trait, attrKvp) => new
                     {
-                        Attribute = attrKvp.Key,
-                        TraitTuple = (Trait: trait, Value: attrKvp.Value)
+                        Attribute = attrKvp.Attribute,
+                        TraitTuple = (Trait: trait, Value: attrKvp.ModifierValue)
                     })
                     .DistinctBy(x => x.TraitTuple.Trait.Id);
 
@@ -10497,30 +10497,6 @@ namespace SeraphLeveling
             sb.AppendLine($"  Armor durability: {armorProgress.TotalDurabilityCredits} / {HardyHealthArmorDurabilityThreshold} ({(armorProgress.TotalDurabilityCredits >= HardyHealthArmorDurabilityThreshold ? "✓" : "✗")})");
 
             return TextCommandResult.Success(sb.ToString());
-        }
-
-        /// <summary>
-        /// Handler for /trait bowyer command.
-        /// </summary>
-        private TextCommandResult OnTraitBowyerCommand(TextCommandCallingArgs args)
-        {
-            return TraitDefinitions.Bowyer.HandleTraitCommand(args);
-        }
-
-        /// <summary>
-        /// Handler for /trait improviser command.
-        /// </summary>
-        private TextCommandResult OnTraitImproviserCommand(TextCommandCallingArgs args)
-        {
-            return TraitDefinitions.Improviser.HandleTraitCommand(args);
-        }
-
-        /// <summary>
-        /// Handler for /trait tinkerer command.
-        /// </summary>
-        private TextCommandResult OnTraitTinkererCommand(TextCommandCallingArgs args)
-        {
-            return TraitDefinitions.Tinkerer.HandleTraitCommand(args);
         }
 
         /// <summary>

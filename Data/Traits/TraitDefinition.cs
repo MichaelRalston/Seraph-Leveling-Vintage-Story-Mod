@@ -14,15 +14,19 @@ namespace SeraphLeveling.Data.Traits
     public record class TraitDefinition
     {
         public required string Id { get; init; }
-        public required Dictionary<ISaveableAttribute, int> Attributes { get; init; }
-        public List<IRequirement> Requirements
+        public required List<IAttributeModifier> Attributes
         {
             get;
             init
             {
                 field = value;
-                field?.ForEach(req => req.SatisfactionChanged += OnRequirementSatisfactionChanged);
+                field?.ForEach(mod => mod.ActiveStatusUpdated += OnModifierActiveStatusUpdated);
             }
+        }
+        public List<IRequirement> Requirements
+        {
+            get;
+            init;
         } = [];
         public bool MergeWithVanilla { get; init; } = false;
         public virtual string PlainTraitNameKey
@@ -41,7 +45,12 @@ namespace SeraphLeveling.Data.Traits
 
         ~TraitDefinition()
         {
-            Requirements?.ForEach(req => req.SatisfactionChanged -= OnRequirementSatisfactionChanged);
+            Attributes?.ForEach(req => req.ActiveStatusUpdated -= OnModifierActiveStatusUpdated);
+        }
+
+        protected void OnModifierActiveStatusUpdated(IServerPlayer player, bool _)
+        {
+            CheckUnlocks(player);
         }
 
         protected void OnRequirementSatisfactionChanged(IServerPlayer player, bool oldSatisfaction, bool newSatisfaction)
@@ -63,9 +72,9 @@ namespace SeraphLeveling.Data.Traits
             if (HasVanillaTrait(player.Entity)) return;
 
             // Check prerequisites
-            if (Requirements.All(attr => attr.IsSatisfied(player)))
+            if (Attributes.All(mod => mod.IsActive(player)))
             {
-                Attributes.Select(kvp => kvp.Key).Foreach(attr => attr.Unlock(player, true));
+                Attributes.Select(kvp => kvp.Attribute).Foreach(attr => attr.Unlock(player, true));
                 UnlockChanged?.Invoke(player, false, true);
             }
         }
@@ -76,11 +85,11 @@ namespace SeraphLeveling.Data.Traits
             if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
 
             var sb = new StringBuilder();
-            Attributes.Select(kvp => kvp.Key).Foreach(attr => attr.CollectStatus(player, sb));
-            if (Requirements.Count > 0)
+            Attributes.Select(kvp => kvp.Attribute).Foreach(attr => attr.CollectStatus(player, sb));
+            if (Attributes.Any(mod => mod.HasRequirements))
             {
                 sb.AppendLine($"Requirements:");
-                Requirements.Foreach(req => req.CollectStatus(player, sb));
+                Attributes.ForEach(mod => mod.CollectRequirementStatus(player, sb));
             }
             
             return TextCommandResult.Success(sb.ToString().TrimEnd());
@@ -93,12 +102,19 @@ namespace SeraphLeveling.Data.Traits
 
         protected virtual bool ShouldDisplay(EntityPlayer player)
         {
-            return Attributes.Any(a => a.Key.ShouldDisplay(player)) && (MergeWithVanilla || !HasVanillaTrait(player));
+            return Attributes.Any(a => a.Attribute.ShouldDisplay(player)) && (MergeWithVanilla || !HasVanillaTrait(player));
         }
 
         private int GetVanillaValue(ILeveledAttributeModifierDefinition attr)
         {
-            return Attributes.TryGetValue(attr, out int val) ? val : 0;
+            foreach (var modifier in Attributes)
+            {
+                if (modifier.Attribute == attr)
+                {
+                    return modifier.ModifierValue;
+                }
+            }
+            return 0;
         }
 
         public virtual void AppendTraitText(EntityPlayer player, ref string result)
@@ -141,9 +157,9 @@ namespace SeraphLeveling.Data.Traits
             Dictionary<ILeveledAttributeModifierDefinition, int> retVal = [];
             foreach (var kvp in Attributes)
             {
-                if (kvp.Key is ILeveledAttributeModifierDefinition leveledAttr)
+                if (kvp.Attribute is ILeveledAttributeModifierDefinition leveledAttr)
                 {
-                    retVal[leveledAttr] = kvp.Value + leveledAttr.GetBonusPercent(player);
+                    retVal[leveledAttr] = kvp.ModifierValue + leveledAttr.GetBonusPercent(player);
                 }
             }
             return retVal;
@@ -166,7 +182,7 @@ namespace SeraphLeveling.Data.Traits
 
         protected virtual object[] GetLocalizedTraitTextParams(EntityPlayer player)
         {
-            return Attributes.Select(kvp => kvp.Key.GetLocalizedTraitTextParam(player)).Where(param => param != null).ToArray();
+            return Attributes.Select(kvp => kvp.Attribute.GetLocalizedTraitTextParam(player)).Where(param => param != null).ToArray();
         }
     }
 }
