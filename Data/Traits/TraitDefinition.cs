@@ -37,6 +37,10 @@ namespace SeraphLeveling.Data.Traits
         {
             get => field ??= $"seraphleveling:trait-{Id}-dynamic"; init;
         }
+        public virtual string DynamicTraitHeaderKey
+        {
+            get => field ??= $"seraphleveling:trait-{Id}-header"; init;
+        }
 
         /// <summary>
         /// Registers a method to be called every time the unlock status for this attribute changes for a player
@@ -102,7 +106,7 @@ namespace SeraphLeveling.Data.Traits
 
         protected virtual bool ShouldDisplay(EntityPlayer player)
         {
-            return Attributes.Any(a => a.Attribute.ShouldDisplay(player)) && (MergeWithVanilla || !HasVanillaTrait(player));
+            return Attributes.Any(a => a.IsActive(player.Player)) /* && (MergeWithVanilla || !HasVanillaTrait(player)) */;
         }
 
         private int GetVanillaValue(ILeveledAttributeModifierDefinition attr)
@@ -117,44 +121,46 @@ namespace SeraphLeveling.Data.Traits
             return 0;
         }
 
-        public virtual void AppendTraitText(EntityPlayer player, ref string result)
+        public virtual void BuildTraitText(EntityPlayer player, ref string result)
         {
-            if (ShouldDisplay(player))
+            bool shouldDisplay = ShouldDisplay(player);
+            bool hasVanillaTrait = HasVanillaTrait(player);
+
+            CharacterSystemPatches.ClientApi.Logger.Debug($"[Verdus] Calling BuildTraitText for trait {Id}: shouldDisplay={shouldDisplay}, hasVanillaTrait={hasVanillaTrait}");
+            if (shouldDisplay)
             {
-                string plainTraitName = Lang.Get(PlainTraitNameKey);
-                string dynamicTraitText = BuildLocalizedTraitLine(player);
-                bool hasVanillaTrait = SeraphLevelingModSystem.PlayerHasTrait(player, this);
-                if (MergeWithVanilla && hasVanillaTrait)
+                var combinedAttrBonuses = GetCombinedAttributeBonuses(player);
+                string headerText = Lang.Get(DynamicTraitHeaderKey);
+                string contentText = string.Join(", ", Attributes.Select(mod => {
+                    string modKey = mod.DynamicAttributeContentsKey.ToLowerInvariant();
+                    string retVal = Lang.Get(modKey, combinedAttrBonuses[mod.Attribute]);
+                    CharacterSystemPatches.ClientApi.Logger.Debug($"      [Verdus] Calling BuildTraitText for trait {Id}: attr={mod.Attribute.Id}, key={mod.DynamicAttributeContentsKey}, lang token={retVal}");
+                    return retVal == modKey ? null : retVal;
+                }).Where(token => token != null));
+                string dynamicContents = Lang.Get(CharacterSystemPatches.DYNAMIC_CONTENTS_MESSAGE_KEY, contentText);
+                string fullMessage = string.IsNullOrEmpty(contentText) ? "" : Lang.Get(CharacterSystemPatches.FULL_TRAIT_MESSAGE_KEY, headerText, dynamicContents);
+                bool messageComplete = fullMessage != CharacterSystemPatches.FULL_TRAIT_MESSAGE_KEY;
+                CharacterSystemPatches.ClientApi.Logger.Debug($"   [Verdus] Calling BuildTraitText for trait {Id}: headerText={headerText}");
+                CharacterSystemPatches.ClientApi.Logger.Debug($"   [Verdus] Calling BuildTraitText for trait {Id}: contentText={contentText}");
+                CharacterSystemPatches.ClientApi.Logger.Debug($"   [Verdus] Calling BuildTraitText for trait {Id}: dynamicContents={dynamicContents}");
+                CharacterSystemPatches.ClientApi.Logger.Debug($"   [Verdus] Calling BuildTraitText for trait {Id}: fullMessage={fullMessage}");
+                if (messageComplete)
                 {
-                    // Class already has vanilla trait - update the inline walk speed value (locale-aware).
-                    var combinedBonuses = GetCombinedAttributeBonuses(player);
-                    foreach (var key in combinedBonuses.Keys)
+                    if (hasVanillaTrait)
                     {
-                        result = CharacterSystemPatches.ReplaceVanillaCharAttribute(result, key.StatName, 0.01D * GetVanillaValue(key), combinedBonuses[key]);
-                        result = CharacterSystemPatches.RemoveOrphanTraitName(result, plainTraitName);
+                        result = CharacterSystemPatches.ReplaceVanillaTraitLine(result, Id, fullMessage);
                     }
-                }
-                else if (CharacterSystemPatches.HasNoTraits(result))
-                {
-                    // Commoner or other class with no traits - replace entirely with our dynamic trait text
-                    result = dynamicTraitText;
-                }
-                else if (CharacterSystemPatches.ContainsOrphanTraitName(result, plainTraitName))
-                {
-                    // We have our dynamic trait but no vanilla trait - replace orphan plain name with dynamic version
-                    result = CharacterSystemPatches.ReplaceOrphanTraitName(result, plainTraitName, dynamicTraitText);
-                }
-                else
-                {
-                    // Has other traits but no vanilla trait at all - append our dynamic trait text
-                    result = result + "\n" + dynamicTraitText;
+                    else
+                    {
+                        result = result + "\n" + fullMessage;
+                    }
                 }
             }
         }
 
-        protected virtual Dictionary<ILeveledAttributeModifierDefinition, int> GetCombinedAttributeBonuses(EntityPlayer player)
+        protected virtual Dictionary<ISaveableAttribute, int> GetCombinedAttributeBonuses(EntityPlayer player)
         {
-            Dictionary<ILeveledAttributeModifierDefinition, int> retVal = [];
+            Dictionary<ISaveableAttribute, int> retVal = [];
             foreach (var kvp in Attributes)
             {
                 if (kvp.Attribute is ILeveledAttributeModifierDefinition leveledAttr)

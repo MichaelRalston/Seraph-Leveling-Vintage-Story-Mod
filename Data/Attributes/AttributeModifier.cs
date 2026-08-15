@@ -344,10 +344,11 @@ namespace SeraphLeveling.Data.Attributes
         public ISaveableAttribute Attribute { get; }
         public int ModifierValue { get; }
         public bool HasRequirements { get; }
+        public string DynamicAttributeContentsKey { get; }
 
         public event ActiveStatusUpdatedDelegate ActiveStatusUpdated;
 
-        public bool IsActive(IServerPlayer player);
+        public bool IsActive(IPlayer player);
 
         /// <summary>
         /// Get a status string for the attribute modifier's requirements when the player uses the /trait command
@@ -390,6 +391,10 @@ namespace SeraphLeveling.Data.Attributes
             private List<IAttributeRequirement> UnlockWith { get; init; }
             private List<IAttributeRequirement> RemoveWith { get; init; }
             public bool HasRequirements => UnlockWith.Count > 0 || RemoveWith.Count > 0;
+            public string DynamicAttributeContentsKey
+            {
+                get => field ??= $"seraphleveling:attribute-{Attribute.Id}-contents"; init;
+            }
 
             public event ActiveStatusUpdatedDelegate ActiveStatusUpdated;
 
@@ -399,7 +404,7 @@ namespace SeraphLeveling.Data.Attributes
                 UnlockWith.ForEach(req => req.CollectStatus(player, sb));
             }
 
-            public bool IsActive(IServerPlayer player)
+            public bool IsActive(IPlayer player)
             {
                 if (RemoveWith.Any(req => !req.IsSatisfied(player)))
                 {

@@ -8,7 +8,7 @@ namespace SeraphLeveling.Data.Attributes
 {
     public interface IAttributeRequirement
     {
-        public bool IsSatisfied(IServerPlayer player);
+        public bool IsSatisfied(IPlayer player);
         public void CollectStatus(IPlayer player, StringBuilder sb);
 
         /// <summary>
@@ -38,7 +38,7 @@ namespace SeraphLeveling.Data.Attributes
 
         public event SatisfactionChangedDelegate SatisfactionChanged;
 
-        public bool IsSatisfied(IServerPlayer player) => (player?.Entity != null) && Attribute.GetBonusPercent(player.Entity) >= ThresholdPercentage;
+        public bool IsSatisfied(IPlayer player) => (player?.Entity != null) && Attribute.GetBonusPercent(player.Entity) >= ThresholdPercentage;
 
         protected void OnAttributeBonusChanged(IServerPlayer player, int oldBonusPercent, int newBonusPercent)
         {
@@ -78,7 +78,7 @@ namespace SeraphLeveling.Data.Attributes
 
         public event SatisfactionChangedDelegate SatisfactionChanged;
 
-        public bool IsSatisfied(IServerPlayer player) => Attribute.IsUnlockedForPlayer(player);
+        public bool IsSatisfied(IPlayer player) => Attribute.IsUnlockedForPlayer(player);
 
         private void OnRequirementSatisfactionChanged(IServerPlayer player, bool oldUnlock, bool newUnlock)
         {
