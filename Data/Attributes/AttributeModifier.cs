@@ -66,9 +66,13 @@ namespace SeraphLeveling.Data.Attributes
     public abstract class AttributeModifierDefinition<D, PD> : ISaveableAttribute where D : AttributeModifierDefinition<D, PD>, IConstructable<D, PD> where PD : AttributeModifierProgressData<D, PD>
     {
         public required string Id { get; init; }
-        public required string SaveKey { get; init; }
+        public required string Name { get; init; }
+
         public required string SkillKey { get; init; }
-        public virtual string LongDescription { get => field??SkillKey; init; }
+        public virtual string SaveKey { get => field ??= $"sit{Name}Progress"; init; }
+        public virtual string LongDescription { get => field??=SkillKey; init; }
+        public virtual string TraitCode { get => field ??= $"sit{SkillKey}mastery"; init; }
+
         public virtual string Direction { get; init; } = "+";
         public required string PersistenceHeader { get; init; }
         public virtual byte PersistenceVersion { get; init; } = 1;

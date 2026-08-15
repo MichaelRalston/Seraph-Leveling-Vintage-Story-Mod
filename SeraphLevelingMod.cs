@@ -25,6 +25,9 @@ using SeraphLeveling.Data.Attributes;
 using SeraphLeveling.Data.Legacy;
 using Vintagestory.API.Util;
 using Microsoft.CSharp.RuntimeBinder;
+using System.Text.Json;
+using Newtonsoft.Json.Serialization;
+using Newtonsoft.Json;
 
 namespace SeraphLeveling
 {
@@ -69,12 +72,6 @@ namespace SeraphLeveling
 
         // Vanilla Soldier trait melee damage bonus (used for cap calculations)
         public const int VANILLA_SOLDIER_MELEE_BONUS = 30;
-
-        // Storage for melee progress - keyed by player UID
-        public static ConcurrentDictionary<string, MeleeProgressData> MeleeProgress = new ConcurrentDictionary<string, MeleeProgressData>();
-
-        // Flag to indicate pending melee progress save
-        public static volatile bool pendingMeleeProgressSave = false;
 
         // Keys for ranged damage progression system
         public const string RANGED_DAMAGE_KEY = "sitRangedDamage";
@@ -411,10 +408,6 @@ namespace SeraphLeveling
         // Vanilla Precise trait bonus (Clockmaker)
         public const int VANILLA_PRECISE_MECHANICAL_DAMAGE_BONUS = 25;
 
-        // Storage for precise progress
-        public static ConcurrentDictionary<string, PreciseProgressData> PreciseProgress = new ConcurrentDictionary<string, PreciseProgressData>();
-        public static volatile bool pendingPreciseProgressSave = false;
-
         // =========================================================================
         // HARDY HEALTH TRAIT - Unlocks +5 HP after reaching mining and armor thresholds
         // =========================================================================
@@ -561,12 +554,12 @@ namespace SeraphLeveling
             var flatAttributeMappings = activeMods
                     .SelectMany(mod => mod.CharacterClasses)
                     .SelectMany(charClass => charClass.Traits)
+                    .DistinctBy(trait => trait.Id)
                     .SelectMany(trait => trait.Attributes, (trait, attrKvp) => new
                     {
                         Attribute = attrKvp.Attribute,
                         TraitTuple = (Trait: trait, Value: attrKvp.ModifierValue)
-                    })
-                    .DistinctBy(x => x.TraitTuple.Trait.Id);
+                    });
 
             // 3. Extract the unique attributes
             LoadedAttributes = flatAttributeMappings
@@ -934,37 +927,6 @@ namespace SeraphLeveling
                 definition.RegisterCommands(api, command);
             }
             command
-                .BeginSubCommand("melee")
-                    .WithDescription("View your melee damage progression stats")
-                    .RequiresPrivilege(Privilege.chat)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitMeleeCommand)
-                .EndSubCommand()
-                .BeginSubCommand("meleebase")
-                    .WithDescription("Get or set the base damage per level (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalInt("damage"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitMeleeBaseCommand)
-                .EndSubCommand()
-                .BeginSubCommand("meleelevel")
-                    .WithDescription("Get or set your melee level (admin only). Usage: /trait meleelevel [level] [toolname]")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalInt("level"), api.ChatCommands.Parsers.OptionalWord("toolname"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitMeleeLevelCommand)
-                .EndSubCommand()
-                .BeginSubCommand("meleemax")
-                    .WithDescription("Get or set the max melee damage bonus percent (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalInt("percent"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitMeleeMaxCommand)
-                .EndSubCommand()
-                .BeginSubCommand("meleeincrement")
-                    .WithDescription("Get or set the melee increment step per credit (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalInt("step"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitMeleeIncrementCommand)
-                .EndSubCommand()
                 .BeginSubCommand("armor")
                     .WithDescription("View your armor progression stats")
                     .RequiresPrivilege(Privilege.chat)
@@ -1125,20 +1087,6 @@ namespace SeraphLeveling
                     .WithArgs(api.ChatCommands.Parsers.OptionalInt("percent"))
                     .RequiresPrivilege(Privilege.controlserver)
                     .HandleWith(OnTraitForagerMaxCommand)
-                .EndSubCommand()
-                // Precise trait commands
-                .BeginSubCommand("precise")
-                    .WithDescription("View your precise (mechanical damage) progression stats")
-                    .RequiresPrivilege(Privilege.chat)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitPreciseCommand)
-                .EndSubCommand()
-                .BeginSubCommand("preciselevel")
-                    .WithDescription("Get or set your precise level (admin only). Usage: /trait preciselevel [level] [toolname]")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalInt("level"), api.ChatCommands.Parsers.OptionalWord("toolname"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitPreciseLevelCommand)
                 .EndSubCommand()
                 // Hardy health trait commands
                 .BeginSubCommand("hardyhealth")
@@ -1465,16 +1413,13 @@ namespace SeraphLeveling
             // Load config and progress data after save game is loaded
             api.Event.SaveGameLoaded += LoadConfig;
             api.Event.SaveGameLoaded += LoadAllProgress;
-            api.Event.SaveGameLoaded += LoadMeleeProgress;
             api.Event.SaveGameLoaded += LoadArmorProgress;
             api.Event.SaveGameLoaded += LoadClothierProgress;
             api.Event.SaveGameLoaded += LoadMenderProgress;
             api.Event.SaveGameLoaded += LoadPilfererProgress;
             api.Event.SaveGameLoaded += LoadResourcefulProgress;
             api.Event.SaveGameLoaded += LoadForagerProgress;
-            api.Event.SaveGameLoaded += LoadPreciseProgress;
             api.Event.SaveGameLoaded += LoadHardyHealthProgress;
-            api.Event.SaveGameLoaded += LoadImproviserProgress;
             api.Event.SaveGameLoaded += LoadMercilessProgress;
             api.Event.SaveGameLoaded += LoadClaustrophobicRemovalProgress;
             api.Event.SaveGameLoaded += LoadCOProgress;
@@ -1632,10 +1577,6 @@ namespace SeraphLeveling
                 definition.GetTraitAllCommandLine(player, sb);
             }
 
-            // Progression traits
-            var meleeProg = MeleeProgress.GetOrAdd(playerUid, _ => new MeleeProgressData());
-            sb.AppendLine($"Melee: {meleeProg.TotalCredits}/{MaxMeleeDamagePercent} (+{meleeProg.TotalCredits}% damage)");
-
             var armorProg = ArmorProgress.GetOrAdd(playerUid, _ => new ArmorProgressData());
             sb.AppendLine($"Armor: +{armorProg.TotalDurabilityCredits}/{MaxArmorDurabilityPercent}% durability, -{armorProg.TotalWalkSpeedCredits}/{MaxArmorWalkSpeedPercent}% walk penalty");
 
@@ -1650,9 +1591,6 @@ namespace SeraphLeveling
 
             var foragerProg = ForagerProgress.GetOrAdd(playerUid, _ => new ForagerProgressData { CurrentIncrementSize = BaseForagerCropsPerIncrement });
             sb.AppendLine($"Forager: {foragerProg.TotalCredits}/{MaxForagerLootPercent} (+{foragerProg.TotalCredits}% foraging loot)");
-
-            var preciseProg = PreciseProgress.GetOrAdd(playerUid, _ => new PreciseProgressData());
-            sb.AppendLine($"Precise: {preciseProg.TotalCredits}/{MaxPrecisePercent} (+{preciseProg.TotalCredits}% mechanical dmg)");
 
             // Unlock traits
             sb.AppendLine("\n--- Unlock Traits ---");
@@ -1841,10 +1779,6 @@ namespace SeraphLeveling
             // Traits with per-tool support delegate to shared helpers
             switch (traitName)
             {
-                case "melee":
-                    return SetMeleeLevelForPlayer(targetPlayer, level, toolName);
-                case "precise":
-                    return SetPreciseLevelForPlayer(targetPlayer, level, toolName);
                 case "armor":
                     return SetArmorLevelForPlayer(targetPlayer, level, toolName);
             }
@@ -1935,124 +1869,6 @@ namespace SeraphLeveling
                 if (toolCredits > 0) total += toolCredits;
             }
             return total;
-        }
-
-        /// <summary>
-        /// Sets per-tool credits for melee.
-        /// </summary>
-        private TextCommandResult SetMeleeLevelForPlayer(IServerPlayer player, int level, string toolName)
-        {
-            string playerUid = player.PlayerUID;
-            int maxCredits = GetMaxMeleeCredits(player.Entity);
-            var progress = MeleeProgress.GetOrAdd(playerUid, _ => new MeleeProgressData());
-
-            if (level < 0)
-                return TextCommandResult.Error("Credits cannot be negative.");
-
-            if (toolName != null)
-            {
-                int oldToolCredits = 0;
-                if (progress.WeaponProgress.TryGetValue(toolName, out var existingTool))
-                    oldToolCredits = CalculateToolCredits(existingTool.CurrentIncrementSize, BaseDamagePerIncrement, MeleeIncrementStep);
-
-                int projectedTotal = progress.TotalCredits - oldToolCredits + level;
-                if (projectedTotal > maxCredits)
-                    return TextCommandResult.Error($"Setting {level} credits on {toolName} would result in {projectedTotal} total credits, exceeding max ({maxCredits}).");
-
-                if (level == 0)
-                {
-                    progress.WeaponProgress.Remove(toolName);
-                }
-                else
-                {
-                    var weaponProgress = progress.GetWeaponProgress(toolName);
-                    weaponProgress.CurrentIncrementSize = BaseDamagePerIncrement + (level * MeleeIncrementStep);
-                    weaponProgress.DamageInIncrement = 0;
-                }
-
-                progress.TotalCredits = RecalculateTotalCreditsFromTools(
-                    progress.WeaponProgress, w => w.CurrentIncrementSize,
-                    BaseDamagePerIncrement, MeleeIncrementStep);
-
-                pendingMeleeProgressSave = true;
-                int bonusPercent = ApplyMeleeBonusStatic(player, progress.TotalCredits);
-                CheckMercilessUnlock(player);
-                UpdateSkillActivityDay(playerUid, "melee");
-
-                return TextCommandResult.Success($"Set {level} credits on {toolName}. Total: {progress.TotalCredits}/{maxCredits} (+{bonusPercent}% melee damage).");
-            }
-            else
-            {
-                if (level > maxCredits)
-                    return TextCommandResult.Error($"Credits cannot exceed max ({maxCredits}).");
-
-                progress.TotalCredits = level;
-                progress.WeaponProgress.Clear();
-
-                pendingMeleeProgressSave = true;
-                int bonusPercent = ApplyMeleeBonusStatic(player, level);
-                CheckMercilessUnlock(player);
-                UpdateSkillActivityDay(playerUid, "melee");
-
-                return TextCommandResult.Success($"Melee credits set to {level} (+{bonusPercent}% melee damage). Per-weapon progress reset.");
-            }
-        }
-
-        /// <summary>
-        /// Sets per-tool credits for precise.
-        /// </summary>
-        private TextCommandResult SetPreciseLevelForPlayer(IServerPlayer player, int level, string toolName)
-        {
-            string playerUid = player.PlayerUID;
-            var progress = PreciseProgress.GetOrAdd(playerUid, _ => new PreciseProgressData());
-
-            if (level < 0 || level > MaxPrecisePercent)
-                return TextCommandResult.Error($"Level must be between 0 and {MaxPrecisePercent}.");
-
-            if (toolName != null)
-            {
-                int oldToolCredits = 0;
-                if (progress.WeaponProgress.TryGetValue(toolName, out var existingTool))
-                    oldToolCredits = CalculateToolCredits(existingTool.CurrentIncrementSize, BasePreciseDamagePerIncrement, PreciseIncrementStep);
-
-                int projectedTotal = progress.TotalCredits - oldToolCredits + level;
-                if (projectedTotal > MaxPrecisePercent)
-                    return TextCommandResult.Error($"Setting {level} credits on {toolName} would result in {projectedTotal} total credits, exceeding max ({MaxPrecisePercent}).");
-
-                if (level == 0)
-                {
-                    progress.WeaponProgress.Remove(toolName);
-                }
-                else
-                {
-                    var weaponProgress = progress.GetWeaponProgress(toolName);
-                    weaponProgress.CurrentIncrementSize = BasePreciseDamagePerIncrement + (level * PreciseIncrementStep);
-                    weaponProgress.DamageInIncrement = 0;
-                }
-
-                progress.TotalCredits = RecalculateTotalCreditsFromTools(
-                    progress.WeaponProgress, w => w.CurrentIncrementSize,
-                    BasePreciseDamagePerIncrement, PreciseIncrementStep);
-
-                pendingPreciseProgressSave = true;
-                int bonusPercent = ApplyPreciseBonusStatic(player, progress.TotalCredits);
-                TraitDefinitions.Tinkerer.CheckUnlocks(player);
-                UpdateSkillActivityDay(playerUid, "precise");
-
-                return TextCommandResult.Success($"Set {level} credits on {toolName}. Total: {progress.TotalCredits}/{MaxPrecisePercent} (+{bonusPercent}% mechanical damage).");
-            }
-            else
-            {
-                progress.TotalCredits = level;
-                progress.WeaponProgress.Clear();
-
-                pendingPreciseProgressSave = true;
-                int bonusPercent = ApplyPreciseBonusStatic(player, level);
-                TraitDefinitions.Tinkerer.CheckUnlocks(player);
-                UpdateSkillActivityDay(playerUid, "precise");
-
-                return TextCommandResult.Success($"Precise level set to {level} (+{bonusPercent}% mechanical damage).");
-            }
         }
 
         /// <summary>
@@ -2278,170 +2094,6 @@ namespace SeraphLeveling
             }
 
             return 0;
-        }
-
-        /// <summary>
-        /// Handler for /trait melee command.
-        /// </summary>
-        private TextCommandResult OnTraitMeleeCommand(TextCommandCallingArgs args)
-        {
-            var player = args.Caller.Player;
-            if (player?.Entity == null)
-            {
-                return TextCommandResult.Error("Could not find player entity");
-            }
-
-            string playerUid = player.PlayerUID;
-            var progress = MeleeProgress.GetOrAdd(playerUid, _ => new MeleeProgressData());
-
-            int currentCredits = progress.TotalCredits;
-            int bonusPercent = CalculateMeleeBonusPercent(currentCredits);
-            int maxCredits = GetMaxMeleeCredits(player.Entity);
-
-            var sb = new StringBuilder();
-            sb.AppendLine($"Melee progression: {currentCredits}% / {maxCredits}%");
-            sb.AppendLine($"Current bonus: +{bonusPercent}% melee damage");
-
-            if (progress.WeaponProgress.Count > 0)
-            {
-                sb.AppendLine("\nPer-weapon progress:");
-                foreach (var kvp in progress.WeaponProgress.OrderBy(p => p.Value.CurrentIncrementSize))
-                {
-                    string weaponName = kvp.Key;
-                    // Simplify the display name (remove "game:" prefix if present)
-                    if (weaponName.StartsWith("game:"))
-                        weaponName = weaponName.Substring(5);
-
-                    var weaponProgress = kvp.Value;
-                    sb.AppendLine($"  {weaponName}: {weaponProgress.DamageInIncrement:F1}/{weaponProgress.CurrentIncrementSize} damage");
-                }
-            }
-            else
-            {
-                sb.AppendLine("\nNo weapon progress yet. Deal damage with swords, falx, or spears to start!");
-            }
-
-            if (currentCredits >= maxCredits)
-            {
-                sb.Insert(0, "=== MAXED OUT ===\n");
-            }
-
-            return TextCommandResult.Success(sb.ToString().TrimEnd());
-        }
-
-        /// <summary>
-        /// Handler for /trait meleebase command.
-        /// Sets the base damage needed for the first 1% increment.
-        /// </summary>
-        private TextCommandResult OnTraitMeleeBaseCommand(TextCommandCallingArgs args)
-        {
-            int? newValue = (int?)args[0];
-
-            if (newValue.HasValue)
-            {
-                if (newValue.Value < 1)
-                {
-                    return TextCommandResult.Error("Base damage per increment must be at least 1");
-                }
-
-                BaseDamagePerIncrement = newValue.Value;
-                pendingConfigSave = true;
-
-                return TextCommandResult.Success($"Base damage per increment set to {BaseDamagePerIncrement}. New weapons will require this much damage for first 1%.");
-            }
-            else
-            {
-                return TextCommandResult.Success($"Current base damage per increment: {BaseDamagePerIncrement}\nIncrement step: +{MeleeIncrementStep} per credit");
-            }
-        }
-
-        /// <summary>
-        /// Handler for /trait meleeincrement command.
-        /// Sets how much additional damage is required for each subsequent credit.
-        /// </summary>
-        private TextCommandResult OnTraitMeleeIncrementCommand(TextCommandCallingArgs args)
-        {
-            int? newValue = (int?)args[0];
-
-            if (newValue.HasValue)
-            {
-                if (newValue.Value < 0)
-                {
-                    return TextCommandResult.Error("Increment step cannot be negative");
-                }
-
-                MeleeIncrementStep = newValue.Value;
-                pendingConfigSave = true;
-
-                return TextCommandResult.Success($"Melee increment step set to +{MeleeIncrementStep} per credit.\nProgression: {BaseDamagePerIncrement}, {BaseDamagePerIncrement + MeleeIncrementStep}, {BaseDamagePerIncrement + MeleeIncrementStep * 2}...");
-            }
-            else
-            {
-                return TextCommandResult.Success($"Current melee increment step: +{MeleeIncrementStep} per credit\nProgression: {BaseDamagePerIncrement}, {BaseDamagePerIncrement + MeleeIncrementStep}, {BaseDamagePerIncrement + MeleeIncrementStep * 2}...");
-            }
-        }
-
-        /// <summary>
-        /// Handler for /trait meleelevel command.
-        /// Gets or sets the player's melee credits (level) directly.
-        /// Note: Setting resets all per-weapon progress since we're setting credits directly.
-        /// </summary>
-        private TextCommandResult OnTraitMeleeLevelCommand(TextCommandCallingArgs args)
-        {
-            var player = args.Caller.Player as IServerPlayer;
-            if (player?.Entity == null)
-            {
-                return TextCommandResult.Error("Could not find player entity");
-            }
-
-            int? newCredits = (int?)args[0];
-
-            // If no value provided, show current level
-            if (!newCredits.HasValue)
-            {
-                int maxCredits = GetMaxMeleeCredits(player.Entity);
-                var progress = MeleeProgress.GetOrAdd(player.PlayerUID, _ => new MeleeProgressData());
-                int currentBonus = CalculateMeleeBonusPercent(progress.TotalCredits);
-                return TextCommandResult.Success($"Current melee level: {progress.TotalCredits}/{maxCredits} (+{currentBonus}% melee damage)");
-            }
-
-            string toolName = (string)args[1];
-            return SetMeleeLevelForPlayer(player, newCredits.Value, toolName);
-        }
-
-        /// <summary>
-        /// Handler for /trait meleemax command.
-        /// Gets or sets the maximum melee damage bonus percent.
-        /// </summary>
-        private TextCommandResult OnTraitMeleeMaxCommand(TextCommandCallingArgs args)
-        {
-            int? newValue = (int?)args[0];
-
-            if (newValue.HasValue)
-            {
-                if (newValue.Value < 1)
-                {
-                    return TextCommandResult.Error("Max melee damage percent must be at least 1");
-                }
-
-                MaxMeleeDamagePercent = newValue.Value;
-                pendingConfigSave = true;
-
-                // Recalculate and reapply bonuses for all online players
-                foreach (IServerPlayer player in ServerApi.World.AllOnlinePlayers)
-                {
-                    if (player?.Entity == null) continue;
-                    string playerUid = player.PlayerUID;
-                    var progress = MeleeProgress.GetOrAdd(playerUid, _ => new MeleeProgressData());
-                    ApplyMeleeBonusStatic(player, progress.TotalCredits);
-                }
-
-                return TextCommandResult.Success($"Max melee damage bonus set to +{MaxMeleeDamagePercent}%. All player bonuses recalculated.");
-            }
-            else
-            {
-                return TextCommandResult.Success($"Current max melee damage bonus: +{MaxMeleeDamagePercent}%");
-            }
         }
 
         /// <summary>
@@ -2772,32 +2424,6 @@ namespace SeraphLeveling
         }
 
         /// <summary>
-        /// Calculate the maximum hunger credits a player can earn.
-        /// Ravenous players need more credits to reach the same target hunger rate.
-        /// Target is (100 - MaxHungerReductionPercent)% = 75% by default.
-        /// Non-Ravenous: 100% - 75% = 25 credits needed
-        /// Ravenous: 130% - 75% = 55 credits needed
-        /// </summary>
-        public static int CalculateMaxHungerCredits(EntityPlayer entity)
-        {
-            bool hasRavenous = entity != null && PlayerHasVanillaRavenousStatic(entity);
-            int ravenousPenalty = hasRavenous ? VANILLA_RAVENOUS_HUNGER_PENALTY : 0;
-            // MaxHungerReductionPercent represents how much a normal player needs to reduce
-            // Ravenous players need that PLUS their penalty to reach the same target
-            return AttributeModifierDefinitions.HungerRate.GlobalMaxCredits + ravenousPenalty;
-        }
-
-        /// <summary>
-        /// Calculate the hunger rate reduction bonus as an integer percentage.
-        /// This is the actual reduction applied (1% per credit, up to player's max).
-        /// </summary>
-        public static int CalculateHungerBonusPercent(int credits, EntityPlayer entity)
-        {
-            int maxCredits = CalculateMaxHungerCredits(entity);
-            return Math.Min(credits, maxCredits);
-        }
-
-        /// <summary>
         /// Checks if the player's class has the vanilla Ravenous trait.
         /// </summary>
         public static bool PlayerHasVanillaRavenousStatic(EntityPlayer entity)
@@ -2818,76 +2444,6 @@ namespace SeraphLeveling
             // Fallback: check known classes that have Ravenous (Blackguard)
             string characterClass = entity.WatchedAttributes.GetString("characterClass", "");
             return characterClass.Equals("blackguard", StringComparison.OrdinalIgnoreCase);
-        }
-
-        /// <summary>
-        /// Apply hunger rate reduction to a player based on their level.
-        /// Returns the actual applied bonus percentage.
-        /// All classes can reach the same target hunger rate (75% by default).
-        /// Ravenous players start at 130% and need 55 credits to reach 75%.
-        /// Non-Ravenous players start at 100% and need 25 credits to reach 75%.
-        /// </summary>
-        public static int ApplyHungerBonusStatic(IServerPlayer player, int level)
-        {
-            if (player?.Entity == null) return 0;
-
-            // Use cached vanilla traits if available, otherwise fall back to direct check
-            var cache = GetCachedTraits(player.PlayerUID);
-            bool hasVanillaRavenous = cache?.HasRavenous ?? PlayerHasVanillaRavenousStatic(player.Entity);
-
-            // Calculate max credits this player can earn
-            int maxCredits = CalculateMaxHungerCredits(player.Entity);
-
-            // Calculate bonus from level (1% per level, capped at player's max)
-            int cappedLevel = Math.Min(level, maxCredits);
-            float bonus = cappedLevel * 0.01f;
-            int bonusPercent = (int)(bonus * 100);
-
-            // Calculate remaining Ravenous penalty (0 when fully cancelled at level 30)
-            int ravenousRemaining = hasVanillaRavenous ? CalculateRemainingPenalty(VANILLA_RAVENOUS_HUNGER_PENALTY, level) : 0;
-
-            // Always apply stats (they're not persistent)
-            // Set the hunger rate stat - this value is ADDED to the base (1.0)
-            // We want to REDUCE hunger rate, so we use a negative value
-            player.Entity.Stats.Set("hungerrate", HUNGER_STAT_CODE, -bonus, false);
-
-            // Check if any values have changed before updating WatchedAttributes
-            var watchedAttrs = player.Entity.WatchedAttributes;
-            int oldLevel = watchedAttrs.GetInt(WATCHED_HUNGER_LEVEL, -1);
-            int oldBonus = watchedAttrs.GetInt(WATCHED_HUNGER_BONUS, -1);
-
-            bool valuesChanged = (oldLevel != level) || (oldBonus != bonusPercent);
-
-            // Only update WatchedAttributes if values changed
-            if (valuesChanged)
-            {
-                // Sync level and bonus to WatchedAttributes for client-side display
-                watchedAttrs.SetInt(WATCHED_HUNGER_LEVEL, level);
-                watchedAttrs.SetInt(WATCHED_HUNGER_BONUS, bonusPercent);
-                watchedAttrs.SetBool("sitHasVanillaRavenous", hasVanillaRavenous);
-                watchedAttrs.SetInt("sitMaxHungerCredits", maxCredits);
-                watchedAttrs.SetInt(WATCHED_RAVENOUS_REMAINING, ravenousRemaining);
-
-                // Add our trait to extraTraits (hunger mastery is unique, doesn't replace a vanilla trait)
-                UpdateExtraTraitStatic(player.Entity, HUNGER_TRAIT_CODE, level > 0);
-
-                // Only call MarkPathDirty once (batched update)
-                watchedAttrs.MarkPathDirty(WATCHED_HUNGER_LEVEL);
-            }
-
-            return bonusPercent;
-        }
-
-        /// <summary>
-        /// Calculate the walking speed bonus as an integer percentage.
-        /// Accounts for vanilla Fleetfooted trait (+10% walk speed).
-        /// </summary>
-        public static int CalculateWalkingBonusPercent(int credits, EntityPlayer entity)
-        {
-            bool hasFleetfooted = entity != null && PlayerHasVanillaFleetfootedStatic(entity);
-            int vanillaBonus = hasFleetfooted ? VANILLA_FLEETFOOTED_WALK_BONUS : 0;
-            int earnableBonus = Math.Max(0, AttributeModifierDefinitions.WalkingSpeed.GlobalMaxCredits - vanillaBonus);
-            return Math.Min(credits, earnableBonus);
         }
 
         /// <summary>
@@ -2927,59 +2483,6 @@ namespace SeraphLeveling
         }
 
         /// <summary>
-        /// Calculate ranged bonuses as percentages, accounting for vanilla Focused trait.
-        /// Returns (damageBonus, accuracyBonus, distanceBonus) as integers.
-        /// </summary>
-        public static (int damage, int accuracy, int distance) CalculateRangedBonusPercents(int credits, EntityPlayer entity)
-        {
-            bool hasFocused = entity != null && PlayerHasVanillaFocusedStatic(entity);
-            int vanillaDamage = hasFocused ? VANILLA_FOCUSED_DAMAGE_BONUS : 0;
-            int vanillaAccuracy = hasFocused ? VANILLA_FOCUSED_ACCURACY_BONUS : 0;
-            int vanillaDistance = hasFocused ? VANILLA_FOCUSED_DISTANCE_BONUS : 0;
-
-            // Each stat is capped individually
-            int earnableDamage = Math.Max(0, MaxRangedDamagePercent - vanillaDamage);
-            int earnableAccuracy = Math.Max(0, MaxRangedAccuracyPercent - vanillaAccuracy);
-            int earnableDistance = Math.Max(0, MaxRangedDistancePercent - vanillaDistance);
-
-            int damageBonus = Math.Min(credits, earnableDamage);
-            int accuracyBonus = Math.Min(credits, earnableAccuracy);
-            int distanceBonus = Math.Min(credits, earnableDistance);
-
-            return (damageBonus, accuracyBonus, distanceBonus);
-        }
-
-        /// <summary>
-        /// Get the maximum ranged credits a player can earn based on their traits.
-        /// Players with Nearsighted or Frail traits can earn extra credits
-        /// to compensate for the penalty before gaining positive bonuses.
-        /// </summary>
-        public static int GetMaxRangedCredits(EntityPlayer entity)
-        {
-            if (entity == null) return MaxRangedDamagePercent;
-
-            bool hasNearsighted = PlayerHasVanillaNearsighted(entity);
-            bool hasFrail = PlayerHasVanillaFrail(entity);
-
-            // Use the larger penalty to determine max credits
-            int extraCredits = 0;
-
-            // Nearsighted penalty is 15% ranged damage, need 15 extra levels to cancel it
-            if (hasNearsighted)
-            {
-                extraCredits = Math.Max(extraCredits, VANILLA_NEARSIGHTED_RANGED_PENALTY);
-            }
-
-            // Frail penalty is 25% ranged distance, need 25 extra levels to cancel it
-            if (hasFrail)
-            {
-                extraCredits = Math.Max(extraCredits, VANILLA_FRAIL_DISTANCE_PENALTY);
-            }
-
-            return MaxRangedDamagePercent + extraCredits;
-        }
-
-        /// <summary>
         /// Checks if the player's class has the vanilla Focused trait.
         /// </summary>
         private static bool PlayerHasVanillaFocusedStatic(EntityPlayer entity)
@@ -3000,14 +2503,6 @@ namespace SeraphLeveling
             // Fallback: check known classes that have Focused (Hunter)
             string characterClass = entity.WatchedAttributes.GetString("characterClass", "");
             return characterClass.Equals("hunter", StringComparison.OrdinalIgnoreCase);
-        }
-
-        /// <summary>
-        /// Checks if the player's class has the vanilla Fleetfooted trait.
-        /// </summary>
-        public static bool PlayerHasVanillaFleetfootedStatic(EntityPlayer entity)
-        {
-            return PlayerHasTrait(entity, TraitDefinitions.Fleetfooted);
         }
 
         /// <summary>
@@ -3100,45 +2595,6 @@ namespace SeraphLeveling
                 foreach (string trait in classTraits)
                 {
                     if (trait.Equals("nervous", StringComparison.OrdinalIgnoreCase))
-                        return true;
-                }
-            }
-            string characterClass = entity.WatchedAttributes.GetString("characterClass", "");
-            return characterClass.Equals("malefactor", StringComparison.OrdinalIgnoreCase) ||
-                   characterClass.Equals("clockmaker", StringComparison.OrdinalIgnoreCase);
-        }
-
-        /// <summary>
-        /// Checks if the player's class has the vanilla Nearsighted trait (Blackguard).
-        /// </summary>
-        public static bool PlayerHasVanillaNearsighted(EntityPlayer entity)
-        {
-            if (entity == null) return false;
-            string[] classTraits = entity.WatchedAttributes.GetStringArray("characterTraits", null);
-            if (classTraits != null)
-            {
-                foreach (string trait in classTraits)
-                {
-                    if (trait.Equals("nearsighted", StringComparison.OrdinalIgnoreCase))
-                        return true;
-                }
-            }
-            string characterClass = entity.WatchedAttributes.GetString("characterClass", "");
-            return characterClass.Equals("blackguard", StringComparison.OrdinalIgnoreCase);
-        }
-
-        /// <summary>
-        /// Checks if the player's class has the vanilla Frail trait (Malefactor, Clockmaker).
-        /// </summary>
-        public static bool PlayerHasVanillaFrail(EntityPlayer entity)
-        {
-            if (entity == null) return false;
-            string[] classTraits = entity.WatchedAttributes.GetStringArray("characterTraits", null);
-            if (classTraits != null)
-            {
-                foreach (string trait in classTraits)
-                {
-                    if (trait.Equals("frail", StringComparison.OrdinalIgnoreCase))
                         return true;
                 }
             }
@@ -4016,15 +3472,6 @@ namespace SeraphLeveling
                 definition.HandleLogin(byPlayer);
             }
 
-            // Apply melee bonus (Stats always applied, WatchedAttributes only sync if changed)
-            var meleeProg = MeleeProgress.GetOrAdd(playerUid, _ => new MeleeProgressData());
-            int meleeCredits = meleeProg.TotalCredits;
-            ApplyMeleeBonusStatic(byPlayer, meleeCredits);
-            if (meleeCredits > 0)
-            {
-                ServerApi.Logger.Debug($"[SeraphLeveling] Applied melee bonus {meleeCredits}% to player {byPlayer.PlayerName}");
-            }
-
             // Apply armor bonuses (Stats always applied, WatchedAttributes only sync if changed)
             var armorProg = ArmorProgress.GetOrAdd(playerUid, _ => new ArmorProgressData());
             ApplyArmorBonusesStatic(byPlayer, armorProg.TotalDurabilityCredits, armorProg.TotalWalkSpeedCredits);
@@ -4079,15 +3526,6 @@ namespace SeraphLeveling
             if (foragerCredits > 0)
             {
                 ServerApi.Logger.Debug($"[SeraphLeveling] Applied forager bonus +{foragerCredits}% to player {byPlayer.PlayerName}");
-            }
-
-            // Apply precise bonus
-            var preciseProg = PreciseProgress.GetOrAdd(playerUid, _ => new PreciseProgressData());
-            int preciseCredits = preciseProg.TotalCredits;
-            ApplyPreciseBonusStatic(byPlayer, preciseCredits);
-            if (preciseCredits > 0)
-            {
-                ServerApi.Logger.Debug($"[SeraphLeveling] Applied precise bonus +{preciseCredits}% mechanical damage to player {byPlayer.PlayerName}");
             }
 
             // Apply hardy health unlock
@@ -4183,87 +3621,6 @@ namespace SeraphLeveling
             // Fallback: check known classes that have Hardy
             string characterClass = entity.WatchedAttributes.GetString("characterClass", "");
             return characterClass.Equals("blackguard", StringComparison.OrdinalIgnoreCase);
-        }
-
-        /// <summary>
-        /// Adds or removes a trait from the player's extraTraits array.
-        /// </summary>
-        public void UpdateExtraTrait(EntityPlayer entity, string traitCode, bool shouldHave)
-        {
-            // Get current extra traits
-            string[] currentTraits = entity.WatchedAttributes.GetStringArray("extraTraits", null) ?? Array.Empty<string>();
-            bool hasTrait = currentTraits.Contains(traitCode);
-
-            if (shouldHave && !hasTrait)
-            {
-                // Add the trait
-                var newTraits = currentTraits.Append(traitCode).ToArray();
-                entity.WatchedAttributes.SetStringArray("extraTraits", newTraits);
-                entity.WatchedAttributes.MarkPathDirty("extraTraits");
-                ServerApi.Logger.Debug($"[SeraphLeveling] Added trait {traitCode} to player");
-            }
-            else if (!shouldHave && hasTrait)
-            {
-                // Remove the trait
-                var newTraits = currentTraits.Where(t => t != traitCode).ToArray();
-                entity.WatchedAttributes.SetStringArray("extraTraits", newTraits);
-                entity.WatchedAttributes.MarkPathDirty("extraTraits");
-                ServerApi.Logger.Debug($"[SeraphLeveling] Removed trait {traitCode} from player");
-            }
-        }
-
-        /// <summary>
-        /// Calculate the mining speed bonus as a float (0.0 to 1.5 for 0% to 150%).
-        /// Each credit gives 1% bonus, capped at MaxMiningSpeedPercent.
-        /// </summary>
-        public static float CalculateMiningBonus(int credits)
-        {
-            float bonus = credits * 0.01f;
-            return Math.Min(bonus, AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits / 100f);
-        }
-
-        /// <summary>
-        /// Calculate the mining speed bonus as an integer percentage (0 to 150).
-        /// Each credit gives 1% bonus, capped at MaxMiningSpeedPercent.
-        /// </summary>
-        public static int CalculateMiningBonusPercent(int credits)
-        {
-            return Math.Min(credits, AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits);
-        }
-
-        /// <summary>
-        /// Calculate the maximum credits (level) based on the bonus cap.
-        /// </summary>
-        public static int CalculateMaxCredits()
-        {
-            return AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits;
-        }
-
-        /// <summary>
-        /// Get the maximum mining credits a player can earn based on their traits.
-        /// Players with Weak or Claustrophobic traits can earn extra credits
-        /// to compensate for the penalty before gaining positive bonuses.
-        /// </summary>
-        public static int GetMaxMiningCredits(EntityPlayer entity)
-        {
-            if (entity == null) return AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits;
-
-            bool hasWeak = PlayerHasVanillaWeak(entity);
-            bool hasClaustrophobic = PlayerHasVanillaClaustrophobic(entity);
-
-            // Weak penalty is 10% mining speed, need 10 extra levels to cancel it
-            if (hasWeak)
-            {
-                return AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits + VANILLA_WEAK_MINING_PENALTY;
-            }
-
-            // Claustrophobic penalty is 10% mining speed, need 10 extra levels to cancel it
-            if (hasClaustrophobic)
-            {
-                return AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits + VANILLA_CLAUSTROPHOBIC_MINING_PENALTY;
-            }
-
-            return AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits;
         }
 
         // Server-side Harmony instance for melee damage tracking
@@ -4574,54 +3931,8 @@ namespace SeraphLeveling
 
             string playerUid = attackerPlayer.PlayerUID;
 
-            // Get or create player progress data
-            var playerProgress = MeleeProgress.GetOrAdd(playerUid, _ => new MeleeProgressData());
-
-            // Get the player-specific max credits (accounts for Farsighted/Nervous penalties)
-            int maxCredits = GetMaxMeleeCredits(attackerPlayer.Entity);
-
-            // Skip all processing if already at max - completely invisible
-            if (playerProgress.TotalCredits >= maxCredits) return;
-
-            // Get or create progress for this specific weapon type
-            var weaponProgress = playerProgress.GetWeaponProgress(weaponType);
-
-            int oldCredits = playerProgress.TotalCredits;
-
-            // Apply sleep buff multiplier to damage
-            float modifiedDamage = ApplyXPMultiplier(playerUid, damage);
-
-            // Add damage to THIS weapon type's progress
-            weaponProgress.DamageInIncrement += modifiedDamage;
-
-            // Check if we've earned any new credits with this weapon type
-            while (weaponProgress.DamageInIncrement >= weaponProgress.CurrentIncrementSize && playerProgress.TotalCredits < maxCredits)
-            {
-                // Earn a credit
-                playerProgress.TotalCredits++;
-                weaponProgress.DamageInIncrement -= weaponProgress.CurrentIncrementSize;
-                weaponProgress.CurrentIncrementSize += MeleeIncrementStep;
-
-                ServerApi.Logger.Debug($"[SeraphLeveling] Player {attackerPlayer.PlayerName} earned melee credit {playerProgress.TotalCredits} with {weaponType}, next requires {weaponProgress.CurrentIncrementSize} damage");
-            }
-
-            pendingMeleeProgressSave = true;
-
-            // Update last activity day for skill decay
-            UpdateSkillActivityDay(playerUid, "melee");
-
-            // If credits increased, update the stat and notify player
-            if (playerProgress.TotalCredits > oldCredits)
-            {
-                ApplyMeleeBonusStatic(attackerPlayer, playerProgress.TotalCredits);
-
-                // Notify player of level up with raw improvement (shows progress even when cancelling negative traits)
-                NotifyLevelUp(attackerPlayer,
-                    Lang.Get("seraphleveling:message-melee-level-up", playerProgress.TotalCredits, playerProgress.TotalCredits));
-
-                // Check for trait unlocks that depend on melee damage
-                CheckMercilessUnlock(attackerPlayer);
-            }
+            var damageProgress = AttributeModifierDefinitions.MeleeDamage.GetForPlayer(playerUid);
+            damageProgress.DoEvent(attackerPlayer, weaponType, damage);
         }
 
         /// <summary>
@@ -5240,10 +4551,6 @@ namespace SeraphLeveling
                     }
                 }
 
-                if (pendingMeleeProgressSave || !MeleeProgress.IsEmpty)
-                {
-                    PersistMeleeProgress();
-                }
                 if (pendingArmorProgressSave || !ArmorProgress.IsEmpty)
                 {
                     PersistArmorProgress();
@@ -5263,10 +4570,6 @@ namespace SeraphLeveling
                 if (pendingForagerProgressSave || !ForagerProgress.IsEmpty)
                 {
                     PersistForagerProgress();
-                }
-                if (pendingPreciseProgressSave || !PreciseProgress.IsEmpty)
-                {
-                    PersistPreciseProgress();
                 }
                 if (pendingHardyHealthProgressSave || !HardyHealthProgress.IsEmpty)
                 {
@@ -5316,13 +4619,11 @@ namespace SeraphLeveling
                 def.PendingSave = false;
             }
 
-            MeleeProgress.Clear();
             ArmorProgress.Clear();
             MenderProgress.Clear();
             PilfererProgress.Clear();
             ResourcefulProgress.Clear();
             ForagerProgress.Clear();
-            PreciseProgress.Clear();
             HardyHealthProgress.Clear();
             MercilessProgress.Clear();
             ClaustrophobicRemovalProgress.Clear();
@@ -5334,13 +4635,11 @@ namespace SeraphLeveling
             SleepBuffMultiplier.Clear();
             LastSleepBuffApplyTick.Clear();
             pendingSleepBuffSave = false;
-            pendingMeleeProgressSave = false;
             pendingArmorProgressSave = false;
             pendingMenderProgressSave = false;
             pendingPilfererProgressSave = false;
             pendingResourcefulProgressSave = false;
             pendingForagerProgressSave = false;
-            pendingPreciseProgressSave = false;
             pendingHardyHealthProgressSave = false;
             pendingMercilessProgressSave = false;
             pendingClaustrophobicRemovalProgressSave = false;
@@ -5354,6 +4653,7 @@ namespace SeraphLeveling
         {
             // Guard against persisting empty data after Dispose() has cleared dictionaries
             if (isDisposed) return;
+            PersistModList();
 
             foreach (var def in LoadedAttributes)
             {
@@ -5362,12 +4662,6 @@ namespace SeraphLeveling
                     def.PersistProgress(ServerApi);
                     def.PendingSave = false;
                 }
-            }
-
-            if (pendingMeleeProgressSave || !MeleeProgress.IsEmpty)
-            {
-                PersistMeleeProgress();
-                pendingMeleeProgressSave = false;
             }
 
             if (pendingArmorProgressSave || !ArmorProgress.IsEmpty)
@@ -5398,12 +4692,6 @@ namespace SeraphLeveling
             {
                 PersistForagerProgress();
                 pendingForagerProgressSave = false;
-            }
-
-            if (pendingPreciseProgressSave || !PreciseProgress.IsEmpty)
-            {
-                PersistPreciseProgress();
-                pendingPreciseProgressSave = false;
             }
 
             if (pendingHardyHealthProgressSave || !HardyHealthProgress.IsEmpty)
@@ -5442,41 +4730,6 @@ namespace SeraphLeveling
                 PersistConfig();
                 pendingConfigSave = false;
             }
-        }
-
-        /// <summary>
-        /// Persist mining progress to world save data.
-        /// Version 3 format stores per-pickaxe progress dictionary.
-        /// </summary>
-        public static void PersistMiningProgress()
-        {
-            AttributeModifierDefinitions.MiningSpeed.PersistProgress(ServerApi);
-        }
-
-        /// <summary>
-        /// Load mining progress from world save data.
-        /// Supports versions 1 (legacy blocks), 2 (single pickaxe), and 3 (per-pickaxe).
-        /// </summary>
-        private void LoadMiningProgress()
-        {
-            AttributeModifierDefinitions.MiningSpeed.LoadProgress(ServerApi);
-        }
-
-        /// <summary>
-        /// Persist melee progress to world save data.
-        /// Version 1 format stores per-weapon progress dictionary.
-        /// </summary>
-        public static void PersistMeleeProgress()
-        {
-            PersistProgress<MeleeProgressData>();
-        }
-
-        /// <summary>
-        /// Load melee progress from world save data.
-        /// </summary>
-        private void LoadMeleeProgress()
-        {
-            LoadProgress<MeleeProgressData>();
         }
 
         public static void PersistProgress<T>() where T : ProgressData<T>, IProgressDataContract<T>
@@ -5526,17 +4779,125 @@ namespace SeraphLeveling
                 }
             }
         }
-        /// <summary>
-        /// Persist walking progress to world save data.
-        /// Version 1 format: simple progress tracking (no per-tool).
-        /// </summary>
-        public static void PersistWalkingProgress()
+
+        const string MOD_LIST_SAVE_KEY = "sitModListData";
+        const string MOD_LIST_HEADER = "SML";
+        private static bool savedModList = false;
+        private void LoadModList()
         {
-            AttributeModifierDefinitions.WalkingSpeed.PersistProgress(ServerApi);
+            byte[] data = ServerApi.WorldManager.SaveGame.GetData(MOD_LIST_SAVE_KEY);
+            if (data == null || data.Length == 0)
+            {
+                ServerApi.Logger.Debug($"[SeraphLeveling] No mod list data found in world save; either a fresh world or a port of the old Seraph Leveling.");
+                var legacyRangedDamage = new DamageAttributeModifierDefinition
+                {
+                    Id = AttributeModifierDefinitions.RangedDamage.Id,
+                    Name = "Ranged",
+                    PersistenceHeader = "SIR",
+                    SkillKey = "rangedlegacy",
+                    GlobalMaxCredits = AttributeModifierDefinitions.RangedDamage.GlobalMaxCredits,
+                    Stat = AttributeModifierDefinitions.RangedDamage.Stat,
+                    BaseIncrement = AttributeModifierDefinitions.RangedDamage.BaseIncrement,
+                    StatName = AttributeModifierDefinitions.RangedDamage.StatName,
+                    IncrementStep = AttributeModifierDefinitions.RangedDamage.IncrementStep,
+                    IncrementUnits = AttributeModifierDefinitions.RangedDamage.IncrementUnits,
+                    Tool = AttributeModifierDefinitions.RangedDamage.Tool
+                };
+                legacyRangedDamage.LoadProgress(ServerApi);
+                AttributeModifierDefinitions.RangedDamage.LoadProgress(ServerApi);
+                AttributeModifierDefinitions.RangedAccuracy.LoadProgress(ServerApi);
+                AttributeModifierDefinitions.RangedDistance.LoadProgress(ServerApi);
+                // These three were the same in the old mod, so if you only have damage... clone it.
+                if (!legacyRangedDamage.ProgressDictionary.IsEmpty && AttributeModifierDefinitions.RangedDamage.ProgressDictionary.IsEmpty && AttributeModifierDefinitions.RangedAccuracy.ProgressDictionary.IsEmpty && AttributeModifierDefinitions.RangedDistance.ProgressDictionary.IsEmpty)
+                {
+                    var snapshot = legacyRangedDamage.ProgressDictionary.ToArray();
+                    var options = new JsonSerializerSettings
+                    {
+                        // Forces serialization to include private fields
+                        ContractResolver = new DefaultContractResolver
+                        {
+                            IgnoreSerializableAttribute = true
+                        },
+                        // Allows it to bind to your existing parameterized/private constructors smoothly
+                        ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
+                        ObjectCreationHandling = ObjectCreationHandling.Replace
+                    };
+                    ServerApi.Logger.Debug($"[SeraphLeveling] Porting legacy ranged damage for {snapshot.Length} players.");
+                    foreach (var kvp in snapshot)
+                    {
+                        string json = JsonConvert.SerializeObject(kvp.Value, options);
+                        AttributeModifierDefinitions.RangedDamage.ProgressDictionary.TryAdd(kvp.Key, JsonConvert.DeserializeObject<DamageAttributeModifierProgressData>(json, options));
+                        AttributeModifierDefinitions.RangedDamage.PersistProgress(ServerApi);
+                        AttributeModifierDefinitions.RangedAccuracy.ProgressDictionary.TryAdd(kvp.Key, JsonConvert.DeserializeObject<DamageAttributeModifierProgressData>(json, options));
+                        AttributeModifierDefinitions.RangedAccuracy.PersistProgress(ServerApi);
+                        AttributeModifierDefinitions.RangedDistance.ProgressDictionary.TryAdd(kvp.Key, JsonConvert.DeserializeObject<DamageAttributeModifierProgressData>(json, options));
+                        AttributeModifierDefinitions.RangedDistance.PersistProgress(ServerApi);
+                    }
+                }
+                PersistModList();
+            }
+            else
+            {
+                using (var ms = new MemoryStream(data))
+                {
+                    using (var reader = new BinaryReader(ms))
+                    {
+                        var bytes = Encoding.ASCII.GetBytes(MOD_LIST_HEADER);
+                        bool hasProblem = false;
+                        foreach (var b in bytes)
+                        {
+                            byte bin = reader.ReadByte();
+                            hasProblem |= (bin != b);
+                        }
+                        if (hasProblem)
+                        {
+                            ServerApi.Logger.Warning($"[SeraphLeveling] Invalid mod list data format");
+                            return;
+                        }
+
+                        byte version = reader.ReadByte();
+                        if (version != 0x1)
+                        {
+                            ServerApi.Logger.Warning($"[SeraphLeveling] Unknown mod list data version");
+                        }
+                        // TODO: actually care about the contents, lol.
+                    }
+                }
+            }
+        }
+
+        private void PersistModList()
+        {
+            if (savedModList) return;
+            var snapshot = LoadedMods.ToArray();
+            byte[] data;
+            using (var ms = new MemoryStream())
+            {
+                using (var writer = new BinaryWriter(ms))
+                {
+                    var bytes = Encoding.ASCII.GetBytes(MOD_LIST_HEADER);
+                    foreach (var b in bytes)
+                    {
+                        writer.Write(b);
+                    }
+                    writer.Write((byte)0x1); // version.
+                    writer.Write(snapshot.Length);
+                    foreach (var mod in snapshot)
+                    {
+                        writer.Write(mod.ModId);
+                    }
+                }
+                data = ms.ToArray();
+            }
+
+            ServerApi.WorldManager.SaveGame.StoreData(MOD_LIST_SAVE_KEY, data);
+            savedModList = true;
+            ServerApi.Logger.Debug($"[SeraphLeveling] Persisted mod list.");
         }
 
         private void LoadAllProgress()
         {
+            LoadModList();
             foreach (var definition in LoadedAttributes)
             {
                 definition.LoadProgress(ServerApi);
@@ -5597,31 +4958,6 @@ namespace SeraphLeveling
             {
                 ServerApi.Logger.Error($"[SeraphLeveling] Failed to load {description} progress: {ex.Message}");
             }
-        }
-
-        /// <summary>
-        /// Load walking progress from world save data.
-        /// </summary>
-        private void LoadWalkingProgress()
-        {
-            AttributeModifierDefinitions.WalkingSpeed.LoadProgress(ServerApi);
-        }
-
-        /// <summary>
-        /// Persist hunger progress to world save data.
-        /// Version 1 format: simple progress tracking (no per-tool).
-        /// </summary>
-        public static void PersistHungerProgress()
-        {
-            AttributeModifierDefinitions.HungerRate.PersistProgress(ServerApi);
-        }
-
-        /// <summary>
-        /// Load hunger progress from world save data.
-        /// </summary>
-        private void LoadHungerProgress()
-        {
-            AttributeModifierDefinitions.HungerRate.LoadProgress(ServerApi);
         }
 
         /// <summary>
@@ -6137,118 +5473,6 @@ namespace SeraphLeveling
                 totalDecayApplied += definition.ApplyDecay(player, currentDay, sb, verboseSb);
             }
 
-            // Melee
-            if (!DecayExemptSkills.Contains("melee") && !DisabledSkills.Contains("melee"))
-            {
-                if (MeleeProgress.TryGetValue(playerUid, out var mProg) && (mProg.TotalCredits > 0 || mProg.WeaponProgress.Count > 0))
-                {
-                    var (grace, basePoints, maxPoints) = GetDecayParams("melee");
-                    int decayCredits = CalculateDecayPoints(mProg.LastActivityDay, currentDay, grace, basePoints, maxPoints);
-                    if (decayCredits > 0)
-                    {
-                        int oldCredits = mProg.TotalCredits;
-                        var toolEntries = mProg.WeaponProgress.Select(kvp =>
-                            (kvp.Key, (double)kvp.Value.DamageInIncrement, kvp.Value.CurrentIncrementSize)).ToList();
-
-                        if (toolEntries.Count > 0)
-                        {
-                            double rawPenalty = (double)decayCredits;
-
-                            var (newCr, lost) = ApplyAbsolutePositionDecay(toolEntries, rawPenalty,
-                                BaseDamagePerIncrement, MeleeIncrementStep, oldCredits,
-                                (k, a, s) =>
-                                {
-                                    if (mProg.WeaponProgress.TryGetValue(k, out var p))
-                                    {
-                                        p.DamageInIncrement = (float)a; p.CurrentIncrementSize = s;
-                                    }
-                                },
-                                k => mProg.WeaponProgress.Remove(k), verboseSb, "Melee");
-                            mProg.TotalCredits = newCr;
-                            if (lost > 0) totalDecayApplied += lost;
-                            sb.AppendLine($"  Melee: {oldCredits} \u2192 {newCr} (-{lost} credits, {rawPenalty:F0} pts)");
-                            foreach (var entry in toolEntries)
-                            {
-                                int oldToolCr = MeleeIncrementStep > 0 ? (entry.Item3 - BaseDamagePerIncrement) / MeleeIncrementStep : 0;
-                                if (mProg.WeaponProgress.TryGetValue(entry.Item1, out var after))
-                                {
-                                    int newToolCr = MeleeIncrementStep > 0 ? (after.CurrentIncrementSize - BaseDamagePerIncrement) / MeleeIncrementStep : 0;
-                                    int toolLost = oldToolCr - newToolCr;
-                                    sb.AppendLine($"    {entry.Item1}: {entry.Item2:F0}/{entry.Item3} \u2192 {after.DamageInIncrement:F0}/{after.CurrentIncrementSize}{(toolLost > 0 ? $" (-{toolLost} cr)" : "")}");
-                                }
-                                else
-                                    sb.AppendLine($"    {entry.Item1}: {entry.Item2:F0}/{entry.Item3} \u2192 removed (-{oldToolCr} cr)");
-                            }
-                            pendingMeleeProgressSave = true;
-                        }
-                        else
-                        {
-                            int lost = Math.Min(decayCredits, oldCredits);
-                            mProg.TotalCredits -= lost;
-                            if (lost > 0) { totalDecayApplied += lost; sb.AppendLine($"  Melee: {oldCredits} \u2192 {mProg.TotalCredits} (-{lost} credits)"); }
-                            pendingMeleeProgressSave = true;
-                        }
-                    }
-                }
-            }
-
-            // Precise
-            if (!DecayExemptSkills.Contains("precise") && !DisabledSkills.Contains("precise"))
-            {
-                if (PreciseProgress.TryGetValue(playerUid, out var pProg) && (pProg.TotalCredits > 0 || pProg.WeaponProgress.Count > 0))
-                {
-                    var (grace, basePoints, maxPoints) = GetDecayParams("precise");
-                    int decayCredits = CalculateDecayPoints(pProg.LastActivityDay, currentDay, grace, basePoints, maxPoints);
-                    if (decayCredits > 0)
-                    {
-                        int oldCredits = pProg.TotalCredits;
-                        var toolEntries = pProg.WeaponProgress.Select(kvp =>
-                            (kvp.Key, (double)kvp.Value.DamageInIncrement, kvp.Value.CurrentIncrementSize)).ToList();
-
-                        if (toolEntries.Count > 0)
-                        {
-                            double rawPenalty = (double)decayCredits;
-
-                            var (newCr, lost) = ApplyAbsolutePositionDecay(toolEntries, rawPenalty,
-                                BasePreciseDamagePerIncrement, PreciseIncrementStep, oldCredits,
-                                (k, a, s) =>
-                                {
-                                    if (pProg.WeaponProgress.TryGetValue(k, out var p))
-                                    {
-                                        p.DamageInIncrement = (float)a; p.CurrentIncrementSize = s;
-                                    }
-                                },
-                                k => pProg.WeaponProgress.Remove(k), verboseSb, "Precise");
-                            pProg.TotalCredits = newCr;
-                            if (lost > 0) totalDecayApplied += lost;
-                            sb.AppendLine($"  Precise: {oldCredits} \u2192 {newCr} (-{lost} credits, {rawPenalty:F0} pts)");
-                            foreach (var entry in toolEntries)
-                            {
-                                int oldToolCr = PreciseIncrementStep > 0 ? (entry.Item3 - BasePreciseDamagePerIncrement) / PreciseIncrementStep : 0;
-                                if (pProg.WeaponProgress.TryGetValue(entry.Item1, out var after))
-                                {
-                                    int newToolCr = PreciseIncrementStep > 0 ? (after.CurrentIncrementSize - BasePreciseDamagePerIncrement) / PreciseIncrementStep : 0;
-                                    int toolLost = oldToolCr - newToolCr;
-                                    sb.AppendLine($"    {entry.Item1}: {entry.Item2:F0}/{entry.Item3} \u2192 {after.DamageInIncrement:F0}/{after.CurrentIncrementSize}{(toolLost > 0 ? $" (-{toolLost} cr)" : "")}");
-                                }
-                                else
-                                    sb.AppendLine($"    {entry.Item1}: {entry.Item2:F0}/{entry.Item3} \u2192 removed (-{oldToolCr} cr)");
-                            }
-                            pendingPreciseProgressSave = true;
-                        }
-                        else
-                        {
-                            int lost = Math.Min(decayCredits, oldCredits);
-                            pProg.TotalCredits -= lost;
-                            if (lost > 0) { totalDecayApplied += lost; sb.AppendLine($"  Precise: {oldCredits} \u2192 {pProg.TotalCredits} (-{lost} credits)"); }
-                            pendingPreciseProgressSave = true;
-                        }
-                    }
-                }
-            }
-
-            // --- Single-accumulator skills ---
-
             // Armor is exempt from decay (leveled by wearing new pieces, not renewable)
 
             // Mender
@@ -6434,8 +5658,6 @@ namespace SeraphLeveling
             {
                 definition.ApplyBonusIfExists(player);
             }
-            if (MeleeProgress.TryGetValue(playerUid, out var meleeProg))
-                ApplyMeleeBonusStatic(player, meleeProg.TotalCredits);
             if (ArmorProgress.TryGetValue(playerUid, out var armorProg))
                 ApplyArmorBonusesStatic(player, armorProg.TotalDurabilityCredits, armorProg.TotalWalkSpeedCredits);
             if (MenderProgress.TryGetValue(playerUid, out var menderProg))
@@ -6446,8 +5668,6 @@ namespace SeraphLeveling
                 ApplyResourcefulBonusStatic(player, resourcefulProg.TotalCredits);
             if (ForagerProgress.TryGetValue(playerUid, out var foragerProg))
                 ApplyForagerBonusStatic(player, foragerProg.TotalCredits);
-            if (PreciseProgress.TryGetValue(playerUid, out var preciseProg))
-                ApplyPreciseBonusStatic(player, preciseProg.TotalCredits);
             if (IsCOCompatEnabled && COProgress.TryGetValue(playerUid, out var coProg))
                 ApplyAllCOBonuses(player);
         }
@@ -6464,10 +5684,6 @@ namespace SeraphLeveling
 
             switch (skillType)
             {
-                case "melee":
-                    if (MeleeProgress.TryGetValue(playerUid, out var meleeProg))
-                        meleeProg.LastActivityDay = currentDay;
-                    break;
                 case "armor":
                     if (ArmorProgress.TryGetValue(playerUid, out var armorProg))
                         armorProg.LastActivityDay = currentDay;
@@ -6487,10 +5703,6 @@ namespace SeraphLeveling
                 case "forager":
                     if (ForagerProgress.TryGetValue(playerUid, out var foragerProg))
                         foragerProg.LastActivityDay = currentDay;
-                    break;
-                case "precise":
-                    if (PreciseProgress.TryGetValue(playerUid, out var preciseProg))
-                        preciseProg.LastActivityDay = currentDay;
                     break;
                 case "coproficiency":
                     if (COProgress.TryGetValue(playerUid, out var coProg))
@@ -6838,120 +6050,6 @@ namespace SeraphLeveling
             {
                 totalCreditsLost += definition.ApplyDeathPenalty(player, sb);
             }
-            // --- Per-tool dictionary skills ---
-
-            // Melee
-            if (!DeathPenaltyExemptSkills.Contains("melee") && !DisabledSkills.Contains("melee"))
-            {
-                if (MeleeProgress.TryGetValue(playerUid, out var meleeProg) && (meleeProg.TotalCredits > 0 || meleeProg.WeaponProgress.Count > 0))
-                {
-                    int oldCredits = meleeProg.TotalCredits;
-
-                    var toolEntries = meleeProg.WeaponProgress.Select(kvp =>
-                        (kvp.Key, (double)kvp.Value.DamageInIncrement, kvp.Value.CurrentIncrementSize)).ToList();
-
-                    if (toolEntries.Count > 0)
-                    {
-                        double rawPenalty = BaseDamagePerIncrement * DeathPenaltyFraction * Math.Sqrt(Math.Max(1, oldCredits));
-                        var (newCr, _) = ApplyAbsolutePositionDecay(toolEntries, rawPenalty,
-                            BaseDamagePerIncrement, MeleeIncrementStep, oldCredits,
-                            (k, a, s) =>
-                            {
-                                if (meleeProg.WeaponProgress.TryGetValue(k, out var p))
-                                {
-                                    p.DamageInIncrement = (float)a; p.CurrentIncrementSize = s;
-                                }
-                            },
-                            k => meleeProg.WeaponProgress.Remove(k), null, "Melee");
-                        meleeProg.TotalCredits = newCr;
-                        int actualLost = oldCredits - newCr;
-                        if (actualLost > 0) totalCreditsLost += actualLost;
-                        sb.AppendLine($"  Melee: {oldCredits} \u2192 {newCr} (-{actualLost} credits, {rawPenalty:F0} pts)");
-                        foreach (var entry in toolEntries)
-                        {
-                            int oldToolCr = MeleeIncrementStep > 0 ? (entry.Item3 - BaseDamagePerIncrement) / MeleeIncrementStep : 0;
-                            if (meleeProg.WeaponProgress.TryGetValue(entry.Item1, out var after))
-                            {
-                                int newToolCr = MeleeIncrementStep > 0 ? (after.CurrentIncrementSize - BaseDamagePerIncrement) / MeleeIncrementStep : 0;
-                                int toolLost = oldToolCr - newToolCr;
-                                sb.AppendLine($"    {entry.Item1}: {entry.Item2:F0}/{entry.Item3} \u2192 {after.DamageInIncrement:F0}/{after.CurrentIncrementSize}{(toolLost > 0 ? $" (-{toolLost} cr)" : "")}");
-                            }
-                            else
-                                sb.AppendLine($"    {entry.Item1}: {entry.Item2:F0}/{entry.Item3} \u2192 removed (-{oldToolCr} cr)");
-                        }
-                    }
-                    else if (oldCredits > 0)
-                    {
-                        int intendedLoss = (int)Math.Floor(DeathPenaltyFraction * Math.Sqrt(Math.Max(1, oldCredits)));
-                        intendedLoss = Math.Min(intendedLoss, oldCredits);
-                        if (intendedLoss > 0)
-                        {
-                            meleeProg.TotalCredits = Math.Max(0, oldCredits - intendedLoss);
-                            int actualLost = oldCredits - meleeProg.TotalCredits;
-                            totalCreditsLost += actualLost;
-                            sb.AppendLine($"  Melee: {oldCredits} \u2192 {meleeProg.TotalCredits} (-{actualLost} credits)");
-                        }
-                    }
-                    pendingMeleeProgressSave = true;
-                }
-            }
-
-            // Precise
-            if (!DeathPenaltyExemptSkills.Contains("precise") && !DisabledSkills.Contains("precise"))
-            {
-                if (PreciseProgress.TryGetValue(playerUid, out var preciseProg) && (preciseProg.TotalCredits > 0 || preciseProg.WeaponProgress.Count > 0))
-                {
-                    int oldCredits = preciseProg.TotalCredits;
-
-                    var toolEntries = preciseProg.WeaponProgress.Select(kvp =>
-                        (kvp.Key, (double)kvp.Value.DamageInIncrement, kvp.Value.CurrentIncrementSize)).ToList();
-
-                    if (toolEntries.Count > 0)
-                    {
-                        double rawPenalty = BasePreciseDamagePerIncrement * DeathPenaltyFraction * Math.Sqrt(Math.Max(1, oldCredits));
-                        var (newCr, _) = ApplyAbsolutePositionDecay(toolEntries, rawPenalty,
-                            BasePreciseDamagePerIncrement, PreciseIncrementStep, oldCredits,
-                            (k, a, s) =>
-                            {
-                                if (preciseProg.WeaponProgress.TryGetValue(k, out var p))
-                                {
-                                    p.DamageInIncrement = (float)a; p.CurrentIncrementSize = s;
-                                }
-                            },
-                            k => preciseProg.WeaponProgress.Remove(k), null, "Precise");
-                        preciseProg.TotalCredits = newCr;
-                        int actualLost = oldCredits - newCr;
-                        if (actualLost > 0) totalCreditsLost += actualLost;
-                        sb.AppendLine($"  Precise: {oldCredits} \u2192 {newCr} (-{actualLost} credits, {rawPenalty:F0} pts)");
-                        foreach (var entry in toolEntries)
-                        {
-                            int oldToolCr = PreciseIncrementStep > 0 ? (entry.Item3 - BasePreciseDamagePerIncrement) / PreciseIncrementStep : 0;
-                            if (preciseProg.WeaponProgress.TryGetValue(entry.Item1, out var after))
-                            {
-                                int newToolCr = PreciseIncrementStep > 0 ? (after.CurrentIncrementSize - BasePreciseDamagePerIncrement) / PreciseIncrementStep : 0;
-                                int toolLost = oldToolCr - newToolCr;
-                                sb.AppendLine($"    {entry.Item1}: {entry.Item2:F0}/{entry.Item3} \u2192 {after.DamageInIncrement:F0}/{after.CurrentIncrementSize}{(toolLost > 0 ? $" (-{toolLost} cr)" : "")}");
-                            }
-                            else
-                                sb.AppendLine($"    {entry.Item1}: {entry.Item2:F0}/{entry.Item3} \u2192 removed (-{oldToolCr} cr)");
-                        }
-                    }
-                    else if (oldCredits > 0)
-                    {
-                        int intendedLoss = (int)Math.Floor(DeathPenaltyFraction * Math.Sqrt(Math.Max(1, oldCredits)));
-                        intendedLoss = Math.Min(intendedLoss, oldCredits);
-                        if (intendedLoss > 0)
-                        {
-                            preciseProg.TotalCredits = Math.Max(0, oldCredits - intendedLoss);
-                            int actualLost = oldCredits - preciseProg.TotalCredits;
-                            totalCreditsLost += actualLost;
-                            sb.AppendLine($"  Precise: {oldCredits} \u2192 {preciseProg.TotalCredits} (-{actualLost} credits)");
-                        }
-                    }
-                    pendingPreciseProgressSave = true;
-                }
-            }
-
             // --- Single accumulator skills ---
 
             // Mender
@@ -7184,7 +6282,7 @@ namespace SeraphLeveling
             AppendDecayStatus(sb, "Mining", "mining", playerUid, currentDay,
                 () => AttributeModifierDefinitions.MiningSpeed.ProgressDictionary.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
             AppendDecayStatus(sb, "Melee", "melee", playerUid, currentDay,
-                () => MeleeProgress.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
+                () => AttributeModifierDefinitions.MeleeDamage.ProgressDictionary.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
             AppendDecayStatus(sb, "Ranged", "ranged", playerUid, currentDay,
                 () => AttributeModifierDefinitions.RangedDamage.ProgressDictionary.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
             AppendDecayStatus(sb, "Ranged Accuracy", "rangedaccuracy", playerUid, currentDay,
@@ -7192,7 +6290,7 @@ namespace SeraphLeveling
             AppendDecayStatus(sb, "Ranged Distance", "rangeddistance", playerUid, currentDay,
                 () => AttributeModifierDefinitions.RangedDistance.ProgressDictionary.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
             AppendDecayStatus(sb, "Precise", "precise", playerUid, currentDay,
-                () => PreciseProgress.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
+                () => AttributeModifierDefinitions.Precise.ProgressDictionary.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
 
             // Movement/Survival skills
             sb.AppendLine("--- Movement/Survival ---");
@@ -8808,129 +7906,10 @@ namespace SeraphLeveling
 
             string playerUid = attackerPlayer.PlayerUID;
 
-            // Get or create player progress data
-            var playerProgress = PreciseProgress.GetOrAdd(playerUid, _ => new PreciseProgressData());
-
-            // Check if already at max
-            int effectiveMax = GetPreciseEffectiveMax(attackerPlayer.Entity);
-            if (playerProgress.TotalCredits >= effectiveMax) return;
-
-            int oldCredits = playerProgress.TotalCredits;
-
-            // Get or create weapon progress
-            var weaponProgress = playerProgress.GetWeaponProgress(weaponType);
-
-            // Add damage to progress (apply sleep buff multiplier if active)
-            float modifiedDamage = ApplyXPMultiplier(attackerPlayer.PlayerUID, damage);
-            weaponProgress.DamageInIncrement += modifiedDamage;
-
-            // Check if we've earned any new credits
-            while (weaponProgress.DamageInIncrement >= weaponProgress.CurrentIncrementSize && playerProgress.TotalCredits < effectiveMax)
-            {
-                // Earn a credit
-                playerProgress.TotalCredits++;
-                weaponProgress.DamageInIncrement -= weaponProgress.CurrentIncrementSize;
-                weaponProgress.CurrentIncrementSize += PreciseIncrementStep;
-
-                ServerApi.Logger.Debug($"[SeraphLeveling] Player {attackerPlayer.PlayerName} earned precise credit {playerProgress.TotalCredits} with {weaponType}, next requires {weaponProgress.CurrentIncrementSize} damage");
-            }
-
-            // Mark for saving if any progress was made
-            if (damage > 0)
-            {
-                pendingPreciseProgressSave = true;
-            }
-
-            // Update last activity day for skill decay
-            UpdateSkillActivityDay(playerUid, "precise");
-
-            // If credits increased, update the stat and notify player
-            if (playerProgress.TotalCredits > oldCredits)
-            {
-                ApplyPreciseBonusStatic(attackerPlayer, playerProgress.TotalCredits);
-
-                // Notify player of level up with raw improvement (shows progress even when capped)
-                NotifyLevelUp(attackerPlayer,
-                    Lang.Get("seraphleveling:message-precise-level-up", playerProgress.TotalCredits, playerProgress.TotalCredits));
-
-                // Check if Tinkerer should be unlocked
-                TraitDefinitions.Tinkerer.CheckUnlocks(attackerPlayer);
-            }
+            var damageProgress = AttributeModifierDefinitions.Precise.GetForPlayer(playerUid);
+            damageProgress.DoEvent(attackerPlayer, weaponType, damage);
         }
 
-        /// <summary>
-        /// Get the effective maximum for Precise based on player class.
-        /// Clockmaker has vanilla +25%, so they can only earn 5 more levels.
-        /// </summary>
-        private static int GetPreciseEffectiveMax(EntityPlayer entity)
-        {
-            if (PlayerHasVanillaPreciseStatic(entity))
-            {
-                // Clockmaker already has +25%, cap at +5 more to reach 30% total
-                return MaxPrecisePercent - VANILLA_PRECISE_MECHANICAL_DAMAGE_BONUS;
-            }
-            return MaxPrecisePercent;
-        }
-
-        /// <summary>
-        /// Apply the Precise bonus to a player based on their earned credits.
-        /// The bonus increases damage to mechanical creatures.
-        /// </summary>
-        private static int ApplyPreciseBonusStatic(IServerPlayer player, int credits)
-        {
-            // Check if player has vanilla Precise trait (Clockmaker)
-            bool hasVanillaPrecise = PlayerHasVanillaPreciseStatic(player.Entity);
-
-            // Calculate effective cap
-            int effectiveMax = hasVanillaPrecise ? (MaxPrecisePercent - VANILLA_PRECISE_MECHANICAL_DAMAGE_BONUS) : MaxPrecisePercent;
-
-            // Clamp credits to effective max
-            int effectiveCredits = Math.Min(credits, effectiveMax);
-
-            // Calculate bonus percent
-            int bonusPercent = effectiveCredits;
-
-            // mechanicalsDamage is a delta on a base of 1, the same as vanilla
-            // Precise's 0.4705. Writing 1 + bonus added a whole extra 100% on top
-            // of the bonus the character sheet advertises.
-            if (bonusPercent > 0)
-            {
-                float statValue = bonusPercent / 100f;
-                player.Entity.Stats.Set("mechanicalsDamage", PRECISE_STAT_CODE, statValue, false);
-            }
-            else
-            {
-                player.Entity.Stats.Remove("mechanicalsDamage", PRECISE_STAT_CODE);
-            }
-
-            // Update WatchedAttributes for client sync
-            player.Entity.WatchedAttributes.SetInt(WATCHED_PRECISE_LEVEL, credits);
-            player.Entity.WatchedAttributes.SetInt(WATCHED_PRECISE_BONUS, bonusPercent);
-            player.Entity.WatchedAttributes.SetBool("sitHasVanillaPrecise", hasVanillaPrecise);
-
-            // Update extraTraits for character sheet display
-            UpdateExtraTraitStatic(player.Entity, PRECISE_TRAIT_CODE, credits > 0 && !hasVanillaPrecise);
-
-            return bonusPercent;
-        }
-
-        /// <summary>
-        /// Check if player has the vanilla Precise trait (Clockmaker).
-        /// </summary>
-        private static bool PlayerHasVanillaPreciseStatic(EntityPlayer entity)
-        {
-            if (entity == null) return false;
-
-            // Check if player class is Clockmaker
-            var classTree = entity.WatchedAttributes.GetTreeAttribute("charClass");
-            if (classTree != null)
-            {
-                string classCode = classTree.GetString("code", "").ToLowerInvariant();
-                return classCode == "clockmaker";
-            }
-
-            return false;
-        }
 
         // =========================================================================
         // UNLOCK CHECKING METHODS
@@ -9010,8 +7989,8 @@ namespace SeraphLeveling
             if (armorProgress.TotalDurabilityCredits < MercilessArmorDurabilityThreshold) return;
 
             // Check melee damage threshold
-            var meleeProgress = MeleeProgress.GetOrAdd(playerUid, _ => new MeleeProgressData());
-            if (meleeProgress.TotalCredits < MercilessMeleeDamageThreshold) return;
+            // var meleeProgress = MeleeProgress.GetOrAdd(playerUid, _ => new MeleeProgressData());
+            // if (meleeProgress.TotalCredits < MercilessMeleeDamageThreshold) return;
 
             // Both thresholds met - unlock Merciless!
             progress.IsUnlocked = true;
@@ -10398,69 +9377,6 @@ namespace SeraphLeveling
         // =========================================================================
 
         /// <summary>
-        /// Handler for /trait precise command.
-        /// </summary>
-        private TextCommandResult OnTraitPreciseCommand(TextCommandCallingArgs args)
-        {
-            IServerPlayer player = args.Caller.Player as IServerPlayer;
-            if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
-
-            string playerUid = player.PlayerUID;
-            var progress = PreciseProgress.GetOrAdd(playerUid, _ => new PreciseProgressData());
-
-            bool hasVanillaPrecise = PlayerHasVanillaPreciseStatic(player.Entity);
-            int effectiveMax = GetPreciseEffectiveMax(player.Entity);
-            int bonusPercent = Math.Min(progress.TotalCredits, effectiveMax);
-
-            var sb = new StringBuilder();
-            sb.AppendLine($"Precise progression: Level {progress.TotalCredits} / {effectiveMax}");
-            sb.AppendLine($"Current bonus: +{bonusPercent}% damage to mechanicals");
-            if (hasVanillaPrecise)
-            {
-                int totalBonus = VANILLA_PRECISE_MECHANICAL_DAMAGE_BONUS + bonusPercent;
-                sb.AppendLine($"Combined with Clockmaker trait: +{totalBonus}% total");
-            }
-            if (progress.TotalCredits < effectiveMax)
-            {
-                sb.AppendLine($"Per-weapon progress:");
-                foreach (var kvp in progress.WeaponProgress)
-                {
-                    sb.AppendLine($"  {kvp.Key}: {kvp.Value.DamageInIncrement:F0} / {kvp.Value.CurrentIncrementSize} damage");
-                }
-            }
-            else
-            {
-                sb.AppendLine("Maximum level reached!");
-            }
-
-            return TextCommandResult.Success(sb.ToString());
-        }
-
-        /// <summary>
-        /// Handler for /trait preciselevel command.
-        /// Gets or sets the player's precise level.
-        /// </summary>
-        private TextCommandResult OnTraitPreciseLevelCommand(TextCommandCallingArgs args)
-        {
-            IServerPlayer player = args.Caller.Player as IServerPlayer;
-            if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
-
-            int? newLevel = (int?)args[0];
-
-            // If no value provided, show current level
-            if (!newLevel.HasValue)
-            {
-                var progress = PreciseProgress.GetOrAdd(player.PlayerUID, _ => new PreciseProgressData());
-                bool hasVanillaPrecise = PlayerHasVanillaPreciseStatic(player.Entity);
-                int currentBonus = hasVanillaPrecise ? VANILLA_PRECISE_MECHANICAL_DAMAGE_BONUS : progress.TotalCredits;
-                return TextCommandResult.Success($"Current precise level: {progress.TotalCredits}/{MaxPrecisePercent} (+{currentBonus}% mechanical damage)");
-            }
-
-            string toolName = (string)args[1];
-            return SetPreciseLevelForPlayer(player, newLevel.Value, toolName);
-        }
-
-        /// <summary>
         /// Process a translocator repair (called from Harmony patch).
         /// Gives progress toward Technical trait unlock.
         /// </summary>
@@ -10510,13 +9426,14 @@ namespace SeraphLeveling
             string playerUid = player.PlayerUID;
             var progress = MercilessProgress.GetOrAdd(playerUid, _ => new MercilessProgressData());
             var armorProgress = ArmorProgress.GetOrAdd(playerUid, _ => new ArmorProgressData());
-            var meleeProgress = MeleeProgress.GetOrAdd(playerUid, _ => new MeleeProgressData());
+            // var meleeProgress = MeleeProgress.GetOrAdd(playerUid, _ => new MeleeProgressData());
+            int mptc = 0; // Just for now.
 
             var sb = new StringBuilder();
             sb.AppendLine($"Merciless trait: {(progress.IsUnlocked ? "UNLOCKED" : "Locked")}");
             sb.AppendLine($"Requirements:");
             sb.AppendLine($"  Armor durability: {armorProgress.TotalDurabilityCredits} / {MercilessArmorDurabilityThreshold} ({(armorProgress.TotalDurabilityCredits >= MercilessArmorDurabilityThreshold ? "✓" : "✗")})");
-            sb.AppendLine($"  Melee level: {meleeProgress.TotalCredits} / {MercilessMeleeDamageThreshold} ({(meleeProgress.TotalCredits >= MercilessMeleeDamageThreshold ? "✓" : "✗")})");
+            sb.AppendLine($"  Melee level: {mptc} / {MercilessMeleeDamageThreshold} ({(mptc >= MercilessMeleeDamageThreshold ? "✓" : "✗")})");
 
             return TextCommandResult.Success(sb.ToString());
         }
@@ -10642,15 +9559,6 @@ namespace SeraphLeveling
                 definition.ResetProgress(player);
             }
 
-            // Reset Melee
-            if (MeleeProgress.TryGetValue(playerUid, out var meleeProg))
-            {
-                meleeProg.TotalCredits = 0;
-                meleeProg.WeaponProgress.Clear();
-                pendingMeleeProgressSave = true;
-            }
-            ApplyMeleeBonusStatic(player, 0);
-
             // Reset Armor
             if (ArmorProgress.TryGetValue(playerUid, out var armorProg))
             {
@@ -10660,9 +9568,6 @@ namespace SeraphLeveling
                 pendingArmorProgressSave = true;
             }
             ApplyArmorBonusesStatic(player, 0, 0);
-
-            // Reset Clothier
-            AttributeModifierDefinitions.Clothier.ResetProgress(player);
 
             // Reset Mender
             if (MenderProgress.TryGetValue(playerUid, out var menderProg))
@@ -10704,15 +9609,6 @@ namespace SeraphLeveling
             }
             ApplyForagerBonusStatic(player, 0);
 
-            // Reset Precise
-            if (PreciseProgress.TryGetValue(playerUid, out var preciseProg))
-            {
-                preciseProg.TotalCredits = 0;
-                preciseProg.WeaponProgress.Clear();
-                pendingPreciseProgressSave = true;
-            }
-            ApplyPreciseBonusStatic(player, 0);
-
             // Reset Hardy Health
             if (HardyHealthProgress.TryGetValue(playerUid, out var hardyHealthProg))
             {
@@ -10720,9 +9616,6 @@ namespace SeraphLeveling
                 pendingHardyHealthProgressSave = true;
             }
             ApplyHardyHealthBonusStatic(player, false);
-
-            // Reset Improviser
-            AttributeModifierDefinitions.Improviser.ResetProgress(player);
 
             // Reset Merciless
             if (MercilessProgress.TryGetValue(playerUid, out var mercilessProg))
@@ -10791,7 +9684,7 @@ namespace SeraphLeveling
             };
 
             if (AttributeModifierDefinitions.MiningSpeed.ProgressDictionary.TryGetValue(uid, out var mining)) ex.Mining = mining;
-            if (MeleeProgress.TryGetValue(uid, out var melee)) ex.Melee = melee;
+            if (AttributeModifierDefinitions.MeleeDamage.ProgressDictionary.TryGetValue(uid, out var melee)) ex.Melee = melee;
             if (AttributeModifierDefinitions.RangedDamage.ProgressDictionary.TryGetValue(uid, out var ranged)) ex.Ranged = ranged;
             if (AttributeModifierDefinitions.WalkingSpeed.ProgressDictionary.TryGetValue(uid, out var walking)) ex.Walking = walking;
             if (AttributeModifierDefinitions.HungerRate.ProgressDictionary.TryGetValue(uid, out var hunger)) ex.Hunger = hunger;
@@ -10802,7 +9695,7 @@ namespace SeraphLeveling
             if (ResourcefulProgress.TryGetValue(uid, out var resourceful)) ex.Resourceful = resourceful;
             if (ForagerProgress.TryGetValue(uid, out var forager)) ex.Forager = forager;
             if (AttributeModifierDefinitions.Furtive.ProgressDictionary.TryGetValue(uid, out var furtive)) ex.Furtive = furtive;
-            if (PreciseProgress.TryGetValue(uid, out var precise)) ex.Precise = precise;
+            if (AttributeModifierDefinitions.Precise.ProgressDictionary.TryGetValue(uid, out var precise)) ex.Precise = precise;
             if (AttributeModifierDefinitions.Technical.ProgressDictionary.TryGetValue(uid, out var technical)) ex.Technical = technical;
             if (HardyHealthProgress.TryGetValue(uid, out var hardy)) ex.HardyHealth = hardy;
             if (AttributeModifierDefinitions.Bowyer.ProgressDictionary.TryGetValue(uid, out var bowyer)) ex.Bowyer = bowyer;
@@ -10819,7 +9712,7 @@ namespace SeraphLeveling
         private void ApplyImportedProgress(string uid, PlayerProgressExport ex)
         {
             if (ex.Mining != null) { AttributeModifierDefinitions.MiningSpeed.ProgressDictionary[uid] = ex.Mining; AttributeModifierDefinitions.WalkingSpeed.PendingSave = true; }
-            if (ex.Melee != null) { MeleeProgress[uid] = ex.Melee; pendingMeleeProgressSave = true; }
+            if (ex.Melee != null) { AttributeModifierDefinitions.MeleeDamage.ProgressDictionary[uid] = ex.Melee; AttributeModifierDefinitions.MeleeDamage.PendingSave = true; }
             if (ex.Ranged != null) { AttributeModifierDefinitions.RangedDamage.ProgressDictionary[uid] = ex.Ranged; AttributeModifierDefinitions.RangedDamage.PendingSave = true; }
             if (ex.Walking != null) { AttributeModifierDefinitions.WalkingSpeed.ProgressDictionary[uid] = ex.Walking; AttributeModifierDefinitions.WalkingSpeed.PendingSave = true; }
             if (ex.Hunger != null) { AttributeModifierDefinitions.HungerRate.ProgressDictionary[uid] = ex.Walking; AttributeModifierDefinitions.HungerRate.PendingSave = true; }
@@ -10830,7 +9723,7 @@ namespace SeraphLeveling
             if (ex.Resourceful != null) { ResourcefulProgress[uid] = ex.Resourceful; pendingResourcefulProgressSave = true; }
             if (ex.Forager != null) { ForagerProgress[uid] = ex.Forager; pendingForagerProgressSave = true; }
             if (ex.Furtive != null) { AttributeModifierDefinitions.Furtive.ProgressDictionary[uid] = ex.Furtive; AttributeModifierDefinitions.Furtive.PendingSave = true; }
-            if (ex.Precise != null) { PreciseProgress[uid] = ex.Precise; pendingPreciseProgressSave = true; }
+            if (ex.Precise != null) { AttributeModifierDefinitions.Precise.ProgressDictionary[uid] = ex.Precise; AttributeModifierDefinitions.Precise.PendingSave = true; }
             if (ex.Technical != null) { AttributeModifierDefinitions.Technical.ProgressDictionary[uid] = ex.Technical; AttributeModifierDefinitions.Technical.PendingSave = true; }
             if (ex.HardyHealth != null) { HardyHealthProgress[uid] = ex.HardyHealth; pendingHardyHealthProgressSave = true; }
             if (ex.Bowyer != null) { AttributeModifierDefinitions.Bowyer.ProgressDictionary[uid] = ex.Bowyer; AttributeModifierDefinitions.Bowyer.PendingSave = true; }
@@ -10941,15 +9834,6 @@ namespace SeraphLeveling
                 definition.MaxStat(player);
             }
 
-            // Max Melee — same fix as Mining (pass raw credits so Farsighted/Nervous penalties
-            // don't get subtracted twice and Hunter/Malefactor/Clockmaker can hit +50%).
-            int maxMeleeCredits = GetMaxMeleeCredits(player.Entity);
-            var meleeProg = MeleeProgress.GetOrAdd(playerUid, _ => new MeleeProgressData());
-            meleeProg.TotalCredits = maxMeleeCredits;
-            meleeProg.WeaponProgress.Clear();
-            pendingMeleeProgressSave = true;
-            ApplyMeleeBonusStatic(player, maxMeleeCredits);
-
             // Max Armor
             int maxArmorDurabilityCredits = MaxArmorDurabilityPercent;
             int maxArmorWalkSpeedCredits = MaxArmorWalkSpeedPercent;
@@ -10996,14 +9880,6 @@ namespace SeraphLeveling
             pendingForagerProgressSave = true;
             ApplyForagerBonusStatic(player, maxForagerCredits);
 
-            // Max Precise
-            int maxPreciseCredits = MaxPrecisePercent;
-            var preciseProg = PreciseProgress.GetOrAdd(playerUid, _ => new PreciseProgressData());
-            preciseProg.TotalCredits = maxPreciseCredits;
-            preciseProg.WeaponProgress.Clear();
-            pendingPreciseProgressSave = true;
-            ApplyPreciseBonusStatic(player, maxPreciseCredits);
-
             // Unlock Hardy Health
             var hardyHealthProg = HardyHealthProgress.GetOrAdd(playerUid, _ => new HardyHealthProgressData());
             hardyHealthProg.IsUnlocked = true;
@@ -11048,12 +9924,6 @@ namespace SeraphLeveling
             {
                 definition.ApplyTraitTestSuite1Command(player);
             }
-            // Melee
-            var meleeProg = MeleeProgress.GetOrAdd(playerUid, _ => new MeleeProgressData());
-            meleeProg.TotalCredits = CREDITS;
-            meleeProg.WeaponProgress.Clear();
-            pendingMeleeProgressSave = true;
-            ApplyMeleeBonusStatic(player, CREDITS);
 
             // Armor (both durability and walkspeed tracks)
             var armorProg = ArmorProgress.GetOrAdd(playerUid, _ => new ArmorProgressData());
@@ -11094,13 +9964,6 @@ namespace SeraphLeveling
             foragerProg.CurrentIncrementSize = BaseForagerCropsPerIncrement;
             pendingForagerProgressSave = true;
             ApplyForagerBonusStatic(player, CREDITS);
-
-            // Precise
-            var preciseProg = PreciseProgress.GetOrAdd(playerUid, _ => new PreciseProgressData());
-            preciseProg.TotalCredits = CREDITS;
-            preciseProg.WeaponProgress.Clear();
-            pendingPreciseProgressSave = true;
-            ApplyPreciseBonusStatic(player, CREDITS);
 
             // Combat Overhaul proficiencies (only if CO is loaded)
             string coNote = "";
@@ -11896,14 +10759,6 @@ namespace SeraphLeveling
         // =========================================================================
 
         /// <summary>
-        /// Persist clothier progress to world save data.
-        /// </summary>
-        public static void PersistClothierProgress()
-        {
-            AttributeModifierDefinitions.Clothier.PersistProgress(ServerApi);
-        }
-
-        /// <summary>
         /// Load clothier progress from world save data.
         /// </summary>
         private void LoadClothierProgress()
@@ -11976,46 +10831,6 @@ namespace SeraphLeveling
         }
 
         // =========================================================================
-        // PRECISE TRAIT PERSISTENCE
-        // =========================================================================
-
-        /// <summary>
-        /// Persist precise progress to world save data.
-        /// </summary>
-        public static void PersistPreciseProgress()
-        {
-            PersistProgress<PreciseProgressData>();
-        }
-
-        /// <summary>
-        /// Load precise progress from world save data.
-        /// </summary>
-        private void LoadPreciseProgress()
-        {
-            LoadProgress<PreciseProgressData>();
-        }
-
-        // =========================================================================
-        // TECHNICAL TRAIT PERSISTENCE
-        // =========================================================================
-
-        /// <summary>
-        /// Persist technical progress to world save data.
-        /// </summary>
-        public static void PersistTechnicalProgress()
-        {
-            AttributeModifierDefinitions.Technical.PersistProgress(ServerApi);
-        }
-
-        /// <summary>
-        /// Load technical progress from world save data.
-        /// </summary>
-        private void LoadTechnicalProgress()
-        {
-            AttributeModifierDefinitions.Technical.LoadProgress(ServerApi);
-        }
-
-        // =========================================================================
         // HARDY HEALTH TRAIT PERSISTENCE
         // =========================================================================
 
@@ -12033,66 +10848,6 @@ namespace SeraphLeveling
         private void LoadHardyHealthProgress()
         {
             LoadProgress<HardyHealthProgressData>();
-        }
-
-        // =========================================================================
-        // BOWYER TRAIT PERSISTENCE
-        // =========================================================================
-
-        /// <summary>
-        /// Persist bowyer progress to world save data.
-        /// </summary>
-        public static void PersistBowyerProgress()
-        {
-            AttributeModifierDefinitions.Bowyer.PersistProgress(ServerApi);
-        }
-
-        /// <summary>
-        /// Load bowyer progress from world save data.
-        /// </summary>
-        private void LoadBowyerProgress()
-        {
-            AttributeModifierDefinitions.Bowyer.LoadProgress(ServerApi);
-        }
-
-        // =========================================================================
-        // IMPROVISER TRAIT PERSISTENCE
-        // =========================================================================
-
-        /// <summary>
-        /// Persist improviser progress to world save data.
-        /// </summary>
-        public static void PersistImproviserProgress()
-        {
-            AttributeModifierDefinitions.Improviser.PersistProgress(ServerApi);
-        }
-
-        /// <summary>
-        /// Load improviser progress from world save data.
-        /// </summary>
-        private void LoadImproviserProgress()
-        {
-            AttributeModifierDefinitions.Improviser.LoadProgress(ServerApi);
-        }
-
-        // =========================================================================
-        // TINKERER TRAIT PERSISTENCE
-        // =========================================================================
-
-        /// <summary>
-        /// Persist tinkerer progress to world save data.
-        /// </summary>
-        public static void PersistTinkererProgress()
-        {
-            AttributeModifierDefinitions.Tinkerer.PersistProgress(ServerApi);
-        }
-
-        /// <summary>
-        /// Load tinkerer progress from world save data.
-        /// </summary>
-        private void LoadTinkererProgress()
-        {
-            AttributeModifierDefinitions.Tinkerer.LoadProgress(ServerApi);
         }
 
         // =========================================================================

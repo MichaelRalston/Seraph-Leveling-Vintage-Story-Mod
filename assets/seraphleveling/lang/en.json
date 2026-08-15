@@ -34,7 +34,7 @@
   "trait-soldier-armor-dynamic": "+{0}% armor durability, walk speed penalty reduced by {1}%",
   "trait-sitarmormastery": "<font color=\"#84ff84\">• Soldier </font>",
   "traitname-sitarmormastery": "Soldier",
-  "message-clothier-unlocked": "Clothier unlocked! You can now craft sewing kits and clothing.",
+  "message-clothier-unlock": "Clothier unlocked! You can now craft sewing kits and clothing.",
   "trait-sitclothiermastery": "<font color=\"#84ff84\">• Clothier </font>",
   "traitname-sitclothiermastery": "Clothier",
   "trait-clothier-dynamic": "Exclusive craftables: <a href=\"handbook://item-sewingkit\">sewing kit</a> and various clothing",

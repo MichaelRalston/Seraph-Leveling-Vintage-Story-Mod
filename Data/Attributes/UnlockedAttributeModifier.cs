@@ -23,10 +23,8 @@ namespace SeraphLeveling.Data.Attributes
 
     public abstract class UnlockedAttributeModifierDefinition<D, PD> : AttributeModifierDefinition<D, PD>, IUnlockedAttributeModifierDefinition where PD : UnlockedAttributeModifierProgressData<D, PD> where D : UnlockedAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
     {
-        public required string Name { get; init; }
-        public required string ExtraTraitKey { get; init; }
-        public required string UnlockedKey { get; init; }
-        public string NotifyLangKey { get; init; } = null;
+        public virtual string UnlockedKey { get => field ??= $"sit{Name}Unlocked"; init; }
+        public string NotifyLangKey { get => field ??= $"seraphleveling:message-{SkillKey}-unlock"; init; } = null;
         public required Lazy<TraitDefinition> Trait { get; init; }
 
         public event UnlockChangedDelegate UnlockChanged;
@@ -110,7 +108,7 @@ namespace SeraphLeveling.Data.Attributes
             player.Entity.WatchedAttributes.SetBool(UnlockedKey, progress.IsUnlocked);
 
             // Update extraTraits to show trait if unlocked (for UI display)
-            SeraphLevelingModSystem.UpdateExtraTraitStatic(player.Entity, ExtraTraitKey, progress.IsUnlocked);
+            SeraphLevelingModSystem.UpdateExtraTraitStatic(player.Entity, TraitCode, progress.IsUnlocked);
 
             // IMPORTANT: Add ID to extraTraits to unlock tuning spear etc recipes
             // The game's recipe system checks extraTraits for dynamically granted traits
