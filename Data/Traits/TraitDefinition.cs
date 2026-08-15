@@ -159,16 +159,22 @@ namespace SeraphLeveling.Data.Traits
         protected virtual Dictionary<ISaveableAttribute, int> GetCombinedAttributeBonuses(EntityPlayer player)
         {
             Dictionary<ISaveableAttribute, int> retVal = [];
-            bool hasVanillaTrait = HasVanillaTrait(player);
-            foreach (var kvp in Attributes)
+            foreach (var mod in Attributes)
             {
-                if (kvp.Attribute is ILeveledAttributeModifierDefinition leveledAttr)
+                if (mod.Attribute is ILeveledAttributeModifierDefinition leveledAttr)
                 {
-                    retVal[leveledAttr] = leveledAttr.GetBonusPercent(player);
-                    if (hasVanillaTrait)
+                    int attrVal = leveledAttr.GetBonusPercent(player);
+                    if (SeraphLevelingModSystem.TraitsForAttributes.TryGetValue(leveledAttr.Id, out var traitModList))
                     {
-                        retVal[leveledAttr] += kvp.ModifierValue;
+                        foreach (var (traitDef, modVal) in traitModList)
+                        {
+                            if (SeraphLevelingModSystem.PlayerHasTrait(player, traitDef))
+                            {
+                                attrVal += modVal;
+                            }
+                        }
                     }
+                    retVal[leveledAttr] = attrVal;
                 }
             }
             return retVal;
