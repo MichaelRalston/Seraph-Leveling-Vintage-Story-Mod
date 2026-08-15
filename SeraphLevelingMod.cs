@@ -1474,7 +1474,6 @@ namespace SeraphLeveling
             api.Event.SaveGameLoaded += LoadForagerProgress;
             api.Event.SaveGameLoaded += LoadPreciseProgress;
             api.Event.SaveGameLoaded += LoadHardyHealthProgress;
-            api.Event.SaveGameLoaded += LoadImproviserProgress;
             api.Event.SaveGameLoaded += LoadMercilessProgress;
             api.Event.SaveGameLoaded += LoadClaustrophobicRemovalProgress;
             api.Event.SaveGameLoaded += LoadCOProgress;
@@ -5445,24 +5444,6 @@ namespace SeraphLeveling
         }
 
         /// <summary>
-        /// Persist mining progress to world save data.
-        /// Version 3 format stores per-pickaxe progress dictionary.
-        /// </summary>
-        public static void PersistMiningProgress()
-        {
-            AttributeModifierDefinitions.MiningSpeed.PersistProgress(ServerApi);
-        }
-
-        /// <summary>
-        /// Load mining progress from world save data.
-        /// Supports versions 1 (legacy blocks), 2 (single pickaxe), and 3 (per-pickaxe).
-        /// </summary>
-        private void LoadMiningProgress()
-        {
-            AttributeModifierDefinitions.MiningSpeed.LoadProgress(ServerApi);
-        }
-
-        /// <summary>
         /// Persist melee progress to world save data.
         /// Version 1 format stores per-weapon progress dictionary.
         /// </summary>
@@ -5526,15 +5507,6 @@ namespace SeraphLeveling
                 }
             }
         }
-        /// <summary>
-        /// Persist walking progress to world save data.
-        /// Version 1 format: simple progress tracking (no per-tool).
-        /// </summary>
-        public static void PersistWalkingProgress()
-        {
-            AttributeModifierDefinitions.WalkingSpeed.PersistProgress(ServerApi);
-        }
-
         private void LoadAllProgress()
         {
             foreach (var definition in LoadedAttributes)
@@ -5597,31 +5569,6 @@ namespace SeraphLeveling
             {
                 ServerApi.Logger.Error($"[SeraphLeveling] Failed to load {description} progress: {ex.Message}");
             }
-        }
-
-        /// <summary>
-        /// Load walking progress from world save data.
-        /// </summary>
-        private void LoadWalkingProgress()
-        {
-            AttributeModifierDefinitions.WalkingSpeed.LoadProgress(ServerApi);
-        }
-
-        /// <summary>
-        /// Persist hunger progress to world save data.
-        /// Version 1 format: simple progress tracking (no per-tool).
-        /// </summary>
-        public static void PersistHungerProgress()
-        {
-            AttributeModifierDefinitions.HungerRate.PersistProgress(ServerApi);
-        }
-
-        /// <summary>
-        /// Load hunger progress from world save data.
-        /// </summary>
-        private void LoadHungerProgress()
-        {
-            AttributeModifierDefinitions.HungerRate.LoadProgress(ServerApi);
         }
 
         /// <summary>
@@ -10500,30 +10447,6 @@ namespace SeraphLeveling
         }
 
         /// <summary>
-        /// Handler for /trait bowyer command.
-        /// </summary>
-        private TextCommandResult OnTraitBowyerCommand(TextCommandCallingArgs args)
-        {
-            return TraitDefinitions.Bowyer.HandleTraitCommand(args);
-        }
-
-        /// <summary>
-        /// Handler for /trait improviser command.
-        /// </summary>
-        private TextCommandResult OnTraitImproviserCommand(TextCommandCallingArgs args)
-        {
-            return TraitDefinitions.Improviser.HandleTraitCommand(args);
-        }
-
-        /// <summary>
-        /// Handler for /trait tinkerer command.
-        /// </summary>
-        private TextCommandResult OnTraitTinkererCommand(TextCommandCallingArgs args)
-        {
-            return TraitDefinitions.Tinkerer.HandleTraitCommand(args);
-        }
-
-        /// <summary>
         /// Handler for /trait merciless command.
         /// </summary>
         private TextCommandResult OnTraitMercilessCommand(TextCommandCallingArgs args)
@@ -10685,9 +10608,6 @@ namespace SeraphLeveling
             }
             ApplyArmorBonusesStatic(player, 0, 0);
 
-            // Reset Clothier
-            AttributeModifierDefinitions.Clothier.ResetProgress(player);
-
             // Reset Mender
             if (MenderProgress.TryGetValue(playerUid, out var menderProg))
             {
@@ -10744,9 +10664,6 @@ namespace SeraphLeveling
                 pendingHardyHealthProgressSave = true;
             }
             ApplyHardyHealthBonusStatic(player, false);
-
-            // Reset Improviser
-            AttributeModifierDefinitions.Improviser.ResetProgress(player);
 
             // Reset Merciless
             if (MercilessProgress.TryGetValue(playerUid, out var mercilessProg))
@@ -12077,46 +11994,6 @@ namespace SeraphLeveling
         private void LoadBowyerProgress()
         {
             AttributeModifierDefinitions.Bowyer.LoadProgress(ServerApi);
-        }
-
-        // =========================================================================
-        // IMPROVISER TRAIT PERSISTENCE
-        // =========================================================================
-
-        /// <summary>
-        /// Persist improviser progress to world save data.
-        /// </summary>
-        public static void PersistImproviserProgress()
-        {
-            AttributeModifierDefinitions.Improviser.PersistProgress(ServerApi);
-        }
-
-        /// <summary>
-        /// Load improviser progress from world save data.
-        /// </summary>
-        private void LoadImproviserProgress()
-        {
-            AttributeModifierDefinitions.Improviser.LoadProgress(ServerApi);
-        }
-
-        // =========================================================================
-        // TINKERER TRAIT PERSISTENCE
-        // =========================================================================
-
-        /// <summary>
-        /// Persist tinkerer progress to world save data.
-        /// </summary>
-        public static void PersistTinkererProgress()
-        {
-            AttributeModifierDefinitions.Tinkerer.PersistProgress(ServerApi);
-        }
-
-        /// <summary>
-        /// Load tinkerer progress from world save data.
-        /// </summary>
-        private void LoadTinkererProgress()
-        {
-            AttributeModifierDefinitions.Tinkerer.LoadProgress(ServerApi);
         }
 
         // =========================================================================
