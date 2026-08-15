@@ -121,7 +121,7 @@ namespace SeraphLeveling.Data.Traits
                 string headerText = Lang.Get(DynamicTraitHeaderKey);
                 string contentText = string.Join(", ", Attributes.Where(mod => mod.IsActive(player.Player)).Select(mod => {
                     string modKey = mod.DynamicAttributeContentsKey.ToLowerInvariant();
-                    string retVal = Lang.Get(modKey, combinedAttrBonuses[mod.Attribute]);
+                    string retVal = Lang.Get(modKey, combinedAttrBonuses[mod.Attribute].ToString("+0;-#"));
                     CharacterSystemPatches.ClientApi.Logger.Debug($"      [Verdus] Calling BuildTraitText for trait {Id}: attr={mod.Attribute.Id}, key={mod.DynamicAttributeContentsKey}, lang token={retVal}");
                     return retVal == modKey ? null : retVal;
                 }).Where(token => token != null));
