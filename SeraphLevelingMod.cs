@@ -2771,32 +2771,6 @@ namespace SeraphLeveling
         }
 
         /// <summary>
-        /// Calculate the maximum hunger credits a player can earn.
-        /// Ravenous players need more credits to reach the same target hunger rate.
-        /// Target is (100 - MaxHungerReductionPercent)% = 75% by default.
-        /// Non-Ravenous: 100% - 75% = 25 credits needed
-        /// Ravenous: 130% - 75% = 55 credits needed
-        /// </summary>
-        public static int CalculateMaxHungerCredits(EntityPlayer entity)
-        {
-            bool hasRavenous = entity != null && PlayerHasVanillaRavenousStatic(entity);
-            int ravenousPenalty = hasRavenous ? VANILLA_RAVENOUS_HUNGER_PENALTY : 0;
-            // MaxHungerReductionPercent represents how much a normal player needs to reduce
-            // Ravenous players need that PLUS their penalty to reach the same target
-            return AttributeModifierDefinitions.HungerRate.GlobalMaxCredits + ravenousPenalty;
-        }
-
-        /// <summary>
-        /// Calculate the hunger rate reduction bonus as an integer percentage.
-        /// This is the actual reduction applied (1% per credit, up to player's max).
-        /// </summary>
-        public static int CalculateHungerBonusPercent(int credits, EntityPlayer entity)
-        {
-            int maxCredits = CalculateMaxHungerCredits(entity);
-            return Math.Min(credits, maxCredits);
-        }
-
-        /// <summary>
         /// Checks if the player's class has the vanilla Ravenous trait.
         /// </summary>
         public static bool PlayerHasVanillaRavenousStatic(EntityPlayer entity)
@@ -2817,76 +2791,6 @@ namespace SeraphLeveling
             // Fallback: check known classes that have Ravenous (Blackguard)
             string characterClass = entity.WatchedAttributes.GetString("characterClass", "");
             return characterClass.Equals("blackguard", StringComparison.OrdinalIgnoreCase);
-        }
-
-        /// <summary>
-        /// Apply hunger rate reduction to a player based on their level.
-        /// Returns the actual applied bonus percentage.
-        /// All classes can reach the same target hunger rate (75% by default).
-        /// Ravenous players start at 130% and need 55 credits to reach 75%.
-        /// Non-Ravenous players start at 100% and need 25 credits to reach 75%.
-        /// </summary>
-        public static int ApplyHungerBonusStatic(IServerPlayer player, int level)
-        {
-            if (player?.Entity == null) return 0;
-
-            // Use cached vanilla traits if available, otherwise fall back to direct check
-            var cache = GetCachedTraits(player.PlayerUID);
-            bool hasVanillaRavenous = cache?.HasRavenous ?? PlayerHasVanillaRavenousStatic(player.Entity);
-
-            // Calculate max credits this player can earn
-            int maxCredits = CalculateMaxHungerCredits(player.Entity);
-
-            // Calculate bonus from level (1% per level, capped at player's max)
-            int cappedLevel = Math.Min(level, maxCredits);
-            float bonus = cappedLevel * 0.01f;
-            int bonusPercent = (int)(bonus * 100);
-
-            // Calculate remaining Ravenous penalty (0 when fully cancelled at level 30)
-            int ravenousRemaining = hasVanillaRavenous ? CalculateRemainingPenalty(VANILLA_RAVENOUS_HUNGER_PENALTY, level) : 0;
-
-            // Always apply stats (they're not persistent)
-            // Set the hunger rate stat - this value is ADDED to the base (1.0)
-            // We want to REDUCE hunger rate, so we use a negative value
-            player.Entity.Stats.Set("hungerrate", HUNGER_STAT_CODE, -bonus, false);
-
-            // Check if any values have changed before updating WatchedAttributes
-            var watchedAttrs = player.Entity.WatchedAttributes;
-            int oldLevel = watchedAttrs.GetInt(WATCHED_HUNGER_LEVEL, -1);
-            int oldBonus = watchedAttrs.GetInt(WATCHED_HUNGER_BONUS, -1);
-
-            bool valuesChanged = (oldLevel != level) || (oldBonus != bonusPercent);
-
-            // Only update WatchedAttributes if values changed
-            if (valuesChanged)
-            {
-                // Sync level and bonus to WatchedAttributes for client-side display
-                watchedAttrs.SetInt(WATCHED_HUNGER_LEVEL, level);
-                watchedAttrs.SetInt(WATCHED_HUNGER_BONUS, bonusPercent);
-                watchedAttrs.SetBool("sitHasVanillaRavenous", hasVanillaRavenous);
-                watchedAttrs.SetInt("sitMaxHungerCredits", maxCredits);
-                watchedAttrs.SetInt(WATCHED_RAVENOUS_REMAINING, ravenousRemaining);
-
-                // Add our trait to extraTraits (hunger mastery is unique, doesn't replace a vanilla trait)
-                UpdateExtraTraitStatic(player.Entity, HUNGER_TRAIT_CODE, level > 0);
-
-                // Only call MarkPathDirty once (batched update)
-                watchedAttrs.MarkPathDirty(WATCHED_HUNGER_LEVEL);
-            }
-
-            return bonusPercent;
-        }
-
-        /// <summary>
-        /// Calculate the walking speed bonus as an integer percentage.
-        /// Accounts for vanilla Fleetfooted trait (+10% walk speed).
-        /// </summary>
-        public static int CalculateWalkingBonusPercent(int credits, EntityPlayer entity)
-        {
-            bool hasFleetfooted = entity != null && PlayerHasVanillaFleetfootedStatic(entity);
-            int vanillaBonus = hasFleetfooted ? VANILLA_FLEETFOOTED_WALK_BONUS : 0;
-            int earnableBonus = Math.Max(0, AttributeModifierDefinitions.WalkingSpeed.GlobalMaxCredits - vanillaBonus);
-            return Math.Min(credits, earnableBonus);
         }
 
         /// <summary>
@@ -2923,59 +2827,6 @@ namespace SeraphLeveling
             }
 
             return MaxMeleeDamagePercent;
-        }
-
-        /// <summary>
-        /// Calculate ranged bonuses as percentages, accounting for vanilla Focused trait.
-        /// Returns (damageBonus, accuracyBonus, distanceBonus) as integers.
-        /// </summary>
-        public static (int damage, int accuracy, int distance) CalculateRangedBonusPercents(int credits, EntityPlayer entity)
-        {
-            bool hasFocused = entity != null && PlayerHasVanillaFocusedStatic(entity);
-            int vanillaDamage = hasFocused ? VANILLA_FOCUSED_DAMAGE_BONUS : 0;
-            int vanillaAccuracy = hasFocused ? VANILLA_FOCUSED_ACCURACY_BONUS : 0;
-            int vanillaDistance = hasFocused ? VANILLA_FOCUSED_DISTANCE_BONUS : 0;
-
-            // Each stat is capped individually
-            int earnableDamage = Math.Max(0, MaxRangedDamagePercent - vanillaDamage);
-            int earnableAccuracy = Math.Max(0, MaxRangedAccuracyPercent - vanillaAccuracy);
-            int earnableDistance = Math.Max(0, MaxRangedDistancePercent - vanillaDistance);
-
-            int damageBonus = Math.Min(credits, earnableDamage);
-            int accuracyBonus = Math.Min(credits, earnableAccuracy);
-            int distanceBonus = Math.Min(credits, earnableDistance);
-
-            return (damageBonus, accuracyBonus, distanceBonus);
-        }
-
-        /// <summary>
-        /// Get the maximum ranged credits a player can earn based on their traits.
-        /// Players with Nearsighted or Frail traits can earn extra credits
-        /// to compensate for the penalty before gaining positive bonuses.
-        /// </summary>
-        public static int GetMaxRangedCredits(EntityPlayer entity)
-        {
-            if (entity == null) return MaxRangedDamagePercent;
-
-            bool hasNearsighted = PlayerHasVanillaNearsighted(entity);
-            bool hasFrail = PlayerHasVanillaFrail(entity);
-
-            // Use the larger penalty to determine max credits
-            int extraCredits = 0;
-
-            // Nearsighted penalty is 15% ranged damage, need 15 extra levels to cancel it
-            if (hasNearsighted)
-            {
-                extraCredits = Math.Max(extraCredits, VANILLA_NEARSIGHTED_RANGED_PENALTY);
-            }
-
-            // Frail penalty is 25% ranged distance, need 25 extra levels to cancel it
-            if (hasFrail)
-            {
-                extraCredits = Math.Max(extraCredits, VANILLA_FRAIL_DISTANCE_PENALTY);
-            }
-
-            return MaxRangedDamagePercent + extraCredits;
         }
 
         /// <summary>
@@ -4182,87 +4033,6 @@ namespace SeraphLeveling
             // Fallback: check known classes that have Hardy
             string characterClass = entity.WatchedAttributes.GetString("characterClass", "");
             return characterClass.Equals("blackguard", StringComparison.OrdinalIgnoreCase);
-        }
-
-        /// <summary>
-        /// Adds or removes a trait from the player's extraTraits array.
-        /// </summary>
-        public void UpdateExtraTrait(EntityPlayer entity, string traitCode, bool shouldHave)
-        {
-            // Get current extra traits
-            string[] currentTraits = entity.WatchedAttributes.GetStringArray("extraTraits", null) ?? Array.Empty<string>();
-            bool hasTrait = currentTraits.Contains(traitCode);
-
-            if (shouldHave && !hasTrait)
-            {
-                // Add the trait
-                var newTraits = currentTraits.Append(traitCode).ToArray();
-                entity.WatchedAttributes.SetStringArray("extraTraits", newTraits);
-                entity.WatchedAttributes.MarkPathDirty("extraTraits");
-                ServerApi.Logger.Debug($"[SeraphLeveling] Added trait {traitCode} to player");
-            }
-            else if (!shouldHave && hasTrait)
-            {
-                // Remove the trait
-                var newTraits = currentTraits.Where(t => t != traitCode).ToArray();
-                entity.WatchedAttributes.SetStringArray("extraTraits", newTraits);
-                entity.WatchedAttributes.MarkPathDirty("extraTraits");
-                ServerApi.Logger.Debug($"[SeraphLeveling] Removed trait {traitCode} from player");
-            }
-        }
-
-        /// <summary>
-        /// Calculate the mining speed bonus as a float (0.0 to 1.5 for 0% to 150%).
-        /// Each credit gives 1% bonus, capped at MaxMiningSpeedPercent.
-        /// </summary>
-        public static float CalculateMiningBonus(int credits)
-        {
-            float bonus = credits * 0.01f;
-            return Math.Min(bonus, AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits / 100f);
-        }
-
-        /// <summary>
-        /// Calculate the mining speed bonus as an integer percentage (0 to 150).
-        /// Each credit gives 1% bonus, capped at MaxMiningSpeedPercent.
-        /// </summary>
-        public static int CalculateMiningBonusPercent(int credits)
-        {
-            return Math.Min(credits, AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits);
-        }
-
-        /// <summary>
-        /// Calculate the maximum credits (level) based on the bonus cap.
-        /// </summary>
-        public static int CalculateMaxCredits()
-        {
-            return AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits;
-        }
-
-        /// <summary>
-        /// Get the maximum mining credits a player can earn based on their traits.
-        /// Players with Weak or Claustrophobic traits can earn extra credits
-        /// to compensate for the penalty before gaining positive bonuses.
-        /// </summary>
-        public static int GetMaxMiningCredits(EntityPlayer entity)
-        {
-            if (entity == null) return AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits;
-
-            bool hasWeak = PlayerHasVanillaWeak(entity);
-            bool hasClaustrophobic = PlayerHasVanillaClaustrophobic(entity);
-
-            // Weak penalty is 10% mining speed, need 10 extra levels to cancel it
-            if (hasWeak)
-            {
-                return AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits + VANILLA_WEAK_MINING_PENALTY;
-            }
-
-            // Claustrophobic penalty is 10% mining speed, need 10 extra levels to cancel it
-            if (hasClaustrophobic)
-            {
-                return AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits + VANILLA_CLAUSTROPHOBIC_MINING_PENALTY;
-            }
-
-            return AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits;
         }
 
         // Server-side Harmony instance for melee damage tracking

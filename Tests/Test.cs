@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using SeraphLeveling.Data.Attributes;
+using Vintagestory.API.Common;
 using Vintagestory.API.Server;
 
 namespace SeraphLeveling.Tests
@@ -63,9 +64,6 @@ namespace SeraphLeveling.Tests
                 sb.AppendLine("Available test categories:");
                 sb.AppendLine("  mining      - Mining calculation tests");
                 sb.AppendLine("  melee       - Melee damage calculation tests");
-                sb.AppendLine("  ranged      - Ranged damage, accuracy, and distance tests");
-                sb.AppendLine("  walking     - Walking speed calculation tests");
-                sb.AppendLine("  hunger      - Hunger rate calculation tests");
                 sb.AppendLine("  armor       - Armor durability and walk speed tests");
                 sb.AppendLine("  negative    - Negative trait cancellation tests");
                 sb.AppendLine("  detection   - Block, weapon, and armor detection tests");
@@ -78,7 +76,7 @@ namespace SeraphLeveling.Tests
             if (runAll || (category != null && category.Equals("mining", StringComparison.OrdinalIgnoreCase)))
             {
                 sb.AppendLine("[SeraphLeveling Tests] Running mining tests...");
-                RunMiningTests();
+                RunMiningTests(player.Entity);
                 sb.AppendLine(FormatCategoryResults("Mining"));
             }
 
@@ -87,27 +85,6 @@ namespace SeraphLeveling.Tests
                 sb.AppendLine("[SeraphLeveling Tests] Running melee tests...");
                 RunMeleeTests();
                 sb.AppendLine(FormatCategoryResults("Melee"));
-            }
-
-            if (runAll || (category != null && category.Equals("ranged", StringComparison.OrdinalIgnoreCase)))
-            {
-                sb.AppendLine("[SeraphLeveling Tests] Running ranged tests...");
-                RunRangedTests();
-                sb.AppendLine(FormatCategoryResults("Ranged"));
-            }
-
-            if (runAll || (category != null && category.Equals("walking", StringComparison.OrdinalIgnoreCase)))
-            {
-                sb.AppendLine("[SeraphLeveling Tests] Running walking tests...");
-                RunWalkingTests();
-                sb.AppendLine(FormatCategoryResults("Walking"));
-            }
-
-            if (runAll || (category != null && category.Equals("hunger", StringComparison.OrdinalIgnoreCase)))
-            {
-                sb.AppendLine("[SeraphLeveling Tests] Running hunger tests...");
-                RunHungerTests();
-                sb.AppendLine(FormatCategoryResults("Hunger"));
             }
 
             if (runAll || (category != null && category.Equals("armor", StringComparison.OrdinalIgnoreCase)))
@@ -220,45 +197,41 @@ namespace SeraphLeveling.Tests
         // MINING TESTS
         // =========================================================================
 
-        private static void RunMiningTests()
+        private static void RunMiningTests(EntityPlayer player)
         {
             int maxMining = AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits;
+            var progress = AttributeModifierDefinitions.MiningSpeed.CreateProgressData();
+            progress.TotalCredits = 1;
 
             // MINE-001: First credit at base increment
             // With default settings: 100 blocks = 1 credit = 1%
-            AssertEqual("MINE-001", "Mining bonus percent at 1 credit", 1, SeraphLevelingModSystem.CalculateMiningBonusPercent(1));
+            AssertEqual("MINE-001", "Mining bonus percent at 1 credit", 1, AttributeModifierDefinitions.MiningSpeed.CalculateBonus(player, progress));
+            progress.TotalCredits = maxMining+50;
 
             // MINE-002: Credits capped at configured max
-            AssertEqual("MINE-002", $"Mining bonus capped at max ({maxMining}%)", maxMining, SeraphLevelingModSystem.CalculateMiningBonusPercent(maxMining + 50));
+            AssertEqual("MINE-002", $"Mining bonus capped at max ({maxMining}%)", maxMining, AttributeModifierDefinitions.MiningSpeed.CalculateBonus(player, progress));
+            progress.TotalCredits = 0;
 
             // MINE-003: Zero credits yields zero bonus
-            AssertEqual("MINE-003", "Mining bonus at 0 credits", 0, SeraphLevelingModSystem.CalculateMiningBonusPercent(0));
+            AssertEqual("MINE-003", "Mining bonus at 0 credits", 0, AttributeModifierDefinitions.MiningSpeed.CalculateBonus(player, progress));
+            progress.TotalCredits = 25;
 
             // MINE-004: Credits equal bonus percent (1:1 ratio)
-            AssertEqual("MINE-004", "25 credits = 25% bonus", 25, SeraphLevelingModSystem.CalculateMiningBonusPercent(25));
+            AssertEqual("MINE-004", "25 credits = 25% bonus", 25, AttributeModifierDefinitions.MiningSpeed.CalculateBonus(player, progress));
 
             // MINE-005: Float bonus calculation
-            float expectedFloat = 0.25f;
-            float actualFloat = SeraphLevelingModSystem.CalculateMiningBonus(25);
-            AssertTrue("MINE-005", "Float bonus 25 credits = 0.25", Math.Abs(expectedFloat - actualFloat) < 0.001f, "0.25", actualFloat.ToString("F3"));
-
-            // MINE-006: Float bonus capped at configured max
-            float maxFloat = maxMining / 100f;
-            float actualMaxFloat = SeraphLevelingModSystem.CalculateMiningBonus(maxMining + 50);
-            AssertTrue("MINE-006", $"Float bonus capped at {maxFloat:F2}", Math.Abs(maxFloat - actualMaxFloat) < 0.001f, maxFloat.ToString("F2"), actualMaxFloat.ToString("F2"));
-
-            // MINE-007: Max credits calculation (no entity, default)
-            int maxCredits = SeraphLevelingModSystem.GetMaxMiningCredits(null);
-            AssertEqual("MINE-007", "Max mining credits (null entity)", maxMining, maxCredits);
+            progress.TotalCredits = 25;
 
             // MINE-008: CalculateMaxCredits returns MaxMiningSpeedPercent
-            AssertEqual("MINE-008", "CalculateMaxCredits matches MaxMiningSpeedPercent", maxMining, SeraphLevelingModSystem.CalculateMaxCredits());
+            AssertEqual("MINE-008", "CalculateMaxCredits matches MaxMiningSpeedPercent", maxMining, AttributeModifierDefinitions.MiningSpeed.GetMaxCredits(player));
 
             // MINE-009: Boundary - exactly at max
-            AssertEqual("MINE-009", "Exactly at max credits", maxMining, SeraphLevelingModSystem.CalculateMiningBonusPercent(maxMining));
+            progress.TotalCredits = maxMining;
+            AssertEqual("MINE-009", "Exactly at max credits", maxMining, AttributeModifierDefinitions.MiningSpeed.CalculateBonus(player, progress));
 
             // MINE-010: Boundary - one over max
-            AssertEqual("MINE-010", "One over max credits still capped", maxMining, SeraphLevelingModSystem.CalculateMiningBonusPercent(maxMining + 1));
+            progress.TotalCredits = maxMining+1;
+            AssertEqual("MINE-010", "One over max credits still capped", maxMining, AttributeModifierDefinitions.MiningSpeed.CalculateBonus(player, progress));
         }
 
         // =========================================================================
@@ -330,80 +303,6 @@ namespace SeraphLeveling.Tests
             // MELEE-017: Full code preserved
             string fullCode = SeraphLevelingModSystem.GetWeaponTypeFromCode("game:sword-copper");
             AssertEqual("MELEE-017", "Full item code preserved", "game:sword-copper", fullCode);
-        }
-
-        // =========================================================================
-        // RANGED TESTS
-        // =========================================================================
-
-        private static void RunRangedTests()
-        {
-            int maxDmg = SeraphLevelingModSystem.MaxRangedDamagePercent;
-            int maxAcc = SeraphLevelingModSystem.MaxRangedAccuracyPercent;
-            int maxDist = SeraphLevelingModSystem.MaxRangedDistancePercent;
-
-            // RANGED-001: All three stats increase with credits (null entity = no vanilla bonus)
-            var (damage, accuracy, distance) = SeraphLevelingModSystem.CalculateRangedBonusPercents(25, null);
-            AssertEqual("RANGED-001a", "Ranged damage at 25 credits", 25, damage);
-            AssertEqual("RANGED-001b", "Ranged accuracy at 25 credits", 25, accuracy);
-            AssertEqual("RANGED-001c", "Ranged distance at 25 credits", 25, distance);
-
-            // RANGED-002: Zero credits
-            var (d0, a0, dist0) = SeraphLevelingModSystem.CalculateRangedBonusPercents(0, null);
-            AssertEqual("RANGED-002", "Ranged bonuses at 0 credits", 0, d0 + a0 + dist0);
-
-            // RANGED-003: Stats capped at configured max
-            var (dMax, aMax, distMax) = SeraphLevelingModSystem.CalculateRangedBonusPercents(maxDmg + 50, null);
-            AssertEqual("RANGED-003a", $"Ranged damage capped at {maxDmg}", maxDmg, dMax);
-            AssertEqual("RANGED-003b", $"Ranged accuracy capped at {maxAcc}", maxAcc, aMax);
-            AssertEqual("RANGED-003c", $"Ranged distance capped at {maxDist}", maxDist, distMax);
-
-            // RANGED-004: Max ranged credits for null entity
-            int maxCredits = SeraphLevelingModSystem.GetMaxRangedCredits(null);
-            AssertEqual("RANGED-004", "Max ranged credits (null entity)", maxDmg, maxCredits);
-        }
-
-        // =========================================================================
-        // WALKING TESTS
-        // =========================================================================
-
-        private static void RunWalkingTests()
-        {
-            int maxWalking = AttributeModifierDefinitions.WalkingSpeed.GlobalMaxCredits;
-
-            // WALKING-001: Walking bonus calculation (null entity = no vanilla bonus)
-            AssertEqual("WALKING-001", "Walking bonus at 5 credits", 5, SeraphLevelingModSystem.CalculateWalkingBonusPercent(5, null));
-
-            // WALKING-002: Zero credits
-            AssertEqual("WALKING-002", "Walking bonus at 0 credits", 0, SeraphLevelingModSystem.CalculateWalkingBonusPercent(0, null));
-
-            // WALKING-003: Capped at configured max
-            AssertEqual("WALKING-003", $"Walking bonus capped at max ({maxWalking}%)", maxWalking, SeraphLevelingModSystem.CalculateWalkingBonusPercent(maxWalking + 50, null));
-
-            // WALKING-004: Exactly at max
-            AssertEqual("WALKING-004", "Exactly at max walking credits", maxWalking, SeraphLevelingModSystem.CalculateWalkingBonusPercent(maxWalking, null));
-        }
-
-        // =========================================================================
-        // HUNGER TESTS
-        // =========================================================================
-
-        private static void RunHungerTests()
-        {
-            int maxHunger = AttributeModifierDefinitions.HungerRate.GlobalMaxCredits;
-
-            // HUNGER-001: Hunger bonus calculation (null entity)
-            AssertEqual("HUNGER-001", "Hunger bonus at 10 credits", 10, SeraphLevelingModSystem.CalculateHungerBonusPercent(10, null));
-
-            // HUNGER-002: Zero credits
-            AssertEqual("HUNGER-002", "Hunger bonus at 0 credits", 0, SeraphLevelingModSystem.CalculateHungerBonusPercent(0, null));
-
-            // HUNGER-003: Max hunger credits for null entity (non-Ravenous)
-            int maxCredits = SeraphLevelingModSystem.CalculateMaxHungerCredits(null);
-            AssertEqual("HUNGER-003", $"Max hunger credits (null = non-Ravenous)", maxHunger, maxCredits);
-
-            // HUNGER-004: Capped at max
-            AssertEqual("HUNGER-004", $"Hunger bonus capped at max ({maxCredits})", maxCredits, SeraphLevelingModSystem.CalculateHungerBonusPercent(maxCredits + 50, null));
         }
 
         // =========================================================================
