@@ -106,19 +106,7 @@ namespace SeraphLeveling.Data.Traits
 
         protected virtual bool ShouldDisplay(EntityPlayer player)
         {
-            return Attributes.Any(a => a.IsActive(player.Player)) /* && (MergeWithVanilla || !HasVanillaTrait(player)) */;
-        }
-
-        private int GetVanillaValue(ILeveledAttributeModifierDefinition attr)
-        {
-            foreach (var modifier in Attributes)
-            {
-                if (modifier.Attribute == attr)
-                {
-                    return modifier.ModifierValue;
-                }
-            }
-            return 0;
+            return Attributes.Any(a => a.IsActive(player.Player));
         }
 
         public virtual void BuildTraitText(EntityPlayer player, ref string result)
@@ -131,7 +119,7 @@ namespace SeraphLeveling.Data.Traits
             {
                 var combinedAttrBonuses = GetCombinedAttributeBonuses(player);
                 string headerText = Lang.Get(DynamicTraitHeaderKey);
-                string contentText = string.Join(", ", Attributes.Select(mod => {
+                string contentText = string.Join(", ", Attributes.Where(mod => mod.IsActive(player.Player)).Select(mod => {
                     string modKey = mod.DynamicAttributeContentsKey.ToLowerInvariant();
                     string retVal = Lang.Get(modKey, combinedAttrBonuses[mod.Attribute]);
                     CharacterSystemPatches.ClientApi.Logger.Debug($"      [Verdus] Calling BuildTraitText for trait {Id}: attr={mod.Attribute.Id}, key={mod.DynamicAttributeContentsKey}, lang token={retVal}");

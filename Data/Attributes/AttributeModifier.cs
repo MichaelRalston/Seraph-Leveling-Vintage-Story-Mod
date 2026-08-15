@@ -406,15 +406,19 @@ namespace SeraphLeveling.Data.Attributes
 
             public bool IsActive(IPlayer player)
             {
-                if (RemoveWith.Any(req => !req.IsSatisfied(player)))
+                if (player?.Entity == null)
+                {
+                    return false;
+                }
+                else if (RemoveWith.Any(req => !req.IsSatisfied(player)))
                 {
                     // If at least one removal requirement is present and any are unsatisfied, then the modifier remains active
-                    return true;
+                    return Attribute.ShouldDisplay(player.Entity);
                 }
                 else if (UnlockWith.All(req => req.IsSatisfied(player)))
                 {
                     // If all unlock requirements are met, or none are specified, then the modifier becomes active
-                    return true;
+                    return Attribute.ShouldDisplay(player.Entity);
                 }
                 else
                 {
