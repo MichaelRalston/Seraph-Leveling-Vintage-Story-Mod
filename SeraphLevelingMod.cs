@@ -2584,14 +2584,6 @@ namespace SeraphLeveling
         }
 
         /// <summary>
-        /// Checks if the player's class has the vanilla Fleetfooted trait.
-        /// </summary>
-        public static bool PlayerHasVanillaFleetfootedStatic(EntityPlayer entity)
-        {
-            return PlayerHasTrait(entity, TraitDefinitions.Fleetfooted);
-        }
-
-        /// <summary>
         /// Reliable check for whether the player has a vanilla trait. Reads from
         /// `characterTraits` and `characterClass` watched attributes (both reliably synced by
         /// vanilla VS) instead of our own `sitHasVanillaX` bools, which depend on a MarkPathDirty
@@ -2681,45 +2673,6 @@ namespace SeraphLeveling
                 foreach (string trait in classTraits)
                 {
                     if (trait.Equals("nervous", StringComparison.OrdinalIgnoreCase))
-                        return true;
-                }
-            }
-            string characterClass = entity.WatchedAttributes.GetString("characterClass", "");
-            return characterClass.Equals("malefactor", StringComparison.OrdinalIgnoreCase) ||
-                   characterClass.Equals("clockmaker", StringComparison.OrdinalIgnoreCase);
-        }
-
-        /// <summary>
-        /// Checks if the player's class has the vanilla Nearsighted trait (Blackguard).
-        /// </summary>
-        public static bool PlayerHasVanillaNearsighted(EntityPlayer entity)
-        {
-            if (entity == null) return false;
-            string[] classTraits = entity.WatchedAttributes.GetStringArray("characterTraits", null);
-            if (classTraits != null)
-            {
-                foreach (string trait in classTraits)
-                {
-                    if (trait.Equals("nearsighted", StringComparison.OrdinalIgnoreCase))
-                        return true;
-                }
-            }
-            string characterClass = entity.WatchedAttributes.GetString("characterClass", "");
-            return characterClass.Equals("blackguard", StringComparison.OrdinalIgnoreCase);
-        }
-
-        /// <summary>
-        /// Checks if the player's class has the vanilla Frail trait (Malefactor, Clockmaker).
-        /// </summary>
-        public static bool PlayerHasVanillaFrail(EntityPlayer entity)
-        {
-            if (entity == null) return false;
-            string[] classTraits = entity.WatchedAttributes.GetStringArray("characterTraits", null);
-            if (classTraits != null)
-            {
-                foreach (string trait in classTraits)
-                {
-                    if (trait.Equals("frail", StringComparison.OrdinalIgnoreCase))
                         return true;
                 }
             }
