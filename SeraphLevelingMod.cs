@@ -351,10 +351,6 @@ namespace SeraphLeveling
         public const int VANILLA_RESOURCEFUL_LOOT_BONUS = 10;
         public const int VANILLA_RESOURCEFUL_SPEED_BONUS = 25;
 
-        // Storage for resourceful progress
-        public static ConcurrentDictionary<string, ResourcefulProgressData> ResourcefulProgress = new ConcurrentDictionary<string, ResourcefulProgressData>();
-        public static volatile bool pendingResourcefulProgressSave = false;
-
         // =========================================================================
         // FORAGER TRAIT - Tracks wild crop breaking for foraging loot bonuses
         // =========================================================================
@@ -1032,32 +1028,6 @@ namespace SeraphLeveling
                     .RequiresPrivilege(Privilege.controlserver)
                     .HandleWith(OnTraitPilfererMaxCommand)
                 .EndSubCommand()
-                // Resourceful trait commands
-                .BeginSubCommand("resourceful")
-                    .WithDescription("View your resourceful progression stats")
-                    .RequiresPrivilege(Privilege.chat)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitResourcefulCommand)
-                .EndSubCommand()
-                .BeginSubCommand("resourcefulbase")
-                    .WithDescription("Get or set the base animals per level (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalInt("animals"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitResourcefulBaseCommand)
-                .EndSubCommand()
-                .BeginSubCommand("resourcefullevel")
-                    .WithDescription("Get or set your resourceful level (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalInt("level"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitResourcefulLevelCommand)
-                .EndSubCommand()
-                .BeginSubCommand("resourcefulmax")
-                    .WithDescription("Get or set the max resourceful loot bonus percent (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalInt("percent"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitResourcefulMaxCommand)
-                .EndSubCommand()
                 // Hardy health trait commands
                 .BeginSubCommand("hardyhealth")
                     .WithDescription("View your hardy health unlock progress")
@@ -1387,7 +1357,6 @@ namespace SeraphLeveling
             api.Event.SaveGameLoaded += LoadClothierProgress;
             api.Event.SaveGameLoaded += LoadMenderProgress;
             api.Event.SaveGameLoaded += LoadPilfererProgress;
-            api.Event.SaveGameLoaded += LoadResourcefulProgress;
             api.Event.SaveGameLoaded += LoadHardyHealthProgress;
             api.Event.SaveGameLoaded += LoadMercilessProgress;
             api.Event.SaveGameLoaded += LoadClaustrophobicRemovalProgress;
@@ -1554,9 +1523,6 @@ namespace SeraphLeveling
 
             var pilfererProg = PilfererProgress.GetOrAdd(playerUid, _ => new PilfererProgressData { CurrentIncrementSize = BasePilfererPointsPerIncrement });
             sb.AppendLine($"Pilferer: {pilfererProg.TotalCredits}/{MaxPilfererPercent} (+{pilfererProg.TotalCredits}% vessel loot)");
-
-            var resourcefulProg = ResourcefulProgress.GetOrAdd(playerUid, _ => new ResourcefulProgressData { CurrentIncrementSize = BaseResourcefulAnimalsPerIncrement });
-            sb.AppendLine($"Resourceful: {resourcefulProg.TotalCredits}/{MaxResourcefulLootPercent} (+{resourcefulProg.TotalCredits}% animal loot)");
 
             // Unlock traits
             sb.AppendLine("\n--- Unlock Traits ---");
@@ -1777,17 +1743,6 @@ namespace SeraphLeveling
                         ApplyPilfererBonusStatic(targetPlayer, level);
                         UpdateSkillActivityDay(targetUid, "pilferer");
                         result = $"Pilferer level set to {level} for {targetPlayer.PlayerName}.";
-                        break;
-                    }
-                case "resourceful":
-                    {
-                        if (level > MaxResourcefulLootPercent) return TextCommandResult.Error($"Level cannot exceed max ({MaxResourcefulLootPercent}).");
-                        var progress = ResourcefulProgress.GetOrAdd(targetUid, _ => new ResourcefulProgressData { CurrentIncrementSize = BaseResourcefulAnimalsPerIncrement });
-                        progress.TotalCredits = level;
-                        pendingResourcefulProgressSave = true;
-                        ApplyResourcefulBonusStatic(targetPlayer, level);
-                        UpdateSkillActivityDay(targetUid, "resourceful");
-                        result = $"Resourceful level set to {level} for {targetPlayer.PlayerName}.";
                         break;
                     }
                 default:
@@ -3459,19 +3414,6 @@ namespace SeraphLeveling
                 ServerApi.Logger.Debug($"[SeraphLeveling] Applied pilferer bonus +{pilfererCredits}% to player {byPlayer.PlayerName}");
             }
 
-            // Apply resourceful bonus
-            var resourcefulProg = ResourcefulProgress.GetOrAdd(playerUid, _ => new ResourcefulProgressData
-            {
-                CurrentIncrementSize = BaseResourcefulAnimalsPerIncrement
-            });
-            int resourcefulCredits = resourcefulProg.TotalCredits;
-            ApplyResourcefulBonusStatic(byPlayer, resourcefulCredits);
-            if (resourcefulCredits > 0)
-            {
-                ServerApi.Logger.Debug($"[SeraphLeveling] Applied resourceful bonus +{resourcefulCredits}% to player {byPlayer.PlayerName}");
-            }
-
-
             // Apply hardy health unlock
             var hardyHealthProg = HardyHealthProgress.GetOrAdd(playerUid, _ => new HardyHealthProgressData());
             if (hardyHealthProg.IsUnlocked)
@@ -4507,10 +4449,6 @@ namespace SeraphLeveling
                 {
                     PersistPilfererProgress();
                 }
-                if (pendingResourcefulProgressSave || !ResourcefulProgress.IsEmpty)
-                {
-                    PersistResourcefulProgress();
-                }
                 if (pendingHardyHealthProgressSave || !HardyHealthProgress.IsEmpty)
                 {
                     PersistHardyHealthProgress();
@@ -4562,7 +4500,6 @@ namespace SeraphLeveling
             ArmorProgress.Clear();
             MenderProgress.Clear();
             PilfererProgress.Clear();
-            ResourcefulProgress.Clear();
             HardyHealthProgress.Clear();
             MercilessProgress.Clear();
             ClaustrophobicRemovalProgress.Clear();
@@ -4577,7 +4514,6 @@ namespace SeraphLeveling
             pendingArmorProgressSave = false;
             pendingMenderProgressSave = false;
             pendingPilfererProgressSave = false;
-            pendingResourcefulProgressSave = false;
             pendingHardyHealthProgressSave = false;
             pendingMercilessProgressSave = false;
             pendingClaustrophobicRemovalProgressSave = false;
@@ -4618,12 +4554,6 @@ namespace SeraphLeveling
             {
                 PersistPilfererProgress();
                 pendingPilfererProgressSave = false;
-            }
-
-            if (pendingResourcefulProgressSave || !ResourcefulProgress.IsEmpty)
-            {
-                PersistResourcefulProgress();
-                pendingResourcefulProgressSave = false;
             }
 
             if (pendingHardyHealthProgressSave || !HardyHealthProgress.IsEmpty)
@@ -4794,6 +4724,33 @@ namespace SeraphLeveling
                         AttributeModifierDefinitions.LootingBonus.PersistProgress(ServerApi);
                         AttributeModifierDefinitions.WildCropDropRate.ProgressDictionary.TryAdd(kvp.Key, JsonConvert.DeserializeObject<LeveledPartialAttributeModifierProgressData>(json, serializerSettings));
                         AttributeModifierDefinitions.WildCropDropRate.PersistProgress(ServerApi);
+                    }
+                }
+                var legacyResourceful = new GenericLeveledAttributeModifierDefinition
+                {
+                    Id = AttributeModifierDefinitions.AnimalDropRate.Id,
+                    Name = "Resourceful",
+                    PersistenceHeader = "RSF",
+                    SkillKey = "resourcefullegacy",
+                    SaveKey = "sitResourcefulProgress",
+                    GlobalMaxCredits = AttributeModifierDefinitions.AnimalDropRate.GlobalMaxCredits,
+                    Stat = AttributeModifierDefinitions.AnimalDropRate.Stat,
+                    StatName = AttributeModifierDefinitions.AnimalDropRate.StatName,
+                    BaseIncrement = AttributeModifierDefinitions.AnimalDropRate.BaseIncrement,
+                    IncrementStep = AttributeModifierDefinitions.AnimalDropRate.IncrementStep,
+                    IncrementUnits = AttributeModifierDefinitions.AnimalDropRate.IncrementUnits,
+                };
+                legacyResourceful.LoadProgress(ServerApi);
+                AttributeModifierDefinitions.AnimalHarvestRate.LoadProgress(ServerApi);
+                if (!legacyResourceful.ProgressDictionary.IsEmpty && AttributeModifierDefinitions.AnimalHarvestRate.ProgressDictionary.IsEmpty)
+                {
+                    var snapshot = legacyResourceful.ProgressDictionary.ToArray();
+                    ServerApi.Logger.Debug($"[SeraphLeveling] Porting legacy forager for {snapshot.Length} players.");
+                    foreach (var kvp in snapshot)
+                    {
+                        string json = JsonConvert.SerializeObject(kvp.Value, serializerSettings);
+                        AttributeModifierDefinitions.AnimalHarvestRate.ProgressDictionary.TryAdd(kvp.Key, JsonConvert.DeserializeObject<LeveledPartialAttributeModifierProgressData>(json, serializerSettings));
+                        AttributeModifierDefinitions.AnimalHarvestRate.PersistProgress(ServerApi);
                     }
                 }
                 PersistModList();
@@ -5483,29 +5440,6 @@ namespace SeraphLeveling
                 }
             }
 
-            // Resourceful
-            if (!DecayExemptSkills.Contains("resourceful") && !DisabledSkills.Contains("resourceful"))
-            {
-                if (ResourcefulProgress.TryGetValue(playerUid, out var reProg) && (reProg.TotalCredits > 0 || reProg.AnimalsInIncrement > 0))
-                {
-                    var (grace, basePoints, maxPoints) = GetDecayParams("resourceful");
-                    int decayCredits = CalculateDecayPoints(reProg.LastActivityDay, currentDay, grace, basePoints, maxPoints);
-                    if (decayCredits > 0)
-                    {
-                        int oldCredits = reProg.TotalCredits;
-                        int oldAcc = reProg.AnimalsInIncrement; int oldInc = reProg.CurrentIncrementSize;
-                        double rawPenalty = (double)decayCredits;
-                        var (newCr, newAcc, newInc, lost) = ApplySingleAccumulatorDecay(
-                            oldAcc, oldInc, oldCredits,
-                            rawPenalty, BaseResourcefulAnimalsPerIncrement, ResourcefulIncrementStep, verboseSb, "Resourceful");
-                        reProg.TotalCredits = newCr; reProg.AnimalsInIncrement = (int)Math.Floor(newAcc); reProg.CurrentIncrementSize = newInc;
-                        if (lost > 0) totalDecayApplied += lost;
-                        sb.AppendLine($"  Resourceful: {oldCredits} \u2192 {newCr} (-{lost} credits, {rawPenalty:F0} pts), {oldAcc}/{oldInc} \u2192 {(int)Math.Floor(newAcc)}/{newInc}");
-                        pendingResourcefulProgressSave = true;
-                    }
-                }
-            }
-
             // CO Proficiency (per-proficiency absolute-position drain + SteadyAim direct)
             if (!DecayExemptSkills.Contains("coproficiency") && !DisabledSkills.Contains("coproficiency") && IsCOCompatEnabled)
             {
@@ -5603,8 +5537,6 @@ namespace SeraphLeveling
                 ApplyMenderBonusStatic(player, menderProg.TotalCredits);
             if (PilfererProgress.TryGetValue(playerUid, out var pilfererProg))
                 ApplyPilfererBonusStatic(player, pilfererProg.TotalCredits);
-            if (ResourcefulProgress.TryGetValue(playerUid, out var resourcefulProg))
-                ApplyResourcefulBonusStatic(player, resourcefulProg.TotalCredits);
             if (IsCOCompatEnabled && COProgress.TryGetValue(playerUid, out var coProg))
                 ApplyAllCOBonuses(player);
         }
@@ -5632,10 +5564,6 @@ namespace SeraphLeveling
                 case "pilferer":
                     if (PilfererProgress.TryGetValue(playerUid, out var pilfererProg))
                         pilfererProg.LastActivityDay = currentDay;
-                    break;
-                case "resourceful":
-                    if (ResourcefulProgress.TryGetValue(playerUid, out var resourcefulProg))
-                        resourcefulProg.LastActivityDay = currentDay;
                     break;
                 case "coproficiency":
                     if (COProgress.TryGetValue(playerUid, out var coProg))
@@ -6019,23 +5947,6 @@ namespace SeraphLeveling
                 }
             }
 
-            // Resourceful
-            if (!DeathPenaltyExemptSkills.Contains("resourceful") && !DisabledSkills.Contains("resourceful"))
-            {
-                if (ResourcefulProgress.TryGetValue(playerUid, out var resourcefulProg) && (resourcefulProg.TotalCredits > 0 || resourcefulProg.AnimalsInIncrement > 0))
-                {
-                    int oldCredits = resourcefulProg.TotalCredits;
-                    int oldAcc = resourcefulProg.AnimalsInIncrement; int oldInc = resourcefulProg.CurrentIncrementSize;
-                    double rawPenalty = BaseResourcefulAnimalsPerIncrement * DeathPenaltyFraction * Math.Sqrt(Math.Max(1, oldCredits));
-                    var (newCr, newAcc, newInc, lost) = ApplySingleAccumulatorDecay(
-                        oldAcc, oldInc, oldCredits, rawPenalty, BaseResourcefulAnimalsPerIncrement, ResourcefulIncrementStep, null, "Resourceful");
-                    resourcefulProg.TotalCredits = newCr; resourcefulProg.AnimalsInIncrement = (int)Math.Floor(newAcc); resourcefulProg.CurrentIncrementSize = newInc;
-                    if (lost > 0) totalCreditsLost += lost;
-                    pendingResourcefulProgressSave = true;
-                    sb.AppendLine($"  Resourceful: {oldCredits} \u2192 {newCr} (-{lost} credits, {rawPenalty:F0} pts), {oldAcc}/{oldInc} \u2192 {(int)Math.Floor(newAcc)}/{newInc}");
-                }
-            }
-
             // --- CO Proficiency (per-proficiency subcredit drain) ---
             if (!DeathPenaltyExemptSkills.Contains("coproficiency") && !DisabledSkills.Contains("coproficiency") && IsCOCompatEnabled)
             {
@@ -6224,7 +6135,9 @@ namespace SeraphLeveling
             AppendDecayStatus(sb, "Pilferer", "pilferer", playerUid, currentDay,
                 () => PilfererProgress.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
             AppendDecayStatus(sb, "Resourceful", "resourceful", playerUid, currentDay,
-                () => ResourcefulProgress.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
+                () => AttributeModifierDefinitions.AnimalDropRate.ProgressDictionary.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
+            AppendDecayStatus(sb, "Animal Harvest Rate", "animalharvester", playerUid, currentDay,
+                () => AttributeModifierDefinitions.AnimalHarvestRate.ProgressDictionary.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
             AppendDecayStatus(sb, "Looting Bonus", "foragerlooting", playerUid, currentDay,
                 () => AttributeModifierDefinitions.LootingBonus.ProgressDictionary.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
             AppendDecayStatus(sb, "Crop Drop Rate", "forager", playerUid, currentDay,
@@ -8518,332 +8431,16 @@ namespace SeraphLeveling
         }
 
 
-        // =========================================================================
-        // RESOURCEFUL TRAIT IMPLEMENTATION
-        // =========================================================================
-
-        /// <summary>
-        /// Handler for /trait resourceful command.
-        /// </summary>
-        private TextCommandResult OnTraitResourcefulCommand(TextCommandCallingArgs args)
-        {
-            IServerPlayer player = args.Caller.Player as IServerPlayer;
-            if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
-
-            var progress = ResourcefulProgress.GetOrAdd(player.PlayerUID, _ => new ResourcefulProgressData());
-            int lootBonus = CalculateResourcefulLootBonusPercent(progress.TotalCredits, player.Entity);
-            int speedBonus = CalculateResourcefulSpeedBonusPercent(progress.TotalCredits, player.Entity);
-            bool hasVanillaResourceful = PlayerHasVanillaResourcefulStatic(player.Entity);
-            int maxCredits = GetMaxResourcefulCredits(player.Entity);
-
-            var sb = new StringBuilder();
-            sb.AppendLine($"Resourceful progression: Level {progress.TotalCredits} / {maxCredits}");
-            sb.AppendLine($"Current bonus: +{lootBonus}% animal loot, +{speedBonus}% harvesting speed");
-            if (hasVanillaResourceful)
-            {
-                sb.AppendLine($"(Has vanilla Resourceful trait)");
-            }
-            if (progress.TotalCredits < maxCredits)
-            {
-                int remaining = progress.CurrentIncrementSize - progress.AnimalsInIncrement;
-                sb.AppendLine($"Progress: {progress.AnimalsInIncrement} / {progress.CurrentIncrementSize} animals until next level");
-            }
-            else
-            {
-                sb.AppendLine("Maximum level reached!");
-            }
-
-            return TextCommandResult.Success(sb.ToString());
-        }
-
-        /// <summary>
-        /// Handler for /trait resourcefulbase command.
-        /// </summary>
-        private TextCommandResult OnTraitResourcefulBaseCommand(TextCommandCallingArgs args)
-        {
-            int? newValue = (int?)args[0];
-
-            if (newValue.HasValue)
-            {
-                if (newValue.Value < 1) return TextCommandResult.Error("Base animals must be at least 1.");
-                BaseResourcefulAnimalsPerIncrement = newValue.Value;
-                pendingConfigSave = true;
-                return TextCommandResult.Success($"Resourceful base animals set to {BaseResourcefulAnimalsPerIncrement}.");
-            }
-
-            return TextCommandResult.Success($"Current resourceful base animals: {BaseResourcefulAnimalsPerIncrement}.");
-        }
-
-        /// <summary>
-        /// Handler for /trait resourcefullevel command.
-        /// Gets or sets the player's resourceful level.
-        /// </summary>
-        private TextCommandResult OnTraitResourcefulLevelCommand(TextCommandCallingArgs args)
-        {
-            IServerPlayer player = args.Caller.Player as IServerPlayer;
-            if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
-
-            // Get the player-specific max credits (accounts for Kind penalty)
-            int maxCredits = GetMaxResourcefulCredits(player.Entity);
-
-            var progress = ResourcefulProgress.GetOrAdd(player.PlayerUID, _ => new ResourcefulProgressData());
-
-            int? newLevel = (int?)args[0];
-
-            // If no value provided, show current level
-            if (!newLevel.HasValue)
-            {
-                int lootBonus = CalculateResourcefulLootBonusPercent(progress.TotalCredits, player.Entity);
-                return TextCommandResult.Success($"Current resourceful level: {progress.TotalCredits}/{maxCredits} (+{lootBonus}% loot)");
-            }
-
-            if (newLevel.Value < 0 || newLevel.Value > maxCredits)
-                return TextCommandResult.Error($"Level must be between 0 and {maxCredits}.");
-
-            progress.TotalCredits = newLevel.Value;
-            progress.AnimalsInIncrement = 0;
-            progress.CurrentIncrementSize = BaseResourcefulAnimalsPerIncrement;
-
-            for (int i = 0; i < newLevel.Value; i++)
-            {
-                progress.CurrentIncrementSize += ResourcefulIncrementStep;
-            }
-
-            pendingResourcefulProgressSave = true;
-
-            ApplyResourcefulBonusStatic(player, progress.TotalCredits);
-            int newLootBonus = CalculateResourcefulLootBonusPercent(progress.TotalCredits, player.Entity);
-
-            UpdateSkillActivityDay(player.PlayerUID, "resourceful");
-
-            return TextCommandResult.Success($"Resourceful level set to {newLevel.Value} (+{newLootBonus}% loot).");
-        }
-
-        /// <summary>
-        /// Handler for /trait resourcefulmax command.
-        /// </summary>
-        private TextCommandResult OnTraitResourcefulMaxCommand(TextCommandCallingArgs args)
-        {
-            int? newValue = (int?)args[0];
-
-            if (newValue.HasValue)
-            {
-                if (newValue.Value < 1) return TextCommandResult.Error("Max percent must be at least 1.");
-                MaxResourcefulLootPercent = newValue.Value;
-                pendingConfigSave = true;
-                return TextCommandResult.Success($"Resourceful max loot bonus set to {MaxResourcefulLootPercent}%.");
-            }
-
-            return TextCommandResult.Success($"Current resourceful max loot bonus: {MaxResourcefulLootPercent}%.");
-        }
-
-        /// <summary>
-        /// Calculate the resourceful loot bonus as an integer percentage.
-        /// </summary>
-        public static int CalculateResourcefulLootBonusPercent(int credits, EntityPlayer entity)
-        {
-            bool hasVanillaResourceful = entity != null && PlayerHasVanillaResourcefulStatic(entity);
-            int vanillaBonus = hasVanillaResourceful ? VANILLA_RESOURCEFUL_LOOT_BONUS : 0;
-            int earnableBonus = Math.Max(0, MaxResourcefulLootPercent - vanillaBonus);
-            return Math.Min(credits, earnableBonus);
-        }
-
-        /// <summary>
-        /// Calculate the resourceful speed bonus as an integer percentage.
-        /// Speed bonus scales indefinitely with level (1% per credit), no cap.
-        /// </summary>
-        public static int CalculateResourcefulSpeedBonusPercent(int credits, EntityPlayer entity)
-        {
-            // Speed bonus scales indefinitely - 1% per credit, no cap
-            return credits;
-        }
-
-        /// <summary>
-        /// Get the maximum resourceful credits a player can earn based on their traits.
-        /// Players with Kind trait can earn extra credits to compensate for the penalty.
-        /// </summary>
-        public static int GetMaxResourcefulCredits(EntityPlayer entity)
-        {
-            // Resourceful covers two stats with different caps (loot 20%, speed 25%).
-            // The credit count must be high enough to fill BOTH stats to their cap, so:
-            //   base = max(MaxLoot, MaxSpeed)
-            //   Kind classes need an extra buffer of max(KindLootPenalty, KindSpeedPenalty)
-            //     so the larger penalty is fully cancelled before earnable bonus starts.
-            // Earlier versions used `MaxLoot + KindSpeedPenalty` (20 + 25 = 45) which was
-            // too low — Tailor would land at +20% speed instead of the +25% cap.
-            int baseMax = Math.Max(MaxResourcefulLootPercent, MaxResourcefulSpeedPercent);
-            if (entity == null) return baseMax;
-
-            bool hasKind = PlayerHasVanillaKind(entity);
-            if (hasKind)
-            {
-                int largestKindPenalty = Math.Max(VANILLA_KIND_LOOT_PENALTY, VANILLA_KIND_SPEED_PENALTY);
-                return baseMax + largestKindPenalty;
-            }
-
-            return baseMax;
-        }
-
-        /// <summary>
-        /// Check if player has vanilla Resourceful trait.
-        /// </summary>
-        private static bool PlayerHasVanillaResourcefulStatic(EntityPlayer entity)
-        {
-            if (entity == null) return false;
-            string[] classTraits = entity.WatchedAttributes.GetStringArray("characterTraits", null);
-            if (classTraits != null)
-            {
-                foreach (string trait in classTraits)
-                {
-                    if (trait.Equals("resourceful", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return true;
-                    }
-                }
-            }
-            // Fallback to characterClass — keeps server-side Apply consistent with the
-            // client-side ClientHasVanillaTrait check (otherwise Apply computes a higher
-            // earnable cap when characterTraits hasn't been populated, then the postfix
-            // adds the vanilla bonus on top and the displayed value exceeds the actual cap).
-            string characterClass = entity.WatchedAttributes.GetString("characterClass", "");
-            return characterClass.Equals("hunter", StringComparison.OrdinalIgnoreCase) ||
-                   characterClass.Equals("malefactor", StringComparison.OrdinalIgnoreCase);
-        }
-
-        /// <summary>
-        /// Apply resourceful bonus.
-        /// Also handles Kind negative trait cancellation.
-        /// </summary>
-        private static void ApplyResourcefulBonusStatic(IServerPlayer player, int level)
-        {
-            if (player?.Entity == null) return;
-
-            // If resourceful skill is disabled, set bonus to 0 and return
-            if (IsSkillDisabled("resourceful"))
-            {
-                player.Entity.Stats.Set("animalLootDropRate", RESOURCEFUL_LOOT_STAT_CODE, 0f, false);
-                player.Entity.Stats.Set("animalHarvestingTime", RESOURCEFUL_SPEED_STAT_CODE, 0f, false);
-                return;
-            }
-
-            bool hasVanillaResourceful = PlayerHasVanillaResourcefulStatic(player.Entity);
-            bool hasKind = PlayerHasVanillaKind(player.Entity);
-
-            // Calculate remaining Kind penalties
-            int kindLootRemaining = hasKind ? CalculateRemainingPenalty(VANILLA_KIND_LOOT_PENALTY, level) : 0;
-            int kindSpeedRemaining = hasKind ? CalculateRemainingPenalty(VANILLA_KIND_SPEED_PENALTY, level) : 0;
-
-            // Calculate net bonus after cancelling negative traits
-            int netLootLevel = level;
-            int netSpeedLevel = level;
-
-            if (hasKind)
-            {
-                // Kind penalties are cancelled first, then bonuses start
-                netLootLevel = Math.Max(0, level - VANILLA_KIND_LOOT_PENALTY);
-                netSpeedLevel = Math.Max(0, level - VANILLA_KIND_SPEED_PENALTY);
-            }
-
-            // Apply vanilla caps if player has Resourceful trait
-            int vanillaLootBonus = hasVanillaResourceful ? VANILLA_RESOURCEFUL_LOOT_BONUS : 0;
-            int vanillaSpeedBonus = hasVanillaResourceful ? VANILLA_RESOURCEFUL_SPEED_BONUS : 0;
-
-            int maxEarnableLoot = Math.Max(0, MaxResourcefulLootPercent - vanillaLootBonus);
-            int maxEarnableSpeed = Math.Max(0, MaxResourcefulSpeedPercent - vanillaSpeedBonus);
-
-            int lootBonusPercent = Math.Min(netLootLevel, maxEarnableLoot);
-            int speedBonusPercent = Math.Min(netSpeedLevel, maxEarnableSpeed);
-
-            float lootBonus = lootBonusPercent * 0.01f;
-            float speedBonus = speedBonusPercent * 0.01f;
-
-            // Apply to resourceful-related stats
-            // Note: Stats use WeightedSum blending with a base of 1.0. Vanilla traits set values
-            // like 0.1 for +10%. We set just the bonus value, not 1 + bonus.
-            player.Entity.Stats.Set("animalLootDropRate", RESOURCEFUL_LOOT_STAT_CODE, lootBonus, false);
-            // The stat is animalHarvestingTime, which multiplies the harvest duration, so a
-            // faster harvest is a negative value. Vanilla Resourceful stores -0.25 for it.
-            // There is no stat called harvestingSpeedMul, so the old code went nowhere.
-            player.Entity.Stats.Set("animalHarvestingTime", RESOURCEFUL_SPEED_STAT_CODE, -speedBonus, false);
-
-            // Counter-stats for Kind (Tailor): when each penalty is fully cancelled, apply a
-            // counter on the same stat vanilla uses so functional matches displayed cap.
-            // Kind sets animalLootDropRate -0.10 and animalHarvestingTime +0.25.
-            if (hasKind)
-            {
-                if (kindLootRemaining == 0)
-                    player.Entity.Stats.Set("animalLootDropRate", "sitKindLootCancel", VANILLA_KIND_LOOT_PENALTY * 0.01f, false);
-                else
-                    player.Entity.Stats.Remove("animalLootDropRate", "sitKindLootCancel");
-
-                if (kindSpeedRemaining == 0)
-                    // Kind uses animalHarvestingTime where positive = slower; cancel with negative.
-                    player.Entity.Stats.Set("animalHarvestingTime", "sitKindSpeedCancel", -VANILLA_KIND_SPEED_PENALTY * 0.01f, false);
-                else
-                    player.Entity.Stats.Remove("animalHarvestingTime", "sitKindSpeedCancel");
-            }
-
-            // Sync to WatchedAttributes
-            player.Entity.WatchedAttributes.SetInt(WATCHED_RESOURCEFUL_LEVEL, level);
-            player.Entity.WatchedAttributes.SetInt(WATCHED_RESOURCEFUL_LOOT_BONUS, lootBonusPercent);
-            player.Entity.WatchedAttributes.SetInt(WATCHED_RESOURCEFUL_SPEED_BONUS, speedBonusPercent);
-            player.Entity.WatchedAttributes.SetBool("sitHasVanillaResourceful", hasVanillaResourceful);
-
-            // Sync negative trait status
-            player.Entity.WatchedAttributes.SetBool("sitHasKind", hasKind);
-            player.Entity.WatchedAttributes.SetInt(WATCHED_KIND_LOOT_REMAINING, kindLootRemaining);
-            player.Entity.WatchedAttributes.SetInt(WATCHED_KIND_SPEED_REMAINING, kindSpeedRemaining);
-
-            player.Entity.WatchedAttributes.MarkPathDirty(WATCHED_RESOURCEFUL_LEVEL);
-
-            // Update extraTraits
-            UpdateExtraTraitStatic(player.Entity, RESOURCEFUL_TRAIT_CODE, level > 0 && !hasVanillaResourceful);
-        }
-
         /// <summary>
         /// Process animal harvested (called from Harmony patch when player harvests an animal).
         /// </summary>
         public static void ProcessAnimalHarvested(IServerPlayer player)
         {
             if (player?.Entity == null) return;
-
-            // Check if resourceful skill is disabled
-            if (IsSkillDisabled("resourceful")) return;
-
             string playerUid = player.PlayerUID;
-            var progress = ResourcefulProgress.GetOrAdd(playerUid, _ => new ResourcefulProgressData());
 
-            // Get the player-specific max credits (accounts for Kind penalty)
-            int maxCredits = GetMaxResourcefulCredits(player.Entity);
-
-            if (progress.TotalCredits >= maxCredits) return;
-
-            int oldCredits = progress.TotalCredits;
-            // Apply sleep buff multiplier if active
-            int modifiedAnimals = ApplyXPMultiplier(playerUid, 1);
-            progress.AnimalsInIncrement += modifiedAnimals;
-
-            while (progress.AnimalsInIncrement >= progress.CurrentIncrementSize && progress.TotalCredits < maxCredits)
-            {
-                progress.TotalCredits++;
-                progress.AnimalsInIncrement -= progress.CurrentIncrementSize;
-                progress.CurrentIncrementSize += ResourcefulIncrementStep;
-
-                ServerApi.Logger.Debug($"[SeraphLeveling] Player {player.PlayerName} earned resourceful credit {progress.TotalCredits}");
-            }
-
-            pendingResourcefulProgressSave = true;
-
-            // Update last activity day for skill decay
-            UpdateSkillActivityDay(playerUid, "resourceful");
-
-            if (progress.TotalCredits > oldCredits)
-            {
-                ApplyResourcefulBonusStatic(player, progress.TotalCredits);
-                // Notify player of level up with raw improvement (shows progress even when cancelling Kind)
-                NotifyLevelUp(player,
-                    Lang.Get("seraphleveling:message-resourceful-level-up", progress.TotalCredits, progress.TotalCredits));
-            }
+            AttributeModifierDefinitions.AnimalDropRate.GetForPlayer(playerUid).DoEvent(player, 1);
+            AttributeModifierDefinitions.AnimalHarvestRate.GetForPlayer(playerUid).DoEvent(player, 1);
         }
 
         /// <summary>
@@ -9163,16 +8760,6 @@ namespace SeraphLeveling
             }
             ApplyPilfererBonusStatic(player, 0);
 
-            // Reset Resourceful
-            if (ResourcefulProgress.TryGetValue(playerUid, out var resourcefulProg))
-            {
-                resourcefulProg.TotalCredits = 0;
-                resourcefulProg.AnimalsInIncrement = 0;
-                resourcefulProg.CurrentIncrementSize = 10; // Default base
-                pendingResourcefulProgressSave = true;
-            }
-            ApplyResourcefulBonusStatic(player, 0);
-
             // Reset Hardy Health
             if (HardyHealthProgress.TryGetValue(playerUid, out var hardyHealthProg))
             {
@@ -9407,15 +8994,6 @@ namespace SeraphLeveling
             pendingPilfererProgressSave = true;
             ApplyPilfererBonusStatic(player, maxPilfererCredits);
 
-            // Max Resourceful
-            int maxResourcefulCredits = GetMaxResourcefulCredits(player.Entity);
-            var resourcefulProg = ResourcefulProgress.GetOrAdd(playerUid, _ => new ResourcefulProgressData());
-            resourcefulProg.TotalCredits = maxResourcefulCredits;
-            resourcefulProg.AnimalsInIncrement = 0;
-            resourcefulProg.CurrentIncrementSize = BaseResourcefulAnimalsPerIncrement;
-            pendingResourcefulProgressSave = true;
-            ApplyResourcefulBonusStatic(player, maxResourcefulCredits);
-
             // Unlock Hardy Health
             var hardyHealthProg = HardyHealthProgress.GetOrAdd(playerUid, _ => new HardyHealthProgressData());
             hardyHealthProg.IsUnlocked = true;
@@ -9484,14 +9062,6 @@ namespace SeraphLeveling
             pilfererProg.CurrentIncrementSize = BasePilfererPointsPerIncrement;
             pendingPilfererProgressSave = true;
             ApplyPilfererBonusStatic(player, CREDITS);
-
-            // Resourceful
-            var resourcefulProg = ResourcefulProgress.GetOrAdd(playerUid, _ => new ResourcefulProgressData());
-            resourcefulProg.TotalCredits = CREDITS;
-            resourcefulProg.AnimalsInIncrement = 0;
-            resourcefulProg.CurrentIncrementSize = BaseResourcefulAnimalsPerIncrement;
-            pendingResourcefulProgressSave = true;
-            ApplyResourcefulBonusStatic(player, CREDITS);
 
             // Combat Overhaul proficiencies (only if CO is loaded)
             string coNote = "";
@@ -10325,23 +9895,6 @@ namespace SeraphLeveling
         {
             LoadProgress<PilfererProgressData>();
         }
-
-        /// <summary>
-        /// Persist resourceful progress to world save data.
-        /// </summary>
-        public static void PersistResourcefulProgress()
-        {
-            PersistProgress<ResourcefulProgressData>();
-        }
-
-        /// <summary>
-        /// Load resourceful progress from world save data.
-        /// </summary>
-        private void LoadResourcefulProgress()
-        {
-            LoadProgress<ResourcefulProgressData>();
-        }
-
 
         // =========================================================================
         // HARDY HEALTH TRAIT PERSISTENCE

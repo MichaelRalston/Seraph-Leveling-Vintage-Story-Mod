@@ -37,7 +37,7 @@ namespace SeraphLeveling.Data.Attributes
             Trait = new(() => Traits.TraitDefinitions.Bowyer),
         };
 
-        public static readonly WalkingAttributeModifierDefinition WalkingSpeed = new()
+        public static readonly GenericLeveledAttributeModifierDefinition WalkingSpeed = new()
         {
             Id = "walkingSpeed",
             SkillKey = "walking",
@@ -52,7 +52,7 @@ namespace SeraphLeveling.Data.Attributes
             StatName = "walkspeed",
         };
 
-        public static readonly FurtiveAttributeModifierDefinition Furtive = new()
+        public static readonly GenericLeveledAttributeModifierDefinition Furtive = new()
         {
             Id = "furtive",
             SkillKey = "furtive",
@@ -68,7 +68,7 @@ namespace SeraphLeveling.Data.Attributes
             GlobalMaxCredits = 35,
         };
 
-        public static readonly HungerAttributeModifierDefinition HungerRate = new()
+        public static readonly GenericLeveledAttributeModifierDefinition HungerRate = new()
         {
             Id = "hungerRate",
             SkillKey = "hunger",
@@ -112,6 +112,34 @@ namespace SeraphLeveling.Data.Attributes
             GlobalMaxCredits = 20,
             IncrementUnits = "crops",
             StatName = "wildCropDropRate",
+        };
+
+        public static readonly GenericLeveledAttributeModifierDefinition AnimalDropRate = new()
+        {
+            Id = "Resourceful",
+            SkillKey = "resourceful",
+            PersistenceHeader = "RSF",
+            Name = "Resourceful",
+            Stat = "% animal loot",
+            BaseIncrement = 10,
+            IncrementStep = 10,
+            GlobalMaxCredits = 20,
+            IncrementUnits = "animals",
+            StatName = "animalLootDropRate",
+        };
+
+        public static readonly GenericLeveledAttributeModifierDefinition AnimalHarvestRate = new()
+        {
+            Id = "animalHarvesting",
+            SkillKey = "animalharvester",
+            PersistenceHeader = "RSF",
+            Name = "AnimalHarvester",
+            Stat = "% animal harvest rate",
+            BaseIncrement = 10,
+            IncrementStep = 10,
+            GlobalMaxCredits = 25,
+            IncrementUnits = "animals",
+            StatName = "animalHarvestingTime",
         };
 
         public static readonly MiningAttributeModifierDefinition MiningSpeed = new()
