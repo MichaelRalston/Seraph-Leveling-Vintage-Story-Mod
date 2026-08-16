@@ -357,6 +357,41 @@ namespace SeraphLeveling.Data.Attributes
         {
             return player?.Player == null ? null : GetDict(player.Player).TotalCredits;
         }
+
+        public override int ApplyDecay(IServerPlayer player, double currentDay, StringBuilder sb, StringBuilder verboseSb)
+        {
+            if (!SeraphLevelingModSystem.DecayExemptSkills.Contains(SkillKey) && !SeraphLevelingModSystem.DisabledSkills.Contains(SkillKey))
+            {
+                if (ProgressDictionary.TryGetValue(player.PlayerUID, out var progress) && (progress.TotalCredits > 0))
+                {
+                    var (grace, basePoints, maxPoints) = SeraphLevelingModSystem.GetDecayParams(SkillKey);
+                    int decayCredits = SeraphLevelingModSystem.CalculateDecayPoints(progress.LastActivityDay, currentDay, grace, basePoints, maxPoints);
+                    if (decayCredits > 0)
+                    {
+                        return progress.ApplyStatPenalty(decayCredits, sb, verboseSb);
+                    }
+                }
+            }
+            return 0;
+        }
+
+        public override int ApplyDeathPenalty(IServerPlayer player, StringBuilder sb)
+        {
+            if (!SeraphLevelingModSystem.DeathPenaltyExemptSkills.Contains(SkillKey) && !SeraphLevelingModSystem.DisabledSkills.Contains(SkillKey))
+            {
+                if (ProgressDictionary.TryGetValue(player.PlayerUID, out var progress) && (progress.TotalCredits > 0))
+                {
+                    double rawPenalty;
+                    rawPenalty = Math.Floor(SeraphLevelingModSystem.DeathPenaltyFraction * Math.Sqrt(Math.Max(1, progress.TotalCredits)));
+                    if (rawPenalty > 0)
+                    {
+                        return progress.ApplyStatPenalty(rawPenalty, sb, null);
+                    }
+                }
+            }
+            return 0;
+        }
+
     }
 
     public abstract class LeveledAttributeModifierProgressData<D, PD>(D definition) : AttributeModifierProgressData<D, PD>(definition) where PD : LeveledAttributeModifierProgressData<D, PD> where D : LeveledAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
@@ -397,5 +432,19 @@ namespace SeraphLeveling.Data.Attributes
         {
             // Empty.
         }
+
+        public virtual int ApplyStatPenalty(double rawPenalty, StringBuilder sb, StringBuilder verboseSb)
+        {
+            int oldCredits = TotalCredits;
+            var (newCr, __, _2, lost) = SeraphLevelingModSystem.ApplySingleAccumulatorDecay(
+                0, 1, oldCredits,
+                rawPenalty, Definition.BaseIncrement, Definition.IncrementStep, verboseSb, Definition.SkillKey);
+            TotalCredits = newCr;
+            sb.AppendLine($"  {Definition.Name}: {oldCredits} \u2192 {newCr} (-{lost} credits, {rawPenalty:F0} pts)");
+            Definition.PendingSave = true;
+            if (lost > 0) return lost;
+            return 0;
+        }
+
     }
 }

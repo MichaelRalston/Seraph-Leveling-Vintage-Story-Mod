@@ -80,7 +80,7 @@ namespace SeraphLeveling.Data.Attributes
         {
             PartialCredit = 0;
         }
-        public int ApplyStatPenalty(double rawPenalty, StringBuilder sb, StringBuilder verboseSb)
+        public override int ApplyStatPenalty(double rawPenalty, StringBuilder sb, StringBuilder verboseSb)
         {
             int oldCredits = TotalCredits;
             float oldAcc = PartialCredit; int oldInc = CurrentIncrementSize;

@@ -277,7 +277,7 @@ namespace SeraphLeveling.Data.Attributes
                 sb.AppendLine($"\nNo {Definition.Tool.Name} progress yet.");
             }
         }
-        public int ApplyStatPenalty(double rawPenalty, StringBuilder sb, StringBuilder verboseSb)
+        public override int ApplyStatPenalty(double rawPenalty, StringBuilder sb, StringBuilder verboseSb)
         {
             int oldCredits = TotalCredits;
             var toolEntries = ToolProgress.Select(kvp =>
