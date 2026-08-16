@@ -4640,6 +4640,7 @@ namespace SeraphLeveling
                 if (!PilfererProgressData.progressDict.IsEmpty)
                 {
                     var snapshot = PilfererProgressData.progressDict.ToArray();
+                    ServerApi.Logger.Debug($"[SeraphLeveling] Porting legacy pilferer data for {snapshot.Length} players.");
                     AttributeModifierDefinitions.GearDropRate.LoadProgress(ServerApi);
                     if (AttributeModifierDefinitions.GearDropRate.ProgressDictionary.IsEmpty)
                     {
@@ -4651,6 +4652,7 @@ namespace SeraphLeveling
                             pd.CurrentIncrementSize = kvp.Value.CurrentIncrementSize;
                             pd.LastActivityDay = kvp.Value.LastActivityDay;
                             AttributeModifierDefinitions.GearDropRate.ProgressDictionary.TryAdd(kvp.Key, pd);
+                            AttributeModifierDefinitions.GearDropRate.PersistProgress(ServerApi);
                         }
                     }
                     if (AttributeModifierDefinitions.VesselDropRate.ProgressDictionary.IsEmpty)
@@ -4663,6 +4665,7 @@ namespace SeraphLeveling
                             pd.CurrentIncrementSize = kvp.Value.CurrentIncrementSize;
                             pd.LastActivityDay = kvp.Value.LastActivityDay;
                             AttributeModifierDefinitions.VesselDropRate.ProgressDictionary.TryAdd(kvp.Key, pd);
+                            AttributeModifierDefinitions.VesselDropRate.PersistProgress(ServerApi);
                         }
                     }
                     if (AttributeModifierDefinitions.WholeVesselRate.ProgressDictionary.IsEmpty)
@@ -4675,6 +4678,7 @@ namespace SeraphLeveling
                             pd.CurrentIncrementSize = kvp.Value.CurrentIncrementSize;
                             pd.LastActivityDay = kvp.Value.LastActivityDay;
                             AttributeModifierDefinitions.WholeVesselRate.ProgressDictionary.TryAdd(kvp.Key, pd);
+                            AttributeModifierDefinitions.WholeVesselRate.PersistProgress(ServerApi);
                         }
                     }
                 }
