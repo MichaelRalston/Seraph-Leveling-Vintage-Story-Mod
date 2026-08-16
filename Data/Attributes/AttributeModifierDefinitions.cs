@@ -96,7 +96,7 @@ namespace SeraphLeveling.Data.Attributes
             IncrementStep = 10,
             GlobalMaxCredits = 20,
             IncrementUnits = "crops",
-            StatName = "sitForagerLoot",
+            StatName = "forageDropRate",
         };
 
         public static readonly GenericLeveledAttributeModifierDefinition WildCropDropRate = new()
@@ -111,7 +111,7 @@ namespace SeraphLeveling.Data.Attributes
             IncrementStep = 10,
             GlobalMaxCredits = 20,
             IncrementUnits = "crops",
-            StatName = "sitForagerWildCrop",
+            StatName = "wildCropDropRate",
         };
 
         public static readonly MiningAttributeModifierDefinition MiningSpeed = new()

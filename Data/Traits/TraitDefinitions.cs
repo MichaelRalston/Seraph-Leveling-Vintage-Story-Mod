@@ -67,6 +67,8 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "forager",
             Attributes = [
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.LootingBonus, 10),
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.WildCropDropRate, 20),
             ]
         };
 
