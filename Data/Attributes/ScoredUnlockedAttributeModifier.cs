@@ -35,12 +35,8 @@ namespace SeraphLeveling.Data.Attributes
 
             if (progress.TotalCredits >= GlobalMaxCredits)
             {
-                bool oldUnlock = progress.IsUnlocked;
                 progress.IsUnlocked = true;
-                if (oldUnlock != progress.IsUnlocked)
-                {
-                    FireUnlockChangedEvent(player, oldUnlock, progress.IsUnlocked);
-                }
+                FireUnlockChangedEvent(player, false, true);
                 ApplyUnlock(player, progress);
                 SeraphLevelingModSystem.NotifyLevelUp(player, Lang.Get(NotifyLangKey));
             }
@@ -59,7 +55,8 @@ namespace SeraphLeveling.Data.Attributes
             progress.TotalCredits = GlobalMaxCredits;
         }
 
-        public override void GetTraitUnlockableCommandLine(IPlayer player, StringBuilder sb) {
+        public override void GetTraitUnlockableCommandLine(IPlayer player, StringBuilder sb)
+        {
             var progress = GetDict(player);
             sb.AppendLine($"{Name}: {progress.TotalCredits}/{GlobalMaxCredits} {CreditDescription} ({(progress.IsUnlocked ? "UNLOCKED" : "locked")})");
         }
