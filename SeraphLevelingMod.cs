@@ -4596,10 +4596,8 @@ namespace SeraphLeveling
                     SkillKey = "rangedlegacy",
                     GlobalMaxCredits = AttributeModifierDefinitions.RangedDamage.GlobalMaxCredits,
                     Stat = AttributeModifierDefinitions.RangedDamage.Stat,
-                    BaseIncrement = AttributeModifierDefinitions.RangedDamage.BaseIncrement,
+                    IncrementData = AttributeModifierDefinitions.RangedDamage.IncrementData,
                     StatName = AttributeModifierDefinitions.RangedDamage.StatName,
-                    IncrementStep = AttributeModifierDefinitions.RangedDamage.IncrementStep,
-                    IncrementUnits = AttributeModifierDefinitions.RangedDamage.IncrementUnits,
                     Tool = AttributeModifierDefinitions.RangedDamage.Tool
                 };
                 Conversion.PortData<DamageAttributeModifierDefinition, DamageAttributeModifierProgressData>(legacyRangedDamage, AttributeModifierDefinitions.RangedDamage, ServerApi);
@@ -5532,7 +5530,7 @@ namespace SeraphLeveling
         /// Brings the highest accumulator down toward the next highest, then drains equally, etc.
         /// Returns remaining penalty after all accumulators are drained to zero.
         /// </summary>
-        private static double DrainAccumulatorsLeveling(List<(string key, double value)> accumulators, double penalty)
+        public static double DrainAccumulatorsLeveling(List<(string key, double value)> accumulators, double penalty)
         {
             if (accumulators == null || accumulators.Count == 0 || penalty <= 0) return penalty;
 
@@ -5605,7 +5603,7 @@ namespace SeraphLeveling
         /// So if currentIncrementSize = baseIncrement + N*incrementStep, then N credits were earned.
         /// Absolute position = sum of costs for those N credits + current accumulator.
         /// </summary>
-        private static double ToolToAbsolutePosition(double accumulator, int currentIncrementSize,
+        public static double ToolToAbsolutePosition(double accumulator, int currentIncrementSize,
             int baseIncrement, int incrementStep)
         {
             // N = number of credits this tool has earned

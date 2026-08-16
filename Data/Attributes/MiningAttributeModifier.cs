@@ -1,11 +1,13 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
+using System.Collections.Concurrent;
 using Vintagestory.API.Common;
 using Vintagestory.API.Server;
 
 namespace SeraphLeveling.Data.Attributes
 {
-    public class MiningAttributeModifierProgressData(MiningAttributeModifierDefinition definition) : LeveledToolAttributeModifierProgressData<MiningAttributeModifierDefinition, MiningAttributeModifierProgressData, int>(definition)
+    public class MiningAttributeModifierProgressData(MiningAttributeModifierDefinition definition) : LeveledToolAttributeModifierProgressData<MiningAttributeModifierDefinition, MiningAttributeModifierProgressData, SimpleToolProgress>(definition)
     {
         public override void ReadVersion(byte version, BinaryReader reader)
         {
@@ -34,11 +36,16 @@ namespace SeraphLeveling.Data.Attributes
                     // Migrate single pickaxe progress if it exists
                     if (!string.IsNullOrEmpty(currentPickaxeCode))
                     {
-                        ToolProgress[currentPickaxeCode] = new LevelableTool<int>
+                        var toolProgressRecord = new LevelableTool<MiningAttributeModifierDefinition, MiningAttributeModifierProgressData, SimpleToolProgress>
                         {
-                            PartialCredit = partialCredit,
-                            CurrentIncrementSize = currentIncrementSize
+                            Definition = Definition,
+                            PartialCredit = new ConcurrentDictionary<SimpleToolProgress, CreditData>
+                            {
+                                [default] = new CreditData { Amount = partialCredit, IncrementSize = currentIncrementSize }
+                            },
+                            HasBeenUsed = false,
                         };
+                        ToolProgress[currentPickaxeCode] = toolProgressRecord;
                     }
                     break;
                 case 3:
@@ -48,12 +55,20 @@ namespace SeraphLeveling.Data.Attributes
                     for (int j = 0; j < pickaxeCount; j++)
                     {
                         string pickaxeCode = reader.ReadString();
-                        var pickaxeProgress = new LevelableTool<int>
+                        var toolProgressRecord = new LevelableTool<MiningAttributeModifierDefinition, MiningAttributeModifierProgressData, SimpleToolProgress>
                         {
-                            PartialCredit = reader.ReadInt32(),
-                            CurrentIncrementSize = reader.ReadInt32()
+                            Definition = Definition,
+                            PartialCredit = new ConcurrentDictionary<SimpleToolProgress, CreditData>
+                            {
+                                [default] = new CreditData
+                                {
+                                    Amount = reader.ReadInt32(),
+                                    IncrementSize = reader.ReadInt32()
+                                }
+                            },
+                            HasBeenUsed = false,
                         };
-                        ToolProgress[pickaxeCode] = pickaxeProgress;
+                        ToolProgress[pickaxeCode] = toolProgressRecord;
                     }
                     break;
                 case 4:
@@ -64,20 +79,31 @@ namespace SeraphLeveling.Data.Attributes
                     for (int j = 0; j < pickaxeCount; j++)
                     {
                         string pickaxeCode = reader.ReadString();
-                        var pickaxeProgress = new LevelableTool<int>
+                        var toolProgressRecord = new LevelableTool<MiningAttributeModifierDefinition, MiningAttributeModifierProgressData, SimpleToolProgress>
                         {
-                            PartialCredit = reader.ReadInt32(),
-                            CurrentIncrementSize = reader.ReadInt32()
+                            Definition = Definition,
+                            PartialCredit = new ConcurrentDictionary<SimpleToolProgress, CreditData>
+                            {
+                                [default] = new CreditData
+                                {
+                                    Amount = reader.ReadInt32(),
+                                    IncrementSize = reader.ReadInt32()
+                                }
+                            },
+                            HasBeenUsed = false,
                         };
-                        ToolProgress[pickaxeCode] = pickaxeProgress;
+                        ToolProgress[pickaxeCode] = toolProgressRecord;
                     }
+                    break;
+                case 5:
+                    base.ReadVersion(3, reader);
                     break;
                 default:
                     throw new NotSupportedException($"Version {version} is not supported");
             }
         }
     }
-    public class MiningAttributeModifierDefinition : LeveledToolAttributeModifierDefinition<MiningAttributeModifierDefinition, MiningAttributeModifierProgressData, int>, IConstructable<MiningAttributeModifierDefinition, MiningAttributeModifierProgressData>
+    public class MiningAttributeModifierDefinition : LeveledToolAttributeModifierDefinition<MiningAttributeModifierDefinition, MiningAttributeModifierProgressData, SimpleToolProgress>, IConstructable<MiningAttributeModifierDefinition, MiningAttributeModifierProgressData>
     {
         public static MiningAttributeModifierProgressData Create(MiningAttributeModifierDefinition definition) { return new MiningAttributeModifierProgressData(definition); }
     }

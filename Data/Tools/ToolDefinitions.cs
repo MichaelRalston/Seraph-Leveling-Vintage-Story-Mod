@@ -10,5 +10,9 @@ namespace SeraphLeveling.Data.Tools
         {
             Name = "weapon",
         };
+        public static readonly ToolDefinition Armor = new()
+        {
+            Name = "armor",
+        };
     }
 }

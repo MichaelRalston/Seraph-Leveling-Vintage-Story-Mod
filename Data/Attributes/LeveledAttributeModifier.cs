@@ -46,9 +46,6 @@ namespace SeraphLeveling.Data.Attributes
             get => field ??= $"sit{Name}BonusPercent"; init;
         }
         public required string StatName { get; init; }
-        public required int BaseIncrement { get; set; }
-        public required int IncrementStep { get; set; }
-        public required string IncrementUnits { get; init; }
 
         public event CreditsChangedDelegate CreditsChanged;
         public void OnCreditsChanged(IServerPlayer player, int oldCredits, PD progress)
@@ -260,48 +257,6 @@ namespace SeraphLeveling.Data.Attributes
             return TextCommandResult.Success($"{Name} level set to {level} ({Direction}{level}{Stat}) for {player.PlayerName}.");
         }
 
-        public override TextCommandResult HandleIncrementCommand(TextCommandCallingArgs args, int indexOffset)
-        {
-            int? newValue = (int?)args[0+indexOffset];
-
-            if (newValue.HasValue)
-            {
-                if (newValue.Value < 0)
-                {
-                    return TextCommandResult.Error("Increment step cannot be negative");
-                }
-
-                IncrementStep = newValue.Value;
-                SeraphLevelingModSystem.pendingConfigSave = true;
-
-                return TextCommandResult.Success($"{Name} increment step set to +{IncrementStep} per credit.\nProgression: {BaseIncrement}, {BaseIncrement + IncrementStep}, {BaseIncrement + IncrementStep * 2}...");
-            }
-            else
-            {
-                return TextCommandResult.Success($"Current {LongDescription} increment step: +{IncrementStep} per credit\nProgression: {BaseIncrement}, {BaseIncrement + IncrementStep}, {BaseIncrement + IncrementStep * 2}...");
-            }
-        }
-
-        public override TextCommandResult HandleBaseCommand(TextCommandCallingArgs args, int indexOffset)
-        {
-            int? newValue = (int?)args[0+indexOffset];
-            if (newValue.HasValue)
-            {
-                if (newValue.Value < 1)
-                {
-                    return TextCommandResult.Error($"Base {IncrementUnits} per increment must be at least 1");
-                }
-
-                BaseIncrement = newValue.Value;
-                SeraphLevelingModSystem.pendingConfigSave = true;
-
-                return TextCommandResult.Success($"Base {IncrementUnits} per increment set to {BaseIncrement}. New progress will require this many {IncrementUnits} for the first 1%.");
-            }
-            else
-            {
-                return TextCommandResult.Success($"Current base {IncrementUnits} per increment: {BaseIncrement}\nIncrement step: +{IncrementStep} per credit");
-            }
-        }
 
         public override TextCommandResult HandleMaxCommand(TextCommandCallingArgs args, int indexOffset)
         {
@@ -433,18 +388,6 @@ namespace SeraphLeveling.Data.Attributes
             // Empty.
         }
 
-        public virtual int ApplyStatPenalty(double rawPenalty, StringBuilder sb, StringBuilder verboseSb)
-        {
-            int oldCredits = TotalCredits;
-            var (newCr, __, _2, lost) = SeraphLevelingModSystem.ApplySingleAccumulatorDecay(
-                0, 1, oldCredits,
-                rawPenalty, Definition.BaseIncrement, Definition.IncrementStep, verboseSb, Definition.SkillKey);
-            TotalCredits = newCr;
-            sb.AppendLine($"  {Definition.Name}: {oldCredits} \u2192 {newCr} (-{lost} credits, {rawPenalty:F0} pts)");
-            Definition.PendingSave = true;
-            if (lost > 0) return lost;
-            return 0;
-        }
-
+        public abstract int ApplyStatPenalty(double rawPenalty, StringBuilder sb, StringBuilder verboseSb);
     }
 }

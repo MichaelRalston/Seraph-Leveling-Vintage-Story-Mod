@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using SeraphLeveling.Data.Tools;
 
 namespace SeraphLeveling.Data.Attributes
@@ -147,7 +149,7 @@ namespace SeraphLeveling.Data.Attributes
             Id = "gearDropRate",
             Name = "GearDropRate",
             SkillKey = "geardroprate",
-            PersistenceHeader = "PLF",            
+            PersistenceHeader = "PLF",
             Stat = "% rusty gear rate",
             IncrementUnits = "vessels looted",
             BaseIncrement = 10,
@@ -156,7 +158,8 @@ namespace SeraphLeveling.Data.Attributes
             StatName = "rustyGearDropRate"
         };
 
-        public static readonly GenericLeveledAttributeModifierDefinition VesselDropRate = new() {
+        public static readonly GenericLeveledAttributeModifierDefinition VesselDropRate = new()
+        {
             Id = "vesselDropRate",
             Name = "VesselDropRate",
             SkillKey = "vesseldroprate",
@@ -183,6 +186,16 @@ namespace SeraphLeveling.Data.Attributes
             StatName = "wholeVesselLootChance",
         };
 
+        public static readonly ConcurrentDictionary<SimpleToolProgress, IncrementData> MiningIncrementData = new()
+        {
+            [default] = new IncrementData
+            {
+                IncrementUnits = "blocks",
+                BaseIncrement = 100,
+                IncrementStep = 100,
+            }
+        };
+
         public static readonly MiningAttributeModifierDefinition MiningSpeed = new()
         {
             Id = "miningSpeed",
@@ -191,11 +204,9 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% mining speed",
             LongDescription = "mining speed",
             PersistenceHeader = "SIT",
-            PersistenceVersion = 4,
+            PersistenceVersion = 5,
             Tool = ToolDefinitions.Pickaxe,
-            BaseIncrement = 100,
-            IncrementStep = 100,
-            IncrementUnits = "blocks",
+            IncrementData = MiningIncrementData,
             GlobalMaxCredits = 50,
             StatName = "miningSpeedMul"
         };
@@ -225,6 +236,17 @@ namespace SeraphLeveling.Data.Attributes
             Trait = new(() => Traits.TraitDefinitions.Clothier),
         };
 
+        public static readonly ConcurrentDictionary<SimpleToolProgress, IncrementData> DamageIncrementData = new()
+        {
+            [default] = new IncrementData
+            {
+                IncrementUnits = "damage",
+                BaseIncrement = 100,
+                IncrementStep = 100,
+            }
+        };
+
+
         public static readonly DamageAttributeModifierDefinition RangedDamage = new()
         {
             Id = "rangedDamage",
@@ -234,9 +256,7 @@ namespace SeraphLeveling.Data.Attributes
             SkillKey = "ranged",
             PersistenceHeader = "SIR",
             Tool = ToolDefinitions.Weapon,
-            IncrementUnits = "damage",
-            BaseIncrement = 100,
-            IncrementStep = 100,
+            IncrementData = DamageIncrementData,
             GlobalMaxCredits = 50,
             StatName = "rangedWeaponsDamage",
         };
@@ -250,9 +270,7 @@ namespace SeraphLeveling.Data.Attributes
             SkillKey = "rangedaccuracy",
             PersistenceHeader = "SIR",
             Tool = ToolDefinitions.Weapon,
-            IncrementUnits = "damage",
-            BaseIncrement = 100,
-            IncrementStep = 100,
+            IncrementData = DamageIncrementData,
             GlobalMaxCredits = 50,
             StatName = "rangedWeaponsAcc",
         };
@@ -266,9 +284,7 @@ namespace SeraphLeveling.Data.Attributes
             SkillKey = "rangeddistance",
             PersistenceHeader = "SIR",
             Tool = ToolDefinitions.Weapon,
-            IncrementUnits = "damage",
-            BaseIncrement = 100,
-            IncrementStep = 100,
+            IncrementData = DamageIncrementData,
             GlobalMaxCredits = 50,
             StatName = "bowDrawingStrength",
         };
@@ -282,9 +298,7 @@ namespace SeraphLeveling.Data.Attributes
             SkillKey = "melee",
             PersistenceHeader = "SIM",
             Tool = ToolDefinitions.Weapon,
-            IncrementUnits = "damage",
-            BaseIncrement = 100,
-            IncrementStep = 100,
+            IncrementData = DamageIncrementData,
             GlobalMaxCredits = 50,
             StatName = "meleeWeaponsDamage",
         };
@@ -298,9 +312,7 @@ namespace SeraphLeveling.Data.Attributes
             SkillKey = "precise",
             PersistenceHeader = "PRC",
             Tool = ToolDefinitions.Weapon,
-            IncrementUnits = "damage",
-            BaseIncrement = 100,
-            IncrementStep = 100,
+            IncrementData = DamageIncrementData,
             GlobalMaxCredits = 30,
             StatName = "mechanicalsDamage",
         };

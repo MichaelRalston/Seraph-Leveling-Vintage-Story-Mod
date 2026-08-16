@@ -9,6 +9,9 @@ namespace SeraphLeveling.Data.Attributes
 {
     public abstract class LeveledPartialAttributeModifierDefinition : LeveledAttributeModifierDefinition<LeveledPartialAttributeModifierDefinition, LeveledPartialAttributeModifierProgressData>, IConstructable<LeveledPartialAttributeModifierDefinition, LeveledPartialAttributeModifierProgressData>
     {
+        public virtual required int BaseIncrement { get; set; }
+        public virtual required int IncrementStep { get; set; }
+        public virtual required string IncrementUnits { get; init; }
         public static LeveledPartialAttributeModifierProgressData Create(LeveledPartialAttributeModifierDefinition definition) { return new LeveledPartialAttributeModifierProgressData(definition); }
         public override void ResetProgress(IServerPlayer player)
         {
@@ -19,6 +22,48 @@ namespace SeraphLeveling.Data.Attributes
             progress.LastActivityDay = 0;
             PendingSave = true;
             ApplyBonus(player, progress);
+        }
+        public override TextCommandResult HandleIncrementCommand(TextCommandCallingArgs args, int indexOffset)
+        {
+            int? newValue = (int?)args[0 + indexOffset];
+
+            if (newValue.HasValue)
+            {
+                if (newValue.Value < 0)
+                {
+                    return TextCommandResult.Error("Increment step cannot be negative");
+                }
+
+                IncrementStep = newValue.Value;
+                SeraphLevelingModSystem.pendingConfigSave = true;
+
+                return TextCommandResult.Success($"{Name} increment step set to +{IncrementStep} per credit.\nProgression: {BaseIncrement}, {BaseIncrement + IncrementStep}, {BaseIncrement + IncrementStep * 2}...");
+            }
+            else
+            {
+                return TextCommandResult.Success($"Current {LongDescription} increment step: +{IncrementStep} per credit\nProgression: {BaseIncrement}, {BaseIncrement + IncrementStep}, {BaseIncrement + IncrementStep * 2}...");
+            }
+        }
+
+        public override TextCommandResult HandleBaseCommand(TextCommandCallingArgs args, int indexOffset)
+        {
+            int? newValue = (int?)args[0 + indexOffset];
+            if (newValue.HasValue)
+            {
+                if (newValue.Value < 1)
+                {
+                    return TextCommandResult.Error($"Base {IncrementUnits} per increment must be at least 1");
+                }
+
+                BaseIncrement = newValue.Value;
+                SeraphLevelingModSystem.pendingConfigSave = true;
+
+                return TextCommandResult.Success($"Base {IncrementUnits} per increment set to {BaseIncrement}. New progress will require this many {IncrementUnits} for the first 1%.");
+            }
+            else
+            {
+                return TextCommandResult.Success($"Current base {IncrementUnits} per increment: {BaseIncrement}\nIncrement step: +{IncrementStep} per credit");
+            }
         }
     }
 
@@ -124,6 +169,5 @@ namespace SeraphLeveling.Data.Attributes
             // Calculate what the increment size should be at this level
             CurrentIncrementSize = Definition.BaseIncrement + (TotalCredits * Definition.IncrementStep);
         }
-
     }
 }
