@@ -327,10 +327,6 @@ namespace SeraphLeveling
         public const int VANILLA_PILFERER_VESSEL_CONTENTS_BONUS = 15;
         public const int VANILLA_PILFERER_WHOLE_VESSEL_BONUS = 12;
 
-        // Storage for pilferer progress
-        public static ConcurrentDictionary<string, PilfererProgressData> PilfererProgress = new ConcurrentDictionary<string, PilfererProgressData>();
-        public static volatile bool pendingPilfererProgressSave = false;
-
         // =========================================================================
         // RESOURCEFUL TRAIT - Tracks animal harvesting for loot/speed bonuses
         // =========================================================================
@@ -1002,32 +998,6 @@ namespace SeraphLeveling
                     .RequiresPrivilege(Privilege.controlserver)
                     .HandleWith(OnTraitMenderMaxCommand)
                 .EndSubCommand()
-                // Pilferer trait commands
-                .BeginSubCommand("pilferer")
-                    .WithDescription("View your pilferer progression stats")
-                    .RequiresPrivilege(Privilege.chat)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitPilfererCommand)
-                .EndSubCommand()
-                .BeginSubCommand("pilfererbase")
-                    .WithDescription("Get or set the base points per level (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalInt("points"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitPilfererBaseCommand)
-                .EndSubCommand()
-                .BeginSubCommand("pilfererlevel")
-                    .WithDescription("Get or set your pilferer level (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalInt("level"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitPilfererLevelCommand)
-                .EndSubCommand()
-                .BeginSubCommand("pilferermax")
-                    .WithDescription("Get or set the max pilferer bonus percent (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalInt("percent"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitPilfererMaxCommand)
-                .EndSubCommand()
                 // Hardy health trait commands
                 .BeginSubCommand("hardyhealth")
                     .WithDescription("View your hardy health unlock progress")
@@ -1354,9 +1324,7 @@ namespace SeraphLeveling
             api.Event.SaveGameLoaded += LoadConfig;
             api.Event.SaveGameLoaded += LoadAllProgress;
             api.Event.SaveGameLoaded += LoadArmorProgress;
-            api.Event.SaveGameLoaded += LoadClothierProgress;
             api.Event.SaveGameLoaded += LoadMenderProgress;
-            api.Event.SaveGameLoaded += LoadPilfererProgress;
             api.Event.SaveGameLoaded += LoadHardyHealthProgress;
             api.Event.SaveGameLoaded += LoadMercilessProgress;
             api.Event.SaveGameLoaded += LoadClaustrophobicRemovalProgress;
@@ -1520,9 +1488,6 @@ namespace SeraphLeveling
 
             var menderProg = MenderProgress.GetOrAdd(playerUid, _ => new MenderProgressData { CurrentIncrementSize = BaseMenderRepairsPerIncrement });
             sb.AppendLine($"Mender: {menderProg.TotalCredits}/{MaxMenderPercent} (+{menderProg.TotalCredits}% repair bonus)");
-
-            var pilfererProg = PilfererProgress.GetOrAdd(playerUid, _ => new PilfererProgressData { CurrentIncrementSize = BasePilfererPointsPerIncrement });
-            sb.AppendLine($"Pilferer: {pilfererProg.TotalCredits}/{MaxPilfererPercent} (+{pilfererProg.TotalCredits}% vessel loot)");
 
             // Unlock traits
             sb.AppendLine("\n--- Unlock Traits ---");
@@ -1732,17 +1697,6 @@ namespace SeraphLeveling
                         ApplyMenderBonusStatic(targetPlayer, level);
                         UpdateSkillActivityDay(targetUid, "mender");
                         result = $"Mender level set to {level} (+{level}% repair) for {targetPlayer.PlayerName}.";
-                        break;
-                    }
-                case "pilferer":
-                    {
-                        if (level > MaxPilfererPercent) return TextCommandResult.Error($"Level cannot exceed max ({MaxPilfererPercent}).");
-                        var progress = PilfererProgress.GetOrAdd(targetUid, _ => new PilfererProgressData { CurrentIncrementSize = BasePilfererPointsPerIncrement });
-                        progress.TotalCredits = level;
-                        pendingPilfererProgressSave = true;
-                        ApplyPilfererBonusStatic(targetPlayer, level);
-                        UpdateSkillActivityDay(targetUid, "pilferer");
-                        result = $"Pilferer level set to {level} for {targetPlayer.PlayerName}.";
                         break;
                     }
                 default:
@@ -3402,18 +3356,6 @@ namespace SeraphLeveling
                 ServerApi.Logger.Debug($"[SeraphLeveling] Applied mender bonus +{menderCredits}% to player {byPlayer.PlayerName}");
             }
 
-            // Apply pilferer bonus
-            var pilfererProg = PilfererProgress.GetOrAdd(playerUid, _ => new PilfererProgressData
-            {
-                CurrentIncrementSize = BasePilfererPointsPerIncrement
-            });
-            int pilfererCredits = pilfererProg.TotalCredits;
-            ApplyPilfererBonusStatic(byPlayer, pilfererCredits);
-            if (pilfererCredits > 0)
-            {
-                ServerApi.Logger.Debug($"[SeraphLeveling] Applied pilferer bonus +{pilfererCredits}% to player {byPlayer.PlayerName}");
-            }
-
             // Apply hardy health unlock
             var hardyHealthProg = HardyHealthProgress.GetOrAdd(playerUid, _ => new HardyHealthProgressData());
             if (hardyHealthProg.IsUnlocked)
@@ -4445,10 +4387,6 @@ namespace SeraphLeveling
                 {
                     PersistMenderProgress();
                 }
-                if (pendingPilfererProgressSave || !PilfererProgress.IsEmpty)
-                {
-                    PersistPilfererProgress();
-                }
                 if (pendingHardyHealthProgressSave || !HardyHealthProgress.IsEmpty)
                 {
                     PersistHardyHealthProgress();
@@ -4499,7 +4437,6 @@ namespace SeraphLeveling
 
             ArmorProgress.Clear();
             MenderProgress.Clear();
-            PilfererProgress.Clear();
             HardyHealthProgress.Clear();
             MercilessProgress.Clear();
             ClaustrophobicRemovalProgress.Clear();
@@ -4513,7 +4450,6 @@ namespace SeraphLeveling
             pendingSleepBuffSave = false;
             pendingArmorProgressSave = false;
             pendingMenderProgressSave = false;
-            pendingPilfererProgressSave = false;
             pendingHardyHealthProgressSave = false;
             pendingMercilessProgressSave = false;
             pendingClaustrophobicRemovalProgressSave = false;
@@ -4548,12 +4484,6 @@ namespace SeraphLeveling
             {
                 PersistMenderProgress();
                 pendingMenderProgressSave = false;
-            }
-
-            if (pendingPilfererProgressSave || !PilfererProgress.IsEmpty)
-            {
-                PersistPilfererProgress();
-                pendingPilfererProgressSave = false;
             }
 
             if (pendingHardyHealthProgressSave || !HardyHealthProgress.IsEmpty)
@@ -4706,6 +4636,48 @@ namespace SeraphLeveling
                     IncrementUnits = AttributeModifierDefinitions.AnimalDropRate.IncrementUnits,
                 };
                 Conversion.PortData<LeveledPartialAttributeModifierDefinition, LeveledPartialAttributeModifierProgressData>(legacyResourceful, AttributeModifierDefinitions.AnimalHarvestRate, ServerApi);
+                LoadProgress<PilfererProgressData>();
+                if (!PilfererProgressData.progressDict.IsEmpty)
+                {
+                    var snapshot = PilfererProgressData.progressDict.ToArray();
+                    AttributeModifierDefinitions.GearDropRate.LoadProgress(ServerApi);
+                    if (AttributeModifierDefinitions.GearDropRate.ProgressDictionary.IsEmpty)
+                    {
+                        foreach (var kvp in snapshot)
+                        {
+                            var pd = AttributeModifierDefinitions.GearDropRate.CreateProgressData();
+                            pd.TotalCredits = kvp.Value.TotalCredits;
+                            pd.PartialCredit = kvp.Value.PointsInIncrement;
+                            pd.CurrentIncrementSize = kvp.Value.CurrentIncrementSize;
+                            pd.LastActivityDay = kvp.Value.LastActivityDay;
+                            AttributeModifierDefinitions.GearDropRate.ProgressDictionary.TryAdd(kvp.Key, pd);
+                        }
+                    }
+                    if (AttributeModifierDefinitions.VesselDropRate.ProgressDictionary.IsEmpty)
+                    {
+                        foreach (var kvp in snapshot)
+                        {
+                            var pd = AttributeModifierDefinitions.VesselDropRate.CreateProgressData();
+                            pd.TotalCredits = kvp.Value.TotalCredits;
+                            pd.PartialCredit = kvp.Value.PointsInIncrement;
+                            pd.CurrentIncrementSize = kvp.Value.CurrentIncrementSize;
+                            pd.LastActivityDay = kvp.Value.LastActivityDay;
+                            AttributeModifierDefinitions.VesselDropRate.ProgressDictionary.TryAdd(kvp.Key, pd);
+                        }
+                    }
+                    if (AttributeModifierDefinitions.WholeVesselRate.ProgressDictionary.IsEmpty)
+                    {
+                        foreach (var kvp in snapshot)
+                        {
+                            var pd = AttributeModifierDefinitions.WholeVesselRate.CreateProgressData();
+                            pd.TotalCredits = kvp.Value.TotalCredits;
+                            pd.PartialCredit = kvp.Value.PointsInIncrement;
+                            pd.CurrentIncrementSize = kvp.Value.CurrentIncrementSize;
+                            pd.LastActivityDay = kvp.Value.LastActivityDay;
+                            AttributeModifierDefinitions.WholeVesselRate.ProgressDictionary.TryAdd(kvp.Key, pd);
+                        }
+                    }
+                }
                 PersistModList();
             }
             else
@@ -5370,29 +5342,6 @@ namespace SeraphLeveling
                 }
             }
 
-            // Pilferer
-            if (!DecayExemptSkills.Contains("pilferer") && !DisabledSkills.Contains("pilferer"))
-            {
-                if (PilfererProgress.TryGetValue(playerUid, out var piProg) && (piProg.TotalCredits > 0 || piProg.PointsInIncrement > 0))
-                {
-                    var (grace, basePoints, maxPoints) = GetDecayParams("pilferer");
-                    int decayCredits = CalculateDecayPoints(piProg.LastActivityDay, currentDay, grace, basePoints, maxPoints);
-                    if (decayCredits > 0)
-                    {
-                        int oldCredits = piProg.TotalCredits;
-                        int oldAcc = piProg.PointsInIncrement; int oldInc = piProg.CurrentIncrementSize;
-                        double rawPenalty = (double)decayCredits;
-                        var (newCr, newAcc, newInc, lost) = ApplySingleAccumulatorDecay(
-                            oldAcc, oldInc, oldCredits,
-                            rawPenalty, BasePilfererPointsPerIncrement, PilfererIncrementStep, verboseSb, "Pilferer");
-                        piProg.TotalCredits = newCr; piProg.PointsInIncrement = (int)Math.Floor(newAcc); piProg.CurrentIncrementSize = newInc;
-                        if (lost > 0) totalDecayApplied += lost;
-                        sb.AppendLine($"  Pilferer: {oldCredits} \u2192 {newCr} (-{lost} credits, {rawPenalty:F0} pts), {oldAcc}/{oldInc} \u2192 {(int)Math.Floor(newAcc)}/{newInc}");
-                        pendingPilfererProgressSave = true;
-                    }
-                }
-            }
-
             // CO Proficiency (per-proficiency absolute-position drain + SteadyAim direct)
             if (!DecayExemptSkills.Contains("coproficiency") && !DisabledSkills.Contains("coproficiency") && IsCOCompatEnabled)
             {
@@ -5488,8 +5437,6 @@ namespace SeraphLeveling
                 ApplyArmorBonusesStatic(player, armorProg.TotalDurabilityCredits, armorProg.TotalWalkSpeedCredits);
             if (MenderProgress.TryGetValue(playerUid, out var menderProg))
                 ApplyMenderBonusStatic(player, menderProg.TotalCredits);
-            if (PilfererProgress.TryGetValue(playerUid, out var pilfererProg))
-                ApplyPilfererBonusStatic(player, pilfererProg.TotalCredits);
             if (IsCOCompatEnabled && COProgress.TryGetValue(playerUid, out var coProg))
                 ApplyAllCOBonuses(player);
         }
@@ -5513,10 +5460,6 @@ namespace SeraphLeveling
                 case "mender":
                     if (MenderProgress.TryGetValue(playerUid, out var menderProg))
                         menderProg.LastActivityDay = currentDay;
-                    break;
-                case "pilferer":
-                    if (PilfererProgress.TryGetValue(playerUid, out var pilfererProg))
-                        pilfererProg.LastActivityDay = currentDay;
                     break;
                 case "coproficiency":
                     if (COProgress.TryGetValue(playerUid, out var coProg))
@@ -5883,23 +5826,6 @@ namespace SeraphLeveling
                 }
             }
 
-            // Pilferer
-            if (!DeathPenaltyExemptSkills.Contains("pilferer") && !DisabledSkills.Contains("pilferer"))
-            {
-                if (PilfererProgress.TryGetValue(playerUid, out var pilfererProg) && (pilfererProg.TotalCredits > 0 || pilfererProg.PointsInIncrement > 0))
-                {
-                    int oldCredits = pilfererProg.TotalCredits;
-                    int oldAcc = pilfererProg.PointsInIncrement; int oldInc = pilfererProg.CurrentIncrementSize;
-                    double rawPenalty = BasePilfererPointsPerIncrement * DeathPenaltyFraction * Math.Sqrt(Math.Max(1, oldCredits));
-                    var (newCr, newAcc, newInc, lost) = ApplySingleAccumulatorDecay(
-                        oldAcc, oldInc, oldCredits, rawPenalty, BasePilfererPointsPerIncrement, PilfererIncrementStep, null, "Pilferer");
-                    pilfererProg.TotalCredits = newCr; pilfererProg.PointsInIncrement = (int)Math.Floor(newAcc); pilfererProg.CurrentIncrementSize = newInc;
-                    if (lost > 0) totalCreditsLost += lost;
-                    pendingPilfererProgressSave = true;
-                    sb.AppendLine($"  Pilferer: {oldCredits} \u2192 {newCr} (-{lost} credits, {rawPenalty:F0} pts), {oldAcc}/{oldInc} \u2192 {(int)Math.Floor(newAcc)}/{newInc}");
-                }
-            }
-
             // --- CO Proficiency (per-proficiency subcredit drain) ---
             if (!DeathPenaltyExemptSkills.Contains("coproficiency") && !DisabledSkills.Contains("coproficiency") && IsCOCompatEnabled)
             {
@@ -6085,8 +6011,8 @@ namespace SeraphLeveling
             sb.AppendLine("--- Utility ---");
             AppendDecayStatus(sb, "Mender", "mender", playerUid, currentDay,
                 () => MenderProgress.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
-            AppendDecayStatus(sb, "Pilferer", "pilferer", playerUid, currentDay,
-                () => PilfererProgress.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
+            AppendDecayStatus(sb, "Pilferer", "pilferer", playerUid, currentDay, // TODO: the other two pilferer subskills.
+                () => AttributeModifierDefinitions.VesselDropRate.ProgressDictionary.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
             AppendDecayStatus(sb, "Resourceful", "resourceful", playerUid, currentDay,
                 () => AttributeModifierDefinitions.AnimalDropRate.ProgressDictionary.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
             AppendDecayStatus(sb, "Animal Harvest Rate", "animalharvester", playerUid, currentDay,
@@ -8094,251 +8020,6 @@ namespace SeraphLeveling
             }
         }
 
-        // =========================================================================
-        // PILFERER TRAIT IMPLEMENTATION
-        // =========================================================================
-
-        /// <summary>
-        /// Handler for /trait pilferer command.
-        /// </summary>
-        private TextCommandResult OnTraitPilfererCommand(TextCommandCallingArgs args)
-        {
-            IServerPlayer player = args.Caller.Player as IServerPlayer;
-            if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
-
-            var progress = PilfererProgress.GetOrAdd(player.PlayerUID, _ => new PilfererProgressData());
-            int bonusPercent = CalculatePilfererBonusPercent(progress.TotalCredits, player.Entity);
-            bool hasVanillaPilferer = PlayerHasVanillaPilfererStatic(player.Entity);
-            int maxCredits = GetMaxPilfererCredits(player.Entity);
-
-            var sb = new StringBuilder();
-            sb.AppendLine($"Pilferer progression: Level {progress.TotalCredits} / {maxCredits}");
-            sb.AppendLine($"Current bonus: +{bonusPercent}% rusty gear, vessel contents, and collection chance");
-            if (hasVanillaPilferer)
-            {
-                sb.AppendLine($"(Has vanilla Pilferer trait)");
-            }
-            if (progress.TotalCredits < maxCredits)
-            {
-                int remaining = progress.CurrentIncrementSize - progress.PointsInIncrement;
-                sb.AppendLine($"Progress: {progress.PointsInIncrement} / {progress.CurrentIncrementSize} points until next level");
-            }
-            else
-            {
-                sb.AppendLine("Maximum level reached!");
-            }
-
-            return TextCommandResult.Success(sb.ToString());
-        }
-
-        /// <summary>
-        /// Handler for /trait pilfererbase command.
-        /// </summary>
-        private TextCommandResult OnTraitPilfererBaseCommand(TextCommandCallingArgs args)
-        {
-            int? newValue = (int?)args[0];
-
-            if (newValue.HasValue)
-            {
-                if (newValue.Value < 1) return TextCommandResult.Error("Base points must be at least 1.");
-                BasePilfererPointsPerIncrement = newValue.Value;
-                pendingConfigSave = true;
-                return TextCommandResult.Success($"Pilferer base points set to {BasePilfererPointsPerIncrement}.");
-            }
-
-            return TextCommandResult.Success($"Current pilferer base points: {BasePilfererPointsPerIncrement}.");
-        }
-
-        /// <summary>
-        /// Handler for /trait pilfererlevel command.
-        /// Gets or sets the player's pilferer level.
-        /// </summary>
-        private TextCommandResult OnTraitPilfererLevelCommand(TextCommandCallingArgs args)
-        {
-            IServerPlayer player = args.Caller.Player as IServerPlayer;
-            if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
-
-            // Get the player-specific max credits (accounts for Heavyhanded penalty)
-            int maxCredits = GetMaxPilfererCredits(player.Entity);
-
-            var progress = PilfererProgress.GetOrAdd(player.PlayerUID, _ => new PilfererProgressData());
-
-            int? newLevel = (int?)args[0];
-
-            // If no value provided, show current level
-            if (!newLevel.HasValue)
-            {
-                int currentBonus = CalculatePilfererBonusPercent(progress.TotalCredits, player.Entity);
-                return TextCommandResult.Success($"Current pilferer level: {progress.TotalCredits}/{maxCredits} (+{currentBonus}% bonuses)");
-            }
-
-            if (newLevel.Value < 0 || newLevel.Value > maxCredits)
-                return TextCommandResult.Error($"Level must be between 0 and {maxCredits}.");
-
-            progress.TotalCredits = newLevel.Value;
-            progress.PointsInIncrement = 0;
-            progress.CurrentIncrementSize = BasePilfererPointsPerIncrement;
-
-            for (int i = 0; i < newLevel.Value; i++)
-            {
-                progress.CurrentIncrementSize += PilfererIncrementStep;
-            }
-
-            pendingPilfererProgressSave = true;
-
-            int bonusPercent = ApplyPilfererBonusStatic(player, progress.TotalCredits);
-
-            UpdateSkillActivityDay(player.PlayerUID, "pilferer");
-
-            return TextCommandResult.Success($"Pilferer level set to {newLevel.Value} (+{bonusPercent}% bonuses).");
-        }
-
-        /// <summary>
-        /// Handler for /trait pilferermax command.
-        /// </summary>
-        private TextCommandResult OnTraitPilfererMaxCommand(TextCommandCallingArgs args)
-        {
-            int? newValue = (int?)args[0];
-
-            if (newValue.HasValue)
-            {
-                if (newValue.Value < 1) return TextCommandResult.Error("Max percent must be at least 1.");
-                MaxPilfererPercent = newValue.Value;
-                pendingConfigSave = true;
-                return TextCommandResult.Success($"Pilferer max bonus set to {MaxPilfererPercent}%.");
-            }
-
-            return TextCommandResult.Success($"Current pilferer max bonus: {MaxPilfererPercent}%.");
-        }
-
-        /// <summary>
-        /// Calculate the pilferer bonus as an integer percentage.
-        /// </summary>
-        public static int CalculatePilfererBonusPercent(int credits, EntityPlayer entity)
-        {
-            bool hasVanillaPilferer = entity != null && PlayerHasVanillaPilfererStatic(entity);
-            int vanillaBonus = hasVanillaPilferer ? VANILLA_PILFERER_RUSTY_GEAR_BONUS : 0;
-            int earnableBonus = Math.Max(0, MaxPilfererPercent - vanillaBonus);
-            return Math.Min(credits, earnableBonus);
-        }
-
-        /// <summary>
-        /// Get the maximum pilferer credits a player can earn based on their traits.
-        /// Players with Heavyhanded trait can earn extra credits to compensate for the penalty.
-        /// </summary>
-        public static int GetMaxPilfererCredits(EntityPlayer entity)
-        {
-            if (entity == null) return MaxPilfererPercent;
-
-            bool hasHeavyhanded = PlayerHasVanillaHeavyhanded(entity);
-
-            // Heavyhanded vessel penalty is 10%, need 10 extra levels to cancel it
-            if (hasHeavyhanded)
-            {
-                return MaxPilfererPercent + VANILLA_HEAVYHANDED_VESSEL_PENALTY;
-            }
-
-            return MaxPilfererPercent;
-        }
-
-        /// <summary>
-        /// Check if player has vanilla Pilferer trait.
-        /// </summary>
-        private static bool PlayerHasVanillaPilfererStatic(EntityPlayer entity)
-        {
-            if (entity == null) return false;
-            string[] classTraits = entity.WatchedAttributes.GetStringArray("characterTraits", null);
-            if (classTraits != null)
-            {
-                foreach (string trait in classTraits)
-                {
-                    if (trait.Equals("pilferer", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return true;
-                    }
-                }
-            }
-            string characterClass = entity.WatchedAttributes.GetString("characterClass", "");
-            return characterClass.Equals("malefactor", StringComparison.OrdinalIgnoreCase);
-        }
-
-        /// <summary>
-        /// Apply pilferer bonus.
-        /// Also handles Heavyhanded vessel loot negative trait cancellation.
-        /// </summary>
-        private static int ApplyPilfererBonusStatic(IServerPlayer player, int level)
-        {
-            if (player?.Entity == null) return 0;
-
-            bool hasVanillaPilferer = PlayerHasVanillaPilfererStatic(player.Entity);
-            bool hasHeavyhanded = PlayerHasVanillaHeavyhanded(player.Entity);
-
-            // Calculate remaining Heavyhanded vessel penalty
-            int heavyhandedVesselRemaining = hasHeavyhanded ? CalculateRemainingPenalty(VANILLA_HEAVYHANDED_VESSEL_PENALTY, level) : 0;
-
-            // Calculate net level after cancelling Heavyhanded's vessel penalty (only affects vessel stat)
-            int netLevel = level;
-            if (hasHeavyhanded)
-            {
-                netLevel = Math.Max(0, level - VANILLA_HEAVYHANDED_VESSEL_PENALTY);
-            }
-
-            // Per-stat earned bonuses. Pilferer's three stats have different vanilla values,
-            // so we compute the earnable cap per stat (MaxPilfererPercent - vanilla_for_that_stat).
-            // Earlier code used a single shared `bonusPercent` based on the rusty-gear cap,
-            // which let Malefactor's vessel total exceed +20% (15 vanilla + 10 earned = 25)
-            // and left rusty/whole below the cap. Splitting per-stat keeps every class at
-            // exactly +20% per stat at maxall.
-            int vanillaVessel = hasVanillaPilferer ? VANILLA_PILFERER_VESSEL_CONTENTS_BONUS : 0;
-            int vanillaRusty = hasVanillaPilferer ? VANILLA_PILFERER_RUSTY_GEAR_BONUS : 0;
-            int vanillaWhole = hasVanillaPilferer ? VANILLA_PILFERER_WHOLE_VESSEL_BONUS : 0;
-
-            int earnableVessel = Math.Max(0, MaxPilfererPercent - vanillaVessel);
-            int earnableRusty = Math.Max(0, MaxPilfererPercent - vanillaRusty);
-            int earnableWhole = Math.Max(0, MaxPilfererPercent - vanillaWhole);
-
-            int vesselBonus = Math.Min(netLevel, earnableVessel);
-            int rustyBonus = Math.Min(level, earnableRusty);  // rusty/whole aren't affected by Heavyhanded
-            int wholeBonus = Math.Min(level, earnableWhole);
-
-            // Apply per-stat. These additive stats use values like 0.1 for +10%; the game
-            // applies (1 + blended) as the final multiplier.
-            player.Entity.Stats.Set("rustyGearDropRate", PILFERER_RUSTY_GEAR_STAT_CODE, rustyBonus * 0.01f, false);
-            player.Entity.Stats.Set("vesselContentsDropRate", PILFERER_VESSEL_CONTENTS_STAT_CODE, vesselBonus * 0.01f, false);
-            player.Entity.Stats.Set("wholeVesselLootChance", PILFERER_WHOLE_VESSEL_STAT_CODE, wholeBonus * 0.01f, false);
-
-            // Counter-stat: when Heavyhanded vessel penalty is fully cancelled, apply +10% to
-            // negate the vanilla -10% so functional vessel drop rate hits the displayed cap.
-            if (hasHeavyhanded)
-            {
-                if (heavyhandedVesselRemaining == 0)
-                    player.Entity.Stats.Set("vesselContentsDropRate", "sitHeavyhandedVesselCancel", VANILLA_HEAVYHANDED_VESSEL_PENALTY * 0.01f, false);
-                else
-                    player.Entity.Stats.Remove("vesselContentsDropRate", "sitHeavyhandedVesselCancel");
-            }
-
-            // Sync to WatchedAttributes
-            player.Entity.WatchedAttributes.SetInt(WATCHED_PILFERER_LEVEL, level);
-            // Keep WATCHED_PILFERER_BONUS as the max of the three for any legacy readers
-            // (display now uses the per-stat values instead).
-            player.Entity.WatchedAttributes.SetInt(WATCHED_PILFERER_BONUS, Math.Max(vesselBonus, Math.Max(rustyBonus, wholeBonus)));
-            player.Entity.WatchedAttributes.SetInt(WATCHED_PILFERER_VESSEL_BONUS, vesselBonus);
-            player.Entity.WatchedAttributes.SetInt(WATCHED_PILFERER_RUSTY_BONUS, rustyBonus);
-            player.Entity.WatchedAttributes.SetInt(WATCHED_PILFERER_WHOLE_BONUS, wholeBonus);
-            player.Entity.WatchedAttributes.SetBool("sitHasVanillaPilferer", hasVanillaPilferer);
-
-            // Sync negative trait status (Heavyhanded vessel part)
-            player.Entity.WatchedAttributes.SetInt(WATCHED_HEAVYHANDED_VESSEL_REMAINING, heavyhandedVesselRemaining);
-
-            player.Entity.WatchedAttributes.MarkPathDirty(WATCHED_PILFERER_LEVEL);
-
-            // Update extraTraits
-            UpdateExtraTraitStatic(player.Entity, PILFERER_TRAIT_CODE, level > 0 && !hasVanillaPilferer);
-
-            // Return the largest earned bonus (caller is informational; all three may differ)
-            return Math.Max(vesselBonus, Math.Max(rustyBonus, wholeBonus));
-        }
-
         /// <summary>
         /// Process cracked vessel break (called from OnBlockBroken for cracked vessels).
         /// Only cracked vessels count - they can't be re-placed by players.
@@ -8348,39 +8029,10 @@ namespace SeraphLeveling
             if (player?.Entity == null) return;
 
             string playerUid = player.PlayerUID;
-            var progress = PilfererProgress.GetOrAdd(playerUid, _ => new PilfererProgressData());
 
-            // Get the player-specific max credits (accounts for Heavyhanded penalty)
-            int maxCredits = GetMaxPilfererCredits(player.Entity);
-
-            if (progress.TotalCredits >= maxCredits) return;
-
-            int oldCredits = progress.TotalCredits;
-            // Apply sleep buff multiplier if active
-            int modifiedPoints = ApplyXPMultiplier(playerUid, PILFERER_VESSEL_POINTS);
-            progress.PointsInIncrement += modifiedPoints;
-
-            while (progress.PointsInIncrement >= progress.CurrentIncrementSize && progress.TotalCredits < maxCredits)
-            {
-                progress.TotalCredits++;
-                progress.PointsInIncrement -= progress.CurrentIncrementSize;
-                progress.CurrentIncrementSize += PilfererIncrementStep;
-
-                ServerApi.Logger.Debug($"[SeraphLeveling] Player {player.PlayerName} earned pilferer credit {progress.TotalCredits} from cracked vessel");
-            }
-
-            pendingPilfererProgressSave = true;
-
-            // Update last activity day for skill decay
-            UpdateSkillActivityDay(playerUid, "pilferer");
-
-            if (progress.TotalCredits > oldCredits)
-            {
-                ApplyPilfererBonusStatic(player, progress.TotalCredits);
-                // Notify player of level up with raw improvement (shows progress even when cancelling Heavyhanded)
-                NotifyLevelUp(player,
-                    Lang.Get("seraphleveling:message-pilferer-level-up", progress.TotalCredits, progress.TotalCredits));
-            }
+            AttributeModifierDefinitions.GearDropRate.GetForPlayer(playerUid).DoEvent(player, PILFERER_VESSEL_POINTS);
+            AttributeModifierDefinitions.VesselDropRate.GetForPlayer(playerUid).DoEvent(player, PILFERER_VESSEL_POINTS);
+            AttributeModifierDefinitions.WholeVesselRate.GetForPlayer(playerUid).DoEvent(player, PILFERER_VESSEL_POINTS);
         }
 
 
@@ -8703,16 +8355,6 @@ namespace SeraphLeveling
             }
             ApplyMenderBonusStatic(player, 0);
 
-            // Reset Pilferer
-            if (PilfererProgress.TryGetValue(playerUid, out var pilfererProg))
-            {
-                pilfererProg.TotalCredits = 0;
-                pilfererProg.PointsInIncrement = 0;
-                pilfererProg.CurrentIncrementSize = 10; // Default base
-                pendingPilfererProgressSave = true;
-            }
-            ApplyPilfererBonusStatic(player, 0);
-
             // Reset Hardy Health
             if (HardyHealthProgress.TryGetValue(playerUid, out var hardyHealthProg))
             {
@@ -8938,15 +8580,6 @@ namespace SeraphLeveling
             pendingMenderProgressSave = true;
             ApplyMenderBonusStatic(player, maxMenderCredits);
 
-            // Max Pilferer
-            int maxPilfererCredits = GetMaxPilfererCredits(player.Entity);
-            var pilfererProg = PilfererProgress.GetOrAdd(playerUid, _ => new PilfererProgressData());
-            pilfererProg.TotalCredits = maxPilfererCredits;
-            pilfererProg.PointsInIncrement = 0;
-            pilfererProg.CurrentIncrementSize = BasePilfererPointsPerIncrement;
-            pendingPilfererProgressSave = true;
-            ApplyPilfererBonusStatic(player, maxPilfererCredits);
-
             // Unlock Hardy Health
             var hardyHealthProg = HardyHealthProgress.GetOrAdd(playerUid, _ => new HardyHealthProgressData());
             hardyHealthProg.IsUnlocked = true;
@@ -9007,14 +8640,6 @@ namespace SeraphLeveling
             menderProg.CurrentIncrementSize = BaseMenderRepairsPerIncrement;
             pendingMenderProgressSave = true;
             ApplyMenderBonusStatic(player, CREDITS);
-
-            // Pilferer
-            var pilfererProg = PilfererProgress.GetOrAdd(playerUid, _ => new PilfererProgressData());
-            pilfererProg.TotalCredits = CREDITS;
-            pilfererProg.PointsInIncrement = 0;
-            pilfererProg.CurrentIncrementSize = BasePilfererPointsPerIncrement;
-            pendingPilfererProgressSave = true;
-            ApplyPilfererBonusStatic(player, CREDITS);
 
             // Combat Overhaul proficiencies (only if CO is loaded)
             string coNote = "";
@@ -9831,22 +9456,6 @@ namespace SeraphLeveling
         private void LoadMenderProgress()
         {
             LoadProgress<MenderProgressData>();
-        }
-
-        /// <summary>
-        /// Persist pilferer progress to world save data.
-        /// </summary>
-        public static void PersistPilfererProgress()
-        {
-            PersistProgress<PilfererProgressData>();
-        }
-
-        /// <summary>
-        /// Load pilferer progress from world save data.
-        /// </summary>
-        private void LoadPilfererProgress()
-        {
-            LoadProgress<PilfererProgressData>();
         }
 
         // =========================================================================

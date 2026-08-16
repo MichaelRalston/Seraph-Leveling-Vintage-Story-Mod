@@ -142,6 +142,47 @@ namespace SeraphLeveling.Data.Attributes
             StatName = "animalHarvestingTime",
         };
 
+        public static readonly GenericLeveledAttributeModifierDefinition GearDropRate = new()
+        {
+            Id = "gearDropRate",
+            Name = "GearDropRate",
+            SkillKey = "geardroprate",
+            PersistenceHeader = "PLF",            
+            Stat = "% rusty gear rate",
+            IncrementUnits = "vessels looted",
+            BaseIncrement = 10,
+            IncrementStep = 10,
+            GlobalMaxCredits = 20,
+            StatName = "rustyGearDropRate"
+        };
+
+        public static readonly GenericLeveledAttributeModifierDefinition VesselDropRate = new() {
+            Id = "vesselDropRate",
+            Name = "VesselDropRate",
+            SkillKey = "vesseldroprate",
+            PersistenceHeader = "PLF",
+            Stat = "% vessel loot bonus",
+            IncrementUnits = "vessels looted",
+            BaseIncrement = 10,
+            IncrementStep = 10,
+            GlobalMaxCredits = 20,
+            StatName = "vesselContentsDropRate"
+        };
+
+        public static readonly GenericLeveledAttributeModifierDefinition WholeVesselRate = new()
+        {
+            Id = "wholeVesselRate",
+            Name = "WholeVesselRate",
+            SkillKey = "wholevesselrate",
+            PersistenceHeader = "PLF",
+            Stat = "% chance of looting entire vessel",
+            IncrementUnits = "vessels looted",
+            BaseIncrement = 10,
+            IncrementStep = 10,
+            GlobalMaxCredits = 20,
+            StatName = "wholeVesselLootChance",
+        };
+
         public static readonly MiningAttributeModifierDefinition MiningSpeed = new()
         {
             Id = "miningSpeed",

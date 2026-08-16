@@ -94,10 +94,11 @@ namespace SeraphLeveling.Data.Legacy
             }
         }
         public static void MarkForSave() {
-            SeraphLevelingModSystem.pendingPilfererProgressSave = true;
         }
+
+        public static ConcurrentDictionary<string, PilfererProgressData> progressDict = [];
         public static ref ConcurrentDictionary<string, PilfererProgressData> ProgressDictionary() {
-            return ref SeraphLevelingModSystem.PilfererProgress;
+            return ref progressDict;
         }
    }
 }

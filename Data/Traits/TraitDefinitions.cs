@@ -19,6 +19,8 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "resourceful",
             Attributes = [
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.AnimalDropRate, 10),
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.AnimalHarvestRate, 25),
             ],
         };
 
@@ -76,6 +78,9 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "pilferer",
             Attributes = [
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.GearDropRate, 10),
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.VesselDropRate, 15),
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.WholeVesselRate, 12),
             ]
         };
 
