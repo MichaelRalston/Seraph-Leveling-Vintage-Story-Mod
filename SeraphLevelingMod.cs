@@ -4642,6 +4642,13 @@ namespace SeraphLeveling
             }
         }
 
+        public static void LogSpammyData(byte[] data, string description, string location)
+        {
+            var stringyData = string.Concat(data.Select(b => b >= 32 && b <= 122 ? ((char)b).ToString() : $"[0x{b:X2}]"));
+            ServerApi.Logger.Debug($"[SeraphLeveling] {description} data found: {stringyData} in {location}");
+
+        }
+
         const string MOD_LIST_SAVE_KEY = "sitModListData";
         const string MOD_LIST_HEADER = "SML";
         private static bool savedModList = false;
@@ -4665,37 +4672,9 @@ namespace SeraphLeveling
                     IncrementUnits = AttributeModifierDefinitions.RangedDamage.IncrementUnits,
                     Tool = AttributeModifierDefinitions.RangedDamage.Tool
                 };
-                legacyRangedDamage.LoadProgress(ServerApi);
-                AttributeModifierDefinitions.RangedDamage.LoadProgress(ServerApi);
-                AttributeModifierDefinitions.RangedAccuracy.LoadProgress(ServerApi);
-                AttributeModifierDefinitions.RangedDistance.LoadProgress(ServerApi);
-                // These three were the same in the old mod, so if you only have damage... clone it.
-                var serializerSettings = new JsonSerializerSettings
-                {
-                    // Forces serialization to include private fields
-                    ContractResolver = new DefaultContractResolver
-                    {
-                        IgnoreSerializableAttribute = true
-                    },
-                    // Allows it to bind to your existing parameterized/private constructors smoothly
-                    ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
-                    ObjectCreationHandling = ObjectCreationHandling.Replace
-                };
-                if (!legacyRangedDamage.ProgressDictionary.IsEmpty && AttributeModifierDefinitions.RangedDamage.ProgressDictionary.IsEmpty && AttributeModifierDefinitions.RangedAccuracy.ProgressDictionary.IsEmpty && AttributeModifierDefinitions.RangedDistance.ProgressDictionary.IsEmpty)
-                {
-                    var snapshot = legacyRangedDamage.ProgressDictionary.ToArray();
-                    ServerApi.Logger.Debug($"[SeraphLeveling] Porting legacy ranged damage for {snapshot.Length} players.");
-                    foreach (var kvp in snapshot)
-                    {
-                        string json = JsonConvert.SerializeObject(kvp.Value, serializerSettings);
-                        AttributeModifierDefinitions.RangedDamage.ProgressDictionary.TryAdd(kvp.Key, JsonConvert.DeserializeObject<DamageAttributeModifierProgressData>(json, serializerSettings));
-                        AttributeModifierDefinitions.RangedDamage.PersistProgress(ServerApi);
-                        AttributeModifierDefinitions.RangedAccuracy.ProgressDictionary.TryAdd(kvp.Key, JsonConvert.DeserializeObject<DamageAttributeModifierProgressData>(json, serializerSettings));
-                        AttributeModifierDefinitions.RangedAccuracy.PersistProgress(ServerApi);
-                        AttributeModifierDefinitions.RangedDistance.ProgressDictionary.TryAdd(kvp.Key, JsonConvert.DeserializeObject<DamageAttributeModifierProgressData>(json, serializerSettings));
-                        AttributeModifierDefinitions.RangedDistance.PersistProgress(ServerApi);
-                    }
-                }
+                Conversion.PortData<DamageAttributeModifierDefinition, DamageAttributeModifierProgressData>(legacyRangedDamage, AttributeModifierDefinitions.RangedDamage, ServerApi);
+                Conversion.PortData<DamageAttributeModifierDefinition, DamageAttributeModifierProgressData>(legacyRangedDamage, AttributeModifierDefinitions.RangedAccuracy, ServerApi);
+                Conversion.PortData<DamageAttributeModifierDefinition, DamageAttributeModifierProgressData>(legacyRangedDamage, AttributeModifierDefinitions.RangedDistance, ServerApi);
                 var legacyForager = new GenericLeveledAttributeModifierDefinition
                 {
                     Id = AttributeModifierDefinitions.LootingBonus.Id,
@@ -4710,22 +4689,8 @@ namespace SeraphLeveling
                     IncrementStep = AttributeModifierDefinitions.LootingBonus.IncrementStep,
                     IncrementUnits = AttributeModifierDefinitions.LootingBonus.IncrementUnits,
                 };
-                legacyForager.LoadProgress(ServerApi);
-                AttributeModifierDefinitions.LootingBonus.LoadProgress(ServerApi);
-                AttributeModifierDefinitions.WildCropDropRate.LoadProgress(ServerApi);
-                if (!legacyForager.ProgressDictionary.IsEmpty && AttributeModifierDefinitions.LootingBonus.ProgressDictionary.IsEmpty && AttributeModifierDefinitions.WildCropDropRate.ProgressDictionary.IsEmpty)
-                {
-                    var snapshot = legacyForager.ProgressDictionary.ToArray();
-                    ServerApi.Logger.Debug($"[SeraphLeveling] Porting legacy forager for {snapshot.Length} players.");
-                    foreach (var kvp in snapshot)
-                    {
-                        string json = JsonConvert.SerializeObject(kvp.Value, serializerSettings);
-                        AttributeModifierDefinitions.LootingBonus.ProgressDictionary.TryAdd(kvp.Key, JsonConvert.DeserializeObject<LeveledPartialAttributeModifierProgressData>(json, serializerSettings));
-                        AttributeModifierDefinitions.LootingBonus.PersistProgress(ServerApi);
-                        AttributeModifierDefinitions.WildCropDropRate.ProgressDictionary.TryAdd(kvp.Key, JsonConvert.DeserializeObject<LeveledPartialAttributeModifierProgressData>(json, serializerSettings));
-                        AttributeModifierDefinitions.WildCropDropRate.PersistProgress(ServerApi);
-                    }
-                }
+                Conversion.PortData<LeveledPartialAttributeModifierDefinition, LeveledPartialAttributeModifierProgressData>(legacyForager, AttributeModifierDefinitions.LootingBonus, ServerApi);
+                Conversion.PortData<LeveledPartialAttributeModifierDefinition, LeveledPartialAttributeModifierProgressData>(legacyForager, AttributeModifierDefinitions.WildCropDropRate, ServerApi);
                 var legacyResourceful = new GenericLeveledAttributeModifierDefinition
                 {
                     Id = AttributeModifierDefinitions.AnimalDropRate.Id,
@@ -4740,19 +4705,7 @@ namespace SeraphLeveling
                     IncrementStep = AttributeModifierDefinitions.AnimalDropRate.IncrementStep,
                     IncrementUnits = AttributeModifierDefinitions.AnimalDropRate.IncrementUnits,
                 };
-                legacyResourceful.LoadProgress(ServerApi);
-                AttributeModifierDefinitions.AnimalHarvestRate.LoadProgress(ServerApi);
-                if (!legacyResourceful.ProgressDictionary.IsEmpty && AttributeModifierDefinitions.AnimalHarvestRate.ProgressDictionary.IsEmpty)
-                {
-                    var snapshot = legacyResourceful.ProgressDictionary.ToArray();
-                    ServerApi.Logger.Debug($"[SeraphLeveling] Porting legacy forager for {snapshot.Length} players.");
-                    foreach (var kvp in snapshot)
-                    {
-                        string json = JsonConvert.SerializeObject(kvp.Value, serializerSettings);
-                        AttributeModifierDefinitions.AnimalHarvestRate.ProgressDictionary.TryAdd(kvp.Key, JsonConvert.DeserializeObject<LeveledPartialAttributeModifierProgressData>(json, serializerSettings));
-                        AttributeModifierDefinitions.AnimalHarvestRate.PersistProgress(ServerApi);
-                    }
-                }
+                Conversion.PortData<LeveledPartialAttributeModifierDefinition, LeveledPartialAttributeModifierProgressData>(legacyResourceful, AttributeModifierDefinitions.AnimalHarvestRate, ServerApi);
                 PersistModList();
             }
             else
