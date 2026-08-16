@@ -84,6 +84,36 @@ namespace SeraphLeveling.Data.Attributes
             StatName = "hungerrate",
         };
 
+        public static readonly GenericLeveledAttributeModifierDefinition LootingBonus = new()
+        {
+            Id = "forageLooting",
+            SkillKey = "foragerlooting",
+            PersistenceHeader = "FRG",
+            Name = "ForagingLoot",
+            LongDescription = "looting bonus",
+            Stat = "% foraging loot",
+            BaseIncrement = 10,
+            IncrementStep = 10,
+            GlobalMaxCredits = 20,
+            IncrementUnits = "crops",
+            StatName = "sitForagerLoot",
+        };
+
+        public static readonly GenericLeveledAttributeModifierDefinition WildCropDropRate = new()
+        {
+            Id = "forageWildCrop",
+            SkillKey = "forager",
+            PersistenceHeader = "FRG",
+            Name = "Foraging",
+            LongDescription = "wild crop rate",
+            Stat = "% wild crop drops",
+            BaseIncrement = 10,
+            IncrementStep = 10,
+            GlobalMaxCredits = 20,
+            IncrementUnits = "crops",
+            StatName = "sitForagerWildCrop",
+        };
+
         public static readonly MiningAttributeModifierDefinition MiningSpeed = new()
         {
             Id = "miningSpeed",

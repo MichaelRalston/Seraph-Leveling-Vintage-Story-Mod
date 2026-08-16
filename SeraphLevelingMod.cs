@@ -375,10 +375,6 @@ namespace SeraphLeveling
         public const int VANILLA_FORAGER_LOOT_BONUS = 10;
         public const int VANILLA_FORAGER_WILD_CROP_BONUS = 20;
 
-        // Storage for forager progress
-        public static ConcurrentDictionary<string, ForagerProgressData> ForagerProgress = new ConcurrentDictionary<string, ForagerProgressData>();
-        public static volatile bool pendingForagerProgressSave = false;
-
         // =========================================================================
         // FURTIVE TRAIT - Tracks sneaking blocks for animal detection range reduction
         // =========================================================================
@@ -1062,32 +1058,6 @@ namespace SeraphLeveling
                     .RequiresPrivilege(Privilege.controlserver)
                     .HandleWith(OnTraitResourcefulMaxCommand)
                 .EndSubCommand()
-                // Forager trait commands
-                .BeginSubCommand("forager")
-                    .WithDescription("View your forager progression stats")
-                    .RequiresPrivilege(Privilege.chat)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitForagerCommand)
-                .EndSubCommand()
-                .BeginSubCommand("foragerbase")
-                    .WithDescription("Get or set the base crops per level (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalInt("crops"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitForagerBaseCommand)
-                .EndSubCommand()
-                .BeginSubCommand("foragerlevel")
-                    .WithDescription("Get or set your forager level (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalInt("level"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitForagerLevelCommand)
-                .EndSubCommand()
-                .BeginSubCommand("foragermax")
-                    .WithDescription("Get or set the max forager bonus percent (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalInt("percent"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitForagerMaxCommand)
-                .EndSubCommand()
                 // Hardy health trait commands
                 .BeginSubCommand("hardyhealth")
                     .WithDescription("View your hardy health unlock progress")
@@ -1418,7 +1388,6 @@ namespace SeraphLeveling
             api.Event.SaveGameLoaded += LoadMenderProgress;
             api.Event.SaveGameLoaded += LoadPilfererProgress;
             api.Event.SaveGameLoaded += LoadResourcefulProgress;
-            api.Event.SaveGameLoaded += LoadForagerProgress;
             api.Event.SaveGameLoaded += LoadHardyHealthProgress;
             api.Event.SaveGameLoaded += LoadMercilessProgress;
             api.Event.SaveGameLoaded += LoadClaustrophobicRemovalProgress;
@@ -1588,9 +1557,6 @@ namespace SeraphLeveling
 
             var resourcefulProg = ResourcefulProgress.GetOrAdd(playerUid, _ => new ResourcefulProgressData { CurrentIncrementSize = BaseResourcefulAnimalsPerIncrement });
             sb.AppendLine($"Resourceful: {resourcefulProg.TotalCredits}/{MaxResourcefulLootPercent} (+{resourcefulProg.TotalCredits}% animal loot)");
-
-            var foragerProg = ForagerProgress.GetOrAdd(playerUid, _ => new ForagerProgressData { CurrentIncrementSize = BaseForagerCropsPerIncrement });
-            sb.AppendLine($"Forager: {foragerProg.TotalCredits}/{MaxForagerLootPercent} (+{foragerProg.TotalCredits}% foraging loot)");
 
             // Unlock traits
             sb.AppendLine("\n--- Unlock Traits ---");
@@ -1824,19 +1790,8 @@ namespace SeraphLeveling
                         result = $"Resourceful level set to {level} for {targetPlayer.PlayerName}.";
                         break;
                     }
-                case "forager":
-                    {
-                        if (level > MaxForagerLootPercent) return TextCommandResult.Error($"Level cannot exceed max ({MaxForagerLootPercent}).");
-                        var progress = ForagerProgress.GetOrAdd(targetUid, _ => new ForagerProgressData { CurrentIncrementSize = BaseForagerCropsPerIncrement });
-                        progress.TotalCredits = level;
-                        pendingForagerProgressSave = true;
-                        ApplyForagerBonusStatic(targetPlayer, level);
-                        UpdateSkillActivityDay(targetUid, "forager");
-                        result = $"Forager level set to {level} for {targetPlayer.PlayerName}.";
-                        break;
-                    }
                 default:
-                    return TextCommandResult.Error($"Unknown trait '{traitName}'. Valid traits: mining, melee, ranged, walking, hunger, armor, mender, pilferer, resourceful, forager, furtive, precise");
+                    return TextCommandResult.Error($"Unknown trait '{traitName}'.");
             }
 
             return TextCommandResult.Success(result);
@@ -3516,17 +3471,6 @@ namespace SeraphLeveling
                 ServerApi.Logger.Debug($"[SeraphLeveling] Applied resourceful bonus +{resourcefulCredits}% to player {byPlayer.PlayerName}");
             }
 
-            // Apply forager bonus
-            var foragerProg = ForagerProgress.GetOrAdd(playerUid, _ => new ForagerProgressData
-            {
-                CurrentIncrementSize = BaseForagerCropsPerIncrement
-            });
-            int foragerCredits = foragerProg.TotalCredits;
-            ApplyForagerBonusStatic(byPlayer, foragerCredits);
-            if (foragerCredits > 0)
-            {
-                ServerApi.Logger.Debug($"[SeraphLeveling] Applied forager bonus +{foragerCredits}% to player {byPlayer.PlayerName}");
-            }
 
             // Apply hardy health unlock
             var hardyHealthProg = HardyHealthProgress.GetOrAdd(playerUid, _ => new HardyHealthProgressData());
@@ -4567,10 +4511,6 @@ namespace SeraphLeveling
                 {
                     PersistResourcefulProgress();
                 }
-                if (pendingForagerProgressSave || !ForagerProgress.IsEmpty)
-                {
-                    PersistForagerProgress();
-                }
                 if (pendingHardyHealthProgressSave || !HardyHealthProgress.IsEmpty)
                 {
                     PersistHardyHealthProgress();
@@ -4623,7 +4563,6 @@ namespace SeraphLeveling
             MenderProgress.Clear();
             PilfererProgress.Clear();
             ResourcefulProgress.Clear();
-            ForagerProgress.Clear();
             HardyHealthProgress.Clear();
             MercilessProgress.Clear();
             ClaustrophobicRemovalProgress.Clear();
@@ -4639,7 +4578,6 @@ namespace SeraphLeveling
             pendingMenderProgressSave = false;
             pendingPilfererProgressSave = false;
             pendingResourcefulProgressSave = false;
-            pendingForagerProgressSave = false;
             pendingHardyHealthProgressSave = false;
             pendingMercilessProgressSave = false;
             pendingClaustrophobicRemovalProgressSave = false;
@@ -4686,12 +4624,6 @@ namespace SeraphLeveling
             {
                 PersistResourcefulProgress();
                 pendingResourcefulProgressSave = false;
-            }
-
-            if (pendingForagerProgressSave || !ForagerProgress.IsEmpty)
-            {
-                PersistForagerProgress();
-                pendingForagerProgressSave = false;
             }
 
             if (pendingHardyHealthProgressSave || !HardyHealthProgress.IsEmpty)
@@ -4808,30 +4740,60 @@ namespace SeraphLeveling
                 AttributeModifierDefinitions.RangedAccuracy.LoadProgress(ServerApi);
                 AttributeModifierDefinitions.RangedDistance.LoadProgress(ServerApi);
                 // These three were the same in the old mod, so if you only have damage... clone it.
+                var serializerSettings = new JsonSerializerSettings
+                {
+                    // Forces serialization to include private fields
+                    ContractResolver = new DefaultContractResolver
+                    {
+                        IgnoreSerializableAttribute = true
+                    },
+                    // Allows it to bind to your existing parameterized/private constructors smoothly
+                    ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
+                    ObjectCreationHandling = ObjectCreationHandling.Replace
+                };
                 if (!legacyRangedDamage.ProgressDictionary.IsEmpty && AttributeModifierDefinitions.RangedDamage.ProgressDictionary.IsEmpty && AttributeModifierDefinitions.RangedAccuracy.ProgressDictionary.IsEmpty && AttributeModifierDefinitions.RangedDistance.ProgressDictionary.IsEmpty)
                 {
                     var snapshot = legacyRangedDamage.ProgressDictionary.ToArray();
-                    var options = new JsonSerializerSettings
-                    {
-                        // Forces serialization to include private fields
-                        ContractResolver = new DefaultContractResolver
-                        {
-                            IgnoreSerializableAttribute = true
-                        },
-                        // Allows it to bind to your existing parameterized/private constructors smoothly
-                        ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
-                        ObjectCreationHandling = ObjectCreationHandling.Replace
-                    };
                     ServerApi.Logger.Debug($"[SeraphLeveling] Porting legacy ranged damage for {snapshot.Length} players.");
                     foreach (var kvp in snapshot)
                     {
-                        string json = JsonConvert.SerializeObject(kvp.Value, options);
-                        AttributeModifierDefinitions.RangedDamage.ProgressDictionary.TryAdd(kvp.Key, JsonConvert.DeserializeObject<DamageAttributeModifierProgressData>(json, options));
+                        string json = JsonConvert.SerializeObject(kvp.Value, serializerSettings);
+                        AttributeModifierDefinitions.RangedDamage.ProgressDictionary.TryAdd(kvp.Key, JsonConvert.DeserializeObject<DamageAttributeModifierProgressData>(json, serializerSettings));
                         AttributeModifierDefinitions.RangedDamage.PersistProgress(ServerApi);
-                        AttributeModifierDefinitions.RangedAccuracy.ProgressDictionary.TryAdd(kvp.Key, JsonConvert.DeserializeObject<DamageAttributeModifierProgressData>(json, options));
+                        AttributeModifierDefinitions.RangedAccuracy.ProgressDictionary.TryAdd(kvp.Key, JsonConvert.DeserializeObject<DamageAttributeModifierProgressData>(json, serializerSettings));
                         AttributeModifierDefinitions.RangedAccuracy.PersistProgress(ServerApi);
-                        AttributeModifierDefinitions.RangedDistance.ProgressDictionary.TryAdd(kvp.Key, JsonConvert.DeserializeObject<DamageAttributeModifierProgressData>(json, options));
+                        AttributeModifierDefinitions.RangedDistance.ProgressDictionary.TryAdd(kvp.Key, JsonConvert.DeserializeObject<DamageAttributeModifierProgressData>(json, serializerSettings));
                         AttributeModifierDefinitions.RangedDistance.PersistProgress(ServerApi);
+                    }
+                }
+                var legacyForager = new GenericLeveledAttributeModifierDefinition
+                {
+                    Id = AttributeModifierDefinitions.LootingBonus.Id,
+                    Name = "Forager",
+                    PersistenceHeader = "FRG",
+                    SkillKey = "foragerlegacy",
+                    SaveKey = "sitForagerProgress",
+                    GlobalMaxCredits = AttributeModifierDefinitions.LootingBonus.GlobalMaxCredits,
+                    Stat = AttributeModifierDefinitions.LootingBonus.Stat,
+                    StatName = AttributeModifierDefinitions.LootingBonus.StatName,
+                    BaseIncrement = AttributeModifierDefinitions.LootingBonus.BaseIncrement,
+                    IncrementStep = AttributeModifierDefinitions.LootingBonus.IncrementStep,
+                    IncrementUnits = AttributeModifierDefinitions.LootingBonus.IncrementUnits,
+                };
+                legacyForager.LoadProgress(ServerApi);
+                AttributeModifierDefinitions.LootingBonus.LoadProgress(ServerApi);
+                AttributeModifierDefinitions.WildCropDropRate.LoadProgress(ServerApi);
+                if (!legacyForager.ProgressDictionary.IsEmpty && AttributeModifierDefinitions.LootingBonus.ProgressDictionary.IsEmpty && AttributeModifierDefinitions.WildCropDropRate.ProgressDictionary.IsEmpty)
+                {
+                    var snapshot = legacyForager.ProgressDictionary.ToArray();
+                    ServerApi.Logger.Debug($"[SeraphLeveling] Porting legacy forager for {snapshot.Length} players.");
+                    foreach (var kvp in snapshot)
+                    {
+                        string json = JsonConvert.SerializeObject(kvp.Value, serializerSettings);
+                        AttributeModifierDefinitions.LootingBonus.ProgressDictionary.TryAdd(kvp.Key, JsonConvert.DeserializeObject<LeveledPartialAttributeModifierProgressData>(json, serializerSettings));
+                        AttributeModifierDefinitions.LootingBonus.PersistProgress(ServerApi);
+                        AttributeModifierDefinitions.WildCropDropRate.ProgressDictionary.TryAdd(kvp.Key, JsonConvert.DeserializeObject<LeveledPartialAttributeModifierProgressData>(json, serializerSettings));
+                        AttributeModifierDefinitions.WildCropDropRate.PersistProgress(ServerApi);
                     }
                 }
                 PersistModList();
@@ -5544,29 +5506,6 @@ namespace SeraphLeveling
                 }
             }
 
-            // Forager
-            if (!DecayExemptSkills.Contains("forager") && !DisabledSkills.Contains("forager"))
-            {
-                if (ForagerProgress.TryGetValue(playerUid, out var fProg) && (fProg.TotalCredits > 0 || fProg.CropsInIncrement > 0))
-                {
-                    var (grace, basePoints, maxPoints) = GetDecayParams("forager");
-                    int decayCredits = CalculateDecayPoints(fProg.LastActivityDay, currentDay, grace, basePoints, maxPoints);
-                    if (decayCredits > 0)
-                    {
-                        int oldCredits = fProg.TotalCredits;
-                        int oldAcc = fProg.CropsInIncrement; int oldInc = fProg.CurrentIncrementSize;
-                        double rawPenalty = (double)decayCredits;
-                        var (newCr, newAcc, newInc, lost) = ApplySingleAccumulatorDecay(
-                            oldAcc, oldInc, oldCredits,
-                            rawPenalty, BaseForagerCropsPerIncrement, ForagerIncrementStep, verboseSb, "Forager");
-                        fProg.TotalCredits = newCr; fProg.CropsInIncrement = (int)Math.Floor(newAcc); fProg.CurrentIncrementSize = newInc;
-                        if (lost > 0) totalDecayApplied += lost;
-                        sb.AppendLine($"  Forager: {oldCredits} \u2192 {newCr} (-{lost} credits, {rawPenalty:F0} pts), {oldAcc}/{oldInc} \u2192 {(int)Math.Floor(newAcc)}/{newInc}");
-                        pendingForagerProgressSave = true;
-                    }
-                }
-            }
-
             // CO Proficiency (per-proficiency absolute-position drain + SteadyAim direct)
             if (!DecayExemptSkills.Contains("coproficiency") && !DisabledSkills.Contains("coproficiency") && IsCOCompatEnabled)
             {
@@ -5666,8 +5605,6 @@ namespace SeraphLeveling
                 ApplyPilfererBonusStatic(player, pilfererProg.TotalCredits);
             if (ResourcefulProgress.TryGetValue(playerUid, out var resourcefulProg))
                 ApplyResourcefulBonusStatic(player, resourcefulProg.TotalCredits);
-            if (ForagerProgress.TryGetValue(playerUid, out var foragerProg))
-                ApplyForagerBonusStatic(player, foragerProg.TotalCredits);
             if (IsCOCompatEnabled && COProgress.TryGetValue(playerUid, out var coProg))
                 ApplyAllCOBonuses(player);
         }
@@ -5699,10 +5636,6 @@ namespace SeraphLeveling
                 case "resourceful":
                     if (ResourcefulProgress.TryGetValue(playerUid, out var resourcefulProg))
                         resourcefulProg.LastActivityDay = currentDay;
-                    break;
-                case "forager":
-                    if (ForagerProgress.TryGetValue(playerUid, out var foragerProg))
-                        foragerProg.LastActivityDay = currentDay;
                     break;
                 case "coproficiency":
                     if (COProgress.TryGetValue(playerUid, out var coProg))
@@ -6103,23 +6036,6 @@ namespace SeraphLeveling
                 }
             }
 
-            // Forager
-            if (!DeathPenaltyExemptSkills.Contains("forager") && !DisabledSkills.Contains("forager"))
-            {
-                if (ForagerProgress.TryGetValue(playerUid, out var foragerProg) && (foragerProg.TotalCredits > 0 || foragerProg.CropsInIncrement > 0))
-                {
-                    int oldCredits = foragerProg.TotalCredits;
-                    int oldAcc = foragerProg.CropsInIncrement; int oldInc = foragerProg.CurrentIncrementSize;
-                    double rawPenalty = BaseForagerCropsPerIncrement * DeathPenaltyFraction * Math.Sqrt(Math.Max(1, oldCredits));
-                    var (newCr, newAcc, newInc, lost) = ApplySingleAccumulatorDecay(
-                        oldAcc, oldInc, oldCredits, rawPenalty, BaseForagerCropsPerIncrement, ForagerIncrementStep, null, "Forager");
-                    foragerProg.TotalCredits = newCr; foragerProg.CropsInIncrement = (int)Math.Floor(newAcc); foragerProg.CurrentIncrementSize = newInc;
-                    if (lost > 0) totalCreditsLost += lost;
-                    pendingForagerProgressSave = true;
-                    sb.AppendLine($"  Forager: {oldCredits} \u2192 {newCr} (-{lost} credits, {rawPenalty:F0} pts), {oldAcc}/{oldInc} \u2192 {(int)Math.Floor(newAcc)}/{newInc}");
-                }
-            }
-
             // --- CO Proficiency (per-proficiency subcredit drain) ---
             if (!DeathPenaltyExemptSkills.Contains("coproficiency") && !DisabledSkills.Contains("coproficiency") && IsCOCompatEnabled)
             {
@@ -6309,8 +6225,10 @@ namespace SeraphLeveling
                 () => PilfererProgress.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
             AppendDecayStatus(sb, "Resourceful", "resourceful", playerUid, currentDay,
                 () => ResourcefulProgress.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
-            AppendDecayStatus(sb, "Forager", "forager", playerUid, currentDay,
-                () => ForagerProgress.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
+            AppendDecayStatus(sb, "Looting Bonus", "foragerlooting", playerUid, currentDay,
+                () => AttributeModifierDefinitions.LootingBonus.ProgressDictionary.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
+            AppendDecayStatus(sb, "Crop Drop Rate", "forager", playerUid, currentDay,
+                () => AttributeModifierDefinitions.WildCropDropRate.ProgressDictionary.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
 
             // CO Proficiency
             if (IsCOCompatEnabled)
@@ -8928,360 +8846,16 @@ namespace SeraphLeveling
             }
         }
 
-        // =========================================================================
-        // FORAGER TRAIT IMPLEMENTATION
-        // =========================================================================
-
-        /// <summary>
-        /// Handler for /trait forager command.
-        /// </summary>
-        private TextCommandResult OnTraitForagerCommand(TextCommandCallingArgs args)
-        {
-            IServerPlayer player = args.Caller.Player as IServerPlayer;
-            if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
-
-            var progress = ForagerProgress.GetOrAdd(player.PlayerUID, _ => new ForagerProgressData());
-            bool hasVanillaForager = PlayerHasVanillaForagerStatic(player.Entity);
-            bool hasCivil = PlayerHasVanillaCivil(player.Entity);
-            bool hasHeavyhanded = PlayerHasVanillaHeavyhanded(player.Entity);
-            int maxCredits = GetMaxForagerCredits(player.Entity);
-
-            // Use net bonuses from WatchedAttributes (set by ApplyForagerBonusStatic)
-            int netLootBonus = player.Entity.WatchedAttributes.GetInt(WATCHED_FORAGER_LOOT_BONUS, 0);
-            int netWildCropBonus = player.Entity.WatchedAttributes.GetInt(WATCHED_FORAGER_WILD_CROP_BONUS, 0);
-
-            var sb = new StringBuilder();
-            sb.AppendLine($"Forager progression: Level {progress.TotalCredits} / {maxCredits}");
-            sb.AppendLine($"Current bonus: +{netLootBonus}% foraging loot, +{netWildCropBonus}% wild crop drops");
-            if (hasVanillaForager)
-            {
-                sb.AppendLine($"(Has vanilla Forager trait)");
-            }
-            if (hasCivil)
-            {
-                int civilRemaining = player.Entity.WatchedAttributes.GetInt(WATCHED_CIVIL_REMAINING, 0);
-                if (civilRemaining > 0)
-                    sb.AppendLine($"(Civil penalty remaining: -{civilRemaining}% foraging loot)");
-                else
-                    sb.AppendLine("(Civil penalty cancelled!)");
-            }
-            if (hasHeavyhanded)
-            {
-                int forageRemaining = player.Entity.WatchedAttributes.GetInt(WATCHED_HEAVYHANDED_FORAGING_REMAINING, 0);
-                int wildCropRemaining = player.Entity.WatchedAttributes.GetInt(WATCHED_HEAVYHANDED_WILD_CROP_REMAINING, 0);
-                if (forageRemaining > 0 || wildCropRemaining > 0)
-                    sb.AppendLine($"(Heavyhanded penalties remaining: -{forageRemaining}% foraging, -{wildCropRemaining}% wild crop)");
-                else
-                    sb.AppendLine("(Heavyhanded penalties cancelled!)");
-            }
-            if (progress.TotalCredits < maxCredits)
-            {
-                sb.AppendLine($"Progress: {progress.CropsInIncrement} / {progress.CurrentIncrementSize} crops until next level");
-            }
-            else
-            {
-                sb.AppendLine("Maximum level reached!");
-            }
-
-            return TextCommandResult.Success(sb.ToString());
-        }
-
-        /// <summary>
-        /// Handler for /trait foragerbase command.
-        /// </summary>
-        private TextCommandResult OnTraitForagerBaseCommand(TextCommandCallingArgs args)
-        {
-            int? newValue = (int?)args[0];
-
-            if (newValue.HasValue)
-            {
-                if (newValue.Value < 1) return TextCommandResult.Error("Base crops must be at least 1.");
-                BaseForagerCropsPerIncrement = newValue.Value;
-                pendingConfigSave = true;
-                return TextCommandResult.Success($"Forager base crops set to {BaseForagerCropsPerIncrement}.");
-            }
-
-            return TextCommandResult.Success($"Current forager base crops: {BaseForagerCropsPerIncrement}.");
-        }
-
-        /// <summary>
-        /// Handler for /trait foragerlevel command.
-        /// Gets or sets the player's forager level.
-        /// </summary>
-        private TextCommandResult OnTraitForagerLevelCommand(TextCommandCallingArgs args)
-        {
-            IServerPlayer player = args.Caller.Player as IServerPlayer;
-            if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
-
-            // Get the player-specific max credits (accounts for Civil/Heavyhanded penalties)
-            int maxCredits = GetMaxForagerCredits(player.Entity);
-
-            var progress = ForagerProgress.GetOrAdd(player.PlayerUID, _ => new ForagerProgressData());
-
-            int? newLevel = (int?)args[0];
-
-            // If no value provided, show current level
-            if (!newLevel.HasValue)
-            {
-                int netLootBonus = player.Entity.WatchedAttributes.GetInt(WATCHED_FORAGER_LOOT_BONUS, 0);
-                int netWildCropBonus = player.Entity.WatchedAttributes.GetInt(WATCHED_FORAGER_WILD_CROP_BONUS, 0);
-                return TextCommandResult.Success($"Current forager level: {progress.TotalCredits}/{maxCredits} (+{netLootBonus}% loot, +{netWildCropBonus}% wild crop)");
-            }
-
-            if (newLevel.Value < 0 || newLevel.Value > maxCredits)
-                return TextCommandResult.Error($"Level must be between 0 and {maxCredits}.");
-
-            progress.TotalCredits = newLevel.Value;
-            progress.CropsInIncrement = 0;
-            progress.CurrentIncrementSize = BaseForagerCropsPerIncrement;
-
-            for (int i = 0; i < newLevel.Value; i++)
-            {
-                progress.CurrentIncrementSize += ForagerIncrementStep;
-            }
-
-            pendingForagerProgressSave = true;
-
-            ApplyForagerBonusStatic(player, progress.TotalCredits);
-            // Use net bonuses from WatchedAttributes which accounts for Civil/Heavyhanded penalties
-            int newNetLootBonus = player.Entity.WatchedAttributes.GetInt(WATCHED_FORAGER_LOOT_BONUS, 0);
-            int newNetWildCropBonus = player.Entity.WatchedAttributes.GetInt(WATCHED_FORAGER_WILD_CROP_BONUS, 0);
-
-            UpdateSkillActivityDay(player.PlayerUID, "forager");
-
-            return TextCommandResult.Success($"Forager level set to {newLevel.Value} (+{newNetLootBonus}% loot, +{newNetWildCropBonus}% wild crop).");
-        }
-
-        /// <summary>
-        /// Handler for /trait foragermax command.
-        /// </summary>
-        private TextCommandResult OnTraitForagerMaxCommand(TextCommandCallingArgs args)
-        {
-            int? newValue = (int?)args[0];
-
-            if (newValue.HasValue)
-            {
-                if (newValue.Value < 1) return TextCommandResult.Error("Max percent must be at least 1.");
-                MaxForagerLootPercent = newValue.Value;
-                pendingConfigSave = true;
-                return TextCommandResult.Success($"Forager max loot bonus set to {MaxForagerLootPercent}%.");
-            }
-
-            return TextCommandResult.Success($"Current forager max loot bonus: {MaxForagerLootPercent}%.");
-        }
-
-        /// <summary>
-        /// Calculate the forager loot bonus as an integer percentage.
-        /// </summary>
-        public static int CalculateForagerLootBonusPercent(int credits, EntityPlayer entity)
-        {
-            bool hasVanillaForager = entity != null && PlayerHasVanillaForagerStatic(entity);
-            int vanillaBonus = hasVanillaForager ? VANILLA_FORAGER_LOOT_BONUS : 0;
-            int earnableBonus = Math.Max(0, MaxForagerLootPercent - vanillaBonus);
-            return Math.Min(credits, earnableBonus);
-        }
-
-        /// <summary>
-        /// Calculate the forager wild crop bonus as an integer percentage.
-        /// </summary>
-        public static int CalculateForagerWildCropBonusPercent(int credits, EntityPlayer entity)
-        {
-            bool hasVanillaForager = entity != null && PlayerHasVanillaForagerStatic(entity);
-            int vanillaBonus = hasVanillaForager ? VANILLA_FORAGER_WILD_CROP_BONUS : 0;
-            int earnableBonus = Math.Max(0, MaxForagerWildCropPercent - vanillaBonus);
-            return Math.Min(credits, earnableBonus);
-        }
-
-        /// <summary>
-        /// Check if player has vanilla Forager trait.
-        /// </summary>
-        private static bool PlayerHasVanillaForagerStatic(EntityPlayer entity)
-        {
-            if (entity == null) return false;
-            string[] classTraits = entity.WatchedAttributes.GetStringArray("characterTraits", null);
-            if (classTraits != null)
-            {
-                foreach (string trait in classTraits)
-                {
-                    if (trait.Equals("forager", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return true;
-                    }
-                }
-            }
-            string characterClass = entity.WatchedAttributes.GetString("characterClass", "");
-            return characterClass.Equals("hunter", StringComparison.OrdinalIgnoreCase) ||
-                   characterClass.Equals("malefactor", StringComparison.OrdinalIgnoreCase);
-        }
-
-        /// <summary>
-        /// Get the maximum forager credits a player can earn based on their traits.
-        /// Players with negative traits (Civil, Heavyhanded) can earn extra credits
-        /// to compensate for the penalty before gaining positive bonuses.
-        /// </summary>
-        public static int GetMaxForagerCredits(EntityPlayer entity)
-        {
-            if (entity == null) return MaxForagerLootPercent;
-
-            bool hasCivil = PlayerHasVanillaCivil(entity);
-            bool hasHeavyhanded = PlayerHasVanillaHeavyhanded(entity);
-
-            // Civil penalty is 10% foraging loot, need 10 extra levels to cancel it
-            if (hasCivil)
-            {
-                return MaxForagerLootPercent + VANILLA_CIVIL_FORAGING_PENALTY;
-            }
-
-            // Heavyhanded has two penalties - use the larger one (wild crop = 20%)
-            if (hasHeavyhanded)
-            {
-                return MaxForagerWildCropPercent + VANILLA_HEAVYHANDED_WILD_CROP_PENALTY;
-            }
-
-            return MaxForagerLootPercent;
-        }
-
-        /// <summary>
-        /// Apply forager bonus.
-        /// Also handles Civil and Heavyhanded negative trait cancellation.
-        /// </summary>
-        private static void ApplyForagerBonusStatic(IServerPlayer player, int level)
-        {
-            if (player?.Entity == null) return;
-
-            bool hasVanillaForager = PlayerHasVanillaForagerStatic(player.Entity);
-            bool hasCivil = PlayerHasVanillaCivil(player.Entity);
-            bool hasHeavyhanded = PlayerHasVanillaHeavyhanded(player.Entity);
-
-            int lootBonusPercent = CalculateForagerLootBonusPercent(level, player.Entity);
-            int wildCropBonusPercent = CalculateForagerWildCropBonusPercent(level, player.Entity);
-
-            // Calculate remaining negative trait penalties
-            int civilRemaining = hasCivil ? CalculateRemainingPenalty(VANILLA_CIVIL_FORAGING_PENALTY, level) : 0;
-            int heavyhandedForagingRemaining = hasHeavyhanded ? CalculateRemainingPenalty(VANILLA_HEAVYHANDED_FORAGING_PENALTY, level) : 0;
-            int heavyhandedWildCropRemaining = hasHeavyhanded ? CalculateRemainingPenalty(VANILLA_HEAVYHANDED_WILD_CROP_PENALTY, level) : 0;
-
-            // Calculate net bonus (earned bonus - remaining penalty)
-            // For Civil: need to earn level > 10 to start gaining bonus
-            // For Heavyhanded: need to earn level > 15 for foraging, > 20 for wild crop
-            int netLootBonus = lootBonusPercent;
-            int netWildCropBonus = wildCropBonusPercent;
-
-            if (hasCivil)
-            {
-                // Civil penalty is cancelled first, then bonus starts
-                netLootBonus = Math.Max(0, level - VANILLA_CIVIL_FORAGING_PENALTY);
-                if (!hasVanillaForager)
-                {
-                    netLootBonus = Math.Min(netLootBonus, MaxForagerLootPercent);
-                }
-            }
-
-            if (hasHeavyhanded)
-            {
-                // Heavyhanded penalties are cancelled first
-                netLootBonus = Math.Max(0, level - VANILLA_HEAVYHANDED_FORAGING_PENALTY);
-                netWildCropBonus = Math.Max(0, level - VANILLA_HEAVYHANDED_WILD_CROP_PENALTY);
-                if (!hasVanillaForager)
-                {
-                    netLootBonus = Math.Min(netLootBonus, MaxForagerLootPercent);
-                    netWildCropBonus = Math.Min(netWildCropBonus, MaxForagerWildCropPercent);
-                }
-            }
-
-            float lootBonus = netLootBonus * 0.01f;
-            float wildCropBonus = netWildCropBonus * 0.01f;
-
-            // Apply to forager-related stats
-            // Note: forageDropRate/wildCropDropRate are additive stats where vanilla traits use
-            // values like 0.1 for +10%. The game applies (1 + blended) as the multiplier.
-            // Using just the bonus value (not 1 + bonus) to avoid doubling.
-            player.Entity.Stats.Set("forageDropRate", FORAGER_LOOT_STAT_CODE, lootBonus, false);
-            player.Entity.Stats.Set("wildCropDropRate", FORAGER_WILD_CROP_STAT_CODE, wildCropBonus, false);
-
-            // Counter-stats: when negative trait penalties are fully cancelled, apply +penalty
-            // counters so functional foraging stats match the displayed cap. Civil affects loot
-            // (Tailor); Heavyhanded affects loot AND wild crop (Blackguard).
-            if (hasCivil)
-            {
-                if (civilRemaining == 0)
-                    player.Entity.Stats.Set("forageDropRate", "sitCivilForagingCancel", VANILLA_CIVIL_FORAGING_PENALTY * 0.01f, false);
-                else
-                    player.Entity.Stats.Remove("forageDropRate", "sitCivilForagingCancel");
-            }
-            if (hasHeavyhanded)
-            {
-                if (heavyhandedForagingRemaining == 0)
-                    player.Entity.Stats.Set("forageDropRate", "sitHeavyhandedForagingCancel", VANILLA_HEAVYHANDED_FORAGING_PENALTY * 0.01f, false);
-                else
-                    player.Entity.Stats.Remove("forageDropRate", "sitHeavyhandedForagingCancel");
-
-                if (heavyhandedWildCropRemaining == 0)
-                    player.Entity.Stats.Set("wildCropDropRate", "sitHeavyhandedWildCropCancel", VANILLA_HEAVYHANDED_WILD_CROP_PENALTY * 0.01f, false);
-                else
-                    player.Entity.Stats.Remove("wildCropDropRate", "sitHeavyhandedWildCropCancel");
-            }
-
-            // Sync to WatchedAttributes
-            player.Entity.WatchedAttributes.SetInt(WATCHED_FORAGER_LEVEL, level);
-            player.Entity.WatchedAttributes.SetInt(WATCHED_FORAGER_LOOT_BONUS, netLootBonus);
-            player.Entity.WatchedAttributes.SetInt(WATCHED_FORAGER_WILD_CROP_BONUS, netWildCropBonus);
-            player.Entity.WatchedAttributes.SetBool("sitHasVanillaForager", hasVanillaForager);
-
-            // Sync negative trait status
-            player.Entity.WatchedAttributes.SetBool("sitHasCivil", hasCivil);
-            player.Entity.WatchedAttributes.SetInt(WATCHED_CIVIL_REMAINING, civilRemaining);
-            player.Entity.WatchedAttributes.SetBool("sitHasHeavyhanded", hasHeavyhanded);
-            player.Entity.WatchedAttributes.SetInt(WATCHED_HEAVYHANDED_FORAGING_REMAINING, heavyhandedForagingRemaining);
-            player.Entity.WatchedAttributes.SetInt(WATCHED_HEAVYHANDED_WILD_CROP_REMAINING, heavyhandedWildCropRemaining);
-
-            player.Entity.WatchedAttributes.MarkPathDirty(WATCHED_FORAGER_LEVEL);
-
-            // Update extraTraits
-            UpdateExtraTraitStatic(player.Entity, FORAGER_TRAIT_CODE, level > 0 && !hasVanillaForager);
-        }
-
         /// <summary>
         /// Process wild crop broken (for Forager progression).
         /// </summary>
         public static void ProcessWildCropBroken(IServerPlayer player)
         {
             if (player?.Entity == null) return;
-
             string playerUid = player.PlayerUID;
-            var progress = ForagerProgress.GetOrAdd(playerUid, _ => new ForagerProgressData());
 
-            // Get the player-specific max credits (accounts for Civil/Heavyhanded penalties)
-            int maxCredits = GetMaxForagerCredits(player.Entity);
-
-            if (progress.TotalCredits >= maxCredits) return;
-
-            int oldCredits = progress.TotalCredits;
-            // Apply sleep buff multiplier if active
-            int modifiedCrops = ApplyXPMultiplier(playerUid, 1);
-            progress.CropsInIncrement += modifiedCrops;
-
-            while (progress.CropsInIncrement >= progress.CurrentIncrementSize && progress.TotalCredits < maxCredits)
-            {
-                progress.TotalCredits++;
-                progress.CropsInIncrement -= progress.CurrentIncrementSize;
-                progress.CurrentIncrementSize += ForagerIncrementStep;
-
-                ServerApi.Logger.Debug($"[SeraphLeveling] Player {player.PlayerName} earned forager credit {progress.TotalCredits}");
-            }
-
-            pendingForagerProgressSave = true;
-
-            // Update last activity day for skill decay
-            UpdateSkillActivityDay(playerUid, "forager");
-
-            if (progress.TotalCredits > oldCredits)
-            {
-                ApplyForagerBonusStatic(player, progress.TotalCredits);
-                // Notify player of level up with raw improvement (shows progress even when cancelling Civil/Heavyhanded)
-                NotifyLevelUp(player,
-                    Lang.Get("seraphleveling:message-forager-level-up", progress.TotalCredits, progress.TotalCredits, progress.TotalCredits));
-            }
+            AttributeModifierDefinitions.LootingBonus.GetForPlayer(playerUid).DoEvent(player, 1);
+            AttributeModifierDefinitions.WildCropDropRate.GetForPlayer(playerUid).DoEvent(player, 1);
         }
 
         /// <summary>
@@ -9599,16 +9173,6 @@ namespace SeraphLeveling
             }
             ApplyResourcefulBonusStatic(player, 0);
 
-            // Reset Forager
-            if (ForagerProgress.TryGetValue(playerUid, out var foragerProg))
-            {
-                foragerProg.TotalCredits = 0;
-                foragerProg.CropsInIncrement = 0;
-                foragerProg.CurrentIncrementSize = 10; // Default base
-                pendingForagerProgressSave = true;
-            }
-            ApplyForagerBonusStatic(player, 0);
-
             // Reset Hardy Health
             if (HardyHealthProgress.TryGetValue(playerUid, out var hardyHealthProg))
             {
@@ -9681,57 +9245,38 @@ namespace SeraphLeveling
                 SourcePlayerName = player.PlayerName,
                 SourcePlayerUid = uid,
                 ExportedGameDay = ServerApi.World.Calendar.TotalDays,
+                Attributes = [],
             };
 
-            if (AttributeModifierDefinitions.MiningSpeed.ProgressDictionary.TryGetValue(uid, out var mining)) ex.Mining = mining;
-            if (AttributeModifierDefinitions.MeleeDamage.ProgressDictionary.TryGetValue(uid, out var melee)) ex.Melee = melee;
-            if (AttributeModifierDefinitions.RangedDamage.ProgressDictionary.TryGetValue(uid, out var ranged)) ex.Ranged = ranged;
-            if (AttributeModifierDefinitions.WalkingSpeed.ProgressDictionary.TryGetValue(uid, out var walking)) ex.Walking = walking;
-            if (AttributeModifierDefinitions.HungerRate.ProgressDictionary.TryGetValue(uid, out var hunger)) ex.Hunger = hunger;
-            if (ArmorProgress.TryGetValue(uid, out var armor)) ex.Armor = armor;
-            if (AttributeModifierDefinitions.Clothier.ProgressDictionary.TryGetValue(uid, out var clothier)) ex.Clothier = clothier;
-            if (MenderProgress.TryGetValue(uid, out var mender)) ex.Mender = mender;
-            if (PilfererProgress.TryGetValue(uid, out var pilferer)) ex.Pilferer = pilferer;
-            if (ResourcefulProgress.TryGetValue(uid, out var resourceful)) ex.Resourceful = resourceful;
-            if (ForagerProgress.TryGetValue(uid, out var forager)) ex.Forager = forager;
-            if (AttributeModifierDefinitions.Furtive.ProgressDictionary.TryGetValue(uid, out var furtive)) ex.Furtive = furtive;
-            if (AttributeModifierDefinitions.Precise.ProgressDictionary.TryGetValue(uid, out var precise)) ex.Precise = precise;
-            if (AttributeModifierDefinitions.Technical.ProgressDictionary.TryGetValue(uid, out var technical)) ex.Technical = technical;
-            if (HardyHealthProgress.TryGetValue(uid, out var hardy)) ex.HardyHealth = hardy;
-            if (AttributeModifierDefinitions.Bowyer.ProgressDictionary.TryGetValue(uid, out var bowyer)) ex.Bowyer = bowyer;
-            if (AttributeModifierDefinitions.Improviser.ProgressDictionary.TryGetValue(uid, out var improviser)) ex.Improviser = improviser;
-            if (AttributeModifierDefinitions.Tinkerer.ProgressDictionary.TryGetValue(uid, out var tinkerer)) ex.Tinkerer = tinkerer;
-            if (MercilessProgress.TryGetValue(uid, out var merciless)) ex.Merciless = merciless;
-            if (ClaustrophobicRemovalProgress.TryGetValue(uid, out var claustro)) ex.ClaustrophobicRemoval = claustro;
-            if (COProgress.TryGetValue(uid, out var co)) ex.CombatOverhaul = co;
-
+            foreach (var kvp in LoadedAttributes)
+            {
+                if (((dynamic)kvp).ProgressDictionary.TryGetValue(uid, out object data)) {
+                    ex.Attributes[kvp.Id] = data;
+                }
+            }
             return ex;
         }
 
         /// <summary>Install imported progression under a UID and flag each system for save.</summary>
         private void ApplyImportedProgress(string uid, PlayerProgressExport ex)
         {
-            if (ex.Mining != null) { AttributeModifierDefinitions.MiningSpeed.ProgressDictionary[uid] = ex.Mining; AttributeModifierDefinitions.WalkingSpeed.PendingSave = true; }
-            if (ex.Melee != null) { AttributeModifierDefinitions.MeleeDamage.ProgressDictionary[uid] = ex.Melee; AttributeModifierDefinitions.MeleeDamage.PendingSave = true; }
-            if (ex.Ranged != null) { AttributeModifierDefinitions.RangedDamage.ProgressDictionary[uid] = ex.Ranged; AttributeModifierDefinitions.RangedDamage.PendingSave = true; }
-            if (ex.Walking != null) { AttributeModifierDefinitions.WalkingSpeed.ProgressDictionary[uid] = ex.Walking; AttributeModifierDefinitions.WalkingSpeed.PendingSave = true; }
-            if (ex.Hunger != null) { AttributeModifierDefinitions.HungerRate.ProgressDictionary[uid] = ex.Walking; AttributeModifierDefinitions.HungerRate.PendingSave = true; }
-            if (ex.Armor != null) { ArmorProgress[uid] = ex.Armor; pendingArmorProgressSave = true; }
-            if (ex.Clothier != null) { AttributeModifierDefinitions.Clothier.ProgressDictionary[uid] = ex.Clothier; AttributeModifierDefinitions.Clothier.PendingSave = true; }
-            if (ex.Mender != null) { MenderProgress[uid] = ex.Mender; pendingMenderProgressSave = true; }
-            if (ex.Pilferer != null) { PilfererProgress[uid] = ex.Pilferer; pendingPilfererProgressSave = true; }
-            if (ex.Resourceful != null) { ResourcefulProgress[uid] = ex.Resourceful; pendingResourcefulProgressSave = true; }
-            if (ex.Forager != null) { ForagerProgress[uid] = ex.Forager; pendingForagerProgressSave = true; }
-            if (ex.Furtive != null) { AttributeModifierDefinitions.Furtive.ProgressDictionary[uid] = ex.Furtive; AttributeModifierDefinitions.Furtive.PendingSave = true; }
-            if (ex.Precise != null) { AttributeModifierDefinitions.Precise.ProgressDictionary[uid] = ex.Precise; AttributeModifierDefinitions.Precise.PendingSave = true; }
-            if (ex.Technical != null) { AttributeModifierDefinitions.Technical.ProgressDictionary[uid] = ex.Technical; AttributeModifierDefinitions.Technical.PendingSave = true; }
-            if (ex.HardyHealth != null) { HardyHealthProgress[uid] = ex.HardyHealth; pendingHardyHealthProgressSave = true; }
-            if (ex.Bowyer != null) { AttributeModifierDefinitions.Bowyer.ProgressDictionary[uid] = ex.Bowyer; AttributeModifierDefinitions.Bowyer.PendingSave = true; }
-            if (ex.Improviser != null) { AttributeModifierDefinitions.Improviser.ProgressDictionary[uid] = ex.Improviser; AttributeModifierDefinitions.Improviser.PendingSave = true; }
-            if (ex.Tinkerer != null) { AttributeModifierDefinitions.Tinkerer.ProgressDictionary[uid] = ex.Tinkerer; AttributeModifierDefinitions.Tinkerer.PendingSave = true; }
-            if (ex.Merciless != null) { MercilessProgress[uid] = ex.Merciless; pendingMercilessProgressSave = true; }
-            if (ex.ClaustrophobicRemoval != null) { ClaustrophobicRemovalProgress[uid] = ex.ClaustrophobicRemoval; pendingClaustrophobicRemovalProgressSave = true; }
-            if (ex.CombatOverhaul != null) { COProgress[uid] = ex.CombatOverhaul; pendingCOProgressSave = true; }
+            foreach (var (id, obj) in ex.Attributes)
+            {
+                var attr = LoadedAttributes.FirstOrDefault(x => x.Id == id);
+                if (attr != null)
+                {
+                    dynamic dict = ((dynamic)attr).ProgressDictionary;
+                    Type dictType = dict.GetType();
+                    Type targetType = dictType.GetGenericArguments()[1];
+                    object stronglyTypedObj = obj;
+                    if (obj is Newtonsoft.Json.Linq.JToken token)
+                    {
+                        stronglyTypedObj = token.ToObject(targetType);
+                    }
+                    dict[uid] = (dynamic)stronglyTypedObj;
+                    attr.PendingSave = true;
+                }
+            }
         }
 
         private TextCommandResult OnTraitExportCommand(TextCommandCallingArgs args)
@@ -9871,15 +9416,6 @@ namespace SeraphLeveling
             pendingResourcefulProgressSave = true;
             ApplyResourcefulBonusStatic(player, maxResourcefulCredits);
 
-            // Max Forager
-            int maxForagerCredits = GetMaxForagerCredits(player.Entity);
-            var foragerProg = ForagerProgress.GetOrAdd(playerUid, _ => new ForagerProgressData());
-            foragerProg.TotalCredits = maxForagerCredits;
-            foragerProg.CropsInIncrement = 0;
-            foragerProg.CurrentIncrementSize = BaseForagerCropsPerIncrement;
-            pendingForagerProgressSave = true;
-            ApplyForagerBonusStatic(player, maxForagerCredits);
-
             // Unlock Hardy Health
             var hardyHealthProg = HardyHealthProgress.GetOrAdd(playerUid, _ => new HardyHealthProgressData());
             hardyHealthProg.IsUnlocked = true;
@@ -9956,14 +9492,6 @@ namespace SeraphLeveling
             resourcefulProg.CurrentIncrementSize = BaseResourcefulAnimalsPerIncrement;
             pendingResourcefulProgressSave = true;
             ApplyResourcefulBonusStatic(player, CREDITS);
-
-            // Forager
-            var foragerProg = ForagerProgress.GetOrAdd(playerUid, _ => new ForagerProgressData());
-            foragerProg.TotalCredits = CREDITS;
-            foragerProg.CropsInIncrement = 0;
-            foragerProg.CurrentIncrementSize = BaseForagerCropsPerIncrement;
-            pendingForagerProgressSave = true;
-            ApplyForagerBonusStatic(player, CREDITS);
 
             // Combat Overhaul proficiencies (only if CO is loaded)
             string coNote = "";
@@ -10814,21 +10342,6 @@ namespace SeraphLeveling
             LoadProgress<ResourcefulProgressData>();
         }
 
-        /// <summary>
-        /// Persist forager progress to world save data.
-        /// </summary>
-        public static void PersistForagerProgress()
-        {
-            PersistProgress<ForagerProgressData>();
-        }
-
-        /// <summary>
-        /// Load forager progress from world save data.
-        /// </summary>
-        private void LoadForagerProgress()
-        {
-            LoadProgress<ForagerProgressData>();
-        }
 
         // =========================================================================
         // HARDY HEALTH TRAIT PERSISTENCE

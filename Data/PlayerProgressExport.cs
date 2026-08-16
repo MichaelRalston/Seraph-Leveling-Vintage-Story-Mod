@@ -1,13 +1,9 @@
+using System.Collections.Generic;
 using SeraphLeveling.Data.Attributes;
 using SeraphLeveling.Data.Legacy;
 
 namespace SeraphLeveling.Data
 {
-    /// <summary>
-    /// Main mod system for Simple Improving Traits.
-    /// Provides a progression system that improves player traits through gameplay.
-    /// Currently implements mining speed progression based on blocks mined.
-    /// </summary>
     /// <summary>
     /// A snapshot of one player's full progression across every system, used to
     /// transfer progress between worlds/servers via /trait export and /trait
@@ -21,27 +17,6 @@ namespace SeraphLeveling.Data
         public string SourcePlayerName;
         public string SourcePlayerUid;
         public double ExportedGameDay;
-
-        public MiningAttributeModifierProgressData Mining;
-        public DamageAttributeModifierProgressData Melee;
-        public DamageAttributeModifierProgressData Ranged;
-        public LeveledPartialAttributeModifierProgressData Walking;
-        public LeveledPartialAttributeModifierProgressData Hunger;
-        public ArmorProgressData Armor;
-        public ClothierAttributeModifierProgressData Clothier;
-        public MenderProgressData Mender;
-        public PilfererProgressData Pilferer;
-        public ResourcefulProgressData Resourceful;
-        public ForagerProgressData Forager;
-        public LeveledPartialAttributeModifierProgressData Furtive;
-        public DamageAttributeModifierProgressData Precise;
-        public TechnicalAttributeModifierProgressData Technical;
-        public HardyHealthProgressData HardyHealth;
-        public BowyerAttributeModifierProgressData Bowyer;
-        public ImproviserAttributeModifierProgressData Improviser;
-        public TinkererAttributeModifierProgressData Tinkerer;
-        public MercilessProgressData Merciless;
-        public ClaustrophobicRemovalProgressData ClaustrophobicRemoval;
-        public COPlayerProgressData CombatOverhaul;
+        public Dictionary<string, object> Attributes;
     }
 }
