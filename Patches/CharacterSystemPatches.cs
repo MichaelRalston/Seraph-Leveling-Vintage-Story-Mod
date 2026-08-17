@@ -81,39 +81,9 @@ namespace SeraphLeveling.Patches
             TraitDefinitions.Hardy.BuildTraitText(eplr, ref __result);
 
             // Process melee progression (Soldier trait)
+            // Process armor progression (Soldier trait - armor durability and speed penalty)
             // Only show Soldier melee when meleeBonus > 0 (after negative traits are cancelled)
-            if (meleeBonus > 0)
-            {
-                string plainMeleeTraitName = Lang.Get("seraphleveling:trait-sitmeleemastery");
-
-                // Re-check hasNoTraits after mining processing
-                hasNoTraits = HasNoTraits(__result);
-
-                if (hasVanillaSoldier)
-                {
-                    // Class already has Soldier - update the inline melee damage value (locale-aware).
-                    int combinedBonus = SeraphLevelingModSystem.VANILLA_SOLDIER_MELEE_BONUS + meleeBonus;
-                    __result = ReplaceVanillaCharAttribute(__result, "meleeWeaponsDamage", 0.3, combinedBonus);
-
-                    __result = RemoveOrphanTraitName(__result, plainMeleeTraitName);
-                }
-                else if (hasNoTraits)
-                {
-                    // Commoner or other class with no traits - replace entirely with our dynamic Soldier
-                    __result = BuildLocalizedTraitLine("soldier", "seraphleveling:trait-soldier-dynamic", meleeBonus);
-                }
-                else if (ContainsOrphanTraitName(__result, plainMeleeTraitName))
-                {
-                    // We have our trait but no vanilla Soldier - replace orphan plain name with dynamic version
-                    __result = ReplaceOrphanTraitName(__result, plainMeleeTraitName,
-                        BuildLocalizedTraitLine("soldier", "seraphleveling:trait-soldier-dynamic", meleeBonus));
-                }
-                else
-                {
-                    // Has other traits but no Soldier at all - append our dynamic Soldier
-                    __result = __result + "\n" + BuildLocalizedTraitLine("soldier", "seraphleveling:trait-soldier-dynamic", meleeBonus);
-                }
-            }
+            TraitDefinitions.Soldier.BuildTraitText(eplr, ref __result);
 
             // Process ranged progression (Focused trait)
             // Only show Focused when any bonus > 0 (after negative traits are cancelled for that stat)
@@ -122,289 +92,28 @@ namespace SeraphLeveling.Patches
             // Process walking progression (Fleetfooted trait)
             TraitDefinitions.Fleetfooted.BuildTraitText(eplr, ref __result);
 
-            // Process armor progression (Soldier trait - armor durability and speed penalty)
-            if (armorDurabilityLevel > 0 || armorWalkSpeedLevel > 0)
-            {
-                // Re-check hasNoTraits after walking processing
-                hasNoTraits = HasNoTraits(__result);
-
-                // Calculate combined bonuses
-                int totalDurabilityBonus = armorDurabilityBonus;
-                int totalWalkSpeedBonus = armorWalkSpeedBonus;
-
-                if (hasVanillaSoldierArmor)
-                {
-                    // Class already has Soldier (Blackguard) - update the inline armor stats (locale-aware).
-                    // Vanilla attributes:
-                    //   armorDurabilityLoss: -0.15 → "+15% armor durability"
-                    //   armorWalkSpeedAffectedness: -0.25 → "walk speed penalty for wearing armor reduced by 25%"
-                    if (armorDurabilityBonus > 0)
-                    {
-                        int combinedDurability = SeraphLevelingModSystem.VANILLA_SOLDIER_ARMOR_DURABILITY_BONUS + armorDurabilityBonus;
-                        __result = ReplaceVanillaCharAttribute(__result, "armorDurabilityLoss", -0.15, combinedDurability);
-                    }
-
-                    if (armorWalkSpeedBonus > 0)
-                    {
-                        int combinedSpeedPenalty = SeraphLevelingModSystem.VANILLA_SOLDIER_ARMOR_WALKSPEED_BONUS + armorWalkSpeedBonus;
-                        __result = ReplaceVanillaCharAttribute(__result, "armorWalkSpeedAffectedness", -0.25, combinedSpeedPenalty);
-                    }
-                }
-                else if (hasNoTraits)
-                {
-                    // No traits at all - show our armor progression as a Soldier-like trait
-                    __result = BuildLocalizedTraitLine("soldier", "seraphleveling:trait-soldier-armor-dynamic", totalDurabilityBonus, totalWalkSpeedBonus);
-                }
-                else
-                {
-                    // Has other traits but no vanilla Soldier - check if we already added melee Soldier
-                    // Only add if we have actual bonuses to show
-                    if (totalDurabilityBonus > 0 || totalWalkSpeedBonus > 0)
-                    {
-                        // Check if melee progression already added a dynamic Soldier entry
-                        string meleeSoldierPattern = BuildLocalizedTraitLine("soldier", "seraphleveling:trait-soldier-dynamic", meleeBonus);
-                        if (meleeLevel > 0 && __result.Contains(meleeSoldierPattern))
-                        {
-                            // Replace the melee-only Soldier with a combined entry
-                            __result = __result.Replace(meleeSoldierPattern,
-                                BuildLocalizedTraitLine("soldier", "seraphleveling:trait-soldier-combined-dynamic", meleeBonus, totalDurabilityBonus, totalWalkSpeedBonus));
-                        }
-                        else
-                        {
-                            // No melee Soldier was added, add armor-only entry
-                            __result = __result + "\n" + BuildLocalizedTraitLine("soldier", "seraphleveling:trait-soldier-armor-dynamic", totalDurabilityBonus, totalWalkSpeedBonus);
-                        }
-                    }
-                }
-            }
-
             // Process Clothier trait (unlocked by wearing 20 unique clothes)
             TraitDefinitions.Clothier.BuildTraitText(eplr, ref __result);
 
             // Process Mender trait (improves armor/clothing durability)
-            int menderLevel = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_MENDER_LEVEL, 0);
-            int menderBonus = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_MENDER_BONUS, 0);
-            bool hasVanillaMender = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Mender);
-            if (menderLevel > 0)
-            {
-                string plainMenderTraitName = Lang.Get("seraphleveling:trait-sitmendermastery");
-                string dynamicMenderTrait = BuildLocalizedTraitLine("mender", "seraphleveling:trait-mender-dynamic", menderBonus);
-
-                // Re-check hasNoTraits
-                hasNoTraits = HasNoTraits(__result);
-
-                if (hasVanillaMender)
-                {
-                    // Class already has Mender trait (Tailor) - update the inline durability value (locale-aware).
-                    // Vanilla armorDurabilityLoss: -0.25 renders as "+25% armor durability".
-                    int combinedBonus = SeraphLevelingModSystem.VANILLA_MENDER_ARMOR_DURABILITY_BONUS + menderBonus;
-                    __result = ReplaceVanillaCharAttribute(__result, "armorDurabilityLoss", -0.25, combinedBonus);
-                }
-                else if (hasNoTraits)
-                {
-                    __result = dynamicMenderTrait;
-                }
-                else if (ContainsOrphanTraitName(__result, plainMenderTraitName))
-                {
-                    __result = ReplaceOrphanTraitName(__result, plainMenderTraitName, dynamicMenderTrait);
-                }
-                else
-                {
-                    __result = __result + "\n" + dynamicMenderTrait;
-                }
-            }
+            TraitDefinitions.Mender.BuildTraitText(eplr, ref __result);
 
             // Process Pilferer trait (improves rusty gear, vessel loot, vessel collection).
             // Read per-stat bonuses (each stat capped independently so all classes hit the
             // same +20% per-stat total at maxall, regardless of vanilla Pilferer offsets).
-            int pilfererLevel = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_PILFERER_LEVEL, 0);
-            int pilfererVesselBonus = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_PILFERER_VESSEL_BONUS, 0);
-            int pilfererRustyBonus = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_PILFERER_RUSTY_BONUS, 0);
-            int pilfererWholeBonus = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_PILFERER_WHOLE_BONUS, 0);
-            bool hasVanillaPilferer = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Pilferer);
-            // Only show Pilferer when any per-stat bonus > 0 (after Heavyhanded vessel penalty is cancelled for vessel)
-            if (pilfererVesselBonus > 0 || pilfererRustyBonus > 0 || pilfererWholeBonus > 0)
-            {
-                string plainPilfererTraitName = Lang.Get("seraphleveling:trait-sitpilferermastery");
-                // Dynamic format params are (vesselContents, rustyGear, wholeVessel)
-                string dynamicPilfererTrait = BuildLocalizedTraitLine("pilferer", "seraphleveling:trait-pilferer-dynamic",
-                    pilfererVesselBonus, pilfererRustyBonus, pilfererWholeBonus);
-
-                // Re-check hasNoTraits
-                hasNoTraits = HasNoTraits(__result);
-
-                if (hasVanillaPilferer)
-                {
-                    // Class already has Pilferer trait (Malefactor) - replace the whole vanilla
-                    // line with our combined dynamic. Substring Replace doesn't work cleanly here:
-                    //   - vanilla "+15% drop rate" (vesselContentsDropRate) is too generic to
-                    //     substring-match safely without risk of hitting unrelated tokens
-                    //   - vanilla "12% chance to collect cracked vessels intact" doesn't follow
-                    //     the "+X% <thing>" pattern, so a value-prefixed Replace target can't hit it
-                    // Combine per-stat earned with per-stat vanilla so each total caps correctly.
-                    int combinedVessel = SeraphLevelingModSystem.VANILLA_PILFERER_VESSEL_CONTENTS_BONUS + pilfererVesselBonus;
-                    int combinedRusty = SeraphLevelingModSystem.VANILLA_PILFERER_RUSTY_GEAR_BONUS + pilfererRustyBonus;
-                    int combinedWhole = SeraphLevelingModSystem.VANILLA_PILFERER_WHOLE_VESSEL_BONUS + pilfererWholeBonus;
-                    string combinedPilfererTrait = BuildLocalizedTraitLine("pilferer", "seraphleveling:trait-pilferer-dynamic",
-                        combinedVessel, combinedRusty, combinedWhole);
-                    __result = ReplaceVanillaTraitLine(__result, "pilferer", combinedPilfererTrait);
-                }
-                else if (hasNoTraits)
-                {
-                    __result = dynamicPilfererTrait;
-                    hasNoTraits = false;
-                }
-                else if (ContainsOrphanTraitName(__result, plainPilfererTraitName))
-                {
-                    __result = ReplaceOrphanTraitName(__result, plainPilfererTraitName, dynamicPilfererTrait);
-                }
-                else
-                {
-                    __result = __result + "\n" + dynamicPilfererTrait;
-                }
-            }
+            TraitDefinitions.Pilferer.BuildTraitText(eplr, ref __result);
 
             // Process Resourceful trait (improves animal loot and harvesting speed)
-            int resourcefulLevel = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_RESOURCEFUL_LEVEL, 0);
-            int resourcefulLootBonus = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_RESOURCEFUL_LOOT_BONUS, 0);
-            int resourcefulSpeedBonus = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_RESOURCEFUL_SPEED_BONUS, 0);
-            bool hasVanillaResourceful = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Resourceful);
-            // Only show Resourceful when any bonus > 0 (after Kind penalty is cancelled)
-            if (resourcefulLootBonus > 0 || resourcefulSpeedBonus > 0)
-            {
-                string plainResourcefulTraitName = Lang.Get("seraphleveling:trait-sitresourcefulmastery");
-                string dynamicResourcefulTrait = BuildLocalizedTraitLine("resourceful", "seraphleveling:trait-resourceful-dynamic", resourcefulLootBonus, resourcefulSpeedBonus);
-
-                // Re-check hasNoTraits
-                hasNoTraits = HasNoTraits(__result);
-
-                if (hasVanillaResourceful)
-                {
-                    // Class already has Resourceful trait - update the inline values (locale-aware).
-                    // Vanilla animalLootDropRate: 0.1 → "+10% animal loot"
-                    // Vanilla animalHarvestingTime: -0.25 → "+25% animal harvesting speed"
-                    int combinedLoot = SeraphLevelingModSystem.VANILLA_RESOURCEFUL_LOOT_BONUS + resourcefulLootBonus;
-                    int combinedSpeed = SeraphLevelingModSystem.VANILLA_RESOURCEFUL_SPEED_BONUS + resourcefulSpeedBonus;
-                    __result = ReplaceVanillaCharAttribute(__result, "animalLootDropRate", 0.1, combinedLoot);
-                    __result = ReplaceVanillaCharAttribute(__result, "animalHarvestingTime", -0.25, combinedSpeed);
-                }
-                else if (hasNoTraits)
-                {
-                    __result = dynamicResourcefulTrait;
-                }
-                else if (ContainsOrphanTraitName(__result, plainResourcefulTraitName))
-                {
-                    __result = ReplaceOrphanTraitName(__result, plainResourcefulTraitName, dynamicResourcefulTrait);
-                }
-                else
-                {
-                    __result = __result + "\n" + dynamicResourcefulTrait;
-                }
-            }
+            TraitDefinitions.Resourceful.BuildTraitText(eplr, ref __result);
 
             // Process Forager trait (improves foraging loot and wild crop drops)
-            int foragerLevel = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_FORAGER_LEVEL, 0);
-            int foragerLootBonus = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_FORAGER_LOOT_BONUS, 0);
-            int foragerWildCropBonus = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_FORAGER_WILD_CROP_BONUS, 0);
-            bool hasVanillaForager = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Forager);
-            // Only show Forager when any bonus > 0 (after Civil/Heavyhanded penalties are cancelled)
-            if (foragerLootBonus > 0 || foragerWildCropBonus > 0)
-            {
-                string plainForagerTraitName = Lang.Get("seraphleveling:trait-sitforagermastery");
-                string dynamicForagerTrait = BuildLocalizedTraitLine("forager", "seraphleveling:trait-forager-dynamic", foragerLootBonus, foragerWildCropBonus);
-
-                // Re-check hasNoTraits
-                hasNoTraits = HasNoTraits(__result);
-
-                if (hasVanillaForager)
-                {
-                    // Class already has Forager trait - update the inline values (locale-aware).
-                    // Vanilla forageDropRate: 0.1 → "+10% loot from foraging"
-                    // Vanilla wildCropDropRate: 0.2 → "+20% wild crop drop rate"
-                    int combinedLoot = SeraphLevelingModSystem.VANILLA_FORAGER_LOOT_BONUS + foragerLootBonus;
-                    int combinedWildCrop = SeraphLevelingModSystem.VANILLA_FORAGER_WILD_CROP_BONUS + foragerWildCropBonus;
-                    __result = ReplaceVanillaCharAttribute(__result, "forageDropRate", 0.1, combinedLoot);
-                    __result = ReplaceVanillaCharAttribute(__result, "wildCropDropRate", 0.2, combinedWildCrop);
-                }
-                else if (hasNoTraits)
-                {
-                    __result = dynamicForagerTrait;
-                }
-                else if (ContainsOrphanTraitName(__result, plainForagerTraitName))
-                {
-                    __result = ReplaceOrphanTraitName(__result, plainForagerTraitName, dynamicForagerTrait);
-                }
-                else
-                {
-                    __result = __result + "\n" + dynamicForagerTrait;
-                }
-            }
+            TraitDefinitions.Forager.BuildTraitText(eplr, ref __result);
 
             // Process Furtive trait (reduces animal detection range)
-            int furtiveLevel = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_FURTIVE_LEVEL, 0);
-            int furtiveBonus = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_FURTIVE_BONUS, 0);
-            bool hasVanillaFurtive = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Furtive);
-            if (furtiveLevel > 0)
-            {
-                string plainFurtiveTraitName = Lang.Get("seraphleveling:trait-sitfurtivemastery");
-                string dynamicFurtiveTrait = BuildLocalizedTraitLine("furtive", "seraphleveling:trait-furtive-dynamic", furtiveBonus);
-
-                // Re-check hasNoTraits
-                hasNoTraits = HasNoTraits(__result);
-
-                if (hasVanillaFurtive)
-                {
-                    // Class already has Furtive trait - update the inline detection range value (locale-aware).
-                    // Vanilla animalSeekingRange: -0.35 → "-35% animal detection range"
-                    int combinedBonus = SeraphLevelingModSystem.VANILLA_FURTIVE_DETECTION_REDUCTION + furtiveBonus;
-                    __result = ReplaceVanillaCharAttribute(__result, "animalSeekingRange", -0.35, combinedBonus);
-                }
-                else if (hasNoTraits)
-                {
-                    __result = dynamicFurtiveTrait;
-                }
-                else if (ContainsOrphanTraitName(__result, plainFurtiveTraitName))
-                {
-                    __result = ReplaceOrphanTraitName(__result, plainFurtiveTraitName, dynamicFurtiveTrait);
-                }
-                else
-                {
-                    __result = __result + "\n" + dynamicFurtiveTrait;
-                }
-            }
+            TraitDefinitions.Furtive.BuildTraitText(eplr, ref __result);
 
             // Process Precise trait (improves damage to mechanicals)
-            int preciseLevel = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_PRECISE_LEVEL, 0);
-            int preciseBonus = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_PRECISE_BONUS, 0);
-            bool hasVanillaPrecise = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Precise);
-            if (preciseLevel > 0)
-            {
-                string plainPreciseTraitName = Lang.Get("seraphleveling:trait-sitprecisemastery");
-                string dynamicPreciseTrait = BuildLocalizedTraitLine("precise", "seraphleveling:trait-precise-dynamic", preciseBonus);
-
-                // Re-check hasNoTraits
-                hasNoTraits = HasNoTraits(__result);
-
-                if (hasVanillaPrecise)
-                {
-                    // Class already has Precise trait (Clockmaker) - update the inline value (locale-aware).
-                    // Vanilla mechanicalsDamage: 0.4705 (calibrated) → "+25% damage against mechanicals"
-                    int combinedBonus = SeraphLevelingModSystem.VANILLA_PRECISE_MECHANICAL_DAMAGE_BONUS + preciseBonus;
-                    __result = ReplaceVanillaCharAttribute(__result, "mechanicalsDamage", 0.4705, combinedBonus);
-                }
-                else if (hasNoTraits)
-                {
-                    __result = dynamicPreciseTrait;
-                }
-                else if (ContainsOrphanTraitName(__result, plainPreciseTraitName))
-                {
-                    __result = ReplaceOrphanTraitName(__result, plainPreciseTraitName, dynamicPreciseTrait);
-                }
-                else
-                {
-                    __result = __result + "\n" + dynamicPreciseTrait;
-                }
-            }
+            TraitDefinitions.Precise.BuildTraitText(eplr, ref __result);
 
             // Process Hunger trait (reduces hunger rate).
             // For Ravenous classes (Blackguard) the raw `hungerBonus` value includes credits
@@ -414,33 +123,7 @@ namespace SeraphLeveling.Patches
             // The display, however, was showing the gross reduction (e.g. -55% on Blackguard
             // vs -25% on Hunter at maxall). Subtract the Ravenous penalty from the displayed
             // value so all classes converge on the same visible cap (-25% at maxall).
-            int hungerLevel = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_HUNGER_LEVEL, 0);
-            int hungerBonus = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_HUNGER_BONUS, 0);
-            bool hasRavenousForHunger = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Ravenous);
-            int displayedHungerReduction = hasRavenousForHunger
-                ? Math.Max(0, hungerBonus - SeraphLevelingModSystem.VANILLA_RAVENOUS_HUNGER_PENALTY)
-                : hungerBonus;
-            if (hungerLevel > 0 && displayedHungerReduction > 0)
-            {
-                string plainHungerTraitName = Lang.Get("seraphleveling:trait-sithungermastery");
-                string dynamicHungerTrait = Lang.Get("seraphleveling:trait-hunger-dynamic", displayedHungerReduction);
-
-                // Re-check hasNoTraits
-                hasNoTraits = HasNoTraits(__result);
-
-                if (hasNoTraits)
-                {
-                    __result = dynamicHungerTrait;
-                }
-                else if (ContainsOrphanTraitName(__result, plainHungerTraitName))
-                {
-                    __result = ReplaceOrphanTraitName(__result, plainHungerTraitName, dynamicHungerTrait);
-                }
-                else
-                {
-                    __result = __result + "\n" + dynamicHungerTrait;
-                }
-            }
+            TraitDefinitions.HungerMastery.BuildTraitText(eplr, ref __result);
 
             // Process Technical unlock trait (translocator gear cost reduction)
             TraitDefinitions.Technical.BuildTraitText(eplr, ref __result);
@@ -455,28 +138,7 @@ namespace SeraphLeveling.Patches
             TraitDefinitions.Tinkerer.BuildTraitText(eplr, ref __result);
 
             // Process Merciless unlock trait (shortsword/shield crafting)
-            bool mercilessUnlocked = eplr.WatchedAttributes.GetBool(SeraphLevelingModSystem.WATCHED_MERCILESS_UNLOCKED, false);
-            if (mercilessUnlocked && !SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Merciless))
-            {
-                string plainMercilessTraitName = Lang.Get("seraphleveling:trait-sitmercilessmastery");
-                string dynamicMercilessTrait = BuildLocalizedTraitLine("merciless", "seraphleveling:trait-merciless-dynamic");
-
-                // Re-check hasNoTraits
-                hasNoTraits = HasNoTraits(__result);
-
-                if (hasNoTraits)
-                {
-                    __result = dynamicMercilessTrait;
-                }
-                else if (ContainsOrphanTraitName(__result, plainMercilessTraitName))
-                {
-                    __result = ReplaceOrphanTraitName(__result, plainMercilessTraitName, dynamicMercilessTrait);
-                }
-                else
-                {
-                    __result = __result + "\n" + dynamicMercilessTrait;
-                }
-            }
+            TraitDefinitions.Merciless.BuildTraitText(eplr, ref __result);
 
             // Note: Claustrophobic Removed trait display was removed in favor of progressive cancellation
             // Claustrophobic is now handled in the negative trait section below - it progressively
@@ -488,193 +150,38 @@ namespace SeraphLeveling.Patches
             // =========================================================================
 
             // Civil trait (Tailor) - foraging loot penalty
-            bool hasCivil = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Civil);
-            int civilRemaining = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_CIVIL_REMAINING, 0);
-            if (hasCivil)
-            {
-                if (civilRemaining > 0)
-                {
-                    string dynamicCivilTrait = BuildLocalizedTraitLine("civil", "seraphleveling:trait-civil-dynamic", civilRemaining);
-                    __result = ReplaceVanillaTraitLine(__result, "civil", dynamicCivilTrait);
-                }
-                else
-                {
-                    __result = RemoveVanillaTraitLine(__result, "civil");
-                }
-            }
+            TraitDefinitions.Civil.BuildTraitText(eplr, ref __result);
 
             // Weak trait (Tailor) - HP and mining speed penalty.
             // Both penalties cancelled together at mining level 10.
-            bool hasWeak = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Weak);
-            int weakMiningRemaining = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_WEAK_MINING_REMAINING, 0);
-            int weakHpRemaining = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_WEAK_HP_REMAINING, 0);
-            if (hasWeak)
-            {
-                if (weakMiningRemaining > 0 || weakHpRemaining > 0)
-                {
-                    string dynamicWeakTrait = BuildLocalizedTraitLine("weak", "seraphleveling:trait-weak-dynamic", weakHpRemaining, weakMiningRemaining);
-                    __result = ReplaceVanillaTraitLine(__result, "weak", dynamicWeakTrait);
-                }
-                else
-                {
-                    __result = RemoveVanillaTraitLine(__result, "weak");
-                }
-            }
+            TraitDefinitions.Weak.BuildTraitText(eplr, ref __result);
 
             // Kind trait (Tailor) - animal loot and harvesting speed penalty.
-            bool hasKind = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Kind);
-            int kindLootRemaining = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_KIND_LOOT_REMAINING, 0);
-            int kindSpeedRemaining = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_KIND_SPEED_REMAINING, 0);
-            if (hasKind)
-            {
-                if (kindLootRemaining > 0 || kindSpeedRemaining > 0)
-                {
-                    string dynamicKindTrait;
-                    if (kindLootRemaining > 0 && kindSpeedRemaining > 0)
-                    {
-                        dynamicKindTrait = BuildLocalizedTraitLine("kind", "seraphleveling:trait-kind-dynamic", kindLootRemaining, kindSpeedRemaining);
-                    }
-                    else if (kindLootRemaining > 0)
-                    {
-                        dynamicKindTrait = BuildLocalizedTraitLine("kind", "seraphleveling:trait-kind-loot-only-dynamic", kindLootRemaining);
-                    }
-                    else
-                    {
-                        dynamicKindTrait = BuildLocalizedTraitLine("kind", "seraphleveling:trait-kind-speed-only-dynamic", kindSpeedRemaining);
-                    }
-                    __result = ReplaceVanillaTraitLine(__result, "kind", dynamicKindTrait);
-                }
-                else
-                {
-                    __result = RemoveVanillaTraitLine(__result, "kind");
-                }
-            }
+            TraitDefinitions.Kind.BuildTraitText(eplr, ref __result);
 
             // Farsighted trait (Hunter) - melee damage penalty
-            bool hasFarsighted = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Farsighted);
-            int farsightedRemaining = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_FARSIGHTED_REMAINING, 0);
-            if (hasFarsighted)
-            {
-                if (farsightedRemaining > 0)
-                {
-                    string dynamicFarsightedTrait = BuildLocalizedTraitLine("farsighted", "seraphleveling:trait-farsighted-dynamic", farsightedRemaining);
-                    __result = ReplaceVanillaTraitLine(__result, "farsighted", dynamicFarsightedTrait);
-                }
-                else
-                {
-                    __result = RemoveVanillaTraitLine(__result, "farsighted");
-                }
-            }
+            TraitDefinitions.Farsighted.BuildTraitText(eplr, ref __result);
 
             // Nervous trait (Malefactor, Clockmaker) - melee damage penalty
-            bool hasNervous = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Nervous);
-            int nervousRemaining = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_NERVOUS_REMAINING, 0);
-            if (hasNervous)
-            {
-                if (nervousRemaining > 0)
-                {
-                    string dynamicNervousTrait = BuildLocalizedTraitLine("nervous", "seraphleveling:trait-nervous-dynamic", nervousRemaining);
-                    __result = ReplaceVanillaTraitLine(__result, "nervous", dynamicNervousTrait);
-                }
-                else
-                {
-                    __result = RemoveVanillaTraitLine(__result, "nervous");
-                }
-            }
+            TraitDefinitions.Nervous.BuildTraitText(eplr, ref __result);
 
             // Nearsighted trait (Blackguard) - ranged damage penalty
-            bool hasNearsighted = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Nearsighted);
-            int nearsightedRemaining = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_NEARSIGHTED_REMAINING, 0);
-            if (hasNearsighted)
-            {
-                if (nearsightedRemaining > 0)
-                {
-                    string dynamicNearsightedTrait = BuildLocalizedTraitLine("nearsighted", "seraphleveling:trait-nearsighted-dynamic", nearsightedRemaining);
-                    __result = ReplaceVanillaTraitLine(__result, "nearsighted", dynamicNearsightedTrait);
-                }
-                else
-                {
-                    __result = RemoveVanillaTraitLine(__result, "nearsighted");
-                }
-            }
+            TraitDefinitions.Nearsighted.BuildTraitText(eplr, ref __result);
 
             // Frail trait (Malefactor, Clockmaker) - HP and ranged distance penalty.
             // Both penalties cancelled together at ranged level 25.
             TraitDefinitions.Frail.BuildTraitText(eplr, ref __result);
 
             // Heavyhanded trait (Blackguard) - vessel, foraging, wild crop penalties.
-            bool hasHeavyhanded = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Heavyhanded);
-            int heavyhandedVesselRemaining = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_HEAVYHANDED_VESSEL_REMAINING, 0);
-            int heavyhandedForagingRemaining = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_HEAVYHANDED_FORAGING_REMAINING, 0);
-            int heavyhandedWildCropRemaining = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_HEAVYHANDED_WILD_CROP_REMAINING, 0);
-            if (hasHeavyhanded)
-            {
-                if (heavyhandedVesselRemaining > 0 || heavyhandedForagingRemaining > 0 || heavyhandedWildCropRemaining > 0)
-                {
-                    // Build partial description from localized vanilla charattribute strings so
-                    // the partial line stays in the same locale as the rest of vanilla output.
-                    var parts = new System.Collections.Generic.List<string>();
-                    if (heavyhandedVesselRemaining > 0)
-                    {
-                        string s = LocalizedCharAttributeWithValue("vesselContentsDropRate", -0.1, heavyhandedVesselRemaining);
-                        if (!string.IsNullOrEmpty(s)) parts.Add(s);
-                    }
-                    if (heavyhandedForagingRemaining > 0)
-                    {
-                        string s = LocalizedCharAttributeWithValue("forageDropRate", -0.15, heavyhandedForagingRemaining);
-                        if (!string.IsNullOrEmpty(s)) parts.Add(s);
-                    }
-                    if (heavyhandedWildCropRemaining > 0)
-                    {
-                        string s = LocalizedCharAttributeWithValue("wildCropDropRate", -0.2, heavyhandedWildCropRemaining);
-                        if (!string.IsNullOrEmpty(s)) parts.Add(s);
-                    }
-
-                    string partialDescription = string.Join(", ", parts);
-                    string dynamicHeavyhandedTrait = BuildLocalizedTraitLine("heavyhanded", "seraphleveling:trait-heavyhanded-partial-dynamic", partialDescription);
-                    __result = ReplaceVanillaTraitLine(__result, "heavyhanded", dynamicHeavyhandedTrait);
-                }
-                else
-                {
-                    __result = RemoveVanillaTraitLine(__result, "heavyhanded");
-                }
-            }
+            TraitDefinitions.Heavyhanded.BuildTraitText(eplr, ref __result);
 
             // Ravenous trait (Blackguard) - hunger rate penalty
-            bool hasRavenous = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Ravenous);
-            int ravenousRemaining = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_RAVENOUS_REMAINING, 0);
-            if (hasRavenous)
-            {
-                if (ravenousRemaining > 0)
-                {
-                    string dynamicRavenousTrait = BuildLocalizedTraitLine("ravenous", "seraphleveling:trait-ravenous-dynamic", ravenousRemaining);
-                    __result = ReplaceVanillaTraitLine(__result, "ravenous", dynamicRavenousTrait);
-                }
-                else
-                {
-                    __result = RemoveVanillaTraitLine(__result, "ravenous");
-                }
-            }
+            TraitDefinitions.Ravenous.BuildTraitText(eplr, ref __result);
 
             // Claustrophobic trait (Hunter) - ore drop and mining speed penalties.
             // Mining penalty decreases progressively with mining level (1-10).
             // At level 10, both mining and ore penalties are cancelled, and Hardy bonus shows instead.
-            bool hasClaustrophobic = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Claustrophobic);
-            int claustrophobicMiningRemaining = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_CLAUSTROPHOBIC_MINING_REMAINING, 0);
-
-            if (hasClaustrophobic)
-            {
-                if (claustrophobicMiningRemaining > 0)
-                {
-                    string dynamicClaustrophobicTrait = BuildLocalizedTraitLine("claustrophobic", "seraphleveling:trait-claustrophobic-dynamic",
-                        SeraphLevelingModSystem.VANILLA_CLAUSTROPHOBIC_ORE_PENALTY, claustrophobicMiningRemaining);
-                    __result = ReplaceVanillaTraitLine(__result, "claustrophobic", dynamicClaustrophobicTrait);
-                }
-                else
-                {
-                    __result = RemoveVanillaTraitLine(__result, "claustrophobic");
-                }
-            }
+            TraitDefinitions.Claustrophobic.BuildTraitText(eplr, ref __result);
 
             // =========================================================================
             // COMBAT OVERHAUL PROFICIENCY TRAIT DISPLAY

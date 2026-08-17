@@ -183,6 +183,16 @@ namespace SeraphLeveling.Data.Traits
             ]
         };
 
+        public static readonly TraitDefinition HungerMastery = new()
+        {
+            // This trait doesn't actually exist in vanilla, but we still want to display it for players that have earned the attribute
+            Id = "hungermastery",
+            DynamicTraitHeaderKey = "seraphleveling:trait-hungermastery",
+            Attributes = [
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.HungerRate, 1),
+            ],
+        };
+
         public static readonly TraitDefinition Ravenous = new()
         {
             Id = "ravenous",

@@ -137,11 +137,27 @@
   "trait-claustrophobic-dynamic": "-{0}% ore drop rate, -{1}% mining speed",
   "trait-claustrophobic-mining-only-dynamic": "<font color=\"#ff8484\">• Claustrophobic </font> <font opacity=\"0.6\">(-{0}% mining speed)</font>",
 
+  "trait-hungermastery": "<font color=\"#84ff84\">• Hunger Mastery </font>",
+
+  "attribute-animalharvesting-contents": "{0}% animal harvesting speed",
+  "attribute-armordurability-contents": "{0}% armor durability",
+  "attribute-armorwalkspeed-contents": "walk speed penalty reduced by {0}%",
+  "attribute-foragelooting-contents": "{0}% foraging loot",
+  "attribute-foragewildcrop-contents": "{0}% wild crop drops",
+  "attribute-furtive-contents": "{0}% animal detection range",
+  "attribute-geardroprate-contents": "{0}% rusty gear drops",
   "attribute-hardyhealth-contents": "{0} health points",
+  "attribute-hungerrate-contents": "{0}% hunger rate",
   "attribute-maxhealth-contents": "{0} health points",
+  "attribute-meleedamage-contents": "{0}% melee damage",
+  "attribute-mender-contents": "{0}% armor/clothing durability",
   "attribute-miningspeed-contents": "{0}% mining speed",
+  "attribute-precise-contents": "{0}% damage against mechanicals",
   "attribute-rangedaccuracy-contents": "{0}% ranged accuracy",
   "attribute-rangeddamage-contents": "{0}% ranged damage",
   "attribute-rangeddistance-contents": "{0}% ranged distance",
-  "attribute-walkingspeed-contents": "{0}% walk speed"
+  "attribute-resourceful-contents": "{0}% animal loot",
+  "attribute-vesseldroprate-contents": "{0}% cracked vessel drops",
+  "attribute-walkingspeed-contents": "{0}% walk speed",
+  "attribute-wholevesselrate-contents": "{0}% vessel collection"
 }
