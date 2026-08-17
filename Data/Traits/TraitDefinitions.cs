@@ -105,7 +105,7 @@ namespace SeraphLeveling.Data.Traits
             Id = "frail",
             Attributes = [
                 IAttributeModifier.Penalty(AttributeModifierDefinitions.FrailHealthOffset, 1, [
-                    new LeveledAttributeMaximumRequirement { Attribute = AttributeModifierDefinitions.RangedDistance, ThresholdPercentage = 25 },
+                    new LeveledAttributeMaximumRequirement { Attribute = AttributeModifierDefinitions.RangedDistance, ThresholdPercentage = 0 },
                 ]),
                 IAttributeModifier.Penalty(AttributeModifierDefinitions.RangedDistance, 25, [ new LeveledAttributeMaximumRequirement { Attribute = AttributeModifierDefinitions.RangedDistance, ThresholdPercentage = 0 }]),
             ],

@@ -70,7 +70,7 @@ namespace SeraphLeveling.Data.Attributes
             return GetDict(player).TotalCredits;
         }
 
-        public virtual int GetMaxCredits(EntityPlayer player) => GlobalMaxCredits;
+        public virtual int GetMaxCredits(EntityPlayer player) => GlobalMaxCredits-CalculateLevelFromTraits(player);
 
         public int CalculateLevelFromTraits(EntityPlayer entity)
         {
@@ -118,7 +118,7 @@ namespace SeraphLeveling.Data.Attributes
                 watchedAttrs.SetInt(WatchedLevel, progressData.TotalCredits);
                 watchedAttrs.SetInt(WatchedBonus, bonusPercent);
 
-                OnBonusChanged(player, oldBonus, bonusPercent);
+                OnBonusChanged(player, oldBonus+totalLevelFromTraits, bonusPercent+totalLevelFromTraits);
 
                 SeraphLevelingModSystem.UpdateExtraTraitStatic(player.Entity, TraitCode, progressData.TotalCredits > 0);
 

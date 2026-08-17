@@ -13,7 +13,7 @@ namespace SeraphLeveling.Data.Traits
 {
     public record class TraitDefinition
     {
-        private static readonly List<string> DebugTraits = ["frail"];
+        private static readonly List<string> DebugTraits = [];
 
         private void DebugLog(bool client, bool server, string message)
         {
@@ -81,8 +81,9 @@ namespace SeraphLeveling.Data.Traits
         {
             if (player?.Entity == null) return;
 
+            // TODO: Do this smartly?
             // If the player already has the trait, do nothing
-            if (HasVanillaTrait(player.Entity)) return;
+            // if (HasVanillaTrait(player.Entity)) return;
 
             // Check prerequisites
             if (Attributes.All(mod => mod.IsActive(player)))

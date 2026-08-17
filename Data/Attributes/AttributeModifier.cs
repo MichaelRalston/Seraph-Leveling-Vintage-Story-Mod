@@ -469,7 +469,7 @@ namespace SeraphLeveling.Data.Attributes
             private void OnRequirementSatisfactionChanged(IServerPlayer player, bool oldValue, bool newValue)
             {
                 DebugLog(false, true, $"[Verdus] Satisfaction of one of {Attribute.Id} modifier requirements has changed from {oldValue} to {newValue}; active status should now be {IsActive(player)}");
-                if (!oldValue && newValue)
+                if (oldValue != newValue && IsActive(player))
                 {
                     Attribute.Unlock(player, true);
                 }
