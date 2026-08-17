@@ -149,6 +149,8 @@ namespace SeraphLeveling.Data.Traits
             Id = "soldier",
             Attributes = [
                 IAttributeModifier.Bonus(AttributeModifierDefinitions.MeleeDamage, 30),
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.ArmorDurability, 15),
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.ArmorWalkSpeed, 25),
             ],
         };
 
@@ -168,8 +170,14 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "precise",
             Attributes = [
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.Merciless, 1, [
+                    new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Merciless },
+                    new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.MeleeDamage, ThresholdPercentage = 15 },
+                    new LeveledAttributeMinimumRequirement{ Attribute = AttributeModifierDefinitions.ArmorDurability , ThresholdPercentage = 10}
+                ])
             ],
             Requirements = [
+                
             ]
         };
 

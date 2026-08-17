@@ -199,12 +199,6 @@ namespace SeraphLeveling
         public const int VANILLA_SOLDIER_ARMOR_DURABILITY_BONUS = 15;
         public const int VANILLA_SOLDIER_ARMOR_WALKSPEED_BONUS = 25;
 
-        // Storage for armor progress - keyed by player UID
-        public static ConcurrentDictionary<string, ArmorProgressData> ArmorProgress = new ConcurrentDictionary<string, ArmorProgressData>();
-
-        // Flag to indicate pending armor progress save
-        public static volatile bool pendingArmorProgressSave = false;
-
         // Tracking currently equipped armor for each player (for time tracking and equip detection)
         private static ConcurrentDictionary<string, Dictionary<string, string>> playerEquippedArmor = new ConcurrentDictionary<string, Dictionary<string, string>>();
 
@@ -407,9 +401,6 @@ namespace SeraphLeveling
         public static int MercilessArmorDurabilityThreshold = 10;    // 10% armor durability bonus required
         public static int MercilessMeleeDamageThreshold = 15;        // 15% melee damage bonus required
 
-        // Storage for merciless progress
-        public static ConcurrentDictionary<string, MercilessProgressData> MercilessProgress = new ConcurrentDictionary<string, MercilessProgressData>();
-        public static volatile bool pendingMercilessProgressSave = false;
 
         // =========================================================================
         // CLAUSTROPHOBIC REMOVAL - Removes trait after reaching mining threshold (Hunter)
@@ -899,56 +890,6 @@ namespace SeraphLeveling
                 definition.RegisterCommands(api, command);
             }
             command
-                .BeginSubCommand("armor")
-                    .WithDescription("View your armor progression stats")
-                    .RequiresPrivilege(Privilege.chat)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitArmorCommand)
-                .EndSubCommand()
-                .BeginSubCommand("armorlevel")
-                    .WithDescription("Get or set your armor durability level (admin only). Usage: /trait armorlevel [level] [armorpiece]")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalInt("level"), api.ChatCommands.Parsers.OptionalWord("armorpiece"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitArmorLevelCommand)
-                .EndSubCommand()
-                .BeginSubCommand("armorwalkspeedlevel")
-                    .WithDescription("Get or set your armor walk speed penalty reduction level (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalInt("level"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitArmorWalkSpeedLevelCommand)
-                .EndSubCommand()
-                .BeginSubCommand("armordurabilitymax")
-                    .WithDescription("Get or set the max armor durability bonus percent (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalInt("percent"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitArmorDurabilityMaxCommand)
-                .EndSubCommand()
-                .BeginSubCommand("armorwalkspeedmax")
-                    .WithDescription("Get or set the max walk speed penalty reduction percent (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalInt("percent"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitArmorWalkSpeedMaxCommand)
-                .EndSubCommand()
-                .BeginSubCommand("armortimebase")
-                    .WithDescription("Get or set the base seconds in armor per increment (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalInt("seconds"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitArmorTimeBaseCommand)
-                .EndSubCommand()
-                .BeginSubCommand("armordamagebase")
-                    .WithDescription("Get or set the base damage blocked per increment (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalInt("damage"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitArmorDamageBaseCommand)
-                .EndSubCommand()
-                .BeginSubCommand("armorrepairbase")
-                    .WithDescription("Get or set the base repairs per increment (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalInt("repairs"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitArmorRepairBaseCommand)
-                .EndSubCommand()
                 .BeginSubCommand("testwalkspeed")
                     .WithDescription("Apply a test walk speed modifier (admin only, use 0 to clear)")
                     .WithArgs(api.ChatCommands.Parsers.OptionalInt("percent"))
@@ -981,20 +922,6 @@ namespace SeraphLeveling
                     .WithArgs(api.ChatCommands.Parsers.OptionalInt("percent"))
                     .RequiresPrivilege(Privilege.controlserver)
                     .HandleWith(OnTraitMenderMaxCommand)
-                .EndSubCommand()
-                // Merciless trait commands
-                .BeginSubCommand("merciless")
-                    .WithDescription("View your merciless unlock progress")
-                    .RequiresPrivilege(Privilege.chat)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitMercilessCommand)
-                .EndSubCommand()
-                .BeginSubCommand("mercilessunlock")
-                    .WithDescription("Manually unlock or lock merciless trait (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.Bool("unlock"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitMercilessUnlockCommand)
                 .EndSubCommand()
                 // Claustrophobic removal commands
                 .BeginSubCommand("claustrophobic")
@@ -1293,9 +1220,7 @@ namespace SeraphLeveling
             // Load config and progress data after save game is loaded
             api.Event.SaveGameLoaded += LoadConfig;
             api.Event.SaveGameLoaded += LoadAllProgress;
-            api.Event.SaveGameLoaded += LoadArmorProgress;
             api.Event.SaveGameLoaded += LoadMenderProgress;
-            api.Event.SaveGameLoaded += LoadMercilessProgress;
             api.Event.SaveGameLoaded += LoadClaustrophobicRemovalProgress;
             api.Event.SaveGameLoaded += LoadCOProgress;
             api.Event.SaveGameLoaded += LoadSleepBuffData;
@@ -1452,9 +1377,6 @@ namespace SeraphLeveling
                 definition.GetTraitAllCommandLine(player, sb);
             }
 
-            var armorProg = ArmorProgress.GetOrAdd(playerUid, _ => new ArmorProgressData());
-            sb.AppendLine($"Armor: +{armorProg.TotalDurabilityCredits}/{MaxArmorDurabilityPercent}% durability, -{armorProg.TotalWalkSpeedCredits}/{MaxArmorWalkSpeedPercent}% walk penalty");
-
             var menderProg = MenderProgress.GetOrAdd(playerUid, _ => new MenderProgressData { CurrentIncrementSize = BaseMenderRepairsPerIncrement });
             sb.AppendLine($"Mender: {menderProg.TotalCredits}/{MaxMenderPercent} (+{menderProg.TotalCredits}% repair bonus)");
 
@@ -1464,9 +1386,6 @@ namespace SeraphLeveling
             {
                 definition.GetTraitUnlockableCommandLine(player, sb);
             }
-
-            var mercilessProg = MercilessProgress.GetOrAdd(playerUid, _ => new MercilessProgressData());
-            sb.AppendLine($"Merciless: {(mercilessProg.IsUnlocked ? "UNLOCKED" : "locked")}");
 
             return TextCommandResult.Success(sb.ToString().TrimEnd());
         }
@@ -1639,13 +1558,6 @@ namespace SeraphLeveling
                 }
             }
 
-            // Traits with per-tool support delegate to shared helpers
-            switch (traitName)
-            {
-                case "armor":
-                    return SetArmorLevelForPlayer(targetPlayer, level, toolName);
-            }
-
             // Traits without per-tool support — reject toolName if provided
             if (toolName != null)
                 return TextCommandResult.Error($"The '{traitName}' trait does not support per-tool level setting.");
@@ -1699,91 +1611,6 @@ namespace SeraphLeveling
                 if (toolCredits > 0) total += toolCredits;
             }
             return total;
-        }
-
-        /// <summary>
-        /// Sets per-tool credits for armor durability.
-        /// Armor has 3 credit streams (time, damage, repair) per piece, so per-piece setting
-        /// distributes credits equally across all 3 streams for the specified armor piece.
-        /// </summary>
-        private TextCommandResult SetArmorLevelForPlayer(IServerPlayer player, int level, string toolName)
-        {
-            string playerUid = player.PlayerUID;
-            var progress = ArmorProgress.GetOrAdd(playerUid, _ => new ArmorProgressData());
-
-            if (level < 0)
-                return TextCommandResult.Error("Credits cannot be negative.");
-
-            if (toolName != null)
-            {
-                // Per-piece mode: set durability credits on a specific armor piece.
-                // Each credit stream (time, damage, repair) for this piece is set to the given level.
-                // TotalDurabilityCredits = sum of all per-piece (time + damage + repair) credits.
-                int oldPieceCredits = 0;
-                if (progress.ArmorProgress.TryGetValue(toolName, out var existingPiece))
-                {
-                    oldPieceCredits += CalculateToolCredits(existingPiece.CurrentTimeIncrementSize, BaseSecondsInArmorPerIncrement, ArmorTimeIncrementStep);
-                    oldPieceCredits += CalculateToolCredits(existingPiece.CurrentDamageIncrementSize, BaseDamageBlockedPerIncrement, ArmorDamageIncrementStep);
-                    oldPieceCredits += CalculateToolCredits(existingPiece.CurrentRepairIncrementSize, BaseRepairsPerIncrement, ArmorRepairIncrementStep);
-                }
-
-                // Each of the 3 streams gets 'level' credits, so total piece contribution is level * 3
-                int newPieceCredits = level * 3;
-                int projectedTotal = progress.TotalDurabilityCredits - oldPieceCredits + newPieceCredits;
-                if (projectedTotal > MaxArmorDurabilityPercent)
-                    return TextCommandResult.Error($"Setting {level} credits per stream on {toolName} would result in {projectedTotal} total durability credits, exceeding max ({MaxArmorDurabilityPercent}).");
-
-                if (level == 0)
-                {
-                    progress.ArmorProgress.TryRemove(toolName, out var _);
-                }
-                else
-                {
-                    var pieceProgress = progress.GetArmorProgress(toolName);
-                    pieceProgress.CurrentTimeIncrementSize = BaseSecondsInArmorPerIncrement + (level * ArmorTimeIncrementStep);
-                    pieceProgress.SecondsWornInIncrement = 0;
-                    pieceProgress.TimeCredits = level;
-                    pieceProgress.CurrentDamageIncrementSize = BaseDamageBlockedPerIncrement + (level * ArmorDamageIncrementStep);
-                    pieceProgress.DamageBlockedInIncrement = 0;
-                    pieceProgress.DamageCredits = level;
-                    pieceProgress.CurrentRepairIncrementSize = BaseRepairsPerIncrement + (level * ArmorRepairIncrementStep);
-                    pieceProgress.RepairsInIncrement = 0;
-                    pieceProgress.RepairCredits = level;
-                    pieceProgress.HasBeenEquipped = true;
-                }
-
-                // Recalculate total durability credits from all armor pieces
-                int total = 0;
-                foreach (var kvp in progress.ArmorProgress)
-                {
-                    total += CalculateToolCredits(kvp.Value.CurrentTimeIncrementSize, BaseSecondsInArmorPerIncrement, ArmorTimeIncrementStep);
-                    total += CalculateToolCredits(kvp.Value.CurrentDamageIncrementSize, BaseDamageBlockedPerIncrement, ArmorDamageIncrementStep);
-                    total += CalculateToolCredits(kvp.Value.CurrentRepairIncrementSize, BaseRepairsPerIncrement, ArmorRepairIncrementStep);
-                }
-                progress.TotalDurabilityCredits = total;
-
-                pendingArmorProgressSave = true;
-                ApplyArmorBonusesStatic(player, progress.TotalDurabilityCredits, progress.TotalWalkSpeedCredits);
-                int bonusPercent = CalculateArmorDurabilityBonusPercent(progress.TotalDurabilityCredits, player.Entity);
-                CheckMercilessUnlock(player);
-                UpdateSkillActivityDay(playerUid, "armor");
-
-                return TextCommandResult.Success($"Set {level} credits per stream on {toolName}. Total durability: {progress.TotalDurabilityCredits}/{MaxArmorDurabilityPercent} (+{bonusPercent}% durability).");
-            }
-            else
-            {
-                if (level > MaxArmorDurabilityPercent)
-                    return TextCommandResult.Error($"Credits cannot exceed max ({MaxArmorDurabilityPercent}).");
-
-                progress.TotalDurabilityCredits = level;
-                pendingArmorProgressSave = true;
-                ApplyArmorBonusesStatic(player, progress.TotalDurabilityCredits, progress.TotalWalkSpeedCredits);
-                int bonusPercent = CalculateArmorDurabilityBonusPercent(level, player.Entity);
-                CheckMercilessUnlock(player);
-                UpdateSkillActivityDay(playerUid, "armor");
-
-                return TextCommandResult.Success($"Armor durability credits set to {level} (+{bonusPercent}% durability).");
-            }
         }
 
         /// <summary>
@@ -1922,266 +1749,6 @@ namespace SeraphLeveling
             }
 
             return 0;
-        }
-
-        /// <summary>
-        /// Handler for /trait armor command.
-        /// </summary>
-        private TextCommandResult OnTraitArmorCommand(TextCommandCallingArgs args)
-        {
-            var player = args.Caller.Player;
-            if (player?.Entity == null)
-            {
-                return TextCommandResult.Error("Could not find player entity");
-            }
-
-            string playerUid = player.PlayerUID;
-            var progress = ArmorProgress.GetOrAdd(playerUid, _ => new ArmorProgressData());
-
-            int durabilityBonus = CalculateArmorDurabilityBonusPercent(progress.TotalDurabilityCredits, player.Entity as EntityPlayer);
-            int walkSpeedBonus = CalculateArmorWalkSpeedBonusPercent(progress.TotalWalkSpeedCredits, player.Entity as EntityPlayer);
-
-            var sb = new StringBuilder();
-            sb.AppendLine($"Armor progression:");
-            sb.AppendLine($"  Durability: {progress.TotalDurabilityCredits} credits, +{durabilityBonus}% bonus (max {MaxArmorDurabilityPercent}%)");
-            sb.AppendLine($"  Walk Speed Penalty Reduction: {progress.TotalWalkSpeedCredits} credits, -{walkSpeedBonus}% (max {MaxArmorWalkSpeedPercent}%)");
-
-            if (progress.ArmorProgress.Count > 0)
-            {
-                sb.AppendLine("\nPer-armor progress:");
-                foreach (var kvp in progress.ArmorProgress.OrderByDescending(p => p.Value.TimeCredits + p.Value.DamageCredits + p.Value.RepairCredits))
-                {
-                    string armorName = kvp.Key;
-                    if (armorName.StartsWith("game:"))
-                        armorName = armorName.Substring(5);
-
-                    var armorProg = kvp.Value;
-                    sb.AppendLine($"  {armorName}:");
-                    sb.AppendLine($"    Time: {armorProg.TimeCredits} credits ({armorProg.SecondsWornInIncrement:F0}/{armorProg.CurrentTimeIncrementSize}s)");
-                    sb.AppendLine($"    Damage: {armorProg.DamageCredits} credits ({armorProg.DamageBlockedInIncrement:F1}/{armorProg.CurrentDamageIncrementSize})");
-                    sb.AppendLine($"    Repairs: {armorProg.RepairCredits} credits ({armorProg.RepairsInIncrement}/{armorProg.CurrentRepairIncrementSize})");
-                }
-            }
-            else
-            {
-                sb.AppendLine("\nNo armor progress yet. Wear armor to start!");
-            }
-
-            return TextCommandResult.Success(sb.ToString().TrimEnd());
-        }
-
-        /// <summary>
-        /// Handler for /trait armorlevel command.
-        /// Gets or sets the player's armor durability credits (level) directly.
-        /// Optionally specify an armor piece to set credits on that specific piece.
-        /// </summary>
-        private TextCommandResult OnTraitArmorLevelCommand(TextCommandCallingArgs args)
-        {
-            var player = args.Caller.Player as IServerPlayer;
-            if (player?.Entity == null)
-            {
-                return TextCommandResult.Error("Could not find player entity");
-            }
-
-            int? newCredits = (int?)args[0];
-
-            // If no value provided, show current level
-            if (!newCredits.HasValue)
-            {
-                var progress = ArmorProgress.GetOrAdd(player.PlayerUID, _ => new ArmorProgressData());
-                int currentBonus = CalculateArmorDurabilityBonusPercent(progress.TotalDurabilityCredits, player.Entity);
-                return TextCommandResult.Success($"Current armor durability level: {progress.TotalDurabilityCredits}/{MaxArmorDurabilityPercent} (+{currentBonus}% durability)");
-            }
-
-            string toolName = (string)args[1];
-            return SetArmorLevelForPlayer(player, newCredits.Value, toolName);
-        }
-
-        /// <summary>
-        /// Handler for /trait armorwalkspeedlevel command.
-        /// Gets or sets the player's armor walk speed penalty reduction credits (level) directly.
-        /// </summary>
-        private TextCommandResult OnTraitArmorWalkSpeedLevelCommand(TextCommandCallingArgs args)
-        {
-            var player = args.Caller.Player as IServerPlayer;
-            if (player?.Entity == null)
-            {
-                return TextCommandResult.Error("Could not find player entity");
-            }
-
-            string playerUid = player.PlayerUID;
-            var progress = ArmorProgress.GetOrAdd(playerUid, _ => new ArmorProgressData());
-
-            int? newCredits = (int?)args[0];
-
-            // If no value provided, show current level
-            if (!newCredits.HasValue)
-            {
-                int currentBonus = CalculateArmorWalkSpeedBonusPercent(progress.TotalWalkSpeedCredits, player.Entity);
-                return TextCommandResult.Success($"Current armor walk speed penalty reduction level: {progress.TotalWalkSpeedCredits}/{MaxArmorWalkSpeedPercent} (-{currentBonus}% penalty)");
-            }
-
-            if (newCredits.Value < 0)
-            {
-                return TextCommandResult.Error("Credits cannot be negative");
-            }
-
-            if (newCredits.Value > MaxArmorWalkSpeedPercent)
-            {
-                return TextCommandResult.Error($"Credits cannot exceed max ({MaxArmorWalkSpeedPercent})");
-            }
-
-            progress.TotalWalkSpeedCredits = newCredits.Value;
-            pendingArmorProgressSave = true;
-
-            ApplyArmorBonusesStatic(player, progress.TotalDurabilityCredits, progress.TotalWalkSpeedCredits);
-
-            int bonusPercent = CalculateArmorWalkSpeedBonusPercent(newCredits.Value, player.Entity);
-
-            UpdateSkillActivityDay(playerUid, "armor");
-
-            return TextCommandResult.Success($"Armor walk speed penalty reduction credits set to {newCredits.Value} (-{bonusPercent}% penalty).");
-        }
-
-        /// <summary>
-        /// Handler for /trait armordurabilitymax command.
-        /// </summary>
-        private TextCommandResult OnTraitArmorDurabilityMaxCommand(TextCommandCallingArgs args)
-        {
-            int? newValue = (int?)args[0];
-
-            if (newValue.HasValue)
-            {
-                if (newValue.Value < 1)
-                {
-                    return TextCommandResult.Error("Max armor durability percent must be at least 1");
-                }
-
-                MaxArmorDurabilityPercent = newValue.Value;
-                pendingConfigSave = true;
-
-                foreach (IServerPlayer player in ServerApi.World.AllOnlinePlayers)
-                {
-                    if (player?.Entity == null) continue;
-                    string playerUid = player.PlayerUID;
-                    var progress = ArmorProgress.GetOrAdd(playerUid, _ => new ArmorProgressData());
-                    ApplyArmorBonusesStatic(player, progress.TotalDurabilityCredits, progress.TotalWalkSpeedCredits);
-                }
-
-                return TextCommandResult.Success($"Max armor durability bonus set to +{MaxArmorDurabilityPercent}%. All player bonuses recalculated.");
-            }
-            else
-            {
-                return TextCommandResult.Success($"Current max armor durability bonus: +{MaxArmorDurabilityPercent}%");
-            }
-        }
-
-        /// <summary>
-        /// Handler for /trait armorwalkspeedmax command.
-        /// </summary>
-        private TextCommandResult OnTraitArmorWalkSpeedMaxCommand(TextCommandCallingArgs args)
-        {
-            int? newValue = (int?)args[0];
-
-            if (newValue.HasValue)
-            {
-                if (newValue.Value < 1)
-                {
-                    return TextCommandResult.Error("Max armor walk speed penalty reduction percent must be at least 1");
-                }
-
-                MaxArmorWalkSpeedPercent = newValue.Value;
-                pendingConfigSave = true;
-
-                foreach (IServerPlayer player in ServerApi.World.AllOnlinePlayers)
-                {
-                    if (player?.Entity == null) continue;
-                    string playerUid = player.PlayerUID;
-                    var progress = ArmorProgress.GetOrAdd(playerUid, _ => new ArmorProgressData());
-                    ApplyArmorBonusesStatic(player, progress.TotalDurabilityCredits, progress.TotalWalkSpeedCredits);
-                }
-
-                return TextCommandResult.Success($"Max armor walk speed penalty reduction set to -{MaxArmorWalkSpeedPercent}%. All player bonuses recalculated.");
-            }
-            else
-            {
-                return TextCommandResult.Success($"Current max armor walk speed penalty reduction: -{MaxArmorWalkSpeedPercent}%");
-            }
-        }
-
-        /// <summary>
-        /// Handler for /trait armortimebase command.
-        /// </summary>
-        private TextCommandResult OnTraitArmorTimeBaseCommand(TextCommandCallingArgs args)
-        {
-            int? newValue = (int?)args[0];
-
-            if (newValue.HasValue)
-            {
-                if (newValue.Value < 1)
-                {
-                    return TextCommandResult.Error("Base seconds must be at least 1");
-                }
-
-                BaseSecondsInArmorPerIncrement = newValue.Value;
-                pendingConfigSave = true;
-
-                return TextCommandResult.Success($"Base seconds in armor per increment set to {BaseSecondsInArmorPerIncrement} ({BaseSecondsInArmorPerIncrement / 3600f:F1} hours).");
-            }
-            else
-            {
-                return TextCommandResult.Success($"Current base seconds in armor: {BaseSecondsInArmorPerIncrement} ({BaseSecondsInArmorPerIncrement / 3600f:F1} hours)\nIncrement step: +{ArmorTimeIncrementStep} ({ArmorTimeIncrementStep / 3600f:F1} hours)");
-            }
-        }
-
-        /// <summary>
-        /// Handler for /trait armordamagebase command.
-        /// </summary>
-        private TextCommandResult OnTraitArmorDamageBaseCommand(TextCommandCallingArgs args)
-        {
-            int? newValue = (int?)args[0];
-
-            if (newValue.HasValue)
-            {
-                if (newValue.Value < 1)
-                {
-                    return TextCommandResult.Error("Base damage must be at least 1");
-                }
-
-                BaseDamageBlockedPerIncrement = newValue.Value;
-                pendingConfigSave = true;
-
-                return TextCommandResult.Success($"Base damage blocked per increment set to {BaseDamageBlockedPerIncrement}.");
-            }
-            else
-            {
-                return TextCommandResult.Success($"Current base damage blocked: {BaseDamageBlockedPerIncrement}\nIncrement step: +{ArmorDamageIncrementStep}");
-            }
-        }
-
-        /// <summary>
-        /// Handler for /trait armorrepairbase command.
-        /// </summary>
-        private TextCommandResult OnTraitArmorRepairBaseCommand(TextCommandCallingArgs args)
-        {
-            int? newValue = (int?)args[0];
-
-            if (newValue.HasValue)
-            {
-                if (newValue.Value < 1)
-                {
-                    return TextCommandResult.Error("Base repairs must be at least 1");
-                }
-
-                BaseRepairsPerIncrement = newValue.Value;
-                pendingConfigSave = true;
-
-                return TextCommandResult.Success($"Base repairs per increment set to {BaseRepairsPerIncrement}.");
-            }
-            else
-            {
-                return TextCommandResult.Success($"Current base repairs: {BaseRepairsPerIncrement}\nIncrement step: +{ArmorRepairIncrementStep}");
-            }
         }
 
         /// <summary>
@@ -2560,113 +2127,6 @@ namespace SeraphLeveling
         }
 
         /// <summary>
-        /// Apply armor bonuses to a player.
-        /// Stats are always applied (they're not persistent). WatchedAttributes only sync when values change.
-        /// </summary>
-        public static void ApplyArmorBonusesStatic(IServerPlayer player, int durabilityCredits, int walkSpeedCredits)
-        {
-            if (player?.Entity == null) return;
-
-            // Get the full armor progress data for optional features
-            string playerUid = player.PlayerUID;
-            ArmorProgress.TryGetValue(playerUid, out var armorProgressData);
-
-            // Use cached vanilla traits if available, otherwise fall back to direct check
-            var cache = GetCachedTraits(playerUid);
-            bool hasVanillaSoldier = cache?.HasSoldier ?? PlayerHasVanillaSoldierForArmor(player.Entity);
-
-            // Calculate durability bonus (reduces armor damage taken)
-            int durabilityBonus = CalculateArmorDurabilityBonusPercent(durabilityCredits, player.Entity);
-            // Calculate walk speed penalty reduction
-            int walkSpeedBonus = CalculateArmorWalkSpeedBonusPercent(walkSpeedCredits, player.Entity);
-
-            // Always apply stats (they're not persistent and need to be set on every join)
-            // armorDurabilityLoss blends as WeightedSum over a base of 1, so this is
-            // a delta and not a multiplier: vanilla Soldier stores -0.15 and vanilla
-            // Mender -0.25. A negative value means less durability lost.
-            float durabilityReduction = -(durabilityBonus * 0.01f);
-            player.Entity.Stats.Set("armorDurabilityLoss", ARMOR_DURABILITY_STAT_CODE, durabilityReduction, false);
-
-            // Reduce armor walk speed penalty using armorWalkSpeedAffectedness
-            // Negative values reduce the penalty (e.g., -0.25 = 25% less armor penalty)
-            // Base value is 1.0, so setting -0.5 gives 1.0 + (-0.5) = 0.5 (50% of penalty applied)
-            float armorWalkSpeedReduction = -(walkSpeedBonus * 0.01f);
-            player.Entity.Stats["armorWalkSpeedAffectedness"].Set(ARMOR_WALKSPEED_STAT_CODE, armorWalkSpeedReduction);
-
-            // Apply optional armor features if enabled
-            if (EnableArmorHungerReduction && armorProgressData != null)
-            {
-                int hungerReductionCredits = armorProgressData.TotalHungerReductionCredits;
-                int hungerReductionBonus = Math.Min(hungerReductionCredits, MaxArmorHungerReductionPercent);
-                // hungerrate is a multiplier: lower = slower hunger drain
-                float hungerMultiplier = -(hungerReductionBonus * 0.01f);
-                player.Entity.Stats.Set("hungerrate", "sitArmorHunger", hungerMultiplier, false);
-                player.Entity.WatchedAttributes.SetInt(WATCHED_ARMOR_HUNGER_REDUCTION, hungerReductionBonus);
-            }
-
-            if (EnableArmorHealingBonus && armorProgressData != null)
-            {
-                int healingCredits = armorProgressData.TotalHealingCredits;
-                int healingBonus = Math.Min(healingCredits, MaxArmorHealingPercent);
-                // The stat EntityPlayer registers is "healingeffectivness", missing an
-                // e. Poultices, healing items and the character sheet all read that
-                // spelling, so anything written to "healingeffectivenesstypical" is
-                // simply never looked at.
-                float healingModifier = healingBonus * 0.01f;
-                player.Entity.Stats.Set("healingeffectivness", "sitArmorHealing", healingModifier, false);
-                player.Entity.WatchedAttributes.SetInt(WATCHED_ARMOR_HEALING_BONUS, healingBonus);
-            }
-
-            // Debug: Log the stat values
-            float blendedValue = player.Entity.Stats.GetBlended("armorWalkSpeedAffectedness");
-            ServerApi.Logger.Debug($"[SeraphLeveling] armorWalkSpeedAffectedness: set modifier {armorWalkSpeedReduction:F2}, blended value {blendedValue:F2}");
-
-            // Force WearableStats to recalculate by triggering slot modified
-            var charInv = player.InventoryManager?.GetOwnInventory(GlobalConstants.characterInvClassName);
-            if (charInv != null)
-            {
-                foreach (var slot in charInv)
-                {
-                    if (slot?.Itemstack != null)
-                    {
-                        slot.MarkDirty();
-                        break;
-                    }
-                }
-            }
-
-            // Check if any values have changed before updating WatchedAttributes
-            var watchedAttrs = player.Entity.WatchedAttributes;
-            int oldDurabilityLevel = watchedAttrs.GetInt(WATCHED_ARMOR_DURABILITY_LEVEL, -1);
-            int oldWalkSpeedLevel = watchedAttrs.GetInt(WATCHED_ARMOR_WALKSPEED_LEVEL, -1);
-
-            bool valuesChanged = (oldDurabilityLevel != durabilityCredits) || (oldWalkSpeedLevel != walkSpeedCredits);
-
-            // Only update WatchedAttributes if values changed
-            if (valuesChanged)
-            {
-                // Sync to WatchedAttributes for client-side display
-                watchedAttrs.SetInt(WATCHED_ARMOR_DURABILITY_LEVEL, durabilityCredits);
-                watchedAttrs.SetInt(WATCHED_ARMOR_DURABILITY_BONUS, durabilityBonus);
-                watchedAttrs.SetInt(WATCHED_ARMOR_WALKSPEED_LEVEL, walkSpeedCredits);
-                watchedAttrs.SetInt(WATCHED_ARMOR_WALKSPEED_BONUS, walkSpeedBonus);
-                watchedAttrs.SetBool("sitHasVanillaSoldierArmor", hasVanillaSoldier);
-
-                // Add our trait to extraTraits only if player doesn't already have Soldier
-                UpdateExtraTraitStatic(player.Entity, ARMOR_TRAIT_CODE, (durabilityCredits > 0 || walkSpeedCredits > 0) && !hasVanillaSoldier);
-
-                watchedAttrs.MarkPathDirty(WATCHED_ARMOR_DURABILITY_LEVEL);
-            }
-
-            // Apply CO-specific bonuses if enabled (Big Head/Thick Skull, Leg Day)
-            if (IsCOCompatEnabled)
-            {
-                ApplyCOBigHeadThickSkull(player, durabilityCredits);
-                ApplyCOLegDay(player, durabilityCredits);
-            }
-        }
-
-        /// <summary>
         /// Determines the armor type from an item code.
         /// Returns: "light" (leather, gambeson), "chain", "brigandine", "scale", "plate", or null if not armor.
         /// </summary>
@@ -2756,23 +2216,8 @@ namespace SeraphLeveling
                             equippedArmor[slotId] = itemCode;
 
                             // Check for first-time equip bonus
-                            var armorProgress = ArmorProgress.GetOrAdd(playerUid, _ => new ArmorProgressData());
-                            var pieceProgress = armorProgress.GetArmorProgress(itemCode);
-
-                            if (!pieceProgress.HasBeenEquipped)
-                            {
-                                pieceProgress.HasBeenEquipped = true;
-                                int firstEquipBonus = GetFirstEquipBonus(armorType);
-                                armorProgress.TotalDurabilityCredits += firstEquipBonus;
-                                pendingArmorProgressSave = true;
-
-                                ServerApi.Logger.Debug($"[SeraphLeveling] Player {player.PlayerName} first-time equipped {itemCode}, +{firstEquipBonus}% durability bonus");
-
-                                ApplyArmorBonusesStatic(player, armorProgress.TotalDurabilityCredits, armorProgress.TotalWalkSpeedCredits);
-
-                                // Check for trait unlocks that depend on armor durability
-                                CheckMercilessUnlock(player);
-                            }
+                            AttributeModifierDefinitions.ArmorDurability.GetForPlayer(playerUid).ApplyFirstTimeBonus(player, itemCode, GetFirstEquipBonus(armorType));
+                            AttributeModifierDefinitions.ArmorWalkSpeed.GetForPlayer(playerUid).ApplyFirstTimeBonus(player, itemCode, GetFirstEquipBonus(armorType));
                         }
                     }
                 }
@@ -2799,7 +2244,6 @@ namespace SeraphLeveling
                 if (!player.Entity.Alive) continue;
 
                 string playerUid = player.PlayerUID;
-                var armorProgress = ArmorProgress.GetOrAdd(playerUid, _ => new ArmorProgressData());
                 var currentArmor = new Dictionary<string, string>();
 
                 // Get the player's currently equipped armor using character inventory
@@ -2829,117 +2273,17 @@ namespace SeraphLeveling
                 {
                     string slotId = kvp.Key;
                     string itemCode = kvp.Value;
-                    var pieceProgress = armorProgress.GetArmorProgress(itemCode);
 
                     // Check if this is new armor in this slot
                     if (!previousArmor.TryGetValue(slotId, out string prevArmor) || prevArmor != itemCode)
                     {
-                        // New armor equipped - check for first-time bonus
-                        if (!pieceProgress.HasBeenEquipped)
-                        {
-                            pieceProgress.HasBeenEquipped = true;
-                            string armorType = GetArmorType(itemCode);
-
-                            // Grant durability bonus
-                            int firstEquipBonus = GetFirstEquipBonus(armorType);
-                            int oldDurability = armorProgress.TotalDurabilityCredits;
-                            armorProgress.TotalDurabilityCredits = Math.Min(armorProgress.TotalDurabilityCredits + firstEquipBonus, MaxArmorDurabilityPercent);
-                            int actualDurabilityBonus = armorProgress.TotalDurabilityCredits - oldDurability;
-
-                            // Grant walk speed penalty reduction bonus (same values as durability)
-                            int walkSpeedEquipBonus = GetFirstEquipWalkSpeedBonus(armorType);
-                            int oldWalkSpeed = armorProgress.TotalWalkSpeedCredits;
-                            armorProgress.TotalWalkSpeedCredits = Math.Min(armorProgress.TotalWalkSpeedCredits + walkSpeedEquipBonus, MaxArmorWalkSpeedPercent);
-                            int actualWalkSpeedBonus = armorProgress.TotalWalkSpeedCredits - oldWalkSpeed;
-
-                            pendingArmorProgressSave = true;
-                            UpdateSkillActivityDay(playerUid, "armor");
-
-                            ApplyArmorBonusesStatic(player, armorProgress.TotalDurabilityCredits, armorProgress.TotalWalkSpeedCredits);
-
-                            // Send message with both bonuses
-                            if (actualDurabilityBonus > 0 || actualWalkSpeedBonus > 0)
-                            {
-                                NotifyLevelUp(player,
-                                    Lang.Get("seraphleveling:message-armor-first-equip-both", actualDurabilityBonus, actualWalkSpeedBonus));
-                            }
-
-                            // Check for trait unlocks that depend on armor durability
-                            CheckMercilessUnlock(player);
-                        }
+                        AttributeModifierDefinitions.ArmorDurability.GetForPlayer(playerUid).ApplyFirstTimeBonus(player, itemCode, GetFirstEquipBonus(GetArmorType(itemCode)));
+                        AttributeModifierDefinitions.ArmorWalkSpeed.GetForPlayer(playerUid).ApplyFirstTimeBonus(player, itemCode, GetFirstEquipBonus(GetArmorType(itemCode)));
                     }
-
-                    // Track time worn for walk speed credits (only if not at max for any time-based stat)
-                    bool hasRoomForWalkSpeed = armorProgress.TotalWalkSpeedCredits < MaxArmorWalkSpeedPercent;
-                    bool hasRoomForHunger = EnableArmorHungerReduction && armorProgress.TotalHungerReductionCredits < MaxArmorHungerReductionPercent;
-                    bool hasRoomForHealing = EnableArmorHealingBonus && armorProgress.TotalHealingCredits < MaxArmorHealingPercent;
-
-                    if (hasRoomForWalkSpeed || hasRoomForHunger || hasRoomForHealing)
-                    {
-                        int oldWalkSpeedCredits = armorProgress.TotalWalkSpeedCredits;
-                        int oldHungerCredits = armorProgress.TotalHungerReductionCredits;
-                        int oldHealingCredits = armorProgress.TotalHealingCredits;
-
-                        // Add 1 second (tick interval) to this armor piece's time
-                        // Apply sleep buff multiplier if active
-                        float modifiedTime = ApplyXPMultiplier(playerUid, 1f);
-                        pieceProgress.SecondsWornInIncrement += modifiedTime;
-
-                        // Check if we've earned any new time credits
-                        while (pieceProgress.SecondsWornInIncrement >= pieceProgress.CurrentTimeIncrementSize)
-                        {
-                            bool anyEarned = false;
-
-                            // Award walk speed credit if not at max
-                            if (armorProgress.TotalWalkSpeedCredits < MaxArmorWalkSpeedPercent)
-                            {
-                                pieceProgress.TimeCredits++;
-                                armorProgress.TotalWalkSpeedCredits++;
-                                anyEarned = true;
-                            }
-
-                            // Award hunger reduction credit if feature enabled and not at max
-                            if (EnableArmorHungerReduction && armorProgress.TotalHungerReductionCredits < MaxArmorHungerReductionPercent)
-                            {
-                                armorProgress.TotalHungerReductionCredits++;
-                                anyEarned = true;
-                            }
-
-                            // Award healing credit if feature enabled and not at max
-                            if (EnableArmorHealingBonus && armorProgress.TotalHealingCredits < MaxArmorHealingPercent)
-                            {
-                                armorProgress.TotalHealingCredits++;
-                                anyEarned = true;
-                            }
-
-                            if (!anyEarned) break; // All time-based stats are at max
-
-                            pieceProgress.SecondsWornInIncrement -= pieceProgress.CurrentTimeIncrementSize;
-                            pieceProgress.CurrentTimeIncrementSize += ArmorTimeIncrementStep;
-
-                            ServerApi.Logger.Debug($"[SeraphLeveling] Player {player.PlayerName} earned time credit {pieceProgress.TimeCredits} with {itemCode}");
-                        }
-
-                        bool creditsChanged = (armorProgress.TotalWalkSpeedCredits > oldWalkSpeedCredits) ||
-                                               (armorProgress.TotalHungerReductionCredits > oldHungerCredits) ||
-                                               (armorProgress.TotalHealingCredits > oldHealingCredits);
-
-                        if (creditsChanged)
-                        {
-                            pendingArmorProgressSave = true;
-                            UpdateSkillActivityDay(playerUid, "armor");
-                            ApplyArmorBonusesStatic(player, armorProgress.TotalDurabilityCredits, armorProgress.TotalWalkSpeedCredits);
-
-                            // Notify player of level up (only for walk speed, as it's the primary stat)
-                            if (armorProgress.TotalWalkSpeedCredits > oldWalkSpeedCredits)
-                            {
-                                NotifyLevelUp(player,
-                                    Lang.Get("seraphleveling:message-armor-time-level-up", armorProgress.TotalWalkSpeedCredits));
-                            }
-                        }
-                    }
+                    AttributeModifierDefinitions.ArmorWalkSpeed.GetForPlayer(playerUid).DoEvent(player, itemCode, 1f);
+                    AttributeModifierDefinitions.ArmorHealing.GetForPlayer(playerUid).DoEvent(player, itemCode, 1f);
+                    AttributeModifierDefinitions.ArmorHungerRate.GetForPlayer(playerUid).DoEvent(player, itemCode, 1f);
                 }
-
                 // Update the equipped armor tracking
                 playerEquippedArmor[playerUid] = currentArmor;
             }
@@ -2953,44 +2297,9 @@ namespace SeraphLeveling
             if (player?.Entity == null || string.IsNullOrEmpty(armorCode)) return;
 
             string playerUid = player.PlayerUID;
-            var armorProgress = ArmorProgress.GetOrAdd(playerUid, _ => new ArmorProgressData());
 
-            // Skip if already at max durability
-            if (armorProgress.TotalDurabilityCredits >= MaxArmorDurabilityPercent) return;
 
-            var pieceProgress = armorProgress.GetArmorProgress(armorCode);
-            int oldDurabilityCredits = armorProgress.TotalDurabilityCredits;
-
-            // Apply sleep buff multiplier if active
-            float modifiedDamage = ApplyXPMultiplier(playerUid, damageBlocked);
-            pieceProgress.DamageBlockedInIncrement += modifiedDamage;
-
-            // Check if we've earned any new damage credits
-            while (pieceProgress.DamageBlockedInIncrement >= pieceProgress.CurrentDamageIncrementSize &&
-                   armorProgress.TotalDurabilityCredits < MaxArmorDurabilityPercent)
-            {
-                pieceProgress.DamageCredits++;
-                armorProgress.TotalDurabilityCredits++;
-                pieceProgress.DamageBlockedInIncrement -= pieceProgress.CurrentDamageIncrementSize;
-                pieceProgress.CurrentDamageIncrementSize += ArmorDamageIncrementStep;
-
-                ServerApi.Logger.Debug($"[SeraphLeveling] Player {player.PlayerName} earned damage credit {pieceProgress.DamageCredits} with {armorCode}");
-            }
-
-            pendingArmorProgressSave = true;
-
-            if (armorProgress.TotalDurabilityCredits > oldDurabilityCredits)
-            {
-                UpdateSkillActivityDay(playerUid, "armor");
-                ApplyArmorBonusesStatic(player, armorProgress.TotalDurabilityCredits, armorProgress.TotalWalkSpeedCredits);
-
-                // Notify player of level up with raw improvement (shows progress even when capped)
-                NotifyLevelUp(player,
-                    Lang.Get("seraphleveling:message-armor-damage-level-up", armorProgress.TotalDurabilityCredits, armorProgress.TotalDurabilityCredits));
-
-                // Check for trait unlocks that depend on armor durability
-                CheckMercilessUnlock(player);
-            }
+            AttributeModifierDefinitions.ArmorDurability.GetForPlayer(playerUid).DoEvent(player, armorCode, damageBlocked, AttributeModifierDefinitions.ArmorDurabilityProgressTypes.DamageBlocked);
         }
 
         /// <summary>
@@ -3001,42 +2310,7 @@ namespace SeraphLeveling
             if (player?.Entity == null || string.IsNullOrEmpty(armorCode)) return;
 
             string playerUid = player.PlayerUID;
-            var armorProgress = ArmorProgress.GetOrAdd(playerUid, _ => new ArmorProgressData());
-
-            // Skip if already at max durability
-            if (armorProgress.TotalDurabilityCredits >= MaxArmorDurabilityPercent) return;
-
-            var pieceProgress = armorProgress.GetArmorProgress(armorCode);
-            int oldDurabilityCredits = armorProgress.TotalDurabilityCredits;
-
-            pieceProgress.RepairsInIncrement++;
-
-            // Check if we've earned a repair credit
-            while (pieceProgress.RepairsInIncrement >= pieceProgress.CurrentRepairIncrementSize &&
-                   armorProgress.TotalDurabilityCredits < MaxArmorDurabilityPercent)
-            {
-                pieceProgress.RepairCredits++;
-                armorProgress.TotalDurabilityCredits++;
-                pieceProgress.RepairsInIncrement -= pieceProgress.CurrentRepairIncrementSize;
-                pieceProgress.CurrentRepairIncrementSize += ArmorRepairIncrementStep;
-
-                ServerApi.Logger.Debug($"[SeraphLeveling] Player {player.PlayerName} earned repair credit {pieceProgress.RepairCredits} with {armorCode}");
-            }
-
-            pendingArmorProgressSave = true;
-
-            if (armorProgress.TotalDurabilityCredits > oldDurabilityCredits)
-            {
-                UpdateSkillActivityDay(playerUid, "armor");
-                ApplyArmorBonusesStatic(player, armorProgress.TotalDurabilityCredits, armorProgress.TotalWalkSpeedCredits);
-
-                // Notify player of level up with raw improvement (shows progress even when capped)
-                NotifyLevelUp(player,
-                    Lang.Get("seraphleveling:message-armor-repair-level-up", armorProgress.TotalDurabilityCredits, armorProgress.TotalDurabilityCredits));
-
-                // Check for trait unlocks that depend on armor durability
-                CheckMercilessUnlock(player);
-            }
+            AttributeModifierDefinitions.ArmorDurability.GetForPlayer(playerUid).DoEvent(player, armorCode, 1, AttributeModifierDefinitions.ArmorDurabilityProgressTypes.RepairProgress);
         }
 
         /// <summary>
@@ -3075,8 +2349,7 @@ namespace SeraphLeveling
             string playerUid = byPlayer.PlayerUID;
 
             // Get or create player progress data
-            var playerProgress = AttributeModifierDefinitions.MiningSpeed.GetForPlayer(playerUid);
-            playerProgress.DoEvent(byPlayer, pickaxeCode, points);
+            AttributeModifierDefinitions.MiningSpeed.GetForPlayer(playerUid).DoEvent(byPlayer, pickaxeCode, points);
         }
 
         /// <summary>
@@ -3296,14 +2569,6 @@ namespace SeraphLeveling
                 definition.HandleLogin(byPlayer);
             }
 
-            // Apply armor bonuses (Stats always applied, WatchedAttributes only sync if changed)
-            var armorProg = ArmorProgress.GetOrAdd(playerUid, _ => new ArmorProgressData());
-            ApplyArmorBonusesStatic(byPlayer, armorProg.TotalDurabilityCredits, armorProg.TotalWalkSpeedCredits);
-            if (armorProg.TotalDurabilityCredits > 0 || armorProg.TotalWalkSpeedCredits > 0)
-            {
-                ServerApi.Logger.Debug($"[SeraphLeveling] Applied armor bonuses: +{armorProg.TotalDurabilityCredits}% durability, -{armorProg.TotalWalkSpeedCredits}% walk speed penalty to player {byPlayer.PlayerName}");
-            }
-
             // Apply mender bonus
             var menderProg = MenderProgress.GetOrAdd(playerUid, _ => new MenderProgressData
             {
@@ -3314,14 +2579,6 @@ namespace SeraphLeveling
             if (menderCredits > 0)
             {
                 ServerApi.Logger.Debug($"[SeraphLeveling] Applied mender bonus +{menderCredits}% to player {byPlayer.PlayerName}");
-            }
-
-            // Apply merciless unlock
-            var mercilessProg = MercilessProgress.GetOrAdd(playerUid, _ => new MercilessProgressData());
-            if (mercilessProg.IsUnlocked)
-            {
-                ApplyMercilessBonusStatic(byPlayer, true);
-                ServerApi.Logger.Debug($"[SeraphLeveling] Applied merciless unlock to player {byPlayer.PlayerName}");
             }
 
             // Apply claustrophobic removal
@@ -4331,17 +3588,9 @@ namespace SeraphLeveling
                     }
                 }
 
-                if (pendingArmorProgressSave || !ArmorProgress.IsEmpty)
-                {
-                    PersistArmorProgress();
-                }
                 if (pendingMenderProgressSave || !MenderProgress.IsEmpty)
                 {
                     PersistMenderProgress();
-                }
-                if (pendingMercilessProgressSave || !MercilessProgress.IsEmpty)
-                {
-                    PersistMercilessProgress();
                 }
                 if (pendingClaustrophobicRemovalProgressSave || !ClaustrophobicRemovalProgress.IsEmpty)
                 {
@@ -4383,9 +3632,7 @@ namespace SeraphLeveling
                 def.PendingSave = false;
             }
 
-            ArmorProgress.Clear();
             MenderProgress.Clear();
-            MercilessProgress.Clear();
             ClaustrophobicRemovalProgress.Clear();
             lastPlayerPositions.Clear();
             lastSneakingPositions.Clear();
@@ -4395,9 +3642,7 @@ namespace SeraphLeveling
             SleepBuffMultiplier.Clear();
             LastSleepBuffApplyTick.Clear();
             pendingSleepBuffSave = false;
-            pendingArmorProgressSave = false;
             pendingMenderProgressSave = false;
-            pendingMercilessProgressSave = false;
             pendingClaustrophobicRemovalProgressSave = false;
             base.Dispose();
         }
@@ -4420,22 +3665,10 @@ namespace SeraphLeveling
                 }
             }
 
-            if (pendingArmorProgressSave || !ArmorProgress.IsEmpty)
-            {
-                PersistArmorProgress();
-                pendingArmorProgressSave = false;
-            }
-
             if (pendingMenderProgressSave || !MenderProgress.IsEmpty)
             {
                 PersistMenderProgress();
                 pendingMenderProgressSave = false;
-            }
-
-            if (pendingMercilessProgressSave || !MercilessProgress.IsEmpty)
-            {
-                PersistMercilessProgress();
-                pendingMercilessProgressSave = false;
             }
 
             if (pendingClaustrophobicRemovalProgressSave || !ClaustrophobicRemovalProgress.IsEmpty)
@@ -4620,6 +3853,111 @@ namespace SeraphLeveling
                         }
                     }
                 }
+
+                LoadProgress<ArmorProgressData>();
+                if (!ArmorProgressData.progressDict.IsEmpty)
+                {
+                    var snapshot = ArmorProgressData.progressDict.ToArray();
+                    ServerApi.Logger.Debug($"[SeraphLeveling] Porting legacy armor data for {snapshot.Length} players.");
+                    AttributeModifierDefinitions.ArmorDurability.LoadProgress(ServerApi);
+                    if (AttributeModifierDefinitions.ArmorDurability.ProgressDictionary.IsEmpty)
+                    {
+                        foreach (var kvp in snapshot)
+                        {
+                            var pd = AttributeModifierDefinitions.ArmorDurability.CreateProgressData();
+                            pd.TotalCredits = kvp.Value.TotalDurabilityCredits;
+                            var armorSnapshot = kvp.Value.ArmorProgress.ToArray();
+                            foreach (var ikvp in armorSnapshot)
+                            {
+                                var tp = pd.GetToolProgress(kvp.Key);
+                                tp.HasBeenUsed = ikvp.Value.HasBeenEquipped;
+                                tp.PartialCredit[AttributeModifierDefinitions.ArmorDurabilityProgressTypes.DamageBlocked] = new()
+                                {
+                                    Amount = ikvp.Value.DamageBlockedInIncrement,
+                                    IncrementSize = ikvp.Value.CurrentDamageIncrementSize,
+                                };
+                                tp.PartialCredit[AttributeModifierDefinitions.ArmorDurabilityProgressTypes.RepairProgress] = new()
+                                {
+                                    Amount = ikvp.Value.RepairsInIncrement,
+                                    IncrementSize = ikvp.Value.CurrentRepairIncrementSize,
+                                };
+                            }
+                            pd.LastActivityDay = kvp.Value.LastActivityDay;
+                            AttributeModifierDefinitions.ArmorDurability.ProgressDictionary.TryAdd(kvp.Key, pd);
+                            AttributeModifierDefinitions.ArmorDurability.PersistProgress(ServerApi);
+                        }
+                    }
+                    AttributeModifierDefinitions.ArmorWalkSpeed.LoadProgress(ServerApi);
+                    if (AttributeModifierDefinitions.ArmorWalkSpeed.ProgressDictionary.IsEmpty)
+                    {
+                        foreach (var kvp in snapshot)
+                        {
+                            var pd = AttributeModifierDefinitions.ArmorWalkSpeed.CreateProgressData();
+                            pd.TotalCredits = kvp.Value.TotalDurabilityCredits;
+                            var armorSnapshot = kvp.Value.ArmorProgress.ToArray();
+                            foreach (var ikvp in armorSnapshot)
+                            {
+                                var tp = pd.GetToolProgress(kvp.Key);
+                                tp.HasBeenUsed = ikvp.Value.HasBeenEquipped;
+                                tp.PartialCredit[default] = new()
+                                {
+                                    Amount = ikvp.Value.SecondsWornInIncrement,
+                                    IncrementSize = ikvp.Value.CurrentTimeIncrementSize,
+                                };
+                            }
+                            pd.LastActivityDay = kvp.Value.LastActivityDay;
+                            AttributeModifierDefinitions.ArmorWalkSpeed.ProgressDictionary.TryAdd(kvp.Key, pd);
+                            AttributeModifierDefinitions.ArmorWalkSpeed.PersistProgress(ServerApi);
+                        }
+                    }
+                    AttributeModifierDefinitions.ArmorHealing.LoadProgress(ServerApi);
+                    if (AttributeModifierDefinitions.ArmorHealing.ProgressDictionary.IsEmpty)
+                    {
+                        foreach (var kvp in snapshot)
+                        {
+                            var pd = AttributeModifierDefinitions.ArmorHealing.CreateProgressData();
+                            pd.TotalCredits = kvp.Value.TotalDurabilityCredits;
+                            var armorSnapshot = kvp.Value.ArmorProgress.ToArray();
+                            foreach (var ikvp in armorSnapshot)
+                            {
+                                var tp = pd.GetToolProgress(kvp.Key);
+                                tp.HasBeenUsed = ikvp.Value.HasBeenEquipped;
+                                tp.PartialCredit[default] = new()
+                                {
+                                    Amount = ikvp.Value.SecondsWornInIncrement,
+                                    IncrementSize = ikvp.Value.CurrentTimeIncrementSize,
+                                };
+                            }
+                            pd.LastActivityDay = kvp.Value.LastActivityDay;
+                            AttributeModifierDefinitions.ArmorHealing.ProgressDictionary.TryAdd(kvp.Key, pd);
+                            AttributeModifierDefinitions.ArmorHealing.PersistProgress(ServerApi);
+                        }
+                    }
+                    AttributeModifierDefinitions.ArmorHungerRate.LoadProgress(ServerApi);
+                    if (AttributeModifierDefinitions.ArmorHungerRate.ProgressDictionary.IsEmpty)
+                    {
+                        foreach (var kvp in snapshot)
+                        {
+                            var pd = AttributeModifierDefinitions.ArmorHungerRate.CreateProgressData();
+                            pd.TotalCredits = kvp.Value.TotalDurabilityCredits;
+                            var armorSnapshot = kvp.Value.ArmorProgress.ToArray();
+                            foreach (var ikvp in armorSnapshot)
+                            {
+                                var tp = pd.GetToolProgress(kvp.Key);
+                                tp.HasBeenUsed = ikvp.Value.HasBeenEquipped;
+                                tp.PartialCredit[default] = new()
+                                {
+                                    Amount = ikvp.Value.SecondsWornInIncrement,
+                                    IncrementSize = ikvp.Value.CurrentTimeIncrementSize,
+                                };
+                            }
+                            pd.LastActivityDay = kvp.Value.LastActivityDay;
+                            AttributeModifierDefinitions.ArmorHungerRate.ProgressDictionary.TryAdd(kvp.Key, pd);
+                            AttributeModifierDefinitions.ArmorHungerRate.PersistProgress(ServerApi);
+                        }
+                    }
+                }
+
                 PersistModList();
             }
             else
@@ -4744,15 +4082,6 @@ namespace SeraphLeveling
             {
                 ServerApi.Logger.Error($"[SeraphLeveling] Failed to load {description} progress: {ex.Message}");
             }
-        }
-
-        /// <summary>
-        /// Persist armor progress to world save data.
-        /// Version 1 format stores durability credits, walk speed credits, and per-armor progress.
-        /// </summary>
-        public static void PersistArmorProgress()
-        {
-            PersistProgress<ArmorProgressData>();
         }
 
         /// <summary>
@@ -5371,8 +4700,6 @@ namespace SeraphLeveling
             {
                 definition.ApplyBonusIfExists(player);
             }
-            if (ArmorProgress.TryGetValue(playerUid, out var armorProg))
-                ApplyArmorBonusesStatic(player, armorProg.TotalDurabilityCredits, armorProg.TotalWalkSpeedCredits);
             if (MenderProgress.TryGetValue(playerUid, out var menderProg))
                 ApplyMenderBonusStatic(player, menderProg.TotalCredits);
             if (IsCOCompatEnabled && COProgress.TryGetValue(playerUid, out var coProg))
@@ -5391,10 +4718,6 @@ namespace SeraphLeveling
 
             switch (skillType)
             {
-                case "armor":
-                    if (ArmorProgress.TryGetValue(playerUid, out var armorProg))
-                        armorProg.LastActivityDay = currentDay;
-                    break;
                 case "mender":
                     if (MenderProgress.TryGetValue(playerUid, out var menderProg))
                         menderProg.LastActivityDay = currentDay;
@@ -7564,54 +6887,6 @@ namespace SeraphLeveling
         // =========================================================================
 
         /// <summary>
-        /// Check and apply Merciless unlock if thresholds are met.
-        /// Requires 10% armor durability AND 15% melee damage.
-        /// </summary>
-        private static void CheckMercilessUnlock(IServerPlayer player)
-        {
-            if (player?.Entity == null) return;
-
-            string playerUid = player.PlayerUID;
-            var progress = MercilessProgress.GetOrAdd(playerUid, _ => new MercilessProgressData());
-
-            // Already unlocked
-            if (progress.IsUnlocked) return;
-
-            // Check armor durability threshold
-            var armorProgress = ArmorProgress.GetOrAdd(playerUid, _ => new ArmorProgressData());
-            if (armorProgress.TotalDurabilityCredits < MercilessArmorDurabilityThreshold) return;
-
-            // Check melee damage threshold
-            // var meleeProgress = MeleeProgress.GetOrAdd(playerUid, _ => new MeleeProgressData());
-            // if (meleeProgress.TotalCredits < MercilessMeleeDamageThreshold) return;
-
-            // Both thresholds met - unlock Merciless!
-            progress.IsUnlocked = true;
-            pendingMercilessProgressSave = true;
-
-            // Apply the trait
-            ApplyMercilessBonusStatic(player, true);
-
-            // Notify player
-            NotifyLevelUp(player,
-                Lang.Get("seraphleveling:message-merciless-unlock"));
-        }
-
-        /// <summary>
-        /// Apply Merciless trait (unlocks shortsword/shield crafting).
-        /// </summary>
-        private static void ApplyMercilessBonusStatic(IServerPlayer player, bool unlocked)
-        {
-            player.Entity.WatchedAttributes.SetBool(WATCHED_MERCILESS_UNLOCKED, unlocked);
-            UpdateExtraTraitStatic(player.Entity, MERCILESS_TRAIT_CODE, unlocked);
-
-            // IMPORTANT: Add "merciless" to extraTraits to unlock shortsword/shield recipes
-            // The game's recipe system checks extraTraits for dynamically granted traits
-            // that unlock recipes via requiresTrait (e.g., shortsword/shield require "merciless")
-            UpdateExtraTraitStatic(player.Entity, "merciless", unlocked);
-        }
-
-        /// <summary>
         /// Check and apply Claustrophobic removal if threshold is met (Hunter only).
         /// Requires 100% mining speed.
         /// </summary>
@@ -8053,29 +7328,6 @@ namespace SeraphLeveling
         }
 
         /// <summary>
-        /// Handler for /trait merciless command.
-        /// </summary>
-        private TextCommandResult OnTraitMercilessCommand(TextCommandCallingArgs args)
-        {
-            IServerPlayer player = args.Caller.Player as IServerPlayer;
-            if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
-
-            string playerUid = player.PlayerUID;
-            var progress = MercilessProgress.GetOrAdd(playerUid, _ => new MercilessProgressData());
-            var armorProgress = ArmorProgress.GetOrAdd(playerUid, _ => new ArmorProgressData());
-            // var meleeProgress = MeleeProgress.GetOrAdd(playerUid, _ => new MeleeProgressData());
-            int mptc = 0; // Just for now.
-
-            var sb = new StringBuilder();
-            sb.AppendLine($"Merciless trait: {(progress.IsUnlocked ? "UNLOCKED" : "Locked")}");
-            sb.AppendLine($"Requirements:");
-            sb.AppendLine($"  Armor durability: {armorProgress.TotalDurabilityCredits} / {MercilessArmorDurabilityThreshold} ({(armorProgress.TotalDurabilityCredits >= MercilessArmorDurabilityThreshold ? "✓" : "✗")})");
-            sb.AppendLine($"  Melee level: {mptc} / {MercilessMeleeDamageThreshold} ({(mptc >= MercilessMeleeDamageThreshold ? "✓" : "✗")})");
-
-            return TextCommandResult.Success(sb.ToString());
-        }
-
-        /// <summary>
         /// Handler for /trait claustrophobic command.
         /// </summary>
         private TextCommandResult OnTraitClaustrophobicCommand(TextCommandCallingArgs args)
@@ -8103,26 +7355,6 @@ namespace SeraphLeveling
             }
 
             return TextCommandResult.Success(sb.ToString());
-        }
-
-        /// <summary>
-        /// Handler for /trait mercilessunlock command.
-        /// </summary>
-        private TextCommandResult OnTraitMercilessUnlockCommand(TextCommandCallingArgs args)
-        {
-            IServerPlayer player = args.Caller.Player as IServerPlayer;
-            if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
-
-            bool unlock = (bool)args[0];
-
-            string playerUid = player.PlayerUID;
-            var progress = MercilessProgress.GetOrAdd(playerUid, _ => new MercilessProgressData());
-            progress.IsUnlocked = unlock;
-
-            pendingMercilessProgressSave = true;
-            ApplyMercilessBonusStatic(player, unlock);
-
-            return TextCommandResult.Success($"Merciless trait {(unlock ? "unlocked" : "locked")}.");
         }
 
         /// <summary>
@@ -8176,16 +7408,6 @@ namespace SeraphLeveling
                 definition.ResetProgress(player);
             }
 
-            // Reset Armor
-            if (ArmorProgress.TryGetValue(playerUid, out var armorProg))
-            {
-                armorProg.TotalDurabilityCredits = 0;
-                armorProg.TotalWalkSpeedCredits = 0;
-                armorProg.ArmorProgress.Clear();
-                pendingArmorProgressSave = true;
-            }
-            ApplyArmorBonusesStatic(player, 0, 0);
-
             // Reset Mender
             if (MenderProgress.TryGetValue(playerUid, out var menderProg))
             {
@@ -8195,14 +7417,6 @@ namespace SeraphLeveling
                 pendingMenderProgressSave = true;
             }
             ApplyMenderBonusStatic(player, 0);
-
-            // Reset Merciless
-            if (MercilessProgress.TryGetValue(playerUid, out var mercilessProg))
-            {
-                mercilessProg.IsUnlocked = false;
-                pendingMercilessProgressSave = true;
-            }
-            ApplyMercilessBonusStatic(player, false);
 
             // Reset Claustrophobic Removal
             if (ClaustrophobicRemovalProgress.TryGetValue(playerUid, out var claustrophobicProg))
@@ -8265,7 +7479,8 @@ namespace SeraphLeveling
 
             foreach (var kvp in LoadedAttributes)
             {
-                if (((dynamic)kvp).ProgressDictionary.TryGetValue(uid, out object data)) {
+                if (((dynamic)kvp).ProgressDictionary.TryGetValue(uid, out object data))
+                {
                     ex.Attributes[kvp.Id] = data;
                 }
             }
@@ -8395,15 +7610,6 @@ namespace SeraphLeveling
             }
 
             // Max Armor
-            int maxArmorDurabilityCredits = MaxArmorDurabilityPercent;
-            int maxArmorWalkSpeedCredits = MaxArmorWalkSpeedPercent;
-            var armorProg = ArmorProgress.GetOrAdd(playerUid, _ => new ArmorProgressData());
-            armorProg.TotalDurabilityCredits = maxArmorDurabilityCredits;
-            armorProg.TotalWalkSpeedCredits = maxArmorWalkSpeedCredits;
-            armorProg.ArmorProgress.Clear();
-            pendingArmorProgressSave = true;
-            ApplyArmorBonusesStatic(player, maxArmorDurabilityCredits, maxArmorWalkSpeedCredits);
-
             // Max Mender
             int maxMenderCredits = MaxMenderPercent;
             var menderProg = MenderProgress.GetOrAdd(playerUid, _ => new MenderProgressData());
@@ -8412,12 +7618,6 @@ namespace SeraphLeveling
             menderProg.CurrentIncrementSize = BaseMenderRepairsPerIncrement;
             pendingMenderProgressSave = true;
             ApplyMenderBonusStatic(player, maxMenderCredits);
-
-            // Unlock Merciless
-            var mercilessProg = MercilessProgress.GetOrAdd(playerUid, _ => new MercilessProgressData());
-            mercilessProg.IsUnlocked = true;
-            pendingMercilessProgressSave = true;
-            ApplyMercilessBonusStatic(player, true);
 
             // Remove Claustrophobic (if applicable)
             var claustrophobicProg = ClaustrophobicRemovalProgress.GetOrAdd(playerUid, _ => new ClaustrophobicRemovalProgressData());
@@ -8451,14 +7651,6 @@ namespace SeraphLeveling
             {
                 definition.ApplyTraitTestSuite1Command(player);
             }
-
-            // Armor (both durability and walkspeed tracks)
-            var armorProg = ArmorProgress.GetOrAdd(playerUid, _ => new ArmorProgressData());
-            armorProg.TotalDurabilityCredits = CREDITS;
-            armorProg.TotalWalkSpeedCredits = CREDITS;
-            armorProg.ArmorProgress.Clear();
-            pendingArmorProgressSave = true;
-            ApplyArmorBonusesStatic(player, CREDITS, CREDITS);
 
             // Mender
             var menderProg = MenderProgress.GetOrAdd(playerUid, _ => new MenderProgressData());
@@ -9284,24 +8476,6 @@ namespace SeraphLeveling
         }
 
         // =========================================================================
-        // MERCILESS TRAIT PERSISTENCE
-        // =========================================================================
-
-        /// <summary>
-        /// Persist merciless progress to world save data.
-        /// </summary>
-        public static void PersistMercilessProgress()
-        {
-            PersistProgress<MercilessProgressData>();
-        }
-
-        /// <summary>
-        /// Load merciless progress from world save data.
-        /// </summary>
-        private void LoadMercilessProgress()
-        {
-            LoadProgress<MercilessProgressData>();
-        }
 
         // =========================================================================
         // CLAUSTROPHOBIC REMOVAL TRAIT PERSISTENCE

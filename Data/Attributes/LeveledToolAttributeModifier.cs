@@ -533,6 +533,54 @@ namespace SeraphLeveling.Data.Attributes
             }
             return 0;
         }
+
+        public void ApplyfirstTimeBonus(IServerPlayer player, string toolCode, int score)
+        {
+            // Get the player-specific max credits (accounts for Weak/Claustrophobic penalties)
+            int maxCredits = Definition.GetMaxCredits(player.Entity);
+
+            // Skip all processing if already at max - completely invisible
+            if (TotalCredits >= maxCredits) return;
+
+            // Get or create progress for this specific tool type
+            var toolProgress = GetToolProgress(toolCode);
+            if (toolProgress.HasBeenUsed)
+            {
+                return;
+            }
+            toolProgress.HasBeenUsed = true;
+
+
+            int oldCredits = TotalCredits;
+
+            // Apply sleep buff multiplier to points
+            int modifiedPoints = SeraphLevelingModSystem.ApplyXPMultiplier(player.PlayerUID, score);
+
+            TotalCredits += modifiedPoints;
+            SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Player {player.PlayerName} earned credit {TotalCredits} with {toolCode} from first-time bonus.");
+
+            Definition.PendingSave = true;
+
+            // Update last activity day for skill decay
+            UpdateSkillActivityDay();
+
+            // If credits increased, update the stat and notify player
+            if (TotalCredits > oldCredits)
+            {
+                Definition.ApplyBonus(player, (PD)this);
+
+                // Notify player of level up with the level as the bonus (the raw mining speed improvement, etc)
+                // This shows the true progress even when negative traits are still being cancelled
+                ;
+                SeraphLevelingModSystem.NotifyLevelUp(player,
+                    Lang.Get($"seraphleveling:message-{Definition.SkillKey}-firstequip", TotalCredits, TotalCredits));
+
+                // Check for trait unlocks that depend on trait level
+                Definition.OnCreditsChanged(player, oldCredits, (PD)this);
+            }
+            var tp = GetToolProgress(toolCode);
+
+        }
         public void DoEvent(IServerPlayer player, string toolCode, float score, E scoreType = default)
         {
             // Get the player-specific max credits (accounts for Weak/Claustrophobic penalties)

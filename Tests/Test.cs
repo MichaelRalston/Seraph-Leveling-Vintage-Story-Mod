@@ -588,18 +588,19 @@ namespace SeraphLeveling.Tests
             }
 
             // PERS-011: Armor data exists in dictionary
-            bool hasArmorData = SeraphLevelingModSystem.ArmorProgress.ContainsKey(playerUid);
+            bool hasArmorData = AttributeModifierDefinitions.ArmorDurability.ProgressDictionary.ContainsKey(playerUid);
             AssertTrue("PERS-011", "Armor data exists in dictionary", hasArmorData, "exists", "missing");
 
             // PERS-012: Armor durability WatchedAttributes matches dictionary
             if (hasArmorData)
             {
-                var armorData = SeraphLevelingModSystem.ArmorProgress[playerUid];
+                var armorData = AttributeModifierDefinitions.ArmorDurability.ProgressDictionary[playerUid];
                 int watchedDurability = watchedAttrs.GetInt(SeraphLevelingModSystem.WATCHED_ARMOR_DURABILITY_LEVEL, -999);
-                AssertEqual("PERS-012", "Armor durability synced to WatchedAttributes", armorData.TotalDurabilityCredits, watchedDurability);
+                AssertEqual("PERS-012", "Armor durability synced to WatchedAttributes", armorData.TotalCredits, watchedDurability);
 
+                var armorWalkData = AttributeModifierDefinitions.ArmorWalkSpeed.ProgressDictionary[playerUid];
                 int watchedWalkSpeed = watchedAttrs.GetInt(SeraphLevelingModSystem.WATCHED_ARMOR_WALKSPEED_LEVEL, -999);
-                AssertEqual("PERS-013", "Armor walk speed synced to WatchedAttributes", armorData.TotalWalkSpeedCredits, watchedWalkSpeed);
+                AssertEqual("PERS-013", "Armor walk speed synced to WatchedAttributes", armorWalkData.TotalCredits, watchedWalkSpeed);
             }
 
             // PERS-014: Mining data structure integrity
@@ -632,11 +633,10 @@ namespace SeraphLeveling.Tests
             // PERS-017: Armor data structure integrity
             if (hasArmorData)
             {
-                var armorData = SeraphLevelingModSystem.ArmorProgress[playerUid];
-                bool durabilityValid = armorData.TotalDurabilityCredits >= 0;
-                bool walkSpeedValid = armorData.TotalWalkSpeedCredits >= 0;
-                bool armorPiecesValid = armorData.ArmorProgress != null;
-                AssertTrue("PERS-017", "Armor data structure valid", durabilityValid && walkSpeedValid && armorPiecesValid, "valid", "corrupted");
+                var armorData = AttributeModifierDefinitions.ArmorDurability.ProgressDictionary[playerUid];
+                bool durabilityValid = armorData.TotalCredits >= 0;
+                bool armorPiecesValid = armorData.ToolProgress != null;
+                AssertTrue("PERS-017", "Armor data structure valid", durabilityValid && armorPiecesValid, "valid", "corrupted");
             }
         }
 

@@ -39,6 +39,15 @@ namespace SeraphLeveling.Data.Attributes
             Trait = new(() => Traits.TraitDefinitions.Bowyer),
         };
 
+        public static readonly MercilessAttributeModifierDefinition Merciless = new()
+        {
+            Id = "merciless",
+            SkillKey = "merciless",
+            PersistenceHeader = "MRC",
+            Name = "Merciless",
+            Trait = new(() => Traits.TraitDefinitions.Merciless)
+        };
+
         public static readonly GenericLeveledAttributeModifierDefinition WalkingSpeed = new()
         {
             Id = "walkingSpeed",
@@ -325,6 +334,89 @@ namespace SeraphLeveling.Data.Attributes
             Name = "HardyHealth",
             ModifierAmount = 5,
             Trait = new(() => Traits.TraitDefinitions.Hardy),
+        };
+
+        public enum ArmorDurabilityProgressTypes
+        {
+            DamageBlocked,
+            RepairProgress,
+        };
+
+        public static readonly ConcurrentDictionary<ArmorDurabilityProgressTypes, IncrementData> ArmorDurabilityIncrementData = new()
+        {
+            [ArmorDurabilityProgressTypes.DamageBlocked] = new IncrementData
+            {
+                BaseIncrement = 100,
+                IncrementStep = 100,
+                IncrementUnits = "damage",
+            },
+            [ArmorDurabilityProgressTypes.RepairProgress] = new IncrementData
+            {
+                IncrementUnits = "repairs",
+                BaseIncrement = 1,
+                IncrementStep = 1,
+            },
+        };
+        public static readonly ArmorModifierDefinition<ArmorDurabilityProgressTypes> ArmorDurability = new()
+        {
+            Id = "armorDurability",
+            Name = "ArmorDurability",
+            Stat = "% durability bonus",
+            SkillKey = "armordurability",
+            PersistenceHeader = "ARD",
+            Direction = "-",
+            StatName = "armorDurabilityLoss",
+            Tool = ToolDefinitions.Armor,
+            IncrementData = ArmorDurabilityIncrementData,
+            GlobalMaxCredits = 50,
+        };
+
+        public static readonly ConcurrentDictionary<SimpleToolProgress, IncrementData> ArmorWornIncrementData = new()
+        {
+            [default] = new IncrementData
+            {
+                IncrementUnits = "seconds",
+                BaseIncrement = 2880,
+                IncrementStep = 2880,
+            },
+        };
+        public static readonly ArmorModifierDefinition<SimpleToolProgress> ArmorWalkSpeed = new()
+        {
+            Id = "armorWalkSpeed",
+            Name = "ArmorWalkSpeed",
+            Stat = "% armor walk speed penalty reduction",
+            SkillKey = "armorwalkspeed",
+            PersistenceHeader = "ARW",
+            Direction = "-",
+            StatName = "armorWalkSpeedAffectedness",
+            Tool = ToolDefinitions.Armor,
+            IncrementData = ArmorWornIncrementData,
+            GlobalMaxCredits = 50,
+        };
+        public static readonly ArmorModifierDefinition<SimpleToolProgress> ArmorHungerRate = new()
+        {
+            Id = "armorHungerRate",
+            Name = "ArmorHungerRate",
+            Stat = "% armor hunger rate penalty reduction",
+            SkillKey = "armorhungerrate",
+            PersistenceHeader = "ARH",
+            Direction = "-",
+            StatName = "hungerrate",
+            Tool = ToolDefinitions.Armor,
+            IncrementData = ArmorWornIncrementData,
+            GlobalMaxCredits = 50,
+        };
+        public static readonly ArmorModifierDefinition<SimpleToolProgress> ArmorHealing = new()
+        {
+            Id = "armorHealing",
+            Name = "ArmorHealing",
+            Stat = "% armor healing effectiveness",
+            SkillKey = "armorhealing",
+            PersistenceHeader = "ARH",
+            StatName = "healingeffectivness", // yes, misspelled - that's correct.
+            Tool = ToolDefinitions.Armor,
+            IncrementData = ArmorWornIncrementData,
+            GlobalMaxCredits = 25,
         };
     }
 }

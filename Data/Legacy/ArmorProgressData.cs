@@ -243,10 +243,11 @@ namespace SeraphLeveling.Data.Legacy
         public static string SAVE_KEY => "sitArmorProgress";
         public static string Description => "armor";
         public static void MarkForSave() {
-            SeraphLevelingModSystem.pendingArmorProgressSave = true;
         }
+
+        public static ConcurrentDictionary<string, ArmorProgressData> progressDict = [];
         public static ref ConcurrentDictionary<string, ArmorProgressData> ProgressDictionary() {
-            return ref SeraphLevelingModSystem.ArmorProgress;
+            return ref progressDict;
         }
     }
 }
