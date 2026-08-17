@@ -13,6 +13,7 @@ namespace SeraphLeveling.Data.Traits
 {
     public record class TraitDefinition
     {
+        private const bool DEBUG_SHOW_BROKEN_L10N = true;
         private static readonly List<string> DebugTraits = [];
 
         private void DebugLog(bool client, bool server, string message)
@@ -146,7 +147,7 @@ namespace SeraphLeveling.Data.Traits
                     {
                         string retVal = Lang.Get(modKey, combinedBonus);
                         DebugLog(true, false, $"      [Verdus] Calling BuildTraitText for trait {Id}: attr={mod.Attribute.Id}, key={mod.DynamicAttributeContentsKey}, lang token={retVal}");
-                        return retVal == modKey ? null : retVal;
+                        return DEBUG_SHOW_BROKEN_L10N || retVal != modKey ? retVal : null;
                     }
                     else
                     {
@@ -155,7 +156,7 @@ namespace SeraphLeveling.Data.Traits
                     }
                 }).Where(token => token != null));
                 string fullMessage = string.IsNullOrEmpty(contentText) ? "" : Lang.Get(CharacterSystemPatches.FULL_TRAIT_MESSAGE_KEY, headerText, contentText);
-                bool messageComplete = fullMessage != CharacterSystemPatches.FULL_TRAIT_MESSAGE_KEY;
+                bool messageComplete = DEBUG_SHOW_BROKEN_L10N || fullMessage != CharacterSystemPatches.FULL_TRAIT_MESSAGE_KEY;
                 DebugLog(true, false, $"   [Verdus] Calling BuildTraitText for trait {Id}: headerText={headerText}");
                 DebugLog(true, false, $"   [Verdus] Calling BuildTraitText for trait {Id}: contentText={contentText}");
                 DebugLog(true, false, $"   [Verdus] Calling BuildTraitText for trait {Id}: fullMessage={fullMessage}");
