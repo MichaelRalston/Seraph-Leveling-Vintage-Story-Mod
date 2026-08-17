@@ -216,6 +216,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "mender",
             Attributes = [
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.Mender, 25)
             ]
         };
 

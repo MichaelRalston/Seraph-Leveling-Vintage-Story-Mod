@@ -282,10 +282,6 @@ namespace SeraphLeveling
         // MaxMenderPercent like every other class) and for inline display Replace.
         public const int VANILLA_MENDER_ARMOR_DURABILITY_BONUS = 25;
 
-        // Storage for mender progress
-        public static ConcurrentDictionary<string, MenderProgressData> MenderProgress = new ConcurrentDictionary<string, MenderProgressData>();
-        public static volatile bool pendingMenderProgressSave = false;
-
         // Durability tracking for repair detection - key is "playerUid_slotId", value is last known durability
         private static ConcurrentDictionary<string, int> TrackedItemDurabilities = new ConcurrentDictionary<string, int>();
 
@@ -410,10 +406,6 @@ namespace SeraphLeveling
 
         // Claustrophobic removal threshold
         public static int ClaustrophobicRemovalMiningThreshold = 100;  // 100% mining speed bonus required
-
-        // Storage for claustrophobic removal progress
-        public static ConcurrentDictionary<string, ClaustrophobicRemovalProgressData> ClaustrophobicRemovalProgress = new ConcurrentDictionary<string, ClaustrophobicRemovalProgressData>();
-        public static volatile bool pendingClaustrophobicRemovalProgressSave = false;
 
         // =========================================================================
         // NEGATIVE TRAIT CONSTANTS - Used for cancellation calculations
@@ -897,46 +889,6 @@ namespace SeraphLeveling
                     .RequiresPlayer()
                     .HandleWith(OnTraitTestWalkSpeedCommand)
                 .EndSubCommand()
-                // Mender trait commands
-                .BeginSubCommand("mender")
-                    .WithDescription("View your mender progression stats")
-                    .RequiresPrivilege(Privilege.chat)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitMenderCommand)
-                .EndSubCommand()
-                .BeginSubCommand("menderbase")
-                    .WithDescription("Get or set the base repairs per level (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalInt("repairs"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitMenderBaseCommand)
-                .EndSubCommand()
-                .BeginSubCommand("menderlevel")
-                    .WithDescription("Get or set your mender level (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalInt("level"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitMenderLevelCommand)
-                .EndSubCommand()
-                .BeginSubCommand("mendermax")
-                    .WithDescription("Get or set the max mender bonus percent (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalInt("percent"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitMenderMaxCommand)
-                .EndSubCommand()
-                // Claustrophobic removal commands
-                .BeginSubCommand("claustrophobic")
-                    .WithDescription("View your claustrophobic removal progress (Hunter only)")
-                    .RequiresPrivilege(Privilege.chat)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitClaustrophobicCommand)
-                .EndSubCommand()
-                .BeginSubCommand("claustrophobicunlock")
-                    .WithDescription("Manually set claustrophobic removed status (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.Bool("removed"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitClaustrophobicUnlockCommand)
-                .EndSubCommand()
                 // Reset all traits
                 .BeginSubCommand("reset")
                     .WithDescription("Reset all trait progression to 0 (admin only)")
@@ -1220,8 +1172,6 @@ namespace SeraphLeveling
             // Load config and progress data after save game is loaded
             api.Event.SaveGameLoaded += LoadConfig;
             api.Event.SaveGameLoaded += LoadAllProgress;
-            api.Event.SaveGameLoaded += LoadMenderProgress;
-            api.Event.SaveGameLoaded += LoadClaustrophobicRemovalProgress;
             api.Event.SaveGameLoaded += LoadCOProgress;
             api.Event.SaveGameLoaded += LoadSleepBuffData;
 
@@ -1376,9 +1326,6 @@ namespace SeraphLeveling
             {
                 definition.GetTraitAllCommandLine(player, sb);
             }
-
-            var menderProg = MenderProgress.GetOrAdd(playerUid, _ => new MenderProgressData { CurrentIncrementSize = BaseMenderRepairsPerIncrement });
-            sb.AppendLine($"Mender: {menderProg.TotalCredits}/{MaxMenderPercent} (+{menderProg.TotalCredits}% repair bonus)");
 
             // Unlock traits
             sb.AppendLine("\n--- Unlock Traits ---");
@@ -1561,27 +1508,7 @@ namespace SeraphLeveling
             // Traits without per-tool support — reject toolName if provided
             if (toolName != null)
                 return TextCommandResult.Error($"The '{traitName}' trait does not support per-tool level setting.");
-
-            string result;
-
-            switch (traitName)
-            {
-                case "mender":
-                    {
-                        if (level > MaxMenderPercent) return TextCommandResult.Error($"Level cannot exceed max ({MaxMenderPercent}).");
-                        var progress = MenderProgress.GetOrAdd(targetUid, _ => new MenderProgressData { CurrentIncrementSize = BaseMenderRepairsPerIncrement });
-                        progress.TotalCredits = level;
-                        pendingMenderProgressSave = true;
-                        ApplyMenderBonusStatic(targetPlayer, level);
-                        UpdateSkillActivityDay(targetUid, "mender");
-                        result = $"Mender level set to {level} (+{level}% repair) for {targetPlayer.PlayerName}.";
-                        break;
-                    }
-                default:
-                    return TextCommandResult.Error($"Unknown trait '{traitName}'.");
-            }
-
-            return TextCommandResult.Success(result);
+            return TextCommandResult.Error($"Unknown trait '{traitName}'.");
         }
 
         /// <summary>
@@ -1998,100 +1925,6 @@ namespace SeraphLeveling
                    characterClass.Equals("clockmaker", StringComparison.OrdinalIgnoreCase);
         }
 
-        /// <summary>
-        /// Checks if the player's class has the vanilla Civil trait (Tailor).
-        /// </summary>
-        public static bool PlayerHasVanillaCivil(EntityPlayer entity)
-        {
-            if (entity == null) return false;
-            string[] classTraits = entity.WatchedAttributes.GetStringArray("characterTraits", null);
-            if (classTraits != null)
-            {
-                foreach (string trait in classTraits)
-                {
-                    if (trait.Equals("civil", StringComparison.OrdinalIgnoreCase))
-                        return true;
-                }
-            }
-            string characterClass = entity.WatchedAttributes.GetString("characterClass", "");
-            return characterClass.Equals("tailor", StringComparison.OrdinalIgnoreCase);
-        }
-
-        /// <summary>
-        /// Checks if the player's class has the vanilla Weak trait (Tailor).
-        /// </summary>
-        public static bool PlayerHasVanillaWeak(EntityPlayer entity)
-        {
-            if (entity == null) return false;
-            string[] classTraits = entity.WatchedAttributes.GetStringArray("characterTraits", null);
-            if (classTraits != null)
-            {
-                foreach (string trait in classTraits)
-                {
-                    if (trait.Equals("weak", StringComparison.OrdinalIgnoreCase))
-                        return true;
-                }
-            }
-            string characterClass = entity.WatchedAttributes.GetString("characterClass", "");
-            return characterClass.Equals("tailor", StringComparison.OrdinalIgnoreCase);
-        }
-
-        /// <summary>
-        /// Checks if the player's class has the vanilla Kind trait (Tailor).
-        /// </summary>
-        public static bool PlayerHasVanillaKind(EntityPlayer entity)
-        {
-            if (entity == null) return false;
-            string[] classTraits = entity.WatchedAttributes.GetStringArray("characterTraits", null);
-            if (classTraits != null)
-            {
-                foreach (string trait in classTraits)
-                {
-                    if (trait.Equals("kind", StringComparison.OrdinalIgnoreCase))
-                        return true;
-                }
-            }
-            string characterClass = entity.WatchedAttributes.GetString("characterClass", "");
-            return characterClass.Equals("tailor", StringComparison.OrdinalIgnoreCase);
-        }
-
-        /// <summary>
-        /// Checks if the player's class has the vanilla Heavyhanded trait (Blackguard).
-        /// </summary>
-        public static bool PlayerHasVanillaHeavyhanded(EntityPlayer entity)
-        {
-            if (entity == null) return false;
-            string[] classTraits = entity.WatchedAttributes.GetStringArray("characterTraits", null);
-            if (classTraits != null)
-            {
-                foreach (string trait in classTraits)
-                {
-                    if (trait.Equals("heavyhanded", StringComparison.OrdinalIgnoreCase))
-                        return true;
-                }
-            }
-            string characterClass = entity.WatchedAttributes.GetString("characterClass", "");
-            return characterClass.Equals("blackguard", StringComparison.OrdinalIgnoreCase);
-        }
-
-        /// <summary>
-        /// Checks if the player's class has the vanilla Claustrophobic trait (Hunter).
-        /// </summary>
-        public static bool PlayerHasVanillaClaustrophobic(EntityPlayer entity)
-        {
-            if (entity == null) return false;
-            string[] classTraits = entity.WatchedAttributes.GetStringArray("characterTraits", null);
-            if (classTraits != null)
-            {
-                foreach (string trait in classTraits)
-                {
-                    if (trait.Equals("claustrophobic", StringComparison.OrdinalIgnoreCase))
-                        return true;
-                }
-            }
-            string characterClass = entity.WatchedAttributes.GetString("characterClass", "");
-            return characterClass.Equals("hunter", StringComparison.OrdinalIgnoreCase);
-        }
 
         /// <summary>
         /// Calculate the remaining penalty for a negative trait after applying progression bonus.
@@ -2567,26 +2400,6 @@ namespace SeraphLeveling
             foreach (var definition in LoadedAttributes)
             {
                 definition.HandleLogin(byPlayer);
-            }
-
-            // Apply mender bonus
-            var menderProg = MenderProgress.GetOrAdd(playerUid, _ => new MenderProgressData
-            {
-                CurrentIncrementSize = BaseMenderRepairsPerIncrement
-            });
-            int menderCredits = menderProg.TotalCredits;
-            ApplyMenderBonusStatic(byPlayer, menderCredits);
-            if (menderCredits > 0)
-            {
-                ServerApi.Logger.Debug($"[SeraphLeveling] Applied mender bonus +{menderCredits}% to player {byPlayer.PlayerName}");
-            }
-
-            // Apply claustrophobic removal
-            var claustrophobicProg = ClaustrophobicRemovalProgress.GetOrAdd(playerUid, _ => new ClaustrophobicRemovalProgressData());
-            if (claustrophobicProg.IsRemoved)
-            {
-                ApplyClaustrophobicRemovalStatic(byPlayer, true);
-                ServerApi.Logger.Debug($"[SeraphLeveling] Applied claustrophobic removal to player {byPlayer.PlayerName}");
             }
 
             // Apply Combat Overhaul proficiency bonuses (if CO is loaded)
@@ -3588,15 +3401,6 @@ namespace SeraphLeveling
                     }
                 }
 
-                if (pendingMenderProgressSave || !MenderProgress.IsEmpty)
-                {
-                    PersistMenderProgress();
-                }
-                if (pendingClaustrophobicRemovalProgressSave || !ClaustrophobicRemovalProgress.IsEmpty)
-                {
-                    PersistClaustrophobicRemovalProgress();
-                }
-
                 // These two are newer than the rest and were never added to the shutdown
                 // flush. OnGameWorldSave persists them, so they only went missing when
                 // Dispose ran without a world save first.
@@ -3632,8 +3436,6 @@ namespace SeraphLeveling
                 def.PendingSave = false;
             }
 
-            MenderProgress.Clear();
-            ClaustrophobicRemovalProgress.Clear();
             lastPlayerPositions.Clear();
             lastSneakingPositions.Clear();
             VanillaTraitsCache.Clear();
@@ -3642,8 +3444,6 @@ namespace SeraphLeveling
             SleepBuffMultiplier.Clear();
             LastSleepBuffApplyTick.Clear();
             pendingSleepBuffSave = false;
-            pendingMenderProgressSave = false;
-            pendingClaustrophobicRemovalProgressSave = false;
             base.Dispose();
         }
 
@@ -3663,18 +3463,6 @@ namespace SeraphLeveling
                     def.PersistProgress(ServerApi);
                     def.PendingSave = false;
                 }
-            }
-
-            if (pendingMenderProgressSave || !MenderProgress.IsEmpty)
-            {
-                PersistMenderProgress();
-                pendingMenderProgressSave = false;
-            }
-
-            if (pendingClaustrophobicRemovalProgressSave || !ClaustrophobicRemovalProgress.IsEmpty)
-            {
-                PersistClaustrophobicRemovalProgress();
-                pendingClaustrophobicRemovalProgressSave = false;
             }
 
             // Combat Overhaul compatibility persistence
@@ -4584,31 +4372,6 @@ namespace SeraphLeveling
                 totalDecayApplied += definition.ApplyDecay(player, currentDay, sb, verboseSb);
             }
 
-            // Armor is exempt from decay (leveled by wearing new pieces, not renewable)
-
-            // Mender
-            if (!DecayExemptSkills.Contains("mender") && !DisabledSkills.Contains("mender"))
-            {
-                if (MenderProgress.TryGetValue(playerUid, out var meProg) && (meProg.TotalCredits > 0 || meProg.RepairsInIncrement > 0))
-                {
-                    var (grace, basePoints, maxPoints) = GetDecayParams("mender");
-                    int decayCredits = CalculateDecayPoints(meProg.LastActivityDay, currentDay, grace, basePoints, maxPoints);
-                    if (decayCredits > 0)
-                    {
-                        int oldCredits = meProg.TotalCredits;
-                        int oldAcc = meProg.RepairsInIncrement; int oldInc = meProg.CurrentIncrementSize;
-                        double rawPenalty = (double)decayCredits;
-                        var (newCr, newAcc, newInc, lost) = ApplySingleAccumulatorDecay(
-                            oldAcc, oldInc, oldCredits,
-                            rawPenalty, BaseMenderRepairsPerIncrement, MenderIncrementStep, verboseSb, "Mender");
-                        meProg.TotalCredits = newCr; meProg.RepairsInIncrement = (int)Math.Floor(newAcc); meProg.CurrentIncrementSize = newInc;
-                        if (lost > 0) totalDecayApplied += lost;
-                        sb.AppendLine($"  Mender: {oldCredits} \u2192 {newCr} (-{lost} credits, {rawPenalty:F0} pts), {oldAcc}/{oldInc} \u2192 {(int)Math.Floor(newAcc)}/{newInc}");
-                        pendingMenderProgressSave = true;
-                    }
-                }
-            }
-
             // CO Proficiency (per-proficiency absolute-position drain + SteadyAim direct)
             if (!DecayExemptSkills.Contains("coproficiency") && !DisabledSkills.Contains("coproficiency") && IsCOCompatEnabled)
             {
@@ -4700,8 +4463,6 @@ namespace SeraphLeveling
             {
                 definition.ApplyBonusIfExists(player);
             }
-            if (MenderProgress.TryGetValue(playerUid, out var menderProg))
-                ApplyMenderBonusStatic(player, menderProg.TotalCredits);
             if (IsCOCompatEnabled && COProgress.TryGetValue(playerUid, out var coProg))
                 ApplyAllCOBonuses(player);
         }
@@ -4718,10 +4479,6 @@ namespace SeraphLeveling
 
             switch (skillType)
             {
-                case "mender":
-                    if (MenderProgress.TryGetValue(playerUid, out var menderProg))
-                        menderProg.LastActivityDay = currentDay;
-                    break;
                 case "coproficiency":
                     if (COProgress.TryGetValue(playerUid, out var coProg))
                         coProg.LastActivityDay = currentDay;
@@ -5070,23 +4827,6 @@ namespace SeraphLeveling
             }
             // --- Single accumulator skills ---
 
-            // Mender
-            if (!DeathPenaltyExemptSkills.Contains("mender") && !DisabledSkills.Contains("mender"))
-            {
-                if (MenderProgress.TryGetValue(playerUid, out var menderProg) && (menderProg.TotalCredits > 0 || menderProg.RepairsInIncrement > 0))
-                {
-                    int oldCredits = menderProg.TotalCredits;
-                    int oldAcc = menderProg.RepairsInIncrement; int oldInc = menderProg.CurrentIncrementSize;
-                    double rawPenalty = BaseMenderRepairsPerIncrement * DeathPenaltyFraction * Math.Sqrt(Math.Max(1, oldCredits));
-                    var (newCr, newAcc, newInc, lost) = ApplySingleAccumulatorDecay(
-                        oldAcc, oldInc, oldCredits, rawPenalty, BaseMenderRepairsPerIncrement, MenderIncrementStep, null, "Mender");
-                    menderProg.TotalCredits = newCr; menderProg.RepairsInIncrement = (int)Math.Floor(newAcc); menderProg.CurrentIncrementSize = newInc;
-                    if (lost > 0) totalCreditsLost += lost;
-                    pendingMenderProgressSave = true;
-                    sb.AppendLine($"  Mender: {oldCredits} \u2192 {newCr} (-{lost} credits, {rawPenalty:F0} pts), {oldAcc}/{oldInc} \u2192 {(int)Math.Floor(newAcc)}/{newInc}");
-                }
-            }
-
             // --- CO Proficiency (per-proficiency subcredit drain) ---
             if (!DeathPenaltyExemptSkills.Contains("coproficiency") && !DisabledSkills.Contains("coproficiency") && IsCOCompatEnabled)
             {
@@ -5271,7 +5011,7 @@ namespace SeraphLeveling
             // Utility skills
             sb.AppendLine("--- Utility ---");
             AppendDecayStatus(sb, "Mender", "mender", playerUid, currentDay,
-                () => MenderProgress.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
+                () => AttributeModifierDefinitions.Mender.ProgressDictionary.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
             AppendDecayStatus(sb, "Pilferer", "pilferer", playerUid, currentDay, // TODO: the other two pilferer subskills.
                 () => AttributeModifierDefinitions.VesselDropRate.ProgressDictionary.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
             AppendDecayStatus(sb, "Resourceful", "resourceful", playerUid, currentDay,
@@ -6882,257 +6622,6 @@ namespace SeraphLeveling
         }
 
 
-        // =========================================================================
-        // UNLOCK CHECKING METHODS
-        // =========================================================================
-
-        /// <summary>
-        /// Check and apply Claustrophobic removal if threshold is met (Hunter only).
-        /// Requires 100% mining speed.
-        /// </summary>
-        public static void CheckClaustrophobicRemoval(IServerPlayer player)
-        {
-            if (player?.Entity == null) return;
-
-            if (!PlayerHasVanillaClaustrophobic(player.Entity)) return; // Ensure vanilla Claustrophobic is present
-
-            string playerUid = player.PlayerUID;
-            var progress = ClaustrophobicRemovalProgress.GetOrAdd(playerUid, _ => new ClaustrophobicRemovalProgressData());
-
-            // Already removed
-            if (progress.IsRemoved) return;
-
-            // Check mining speed threshold
-            var miningProgress = AttributeModifierDefinitions.MiningSpeed.GetForPlayer(playerUid);
-            if (miningProgress.TotalCredits < ClaustrophobicRemovalMiningThreshold) return;
-
-            // Threshold met - remove Claustrophobic!
-            progress.IsRemoved = true;
-            pendingClaustrophobicRemovalProgressSave = true;
-
-            // Apply the removal (negate the Claustrophobic penalties)
-            ApplyClaustrophobicRemovalStatic(player, true);
-
-            // Notify player
-            NotifyLevelUp(player,
-                Lang.Get("seraphleveling:message-claustrophobic-removed"));
-        }
-
-        /// <summary>
-        /// Apply Claustrophobic removal (negates ore drop and mining speed penalties).
-        /// </summary>
-        private static void ApplyClaustrophobicRemovalStatic(IServerPlayer player, bool removed)
-        {
-            if (removed)
-            {
-                // Negate Claustrophobic penalties: -15% ore drop, -10% mining speed
-                // By adding positive stats to counteract them
-                // Note: Stats use WeightedSum with base 1.0. Vanilla uses -0.15/-0.10, so we use +0.15/+0.10 to cancel
-                player.Entity.Stats.Set("oreDropRate", "sitClaustrophobicRemoval", 0.15f, false); // +15% to negate -15%
-                player.Entity.Stats.Set("miningSpeedMul", "sitClaustrophobicRemoval", 0.10f, false); // +10% to negate -10%
-            }
-            else
-            {
-                player.Entity.Stats.Remove("oreDropRate", "sitClaustrophobicRemoval");
-                player.Entity.Stats.Remove("miningSpeedMul", "sitClaustrophobicRemoval");
-            }
-
-            player.Entity.WatchedAttributes.SetBool(WATCHED_CLAUSTROPHOBIC_REMOVED, removed);
-            UpdateExtraTraitStatic(player.Entity, CLAUSTROPHOBIC_REMOVED_TRAIT_CODE, removed);
-        }
-
-        /// <summary>
-        /// Check if player is the Hunter class.
-        /// </summary>
-        private static bool PlayerIsHunterStatic(EntityPlayer entity)
-        {
-            if (entity == null) return false;
-
-            var classTree = entity.WatchedAttributes.GetTreeAttribute("charClass");
-            if (classTree != null)
-            {
-                string classCode = classTree.GetString("code", "").ToLowerInvariant();
-                return classCode == "hunter";
-            }
-
-            return false;
-        }
-
-        // =========================================================================
-        // MENDER TRAIT IMPLEMENTATION
-        // =========================================================================
-
-        /// <summary>
-        /// Handler for /trait mender command.
-        /// </summary>
-        private TextCommandResult OnTraitMenderCommand(TextCommandCallingArgs args)
-        {
-            IServerPlayer player = args.Caller.Player as IServerPlayer;
-            if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
-
-            var progress = MenderProgress.GetOrAdd(player.PlayerUID, _ => new MenderProgressData());
-            int bonusPercent = CalculateMenderBonusPercent(progress.TotalCredits, player.Entity);
-            bool hasVanillaMender = PlayerHasVanillaMenderStatic(player.Entity);
-
-            var sb = new StringBuilder();
-            sb.AppendLine($"Mender progression: Level {progress.TotalCredits} / {MaxMenderPercent}");
-            sb.AppendLine($"Current bonus: +{bonusPercent}% armor and clothing durability");
-            if (hasVanillaMender)
-            {
-                sb.AppendLine($"Combined with Mender trait: +{VANILLA_MENDER_ARMOR_DURABILITY_BONUS + bonusPercent}% total");
-            }
-            if (progress.TotalCredits < MaxMenderPercent)
-            {
-                int remaining = progress.CurrentIncrementSize - progress.RepairsInIncrement;
-                sb.AppendLine($"Progress: {progress.RepairsInIncrement} / {progress.CurrentIncrementSize} repairs until next level");
-            }
-            else
-            {
-                sb.AppendLine("Maximum level reached!");
-            }
-
-            return TextCommandResult.Success(sb.ToString());
-        }
-
-        /// <summary>
-        /// Handler for /trait menderbase command.
-        /// </summary>
-        private TextCommandResult OnTraitMenderBaseCommand(TextCommandCallingArgs args)
-        {
-            int? newValue = (int?)args[0];
-
-            if (newValue.HasValue)
-            {
-                if (newValue.Value < 1) return TextCommandResult.Error("Base repairs must be at least 1.");
-                BaseMenderRepairsPerIncrement = newValue.Value;
-                pendingConfigSave = true;
-                return TextCommandResult.Success($"Mender base repairs set to {BaseMenderRepairsPerIncrement}.");
-            }
-
-            return TextCommandResult.Success($"Current mender base repairs: {BaseMenderRepairsPerIncrement}.");
-        }
-
-        /// <summary>
-        /// Handler for /trait menderlevel command.
-        /// Gets or sets the player's mender level.
-        /// </summary>
-        private TextCommandResult OnTraitMenderLevelCommand(TextCommandCallingArgs args)
-        {
-            IServerPlayer player = args.Caller.Player as IServerPlayer;
-            if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
-
-            var progress = MenderProgress.GetOrAdd(player.PlayerUID, _ => new MenderProgressData());
-
-            int? newLevel = (int?)args[0];
-
-            // If no value provided, show current level
-            if (!newLevel.HasValue)
-            {
-                int currentBonus = CalculateMenderBonusPercent(progress.TotalCredits, player.Entity);
-                return TextCommandResult.Success($"Current mender level: {progress.TotalCredits}/{MaxMenderPercent} (+{currentBonus}% durability)");
-            }
-
-            if (newLevel.Value < 0 || newLevel.Value > MaxMenderPercent)
-                return TextCommandResult.Error($"Level must be between 0 and {MaxMenderPercent}.");
-
-            progress.TotalCredits = newLevel.Value;
-            progress.RepairsInIncrement = 0;
-            progress.CurrentIncrementSize = BaseMenderRepairsPerIncrement;
-
-            // Recalculate increment size for this level
-            for (int i = 0; i < newLevel.Value; i++)
-            {
-                progress.CurrentIncrementSize += MenderIncrementStep;
-            }
-
-            pendingMenderProgressSave = true;
-
-            int bonusPercent = ApplyMenderBonusStatic(player, progress.TotalCredits);
-
-            UpdateSkillActivityDay(player.PlayerUID, "mender");
-
-            return TextCommandResult.Success($"Mender level set to {newLevel.Value} (+{bonusPercent}% durability).");
-        }
-
-        /// <summary>
-        /// Handler for /trait mendermax command.
-        /// </summary>
-        private TextCommandResult OnTraitMenderMaxCommand(TextCommandCallingArgs args)
-        {
-            int? newValue = (int?)args[0];
-
-            if (newValue.HasValue)
-            {
-                if (newValue.Value < 1) return TextCommandResult.Error("Max percent must be at least 1.");
-                MaxMenderPercent = newValue.Value;
-                pendingConfigSave = true;
-                return TextCommandResult.Success($"Mender max bonus set to {MaxMenderPercent}%.");
-            }
-
-            return TextCommandResult.Success($"Current mender max bonus: {MaxMenderPercent}%.");
-        }
-
-        /// <summary>
-        /// Calculate the mender durability bonus as an integer percentage.
-        /// </summary>
-        public static int CalculateMenderBonusPercent(int credits, EntityPlayer entity)
-        {
-            bool hasVanillaMender = entity != null && PlayerHasVanillaMenderStatic(entity);
-            int vanillaBonus = hasVanillaMender ? VANILLA_MENDER_ARMOR_DURABILITY_BONUS : 0;
-            int earnableBonus = Math.Max(0, MaxMenderPercent - vanillaBonus);
-            return Math.Min(credits, earnableBonus);
-        }
-
-        /// <summary>
-        /// Check if player has vanilla Mender trait.
-        /// </summary>
-        private static bool PlayerHasVanillaMenderStatic(EntityPlayer entity)
-        {
-            if (entity == null) return false;
-            string[] classTraits = entity.WatchedAttributes.GetStringArray("characterTraits", null);
-            if (classTraits != null)
-            {
-                foreach (string trait in classTraits)
-                {
-                    if (trait.Equals("mender", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return true;
-                    }
-                }
-            }
-            // Class fallback for Tailor (vanilla Mender) — keeps server-side Apply consistent
-            // with client-side ClientHasVanillaTrait when characterTraits isn't populated.
-            string characterClass = entity.WatchedAttributes.GetString("characterClass", "");
-            return characterClass.Equals("tailor", StringComparison.OrdinalIgnoreCase);
-        }
-
-        /// <summary>
-        /// Apply mender bonus.
-        /// </summary>
-        private static int ApplyMenderBonusStatic(IServerPlayer player, int level)
-        {
-            if (player?.Entity == null) return 0;
-
-            bool hasVanillaMender = PlayerHasVanillaMenderStatic(player.Entity);
-            int bonusPercent = CalculateMenderBonusPercent(level, player.Entity);
-            float bonus = bonusPercent * 0.01f;
-
-            // Apply to armor durability loss stat (reduces durability damage taken).
-            // Negative delta, same as vanilla Mender's -0.25. See ApplyArmorBonusesStatic.
-            player.Entity.Stats.Set("armorDurabilityLoss", MENDER_STAT_CODE, -bonus, false);
-
-            // Sync to WatchedAttributes
-            player.Entity.WatchedAttributes.SetInt(WATCHED_MENDER_LEVEL, level);
-            player.Entity.WatchedAttributes.SetInt(WATCHED_MENDER_BONUS, bonusPercent);
-            player.Entity.WatchedAttributes.SetBool("sitHasVanillaMender", hasVanillaMender);
-            player.Entity.WatchedAttributes.MarkPathDirty(WATCHED_MENDER_LEVEL);
-
-            // Update extraTraits
-            UpdateExtraTraitStatic(player.Entity, MENDER_TRAIT_CODE, level > 0 && !hasVanillaMender);
-
-            return bonusPercent;
-        }
-
         /// <summary>
         /// Process a sewing kit repair (called externally or via Harmony patch).
         /// </summary>
@@ -7140,42 +6629,8 @@ namespace SeraphLeveling
         {
             if (player?.Entity == null) return;
 
-            // Check if mender skill is disabled
-            if (IsSkillDisabled("mender")) return;
-
             string playerUid = player.PlayerUID;
-            var progress = MenderProgress.GetOrAdd(playerUid, _ => new MenderProgressData());
-
-            // Skip if at max
-            if (progress.TotalCredits >= MaxMenderPercent) return;
-
-            int oldCredits = progress.TotalCredits;
-            // Apply sleep buff multiplier if active
-            int modifiedRepairs = ApplyXPMultiplier(playerUid, 1);
-            progress.RepairsInIncrement += modifiedRepairs;
-
-            // Check if we've earned a credit
-            while (progress.RepairsInIncrement >= progress.CurrentIncrementSize && progress.TotalCredits < MaxMenderPercent)
-            {
-                progress.TotalCredits++;
-                progress.RepairsInIncrement -= progress.CurrentIncrementSize;
-                progress.CurrentIncrementSize += MenderIncrementStep;
-
-                ServerApi.Logger.Debug($"[SeraphLeveling] Player {player.PlayerName} earned mender credit {progress.TotalCredits}");
-            }
-
-            pendingMenderProgressSave = true;
-
-            // Update last activity day for skill decay
-            UpdateSkillActivityDay(playerUid, "mender");
-
-            if (progress.TotalCredits > oldCredits)
-            {
-                ApplyMenderBonusStatic(player, progress.TotalCredits);
-                // Notify player of level up with raw improvement (shows progress even when capped)
-                NotifyLevelUp(player,
-                    Lang.Get("seraphleveling:message-mender-level-up", progress.TotalCredits, progress.TotalCredits));
-            }
+            AttributeModifierDefinitions.Mender.GetForPlayer(playerUid).DoEvent(player, 1);
         }
 
         /// <summary>
@@ -7328,57 +6783,6 @@ namespace SeraphLeveling
         }
 
         /// <summary>
-        /// Handler for /trait claustrophobic command.
-        /// </summary>
-        private TextCommandResult OnTraitClaustrophobicCommand(TextCommandCallingArgs args)
-        {
-            IServerPlayer player = args.Caller.Player as IServerPlayer;
-            if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
-
-            // Check if player is Hunter
-            if (!PlayerHasVanillaClaustrophobic(player.Entity))
-            {
-                return TextCommandResult.Success("Claustrophobic removal is only available for classes with that trait.");
-            }
-
-            string playerUid = player.PlayerUID;
-            var progress = ClaustrophobicRemovalProgress.GetOrAdd(playerUid, _ => new ClaustrophobicRemovalProgressData());
-            var miningProgress = AttributeModifierDefinitions.MiningSpeed.GetForPlayer(playerUid);
-
-            var sb = new StringBuilder();
-            sb.AppendLine($"Claustrophobic trait: {(progress.IsRemoved ? "REMOVED" : "Active")}");
-            sb.AppendLine($"Mining level: {miningProgress.TotalCredits} / {ClaustrophobicRemovalMiningThreshold} ({(miningProgress.TotalCredits >= ClaustrophobicRemovalMiningThreshold ? "✓" : "✗")})");
-            if (!progress.IsRemoved)
-            {
-                int remaining = ClaustrophobicRemovalMiningThreshold - miningProgress.TotalCredits;
-                sb.AppendLine($"Reach {remaining}% more mining level to remove Claustrophobic!");
-            }
-
-            return TextCommandResult.Success(sb.ToString());
-        }
-
-        /// <summary>
-        /// Handler for /trait claustrophobicunlock command.
-        /// </summary>
-        private TextCommandResult OnTraitClaustrophobicUnlockCommand(TextCommandCallingArgs args)
-        {
-            IServerPlayer player = args.Caller.Player as IServerPlayer;
-            if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
-
-            bool removed = (bool)args[0];
-
-            string playerUid = player.PlayerUID;
-            var progress = ClaustrophobicRemovalProgress.GetOrAdd(playerUid, _ => new ClaustrophobicRemovalProgressData());
-            progress.IsRemoved = removed;
-
-            pendingClaustrophobicRemovalProgressSave = true;
-            ApplyClaustrophobicRemovalStatic(player, removed);
-
-            return TextCommandResult.Success($"Claustrophobic trait {(removed ? "removed" : "restored")}.");
-        }
-
-
-        /// <summary>
         /// Handler for /trait reset command.
         /// Resets all trait progression to 0 for the calling player.
         /// </summary>
@@ -7407,24 +6811,6 @@ namespace SeraphLeveling
             {
                 definition.ResetProgress(player);
             }
-
-            // Reset Mender
-            if (MenderProgress.TryGetValue(playerUid, out var menderProg))
-            {
-                menderProg.TotalCredits = 0;
-                menderProg.RepairsInIncrement = 0;
-                menderProg.CurrentIncrementSize = 5; // Default base
-                pendingMenderProgressSave = true;
-            }
-            ApplyMenderBonusStatic(player, 0);
-
-            // Reset Claustrophobic Removal
-            if (ClaustrophobicRemovalProgress.TryGetValue(playerUid, out var claustrophobicProg))
-            {
-                claustrophobicProg.IsRemoved = false;
-                pendingClaustrophobicRemovalProgressSave = true;
-            }
-            ApplyClaustrophobicRemovalStatic(player, false);
 
             // Clear sleep buff
             SleepBuffExpiration.TryRemove(playerUid, out _);
@@ -7609,22 +6995,6 @@ namespace SeraphLeveling
                 definition.MaxStat(player);
             }
 
-            // Max Armor
-            // Max Mender
-            int maxMenderCredits = MaxMenderPercent;
-            var menderProg = MenderProgress.GetOrAdd(playerUid, _ => new MenderProgressData());
-            menderProg.TotalCredits = maxMenderCredits;
-            menderProg.RepairsInIncrement = 0;
-            menderProg.CurrentIncrementSize = BaseMenderRepairsPerIncrement;
-            pendingMenderProgressSave = true;
-            ApplyMenderBonusStatic(player, maxMenderCredits);
-
-            // Remove Claustrophobic (if applicable)
-            var claustrophobicProg = ClaustrophobicRemovalProgress.GetOrAdd(playerUid, _ => new ClaustrophobicRemovalProgressData());
-            claustrophobicProg.IsRemoved = true;
-            pendingClaustrophobicRemovalProgressSave = true;
-            ApplyClaustrophobicRemovalStatic(player, true);
-
             return TextCommandResult.Success("All trait progression has been set to maximum for testing.");
         }
 
@@ -7651,14 +7021,6 @@ namespace SeraphLeveling
             {
                 definition.ApplyTraitTestSuite1Command(player);
             }
-
-            // Mender
-            var menderProg = MenderProgress.GetOrAdd(playerUid, _ => new MenderProgressData());
-            menderProg.TotalCredits = CREDITS;
-            menderProg.RepairsInIncrement = 0;
-            menderProg.CurrentIncrementSize = BaseMenderRepairsPerIncrement;
-            pendingMenderProgressSave = true;
-            ApplyMenderBonusStatic(player, CREDITS);
 
             // Combat Overhaul proficiencies (only if CO is loaded)
             string coNote = "";
@@ -8448,49 +7810,6 @@ namespace SeraphLeveling
         }
 
         // =========================================================================
-        // PERSISTENCE METHODS FOR NEW TRAITS
-        // =========================================================================
-
-        /// <summary>
-        /// Load clothier progress from world save data.
-        /// </summary>
-        private void LoadClothierProgress()
-        {
-            AttributeModifierDefinitions.Clothier.LoadProgress(ServerApi);
-        }
-
-        /// <summary>
-        /// Persist mender progress to world save data.
-        /// </summary>
-        public static void PersistMenderProgress()
-        {
-            PersistProgress<MenderProgressData>();
-        }
-
-        /// <summary>
-        /// Load mender progress from world save data.
-        /// </summary>
-        private void LoadMenderProgress()
-        {
-            LoadProgress<MenderProgressData>();
-        }
-
-        // =========================================================================
-
-        // =========================================================================
-        // CLAUSTROPHOBIC REMOVAL TRAIT PERSISTENCE
-        // =========================================================================
-
-        /// <summary>
-        /// Persist claustrophobic removal progress to world save data.
-        /// </summary>
-        public static void PersistClaustrophobicRemovalProgress()
-        {
-            PersistProgress<ClaustrophobicRemovalProgressData>();
-        }
-
-
-        // =========================================================================
         // COMBAT OVERHAUL PERSISTENCE
         // =========================================================================
 
@@ -8645,14 +7964,6 @@ namespace SeraphLeveling
             {
                 ServerApi.Logger.Error($"[SeraphLeveling] Failed to load sleep buff data: {ex.Message}");
             }
-        }
-
-        /// <summary>
-        /// Load claustrophobic removal progress from world save data.
-        /// </summary>
-        private void LoadClaustrophobicRemovalProgress()
-        {
-            LoadProgress<ClaustrophobicRemovalProgressData>();
         }
 
     }

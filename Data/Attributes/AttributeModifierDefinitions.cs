@@ -195,6 +195,21 @@ namespace SeraphLeveling.Data.Attributes
             StatName = "wholeVesselLootChance",
         };
 
+        public static readonly GenericLeveledAttributeModifierDefinition Mender = new()
+        {
+            Id = "mender",
+            Name = "Mender",
+            SkillKey = "mender",
+            PersistenceHeader = "MND",
+            Direction = "-",
+            Stat = "% armor durability",
+            IncrementUnits = "repairs",
+            BaseIncrement = 5,
+            IncrementStep = 1,
+            GlobalMaxCredits = 25,
+            StatName = "armorDurabilityLoss"
+        };
+
         public static readonly ConcurrentDictionary<SimpleToolProgress, IncrementData> MiningIncrementData = new()
         {
             [default] = new IncrementData
