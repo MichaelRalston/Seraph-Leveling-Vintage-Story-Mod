@@ -13,6 +13,23 @@ namespace SeraphLeveling.Data.Traits
 {
     public record class TraitDefinition
     {
+        private static readonly List<string> DebugTraits = ["hardy", "hardyhealth"];
+
+        private void DebugLog(bool client, bool server, string message)
+        {
+            if (DebugTraits.Contains(Id))
+            {
+                if (client)
+                {
+                    CharacterSystemPatches.ClientApi.Logger.Debug(message);
+                }
+                if (server)
+                {
+                    SeraphLevelingModSystem.ServerApi.Logger.Debug(message);
+                }
+            }
+        }
+
         public required string Id { get; init; }
         public required List<IAttributeModifier> Attributes
         {
@@ -51,17 +68,10 @@ namespace SeraphLeveling.Data.Traits
             Attributes?.ForEach(req => req.ActiveStatusUpdated -= OnModifierActiveStatusUpdated);
         }
 
-        protected void OnModifierActiveStatusUpdated(IServerPlayer player, bool _)
+        protected void OnModifierActiveStatusUpdated(IServerPlayer player, bool newValue)
         {
+            DebugLog(false, true, $"[Verdus] Calling OnModifierActiveStatusUpdated for trait {Id} with newValue={newValue}");
             CheckUnlocks(player);
-        }
-
-        protected void OnRequirementSatisfactionChanged(IServerPlayer player, bool oldSatisfaction, bool newSatisfaction)
-        {
-            if (newSatisfaction)
-            {
-                CheckUnlocks(player);
-            }
         }
 
         /// <summary>
@@ -77,8 +87,13 @@ namespace SeraphLeveling.Data.Traits
             // Check prerequisites
             if (Attributes.All(mod => mod.IsActive(player)))
             {
+                DebugLog(false, true, $"[Verdus] All attributes active for trait {Id}!");
                 Attributes.Select(kvp => kvp.Attribute).Foreach(attr => attr.Unlock(player, true));
                 UnlockChanged?.Invoke(player, false, true);
+            }
+            else
+            {
+                DebugLog(false, true, $"[Verdus] Not all attributes active for trait {Id}");
             }
         }
 
@@ -119,7 +134,7 @@ namespace SeraphLeveling.Data.Traits
             bool hasEarnedProgress = HasEarnedProgress(player);
             bool hasVanillaTrait = HasVanillaTrait(player);
 
-            CharacterSystemPatches.ClientApi.Logger.Debug($"[Verdus] Calling BuildTraitText for trait {Id}: shouldDisplay={shouldDisplay}, hasVanillaTrait={hasVanillaTrait}");
+            DebugLog(true, false, $"[Verdus] Calling BuildTraitText for trait {Id}: shouldDisplay={shouldDisplay}, hasVanillaTrait={hasVanillaTrait}");
             if (shouldDisplay)
             {
                 var combinedAttrBonuses = GetCombinedAttributeBonuses(player);
@@ -129,20 +144,20 @@ namespace SeraphLeveling.Data.Traits
                     if (combinedAttrBonuses.TryGetValue(mod.Attribute, out string combinedBonus))
                     {
                         string retVal = Lang.Get(modKey, combinedBonus);
-                        CharacterSystemPatches.ClientApi.Logger.Debug($"      [Verdus] Calling BuildTraitText for trait {Id}: attr={mod.Attribute.Id}, key={mod.DynamicAttributeContentsKey}, lang token={retVal}");
+                        DebugLog(true, false, $"      [Verdus] Calling BuildTraitText for trait {Id}: attr={mod.Attribute.Id}, key={mod.DynamicAttributeContentsKey}, lang token={retVal}");
                         return retVal == modKey ? null : retVal;
                     }
                     else
                     {
-                        CharacterSystemPatches.ClientApi.Logger.Debug($"      [Verdus] Failed to get combined bonus for attribute {mod.Attribute.Id}");
+                        DebugLog(true, false, $"      [Verdus] Failed to get combined bonus for attribute {mod.Attribute.Id}");
                         return null;
                     }
                 }).Where(token => token != null));
                 string fullMessage = string.IsNullOrEmpty(contentText) ? "" : Lang.Get(CharacterSystemPatches.FULL_TRAIT_MESSAGE_KEY, headerText, contentText);
                 bool messageComplete = fullMessage != CharacterSystemPatches.FULL_TRAIT_MESSAGE_KEY;
-                CharacterSystemPatches.ClientApi.Logger.Debug($"   [Verdus] Calling BuildTraitText for trait {Id}: headerText={headerText}");
-                CharacterSystemPatches.ClientApi.Logger.Debug($"   [Verdus] Calling BuildTraitText for trait {Id}: contentText={contentText}");
-                CharacterSystemPatches.ClientApi.Logger.Debug($"   [Verdus] Calling BuildTraitText for trait {Id}: fullMessage={fullMessage}");
+                DebugLog(true, false, $"   [Verdus] Calling BuildTraitText for trait {Id}: headerText={headerText}");
+                DebugLog(true, false, $"   [Verdus] Calling BuildTraitText for trait {Id}: contentText={contentText}");
+                DebugLog(true, false, $"   [Verdus] Calling BuildTraitText for trait {Id}: fullMessage={fullMessage}");
                 if (messageComplete)
                 {
                     if (hasVanillaTrait)

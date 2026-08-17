@@ -380,6 +380,23 @@ namespace SeraphLeveling.Data.Attributes
 
         private record class Instance : IAttributeModifier
         {
+            private static readonly List<string> DebugAttributes = ["hardyhealth"];
+
+            private void DebugLog(bool client, bool server, string message)
+            {
+                if (DebugAttributes.Contains(Attribute.Id))
+                {
+                    if (client)
+                    {
+                        CharacterSystemPatches.ClientApi.Logger.Debug(message);
+                    }
+                    if (server)
+                    {
+                        SeraphLevelingModSystem.ServerApi.Logger.Debug(message);
+                    }
+                }
+            }
+
             public Instance(ISaveableAttribute attribute, int modifierValue, List<IAttributeRequirement> unlockWith = null, List<IAttributeRequirement> removeWith = null)
             {
                 Attribute = attribute;
@@ -411,15 +428,15 @@ namespace SeraphLeveling.Data.Attributes
 
             public bool IsActive(IPlayer player)
             {
-                CharacterSystemPatches.ClientApi.Logger.Debug($"   [Verdus] Calling IsActive for remove requirements for attrmod {Attribute.Id}");
+                DebugLog(true, true, $"[Verdus] Calling IsActive for remove requirements for attrmod {Attribute.Id}");
                 foreach (var req in RemoveWith)
                 {
-                    CharacterSystemPatches.ClientApi.Logger.Debug($"      [Verdus] Req for attribute {req.AttributeId}: curval={req.CurrentValue(player)}, reqval={req.RequiredValue}, satisfied={req.IsSatisfied(player)}");
+                    DebugLog(true, true, $"   [Verdus] Req for attribute {req.AttributeId}: curval={req.CurrentValue(player)}, reqval={req.RequiredValue}, satisfied={req.IsSatisfied(player)}");
                 }
-                CharacterSystemPatches.ClientApi.Logger.Debug($"   [Verdus] Calling IsActive for unlock requirements for attrmod {Attribute.Id}");
+                DebugLog(true, true, $"[Verdus] Calling IsActive for unlock requirements for attrmod {Attribute.Id}");
                 foreach (var req in UnlockWith)
                 {
-                    CharacterSystemPatches.ClientApi.Logger.Debug($"      [Verdus] Req for attribute {req.AttributeId}: curval={req.CurrentValue(player)}, reqval={req.RequiredValue}, satisfied={req.IsSatisfied(player)}");
+                    DebugLog(true, true, $"   [Verdus] Req for attribute {req.AttributeId}: curval={req.CurrentValue(player)}, reqval={req.RequiredValue}, satisfied={req.IsSatisfied(player)}");
                 }
 
                 bool retVal;
@@ -442,12 +459,17 @@ namespace SeraphLeveling.Data.Attributes
                     // Otherwise, the modifier is inactive
                     retVal = false;
                 }
-                CharacterSystemPatches.ClientApi.Logger.Debug($"[Verdus] Finished calling IsActive for attrmod {Attribute.Id}, active={retVal}");
+                DebugLog(true, true, $"[Verdus] Finished calling IsActive for attrmod {Attribute.Id}, active={retVal}");
                 return retVal;
             }
 
             private void OnRequirementSatisfactionChanged(IServerPlayer player, bool oldValue, bool newValue)
             {
+                DebugLog(false, true, $"[Verdus] Satisfaction of one of {Attribute.Id} modifier requirements has changed from {oldValue} to {newValue}; active status should now be {IsActive(player)}");
+                if (!oldValue && newValue)
+                {
+                    Attribute.Unlock(player, true);
+                }
                 ActiveStatusUpdated?.Invoke(player, IsActive(player));
             }
         }

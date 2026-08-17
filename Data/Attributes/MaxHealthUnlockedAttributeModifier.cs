@@ -16,16 +16,19 @@ namespace SeraphLeveling.Data.Attributes
 
         public override void ApplyUnlock(IServerPlayer player, MaxHealthUnlockedAttributeModifierProgressData progress)
         {
+            SeraphLevelingModSystem.ServerApi.Logger.Debug($"[Verdus] Calling ApplyUnlock for max health attribute {Id}, unlocked={progress.IsUnlocked}");
             if (player?.Entity == null) return;
 
             base.ApplyUnlock(player, progress);
 
             if (progress.IsUnlocked)
             {
+                SeraphLevelingModSystem.ServerApi.Logger.Debug($"[Verdus] Setting max health stat for attribute {Id}, category={STAT_CATEGORY}, statkey={StatKey}, modifier={ModifierAmount}");
                 player.Entity.Stats.Set(STAT_CATEGORY, StatKey, ModifierAmount, false);
             }
             else
             {
+                SeraphLevelingModSystem.ServerApi.Logger.Debug($"[Verdus] Removing max health stat for attribute {Id}, category={STAT_CATEGORY}, statkey={StatKey}");
                 player.Entity.Stats.Remove(STAT_CATEGORY, StatKey);
             }
         }

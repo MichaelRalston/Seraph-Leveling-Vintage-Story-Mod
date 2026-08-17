@@ -11,6 +11,7 @@ namespace SeraphLeveling.Data.Attributes
     public interface IUnlockedAttributeModifierDefinition : ISaveableAttribute
     {
         public string Name { get; }
+        public string UnlockedKey { get; }
         public bool IsUnlockedForPlayer(IPlayer player);
 
         /// <summary>
