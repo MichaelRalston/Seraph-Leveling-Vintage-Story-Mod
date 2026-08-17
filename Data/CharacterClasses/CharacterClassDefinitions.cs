@@ -79,6 +79,14 @@ namespace SeraphLeveling.Data.CharacterClasses
             ]
         };
 
+        public static readonly CharacterClassDefinition VanillaDummy = new()
+        {
+            Id = "vanilladummy",
+            Traits = [
+                TraitDefinitions.HungerMastery,
+            ]
+        };
+
         // =========================================================================
         // SACREDLIB CLASSES
         // =========================================================================

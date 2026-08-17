@@ -76,112 +76,11 @@ namespace SeraphLeveling.Patches
             // Use Contains to handle cases where the message might have formatting
             bool hasNoTraits = HasNoTraits(__result);
 
-            // Process mining progression (Hardy trait)
-            // Only show Hardy when miningBonus > 0 (after negative traits are cancelled)
-            TraitDefinitions.Hardy.BuildTraitText(eplr, ref __result);
-
-            // Process melee progression (Soldier trait)
-            // Process armor progression (Soldier trait - armor durability and speed penalty)
-            // Only show Soldier melee when meleeBonus > 0 (after negative traits are cancelled)
-            TraitDefinitions.Soldier.BuildTraitText(eplr, ref __result);
-
-            // Process ranged progression (Focused trait)
-            // Only show Focused when any bonus > 0 (after negative traits are cancelled for that stat)
-            TraitDefinitions.Focused.BuildTraitText(eplr, ref __result);
-
-            // Process walking progression (Fleetfooted trait)
-            TraitDefinitions.Fleetfooted.BuildTraitText(eplr, ref __result);
-
-            // Process Clothier trait (unlocked by wearing 20 unique clothes)
-            TraitDefinitions.Clothier.BuildTraitText(eplr, ref __result);
-
-            // Process Mender trait (improves armor/clothing durability)
-            TraitDefinitions.Mender.BuildTraitText(eplr, ref __result);
-
-            // Process Pilferer trait (improves rusty gear, vessel loot, vessel collection).
-            // Read per-stat bonuses (each stat capped independently so all classes hit the
-            // same +20% per-stat total at maxall, regardless of vanilla Pilferer offsets).
-            TraitDefinitions.Pilferer.BuildTraitText(eplr, ref __result);
-
-            // Process Resourceful trait (improves animal loot and harvesting speed)
-            TraitDefinitions.Resourceful.BuildTraitText(eplr, ref __result);
-
-            // Process Forager trait (improves foraging loot and wild crop drops)
-            TraitDefinitions.Forager.BuildTraitText(eplr, ref __result);
-
-            // Process Furtive trait (reduces animal detection range)
-            TraitDefinitions.Furtive.BuildTraitText(eplr, ref __result);
-
-            // Process Precise trait (improves damage to mechanicals)
-            TraitDefinitions.Precise.BuildTraitText(eplr, ref __result);
-
-            // Process Hunger trait (reduces hunger rate).
-            // For Ravenous classes (Blackguard) the raw `hungerBonus` value includes credits
-            // spent cancelling the +30% Ravenous penalty. The actual stat applied (negative
-            // hungerrate) cancels Ravenous and produces the same NET reduction other classes
-            // get from their full bonus, so functional behavior already matches across classes.
-            // The display, however, was showing the gross reduction (e.g. -55% on Blackguard
-            // vs -25% on Hunter at maxall). Subtract the Ravenous penalty from the displayed
-            // value so all classes converge on the same visible cap (-25% at maxall).
-            TraitDefinitions.HungerMastery.BuildTraitText(eplr, ref __result);
-
-            // Process Technical unlock trait (translocator gear cost reduction)
-            TraitDefinitions.Technical.BuildTraitText(eplr, ref __result);
-
-            // Process Bowyer unlock trait (crude bow crafting)
-            TraitDefinitions.Bowyer.BuildTraitText(eplr, ref __result);
-
-            // Process Improviser unlock trait (sling crafting)
-            TraitDefinitions.Improviser.BuildTraitText(eplr, ref __result);
-
-            // Process Tinkerer unlock trait (tuning spear crafting)
-            TraitDefinitions.Tinkerer.BuildTraitText(eplr, ref __result);
-
-            // Process Merciless unlock trait (shortsword/shield crafting)
-            TraitDefinitions.Merciless.BuildTraitText(eplr, ref __result);
-
-            // Note: Claustrophobic Removed trait display was removed in favor of progressive cancellation
-            // Claustrophobic is now handled in the negative trait section below - it progressively
-            // decreases with mining level (1-10) and is replaced by Hardy when cancelled
-
-            // =========================================================================
-            // NEGATIVE TRAIT DISPLAY HANDLING
-            // Display negative traits with remaining penalty, or remove when cancelled
-            // =========================================================================
-
-            // Civil trait (Tailor) - foraging loot penalty
-            TraitDefinitions.Civil.BuildTraitText(eplr, ref __result);
-
-            // Weak trait (Tailor) - HP and mining speed penalty.
-            // Both penalties cancelled together at mining level 10.
-            TraitDefinitions.Weak.BuildTraitText(eplr, ref __result);
-
-            // Kind trait (Tailor) - animal loot and harvesting speed penalty.
-            TraitDefinitions.Kind.BuildTraitText(eplr, ref __result);
-
-            // Farsighted trait (Hunter) - melee damage penalty
-            TraitDefinitions.Farsighted.BuildTraitText(eplr, ref __result);
-
-            // Nervous trait (Malefactor, Clockmaker) - melee damage penalty
-            TraitDefinitions.Nervous.BuildTraitText(eplr, ref __result);
-
-            // Nearsighted trait (Blackguard) - ranged damage penalty
-            TraitDefinitions.Nearsighted.BuildTraitText(eplr, ref __result);
-
-            // Frail trait (Malefactor, Clockmaker) - HP and ranged distance penalty.
-            // Both penalties cancelled together at ranged level 25.
-            TraitDefinitions.Frail.BuildTraitText(eplr, ref __result);
-
-            // Heavyhanded trait (Blackguard) - vessel, foraging, wild crop penalties.
-            TraitDefinitions.Heavyhanded.BuildTraitText(eplr, ref __result);
-
-            // Ravenous trait (Blackguard) - hunger rate penalty
-            TraitDefinitions.Ravenous.BuildTraitText(eplr, ref __result);
-
-            // Claustrophobic trait (Hunter) - ore drop and mining speed penalties.
-            // Mining penalty decreases progressively with mining level (1-10).
-            // At level 10, both mining and ore penalties are cancelled, and Hardy bonus shows instead.
-            TraitDefinitions.Claustrophobic.BuildTraitText(eplr, ref __result);
+            // Process loaded traits
+            foreach (var trait in SeraphLevelingModSystem.LoadedTraits)
+            {
+                trait.BuildTraitText(eplr, ref __result);
+            }
 
             // =========================================================================
             // COMBAT OVERHAUL PROFICIENCY TRAIT DISPLAY

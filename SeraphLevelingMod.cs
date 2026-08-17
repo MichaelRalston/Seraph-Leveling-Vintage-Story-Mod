@@ -431,6 +431,7 @@ namespace SeraphLeveling
         // =========================================================================
 
         public static ImmutableDictionary<string, ImmutableList<(TraitDefinition Trait, int Value)>> TraitsForAttributes { get; private set; } = ImmutableDictionary<string, ImmutableList<(TraitDefinition, int)>>.Empty;
+        public static List<TraitDefinition> LoadedTraits { get; internal set; } = [];   // Preserve ordering for consistent trait text formatting
         public static HashSet<ISaveableAttribute> LoadedAttributes { get; internal set; } = [];
 
         public static HashSet<ModDefinition> LoadedMods { get; internal set; } = [ModDefinitions.Vanilla];
@@ -446,10 +447,13 @@ namespace SeraphLeveling
                 activeMods.Add(ModDefinitions.SacredClasses);
             }
             LoadedMods = activeMods;
-            var flatAttributeMappings = activeMods
+            var traits = activeMods
                     .SelectMany(mod => mod.CharacterClasses)
                     .SelectMany(charClass => charClass.Traits)
-                    .DistinctBy(trait => trait.Id)
+                    .DistinctBy(trait => trait.Id);
+            LoadedTraits = traits.ToList();
+
+            var flatAttributeMappings = traits
                     .SelectMany(trait => trait.Attributes, (trait, attrKvp) => new
                     {
                         Attribute = attrKvp.Attribute,

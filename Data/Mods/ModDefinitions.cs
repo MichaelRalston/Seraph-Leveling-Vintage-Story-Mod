@@ -14,7 +14,8 @@ namespace SeraphLeveling.Data.Mods
                 CharacterClassDefinitions.Malefactor,
                 CharacterClassDefinitions.Clockmaker,
                 CharacterClassDefinitions.Blackguard,
-                CharacterClassDefinitions.Tailor
+                CharacterClassDefinitions.Tailor,
+                CharacterClassDefinitions.VanillaDummy,
             ]
         };
 
