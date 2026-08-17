@@ -1726,29 +1726,6 @@ namespace SeraphLeveling
         }
 
         /// <summary>
-        /// Checks if the player's class has the vanilla Focused trait.
-        /// </summary>
-        private static bool PlayerHasVanillaFocusedStatic(EntityPlayer entity)
-        {
-            string[] classTraits = entity.WatchedAttributes.GetStringArray("characterTraits", null);
-
-            if (classTraits != null)
-            {
-                foreach (string trait in classTraits)
-                {
-                    if (trait.Equals("focused", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            // Fallback: check known classes that have Focused (Hunter)
-            string characterClass = entity.WatchedAttributes.GetString("characterClass", "");
-            return characterClass.Equals("hunter", StringComparison.OrdinalIgnoreCase);
-        }
-
-        /// <summary>
         /// Reliable check for whether the player has a vanilla trait. Reads from
         /// `characterTraits` and `characterClass` watched attributes (both reliably synced by
         /// vanilla VS) instead of our own `sitHasVanillaX` bools, which depend on a MarkPathDirty
@@ -2680,28 +2657,6 @@ namespace SeraphLeveling
 
             var damageProgress = AttributeModifierDefinitions.MeleeDamage.GetForPlayer(playerUid);
             damageProgress.DoEvent(attackerPlayer, weaponType, damage);
-        }
-
-        /// <summary>
-        /// Static version of PlayerHasVanillaSoldier for use from Harmony patches.
-        /// </summary>
-        private static bool PlayerHasVanillaSoldierStatic(EntityPlayer entity)
-        {
-            string[] classTraits = entity.WatchedAttributes.GetStringArray("characterTraits", null);
-
-            if (classTraits != null)
-            {
-                foreach (string trait in classTraits)
-                {
-                    if (trait.Equals("soldier", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            string characterClass = entity.WatchedAttributes.GetString("characterClass", "");
-            return characterClass.Equals("blackguard", StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
