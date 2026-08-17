@@ -73,7 +73,12 @@ namespace SeraphLeveling.Data.Attributes
         public virtual string LongDescription { get => field??=SkillKey; init; }
         public virtual string TraitCode { get => field ??= $"sit{SkillKey}mastery"; init; }
 
-        public virtual string Direction { get; init; } = "+";
+        /// <summary>
+        /// Indicates that this attribute modifier definition is inverted, i.e. that an increase in the modifier results in a
+        /// corresponding decrease in the corresponding attribute. For example, gaining levels in the Furtive attribute results
+        /// in a decrease in animal detection range.
+        /// </summary>
+        public virtual bool IsInverted { get; init; } = false;
         public required string PersistenceHeader { get; init; }
         public virtual byte PersistenceVersion { get; init; } = 1;
         public abstract void CollectStatus(IPlayer player, StringBuilder sb);

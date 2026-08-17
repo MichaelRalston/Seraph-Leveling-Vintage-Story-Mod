@@ -200,7 +200,7 @@ namespace SeraphLeveling.Data.Traits
                             }
                         }
                     }
-                    retVal[leveledAttr] = attrVal.ToString("+0;-#");
+                    retVal[leveledAttr] = leveledAttr.CalculateDisplayBonus(attrVal);
                 }
                 else if (mod.Attribute is MaxHealthUnlockedAttributeModifierDefinition maxHealthAttr)
                 {

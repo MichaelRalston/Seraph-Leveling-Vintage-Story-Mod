@@ -13,6 +13,7 @@ namespace SeraphLeveling.Data.Attributes
         public int GetCreditsForPlayer(IPlayer player);
         public bool IsLeveledForPlayer(IPlayer player, int requiredCredits) => GetCreditsForPlayer(player) >= requiredCredits;
         public int GetBonusPercent(EntityPlayer player);
+        public string CalculateDisplayBonus(int bonusPercent);
 
         /// <summary>
         /// Registers a method to be called every time the credit total for this attribute changes for a player
@@ -102,7 +103,7 @@ namespace SeraphLeveling.Data.Attributes
             int bonusPercent = (int)(bonus * 100);
 
             // Always apply stats (they're not persistent)
-            player.Entity.Stats.Set(StatName, StatCode, Direction=="-"?-bonus:bonus, false);
+            player.Entity.Stats.Set(StatName, StatCode, IsInverted ? -bonus : bonus, false);
 
             // Check if any values have changed before updating WatchedAttributes
             var watchedAttrs = player.Entity.WatchedAttributes;
@@ -133,6 +134,16 @@ namespace SeraphLeveling.Data.Attributes
             int totalLevelFromTraits = CalculateLevelFromTraits(entity);
             int earnableBonus = Math.Max(0, GlobalMaxCredits - totalLevelFromTraits);
             return Math.Min(progress.TotalCredits, earnableBonus);
+        }
+
+        public virtual string CalculateDisplayBonus(EntityPlayer entity, PD progress)
+        {
+            return CalculateDisplayBonus(CalculateBonus(entity, progress));
+        }
+
+        public virtual string CalculateDisplayBonus(int bonusPercent)
+        {
+            return (IsInverted ? -bonusPercent : bonusPercent).ToString("+0;-#");
         }
 
         public override void ApplyBonusIfExists(IServerPlayer player)
@@ -166,17 +177,17 @@ namespace SeraphLeveling.Data.Attributes
         public override void GetTraitAllCommandLine(IPlayer player, StringBuilder sb)
         {
             var progress = GetDict(player);
-            sb.AppendLine($"{Name}: {progress.TotalCredits}/{GetMaxCredits(player.Entity)} ({Direction}{progress.TotalCredits}{Stat})");
+            sb.AppendLine($"{Name}: {progress.TotalCredits}/{GetMaxCredits(player.Entity)} ({progress.DisplayCredits}{Stat})");
         }
         public override void CollectStatus(IPlayer player, StringBuilder sb)
         {
             var progress = GetDict(player);
             int currentCredits = progress.TotalCredits;
-            int bonusPercent = CalculateBonus(player.Entity, progress);
+            string displayPercent = CalculateDisplayBonus(player.Entity, progress);
             int maxCredits = GetMaxCredits(player.Entity);
 
-            sb.AppendLine($"{Name} progression: {currentCredits}% / {maxCredits}%");
-            sb.AppendLine($"Current bonus: {Direction}{bonusPercent}{Stat}");
+            sb.AppendLine($"{Name} progression: {progress.DisplayCredits}% / {maxCredits}%");
+            sb.AppendLine($"Current bonus: {displayPercent}{Stat}");
             progress.WriteIncrementLine(sb);
 
             if (currentCredits >= maxCredits)
@@ -226,8 +237,8 @@ namespace SeraphLeveling.Data.Attributes
             // If no value provided, show current level
             if (!newCredits.HasValue)
             {
-                int currentBonus = CalculateBonus(player.Entity, progress);
-                return TextCommandResult.Success($"Current {LongDescription} level: {progress.TotalCredits}/{maxCredits} ({Direction}{currentBonus}{Stat})");
+                string displayBonus = CalculateDisplayBonus(player.Entity, progress);
+                return TextCommandResult.Success($"Current {LongDescription} level: {progress.TotalCredits}/{maxCredits} ({displayBonus}{Stat})");
             }
 
             if (newCredits.Value < 0)
@@ -254,7 +265,7 @@ namespace SeraphLeveling.Data.Attributes
             PendingSave = true;
             ApplyBonus(player, progress);
             progress.UpdateSkillActivityDay();
-            return TextCommandResult.Success($"{Name} level set to {level} ({Direction}{level}{Stat}) for {player.PlayerName}.");
+            return TextCommandResult.Success($"{Name} level set to {level} ({CalculateDisplayBonus(level)}{Stat}) for {player.PlayerName}.");
         }
 
 
@@ -280,11 +291,11 @@ namespace SeraphLeveling.Data.Attributes
                     ApplyBonus(player, progress);
                 }
 
-                return TextCommandResult.Success($"Max {LongDescription} bonus set to {Direction}{GlobalMaxCredits}%. All player bonuses recalculated.");
+                return TextCommandResult.Success($"Max {LongDescription} bonus set to {CalculateDisplayBonus(GlobalMaxCredits)}%. All player bonuses recalculated.");
             }
             else
             {
-                return TextCommandResult.Success($"Current max {LongDescription} bonus: {Direction}{GlobalMaxCredits}%");
+                return TextCommandResult.Success($"Current max {LongDescription} bonus: {CalculateDisplayBonus(GlobalMaxCredits)}%");
             }
         }
 
@@ -294,7 +305,7 @@ namespace SeraphLeveling.Data.Attributes
             ApplyBonus(player, progress);
             if (progress.TotalCredits > 0)
             {
-                SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Applied {LongDescription} bonus {Direction}{progress.TotalCredits}% to player {player.PlayerName}");
+                SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Applied {LongDescription} bonus {CalculateDisplayBonus(progress.TotalCredits)}% to player {player.PlayerName}");
             }
         }
 
@@ -356,6 +367,12 @@ namespace SeraphLeveling.Data.Attributes
         /// <summary>Last in-game day when this skill was used. Used for skill decay.</summary>
         public double LastActivityDay { get; set; }
 
+        /// <summary>
+        /// Gets a formatted string representation of this progress data's total credits, taking into account whether
+        /// the attribute is inverted.
+        /// </summary>
+        public string DisplayCredits => (Definition.IsInverted ? -TotalCredits : TotalCredits).ToString("+0;-#");
+
         public void UpdateSkillActivityDay()
         {
             if (!SeraphLevelingModSystem.EnableSkillDecay) return;
@@ -375,7 +392,7 @@ namespace SeraphLeveling.Data.Attributes
             int bonusPercent = Definition.ApplyBonus(player, (PD)this);
             UpdateSkillActivityDay();
 
-            return TextCommandResult.Success($"{Definition.Name} credits set to {newCredits} ({Definition.Direction}{bonusPercent}{Definition.Stat}).");
+            return TextCommandResult.Success($"{Definition.Name} credits set to {newCredits} ({Definition.CalculateDisplayBonus(bonusPercent)}{Definition.Stat}).");
         }
         public virtual void ZeroPartialCredit()
         {

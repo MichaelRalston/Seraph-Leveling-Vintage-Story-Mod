@@ -225,7 +225,7 @@ namespace SeraphLeveling.Data.Attributes
                 Definition.OnCreditsChanged(player, oldCredits, (PD)this);
                 UpdateSkillActivityDay();
 
-                return TextCommandResult.Success($"Set {level} credits on {toolName}. Total: {TotalCredits}/{maxCredits} ({Definition.Direction}{bonusPercent}{Definition.Stat}).");
+                return TextCommandResult.Success($"Set {level} credits on {toolName}. Total: {TotalCredits}/{maxCredits} ({Definition.CalculateDisplayBonus(bonusPercent)}{Definition.Stat}).");
             }
             else
             {
