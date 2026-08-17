@@ -351,6 +351,16 @@ namespace SeraphLeveling.Data.Attributes
             Trait = new(() => Traits.TraitDefinitions.Hardy),
         };
 
+        public static readonly MaxHealthUnlockedAttributeModifierDefinition FrailHealthOffset = new()
+        {
+            Id = "frailhealth",
+            SkillKey = "frailhealth",
+            PersistenceHeader = "FRH",
+            Name = "FrailHealth",
+            ModifierAmount = 2.5f,
+            Trait = new(() => Traits.TraitDefinitions.Frail),
+        };
+
         public enum ArmorDurabilityProgressTypes
         {
             DamageBlocked,

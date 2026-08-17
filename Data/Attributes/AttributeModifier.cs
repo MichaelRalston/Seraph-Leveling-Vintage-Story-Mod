@@ -380,7 +380,7 @@ namespace SeraphLeveling.Data.Attributes
 
         private record class Instance : IAttributeModifier
         {
-            private static readonly List<string> DebugAttributes = ["hardyhealth"];
+            private static readonly List<string> DebugAttributes = ["frailhealth"];
 
             private void DebugLog(bool client, bool server, string message)
             {
@@ -446,8 +446,11 @@ namespace SeraphLeveling.Data.Attributes
                 }
                 else if (RemoveWith.Any(req => !req.IsSatisfied(player)))
                 {
-                    // If at least one removal requirement is present and any are unsatisfied, then the modifier is deactivated
-                    retVal = false;
+                    // If at least one removal requirement is present and any are unsatisfied, then the modifier is deactivated if and only if the player has the linked vanilla trait
+                    var unlockedAttr = Attribute as IUnlockedAttributeModifierDefinition;
+                    bool hasVanilla = SeraphLevelingModSystem.PlayerHasTrait(player.Entity, unlockedAttr?.Trait?.Value);
+                    DebugLog(true, true, $"   [Verdus] Checking vanilla trait with unsatisfied requirement for attribute {Attribute.Id}: hasVanilla={hasVanilla}");
+                    retVal = hasVanilla;
                 }
                 else if (UnlockWith.All(req => req.IsSatisfied(player)))
                 {

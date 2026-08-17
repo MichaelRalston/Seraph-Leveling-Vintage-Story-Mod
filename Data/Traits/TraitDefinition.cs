@@ -13,7 +13,7 @@ namespace SeraphLeveling.Data.Traits
 {
     public record class TraitDefinition
     {
-        private static readonly List<string> DebugTraits = ["hardy", "hardyhealth"];
+        private static readonly List<string> DebugTraits = ["frail"];
 
         private void DebugLog(bool client, bool server, string message)
         {

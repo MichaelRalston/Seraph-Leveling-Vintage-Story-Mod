@@ -1757,7 +1757,7 @@ namespace SeraphLeveling
         /// </summary>
         public static bool PlayerHasTrait(EntityPlayer entity, TraitDefinition traitDefinition)
         {
-            if (entity == null)
+            if (entity == null || traitDefinition == null)
             {
                 return false;
             }

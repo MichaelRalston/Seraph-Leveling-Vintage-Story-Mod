@@ -12,6 +12,7 @@ namespace SeraphLeveling.Data.Attributes
     {
         public string Name { get; }
         public string UnlockedKey { get; }
+        public Lazy<TraitDefinition> Trait { get; }
         public bool IsUnlockedForPlayer(IPlayer player);
 
         /// <summary>

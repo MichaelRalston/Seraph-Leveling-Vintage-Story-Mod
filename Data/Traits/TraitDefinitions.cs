@@ -104,8 +104,10 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "frail",
             Attributes = [
+                IAttributeModifier.Penalty(AttributeModifierDefinitions.FrailHealthOffset, 1, [
+                    new LeveledAttributeMaximumRequirement { Attribute = AttributeModifierDefinitions.RangedDistance, ThresholdPercentage = 25 },
+                ]),
                 IAttributeModifier.Penalty(AttributeModifierDefinitions.RangedDistance, 25, [ new LeveledAttributeMaximumRequirement { Attribute = AttributeModifierDefinitions.RangedDistance, ThresholdPercentage = 0 }]),
-                // TODO Ore drop rate penalty
             ],
         };
 
@@ -160,7 +162,7 @@ namespace SeraphLeveling.Data.Traits
             Attributes = [
                 IAttributeModifier.Bonus(AttributeModifierDefinitions.HardyHealth, 1, [
                     new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.MiningSpeed, ThresholdPercentage = 10 },
-                    // TODO 10% armor durability
+                    new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.ArmorDurability, ThresholdPercentage = 10 }
                 ]),
                 IAttributeModifier.Bonus(AttributeModifierDefinitions.MiningSpeed, 10),
             ]
