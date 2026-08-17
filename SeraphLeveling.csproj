@@ -18,6 +18,11 @@
       <HintPath>$(APPDATA)/vintagestory/VintagestoryLib.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="VSEssentials">
+      <HintPath>$(APPDATA)\Vintagestory\Mods\VSEssentials.dll</HintPath>
+      <HintPath>$(APPDATA)/vintagestory/Mods/VSEssentials.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="VSSurvivalMod">
       <HintPath>$(APPDATA)\Vintagestory\Mods\VSSurvivalMod.dll</HintPath>
       <HintPath>$(APPDATA)/vintagestory/Mods/VSSurvivalMod.dll</HintPath>

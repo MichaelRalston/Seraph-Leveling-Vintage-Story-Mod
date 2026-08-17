@@ -1,3 +1,4 @@
+using Vintagestory.GameContent;
 using Vintagestory.API.Server;
 
 namespace SeraphLeveling.Data.Attributes
@@ -31,6 +32,9 @@ namespace SeraphLeveling.Data.Attributes
                 SeraphLevelingModSystem.ServerApi.Logger.Debug($"[Verdus] Removing max health stat for attribute {Id}, category={STAT_CATEGORY}, statkey={StatKey}");
                 player.Entity.Stats.Remove(STAT_CATEGORY, StatKey);
             }
+            
+            // Calling this forces the behavior to recalculate MaxHealth using the new stats
+            player.Entity.GetBehavior<EntityBehaviorHealth>()?.MarkDirty();
         }
     }
 
