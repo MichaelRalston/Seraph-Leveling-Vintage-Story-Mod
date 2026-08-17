@@ -97,23 +97,9 @@ namespace SeraphLeveling
         public static int MaxRangedAccuracyPercent = 50;         // 50% max bonus for accuracy
         public static int MaxRangedDistancePercent = 50;         // 50% max bonus for distance
 
-        // Vanilla Focused trait bonuses (used for cap calculations)
-        public const int VANILLA_FOCUSED_DAMAGE_BONUS = 20;
-        public const int VANILLA_FOCUSED_ACCURACY_BONUS = 30;
-        public const int VANILLA_FOCUSED_DISTANCE_BONUS = 20;
-
-        // Keys for walking speed progression system
-        public const string WALKING_STAT_CODE = "sitWalkingBonus";
-
         // WatchedAttributes keys for client sync (walking)
         public const string WATCHED_WALKING_LEVEL = "sitWalkingLevel";
         public const string WATCHED_WALKING_BONUS = "sitWalkingBonusPercent";
-
-        // Trait code for the walking speed mastery trait (Fleetfooted)
-        public const string WALKING_TRAIT_CODE = "sitwalkingmastery";
-
-        // Vanilla Fleetfooted trait walk speed bonus (used for cap calculations)
-        public const int VANILLA_FLEETFOOTED_WALK_BONUS = 10;
 
         // Tracking last known positions for walking distance calculation (using Position2D to avoid Vec3d allocations)
         private static ConcurrentDictionary<string, Position2D> lastPlayerPositions = new ConcurrentDictionary<string, Position2D>();
@@ -124,31 +110,20 @@ namespace SeraphLeveling
         // Cache for vanilla trait checks - populated once on player join
         private static ConcurrentDictionary<string, CachedVanillaTraits> VanillaTraitsCache = new ConcurrentDictionary<string, CachedVanillaTraits>();
 
-        // Keys for hunger rate progression system
-        public const string HUNGER_STAT_CODE = "sitHungerBonus";
         // WatchedAttributes keys for client sync (hunger)
         public const string WATCHED_HUNGER_LEVEL = "sitHungerLevel";
         public const string WATCHED_HUNGER_BONUS = "sitHungerBonusPercent";
-
-        // Trait code for the hunger mastery trait
-        public const string HUNGER_TRAIT_CODE = "sithungermastery";
 
         // Vanilla Ravenous trait hunger rate increase (used for cap calculations)
         // Blackguard has +30% hunger rate, so earning 25% brings them back to nearly normal
         public const int VANILLA_RAVENOUS_HUNGER_PENALTY = 30;
         public const string WATCHED_RAVENOUS_REMAINING = "sitRavenousRemaining";
 
-        // Keys for armor progression system
-        public const string ARMOR_DURABILITY_STAT_CODE = "sitArmorDurabilityBonus";
-        public const string ARMOR_WALKSPEED_STAT_CODE = "sitArmorWalkSpeedBonus";
         // WatchedAttributes keys for client sync (armor)
         public const string WATCHED_ARMOR_DURABILITY_LEVEL = "sitArmorDurabilityLevel";
         public const string WATCHED_ARMOR_DURABILITY_BONUS = "sitArmorDurabilityBonusPercent";
         public const string WATCHED_ARMOR_WALKSPEED_LEVEL = "sitArmorWalkSpeedLevel";
         public const string WATCHED_ARMOR_WALKSPEED_BONUS = "sitArmorWalkSpeedBonusPercent";
-
-        // Trait code for the armor mastery trait (Soldier)
-        public const string ARMOR_TRAIT_CODE = "sitarmormastery";
 
         // Armor progression configuration
         // Time-based progression: 1 VS day (48 min) base, +1 VS day increment per credit (gives -1% walk speed penalty per credit)
@@ -191,9 +166,6 @@ namespace SeraphLeveling
         public static bool EnableArmorHealingBonus = false;        // If true, armor time grants healing effectiveness
         public static int MaxArmorHealingPercent = 25;             // Max healing effectiveness from armor
 
-        // WatchedAttributes keys for new armor stats
-        public const string WATCHED_ARMOR_HUNGER_REDUCTION = "sitArmorHungerReduction";
-        public const string WATCHED_ARMOR_HEALING_BONUS = "sitArmorHealingBonus";
 
         // Vanilla Soldier trait armor bonuses (used for cap calculations)
         public const int VANILLA_SOLDIER_ARMOR_DURABILITY_BONUS = 15;
@@ -266,10 +238,8 @@ namespace SeraphLeveling
         // =========================================================================
         // MENDER TRAIT - Tracks sewing kit repairs for durability bonus
         // =========================================================================
-        public const string MENDER_STAT_CODE = "sitMenderBonus";
         public const string WATCHED_MENDER_LEVEL = "sitMenderLevel";
         public const string WATCHED_MENDER_BONUS = "sitMenderBonusPercent";
-        public const string MENDER_TRAIT_CODE = "sitmendermastery";
 
         // Mender progression configuration
         public static int BaseMenderRepairsPerIncrement = 5;   // Base repairs for first credit
@@ -291,11 +261,7 @@ namespace SeraphLeveling
         // =========================================================================
         // PILFERER TRAIT - Tracks chests/vessels for loot bonuses
         // =========================================================================
-        public const string PILFERER_RUSTY_GEAR_STAT_CODE = "sitPilfererRustyGear";
-        public const string PILFERER_VESSEL_CONTENTS_STAT_CODE = "sitPilfererVesselContents";
-        public const string PILFERER_WHOLE_VESSEL_STAT_CODE = "sitPilfererWholeVessel";
         public const string WATCHED_PILFERER_LEVEL = "sitPilfererLevel";
-        public const string WATCHED_PILFERER_BONUS = "sitPilfererBonusPercent";
         // Per-stat displayed bonuses. Pilferer's three stats have different vanilla values
         // (vessel +15%, rusty gear +10%, whole vessel +12%), so a single shared bonus value
         // can't drive all three to the same cap simultaneously for Malefactor (vanilla
@@ -304,7 +270,6 @@ namespace SeraphLeveling
         public const string WATCHED_PILFERER_VESSEL_BONUS = "sitPilfererVesselBonus";
         public const string WATCHED_PILFERER_RUSTY_BONUS = "sitPilfererRustyBonus";
         public const string WATCHED_PILFERER_WHOLE_BONUS = "sitPilfererWholeBonus";
-        public const string PILFERER_TRAIT_CODE = "sitpilferermastery";
 
         // Pilferer progression configuration
         public static int BasePilfererPointsPerIncrement = 10;  // Base points for first credit
@@ -320,12 +285,9 @@ namespace SeraphLeveling
         // =========================================================================
         // RESOURCEFUL TRAIT - Tracks animal harvesting for loot/speed bonuses
         // =========================================================================
-        public const string RESOURCEFUL_LOOT_STAT_CODE = "sitResourcefulLoot";
-        public const string RESOURCEFUL_SPEED_STAT_CODE = "sitResourcefulSpeed";
         public const string WATCHED_RESOURCEFUL_LEVEL = "sitResourcefulLevel";
         public const string WATCHED_RESOURCEFUL_LOOT_BONUS = "sitResourcefulLootBonusPercent";
         public const string WATCHED_RESOURCEFUL_SPEED_BONUS = "sitResourcefulSpeedBonusPercent";
-        public const string RESOURCEFUL_TRAIT_CODE = "sitresourcefulmastery";
 
         // Resourceful progression configuration
         public static int BaseResourcefulAnimalsPerIncrement = 10;  // Base animals for first credit
@@ -391,21 +353,6 @@ namespace SeraphLeveling
         // =========================================================================
         public const string MERCILESS_STAT_CODE = "sitMercilessBonus";
         public const string WATCHED_MERCILESS_UNLOCKED = "sitMercilessUnlocked";
-        public const string MERCILESS_TRAIT_CODE = "sitmercilessmastery";
-
-        // Merciless unlock thresholds
-        public static int MercilessArmorDurabilityThreshold = 10;    // 10% armor durability bonus required
-        public static int MercilessMeleeDamageThreshold = 15;        // 15% melee damage bonus required
-
-
-        // =========================================================================
-        // CLAUSTROPHOBIC REMOVAL - Removes trait after reaching mining threshold (Hunter)
-        // =========================================================================
-        public const string WATCHED_CLAUSTROPHOBIC_REMOVED = "sitClaustrophobicRemoved";
-        public const string CLAUSTROPHOBIC_REMOVED_TRAIT_CODE = "sitclaustrophobicremoved";
-
-        // Claustrophobic removal threshold
-        public static int ClaustrophobicRemovalMiningThreshold = 100;  // 100% mining speed bonus required
 
         // =========================================================================
         // NEGATIVE TRAIT CONSTANTS - Used for cancellation calculations
@@ -424,22 +371,16 @@ namespace SeraphLeveling
         public const string WATCHED_NEARSIGHTED_REMAINING = "sitNearsightedRemaining";
 
         // Frail (Malefactor, Clockmaker): -2.5 HP, -25% ranged distance
-        public const float VANILLA_FRAIL_HP_PENALTY = 2.5f;
         public const int VANILLA_FRAIL_DISTANCE_PENALTY = 25;
-        public const string WATCHED_FRAIL_HP_REMAINING = "sitFrailHpRemaining";
-        public const string WATCHED_FRAIL_DISTANCE_REMAINING = "sitFrailDistanceRemaining";
-        public const string FRAIL_HP_CANCEL_STAT_CODE = "sitFrailHpCancel";
 
         // Civil (Tailor): -10% loot from foraging
         public const int VANILLA_CIVIL_FORAGING_PENALTY = 10;
         public const string WATCHED_CIVIL_REMAINING = "sitCivilRemaining";
 
         // Weak (Tailor): -2 HP, -10% mining speed
-        public const int VANILLA_WEAK_HP_PENALTY = 2;
         public const int VANILLA_WEAK_MINING_PENALTY = 10;
         public const string WATCHED_WEAK_HP_REMAINING = "sitWeakHpRemaining";
         public const string WATCHED_WEAK_MINING_REMAINING = "sitWeakMiningRemaining";
-        public const string WEAK_HP_CANCEL_STAT_CODE = "sitWeakHpCancel";
 
         // Kind (Tailor): -10% animal loot, -25% harvesting speed
         public const int VANILLA_KIND_LOOT_PENALTY = 10;
@@ -458,7 +399,6 @@ namespace SeraphLeveling
         // Claustrophobic (Hunter): -15% ore drop, -10% mining speed - already defined above
         public const int VANILLA_CLAUSTROPHOBIC_ORE_PENALTY = 15;
         public const int VANILLA_CLAUSTROPHOBIC_MINING_PENALTY = 10;
-        public const string WATCHED_CLAUSTROPHOBIC_ORE_REMAINING = "sitClaustrophobicOreRemaining";
         public const string WATCHED_CLAUSTROPHOBIC_MINING_REMAINING = "sitClaustrophobicMiningRemaining";
 
         private const string CONFIG_SAVE_KEY = "sitConfig";
@@ -953,9 +893,11 @@ namespace SeraphLeveling
                     .RequiresPrivilege(Privilege.controlserver)
                     .RequiresPlayer()
                     .HandleWith(OnTraitTestSuite1Command)
-                .EndSubCommand()
+                .EndSubCommand();
+            if (IsCombatOverhaulLoaded)
+            {
                 // Combat Overhaul proficiency commands
-                .BeginSubCommand("coproficiency")
+                command.BeginSubCommand("coproficiency")
                     .WithDescription("View all Combat Overhaul proficiency progression (requires CO mod)")
                     .RequiresPrivilege(Privilege.chat)
                     .RequiresPlayer()
@@ -1085,77 +1027,79 @@ namespace SeraphLeveling
                     .RequiresPlayer()
                     .WithArgs(api.ChatCommands.Parsers.OptionalWord("action"), api.ChatCommands.Parsers.OptionalInt("value"))
                     .HandleWith(args => OnTraitCOProficiencyConfigCommand(args, CO_STEADY_AIM))
-                .EndSubCommand()
-                // Sleep buff and decay status commands
-                .BeginSubCommand("sleepbuff")
-                    .WithDescription("View your current sleep buff status")
-                    .RequiresPrivilege(Privilege.chat)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitSleepBuffCommand)
-                .EndSubCommand()
-                .BeginSubCommand("decay")
-                    .WithDescription("View your current skill decay status")
-                    .RequiresPrivilege(Privilege.chat)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitDecayCommand)
-                .EndSubCommand()
-                .BeginSubCommand("all")
-                    .WithDescription("View all trait progression at once")
-                    .RequiresPrivilege(Privilege.chat)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitAllCommand)
-                .EndSubCommand()
-                .BeginSubCommand("soundvolume")
-                    .WithDescription("Get or set the level-up ding volume, from 0.0 (silent) to 1.0 (full). Default 0.25. Scale is exponential, so 0.5 is close to 1.0 (admin)")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalWord("volume"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitSoundVolumeCommand)
-                .EndSubCommand()
-                .BeginSubCommand("testsound")
-                    .WithDescription("Play the level-up ding once at a specified volume (0.0-1.0) for testing. Defaults to the current config volume (admin)")
-                    .WithArgs(api.ChatCommands.Parsers.OptionalWord("volume"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitTestSoundCommand)
-                .EndSubCommand()
-                .BeginSubCommand("setplayer")
-                    .WithDescription("Set a trait level for another player. Usage: /trait setplayer &lt;playername&gt; &lt;trait&gt; &lt;level&gt; [toolname]")
-                    .WithArgs(api.ChatCommands.Parsers.Word("playername"), api.ChatCommands.Parsers.Word("trait"), api.ChatCommands.Parsers.Int("level"), api.ChatCommands.Parsers.OptionalWord("toolname"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitSetPlayerCommand)
-                .EndSubCommand()
-                .BeginSubCommand("max")
-                    .WithDescription("View or set the max bonus percent for a trait. (admin only) Usage: /trait max &lt;trait&gt; [level]")
-                    .WithArgs(api.ChatCommands.Parsers.Word("trait"), api.ChatCommands.Parsers.OptionalInt("level"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitSetMaxCommand)
-                .EndSubCommand()
-                .BeginSubCommand("increment")
-                    .WithDescription("View or set the increment step per credit for a trait. (admin only) Usage: /trait increment &lt;trait&gt; [step]")
-                    .WithArgs(api.ChatCommands.Parsers.Word("trait"), api.ChatCommands.Parsers.OptionalInt("step"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitSetIncrementCommand)
-                .EndSubCommand()
-                .BeginSubCommand("base")
-                    .WithDescription("View or set the base step per credit for a trait. (admin only) Usage: /trait base &lt;trait&gt; [step]")
-                    .WithArgs(api.ChatCommands.Parsers.Word("trait"), api.ChatCommands.Parsers.OptionalInt("step"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitSetBaseCommand)
-                .EndSubCommand()
-                .BeginSubCommand("level")
-                    .WithDescription("View or set your level for a trait. (admin only) Usage: /trait level &lt;trait&gt; [level]")
-                    .WithArgs(api.ChatCommands.Parsers.Word("trait"), api.ChatCommands.Parsers.OptionalInt("step"), api.ChatCommands.Parsers.OptionalWord("tool"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitLevelCommand)
-                .EndSubCommand()
-                .BeginSubCommand("unlock")
-                    .WithDescription("Manually lock or unlock an unlockable trait. (admin only) Usage: /trait unlock &lt;trait&gt; &lt;unlock&gt;")
-                    .WithArgs(api.ChatCommands.Parsers.Word("trait"), api.ChatCommands.Parsers.Bool("unlock", "unlocked"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .HandleWith(OnTraitUnlockCommand)
-                .EndSubCommand()
+                .EndSubCommand();
+            }
+            command
+            // Sleep buff and decay status commands
+            .BeginSubCommand("sleepbuff")
+                .WithDescription("View your current sleep buff status")
+                .RequiresPrivilege(Privilege.chat)
+                .RequiresPlayer()
+                .HandleWith(OnTraitSleepBuffCommand)
+            .EndSubCommand()
+            .BeginSubCommand("decay")
+                .WithDescription("View your current skill decay status")
+                .RequiresPrivilege(Privilege.chat)
+                .RequiresPlayer()
+                .HandleWith(OnTraitDecayCommand)
+            .EndSubCommand()
+            .BeginSubCommand("all")
+                .WithDescription("View all trait progression at once")
+                .RequiresPrivilege(Privilege.chat)
+                .RequiresPlayer()
+                .HandleWith(OnTraitAllCommand)
+            .EndSubCommand()
+            .BeginSubCommand("soundvolume")
+                .WithDescription("Get or set the level-up ding volume, from 0.0 (silent) to 1.0 (full). Default 0.25. Scale is exponential, so 0.5 is close to 1.0 (admin)")
+                .WithArgs(api.ChatCommands.Parsers.OptionalWord("volume"))
+                .RequiresPrivilege(Privilege.controlserver)
+                .HandleWith(OnTraitSoundVolumeCommand)
+            .EndSubCommand()
+            .BeginSubCommand("testsound")
+                .WithDescription("Play the level-up ding once at a specified volume (0.0-1.0) for testing. Defaults to the current config volume (admin)")
+                .WithArgs(api.ChatCommands.Parsers.OptionalWord("volume"))
+                .RequiresPrivilege(Privilege.controlserver)
+                .RequiresPlayer()
+                .HandleWith(OnTraitTestSoundCommand)
+            .EndSubCommand()
+            .BeginSubCommand("setplayer")
+                .WithDescription("Set a trait level for another player. Usage: /trait setplayer &lt;playername&gt; &lt;trait&gt; &lt;level&gt; [toolname]")
+                .WithArgs(api.ChatCommands.Parsers.Word("playername"), api.ChatCommands.Parsers.Word("trait"), api.ChatCommands.Parsers.Int("level"), api.ChatCommands.Parsers.OptionalWord("toolname"))
+                .RequiresPrivilege(Privilege.controlserver)
+                .HandleWith(OnTraitSetPlayerCommand)
+            .EndSubCommand()
+            .BeginSubCommand("max")
+                .WithDescription("View or set the max bonus percent for a trait. (admin only) Usage: /trait max &lt;trait&gt; [level]")
+                .WithArgs(api.ChatCommands.Parsers.Word("trait"), api.ChatCommands.Parsers.OptionalInt("level"))
+                .RequiresPrivilege(Privilege.controlserver)
+                .HandleWith(OnTraitSetMaxCommand)
+            .EndSubCommand()
+            .BeginSubCommand("increment")
+                .WithDescription("View or set the increment step per credit for a trait. (admin only) Usage: /trait increment &lt;trait&gt; [step]")
+                .WithArgs(api.ChatCommands.Parsers.Word("trait"), api.ChatCommands.Parsers.OptionalInt("step"))
+                .RequiresPrivilege(Privilege.controlserver)
+                .HandleWith(OnTraitSetIncrementCommand)
+            .EndSubCommand()
+            .BeginSubCommand("base")
+                .WithDescription("View or set the base step per credit for a trait. (admin only) Usage: /trait base &lt;trait&gt; [step]")
+                .WithArgs(api.ChatCommands.Parsers.Word("trait"), api.ChatCommands.Parsers.OptionalInt("step"))
+                .RequiresPrivilege(Privilege.controlserver)
+                .HandleWith(OnTraitSetBaseCommand)
+            .EndSubCommand()
+            .BeginSubCommand("level")
+                .WithDescription("View or set your level for a trait. (admin only) Usage: /trait level &lt;trait&gt; [level]")
+                .WithArgs(api.ChatCommands.Parsers.Word("trait"), api.ChatCommands.Parsers.OptionalInt("step"), api.ChatCommands.Parsers.OptionalWord("tool"))
+                .RequiresPrivilege(Privilege.controlserver)
+                .HandleWith(OnTraitLevelCommand)
+            .EndSubCommand()
+            .BeginSubCommand("unlock")
+                .WithDescription("Manually lock or unlock an unlockable trait. (admin only) Usage: /trait unlock &lt;trait&gt; &lt;unlock&gt;")
+                .WithArgs(api.ChatCommands.Parsers.Word("trait"), api.ChatCommands.Parsers.Bool("unlock", "unlocked"))
+                .RequiresPrivilege(Privilege.controlserver)
+                .HandleWith(OnTraitUnlockCommand)
+            .EndSubCommand()
 
-                    ;
+                ;
 
             // Hook into block breaking for mining progression
             api.Event.DidBreakBlock += OnBlockBroken;
@@ -1743,29 +1687,6 @@ namespace SeraphLeveling
             }
 
             return TextCommandResult.Success($"Applied {percent.Value}% armor walk speed penalty reduction (stat value: {reduction:F2}, blended: {blendedValue:F2}). Use '/trait testwalkspeed 0' to clear.");
-        }
-
-        /// <summary>
-        /// Checks if the player's class has the vanilla Ravenous trait.
-        /// </summary>
-        public static bool PlayerHasVanillaRavenousStatic(EntityPlayer entity)
-        {
-            string[] classTraits = entity.WatchedAttributes.GetStringArray("characterTraits", null);
-
-            if (classTraits != null)
-            {
-                foreach (string trait in classTraits)
-                {
-                    if (trait.Equals("ravenous", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            // Fallback: check known classes that have Ravenous (Blackguard)
-            string characterClass = entity.WatchedAttributes.GetString("characterClass", "");
-            return characterClass.Equals("blackguard", StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
@@ -2449,30 +2370,6 @@ namespace SeraphLeveling
             }
         }
 
-        /// <summary>
-        /// Checks if the player's class has the vanilla Hardy trait.
-        /// </summary>
-        public static bool PlayerHasVanillaHardy(EntityPlayer entity)
-        {
-            // Get the player's class traits (not extraTraits which we manage)
-            string[] classTraits = entity.WatchedAttributes.GetStringArray("characterTraits", null);
-
-            if (classTraits != null)
-            {
-                foreach (string trait in classTraits)
-                {
-                    if (trait.Equals("hardy", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            // Fallback: check known classes that have Hardy
-            string characterClass = entity.WatchedAttributes.GetString("characterClass", "");
-            return characterClass.Equals("blackguard", StringComparison.OrdinalIgnoreCase);
-        }
-
         // Server-side Harmony instance for melee damage tracking
         private Harmony serverHarmony;
 
@@ -2786,102 +2683,6 @@ namespace SeraphLeveling
         }
 
         /// <summary>
-        /// Static version of ApplyMeleeBonus for use from Harmony patches.
-        /// Also handles Farsighted and Nervous negative trait cancellation.
-        /// Stats are always applied (they're not persistent). WatchedAttributes only sync when values change.
-        /// </summary>
-        private static int ApplyMeleeBonusStatic(IServerPlayer player, int level)
-        {
-            if (player?.Entity == null) return 0;
-
-            // Use cached vanilla traits if available, otherwise fall back to direct check
-            var cache = GetCachedTraits(player.PlayerUID);
-            bool hasVanillaSoldier = cache?.HasSoldier ?? PlayerHasVanillaSoldierStatic(player.Entity);
-            bool hasFarsighted = cache?.HasFarsighted ?? PlayerHasVanillaFarsighted(player.Entity);
-            bool hasNervous = cache?.HasNervous ?? PlayerHasVanillaNervous(player.Entity);
-
-            int vanillaSoldierBonus = hasVanillaSoldier ? VANILLA_SOLDIER_MELEE_BONUS : 0;
-
-            // Calculate remaining negative trait penalties
-            int farsightedRemaining = hasFarsighted ? CalculateRemainingPenalty(VANILLA_FARSIGHTED_MELEE_PENALTY, level) : 0;
-            int nervousRemaining = hasNervous ? CalculateRemainingPenalty(VANILLA_NERVOUS_MELEE_PENALTY, level) : 0;
-
-            // Calculate net bonus after cancelling negative traits
-            int netBonusPercent = level;
-            if (hasFarsighted)
-            {
-                netBonusPercent = Math.Max(0, level - VANILLA_FARSIGHTED_MELEE_PENALTY);
-            }
-            if (hasNervous)
-            {
-                netBonusPercent = Math.Max(0, level - VANILLA_NERVOUS_MELEE_PENALTY);
-            }
-
-            // Cap earned bonus so total (vanilla + earned) doesn't exceed MaxMeleeDamagePercent
-            int maxEarnableBonus = MaxMeleeDamagePercent - vanillaSoldierBonus;
-            netBonusPercent = Math.Min(netBonusPercent, Math.Max(0, maxEarnableBonus));
-
-            float bonus = netBonusPercent * 0.01f;
-
-            // Always apply stats (they're not persistent)
-            player.Entity.Stats.Set("meleeWeaponsDamage", MELEE_STAT_CODE, bonus, false);
-
-            // Counter-stats: when Farsighted/Nervous melee penalty is fully cancelled, apply a
-            // +penalty counter so functional melee damage matches the displayed cap. Without
-            // this, Hunter (Farsighted) and Malefactor/Clockmaker (Nervous) would land on a
-            // functional +35% melee at maxall while their displayed +50% suggests parity.
-            if (hasFarsighted)
-            {
-                if (farsightedRemaining == 0)
-                    player.Entity.Stats.Set("meleeWeaponsDamage", "sitFarsightedMeleeCancel", VANILLA_FARSIGHTED_MELEE_PENALTY * 0.01f, false);
-                else
-                    player.Entity.Stats.Remove("meleeWeaponsDamage", "sitFarsightedMeleeCancel");
-            }
-            if (hasNervous)
-            {
-                if (nervousRemaining == 0)
-                    player.Entity.Stats.Set("meleeWeaponsDamage", "sitNervousMeleeCancel", VANILLA_NERVOUS_MELEE_PENALTY * 0.01f, false);
-                else
-                    player.Entity.Stats.Remove("meleeWeaponsDamage", "sitNervousMeleeCancel");
-            }
-
-            // Check if any values have changed before updating WatchedAttributes
-            var watchedAttrs = player.Entity.WatchedAttributes;
-            int oldLevel = watchedAttrs.GetInt(WATCHED_MELEE_LEVEL, -1);
-            int oldBonus = watchedAttrs.GetInt(WATCHED_MELEE_BONUS, -1);
-
-            bool valuesChanged = (oldLevel != level) || (oldBonus != netBonusPercent);
-
-            // Only update WatchedAttributes if values changed
-            if (valuesChanged)
-            {
-                // Sync level and bonus to WatchedAttributes for client-side display
-                watchedAttrs.SetInt(WATCHED_MELEE_LEVEL, level);
-                watchedAttrs.SetInt(WATCHED_MELEE_BONUS, netBonusPercent);
-                watchedAttrs.SetBool("sitHasVanillaSoldier", hasVanillaSoldier);
-
-                // Sync negative trait status
-                watchedAttrs.SetBool("sitHasFarsighted", hasFarsighted);
-                watchedAttrs.SetInt(WATCHED_FARSIGHTED_REMAINING, farsightedRemaining);
-                watchedAttrs.SetBool("sitHasNervous", hasNervous);
-                watchedAttrs.SetInt(WATCHED_NERVOUS_REMAINING, nervousRemaining);
-
-                // Add our trait to extraTraits only if player doesn't already have Soldier
-                UpdateExtraTraitStatic(player.Entity, MELEE_TRAIT_CODE, level > 0 && !hasVanillaSoldier);
-
-                watchedAttrs.MarkPathDirty(WATCHED_MELEE_LEVEL);
-            }
-
-            // Apply CO melee tier bonus if CO is enabled (Frightened of Melee / Melee Expert)
-            if (IsCOCompatEnabled)
-            {
-                ApplyCOMeleeTier(player, level);
-            }
-
-            return netBonusPercent;
-        }
-
-        /// <summary>
         /// Static version of PlayerHasVanillaSoldier for use from Harmony patches.
         /// </summary>
         private static bool PlayerHasVanillaSoldierStatic(EntityPlayer entity)
@@ -2922,31 +2723,6 @@ namespace SeraphLeveling
                 var newTraits = currentTraits.Where(t => t != traitCode).ToArray();
                 entity.WatchedAttributes.SetStringArray("extraTraits", newTraits);
                 entity.WatchedAttributes.MarkPathDirty("extraTraits");
-            }
-        }
-
-        /// <summary>
-        /// Updates the characterTraits array to add or remove a trait.
-        /// This is used for traits that unlock recipes (like Clothier).
-        /// Unlike extraTraits which is only for UI display, characterTraits is
-        /// what the game actually checks for recipe requirements.
-        /// </summary>
-        private static void UpdateCharacterTraitStatic(EntityPlayer entity, string traitCode, bool shouldHave)
-        {
-            string[] currentTraits = entity.WatchedAttributes.GetStringArray("characterTraits", null) ?? Array.Empty<string>();
-            bool hasTrait = currentTraits.Contains(traitCode);
-
-            if (shouldHave && !hasTrait)
-            {
-                var newTraits = currentTraits.Append(traitCode).ToArray();
-                entity.WatchedAttributes.SetStringArray("characterTraits", newTraits);
-                entity.WatchedAttributes.MarkPathDirty("characterTraits");
-            }
-            else if (!shouldHave && hasTrait)
-            {
-                var newTraits = currentTraits.Where(t => t != traitCode).ToArray();
-                entity.WatchedAttributes.SetStringArray("characterTraits", newTraits);
-                entity.WatchedAttributes.MarkPathDirty("characterTraits");
             }
         }
 
@@ -3192,51 +2968,6 @@ namespace SeraphLeveling
 
             // Apply sleep buff multiplier if active
             AttributeModifierDefinitions.Improviser.AddCredits(player, ApplyXPMultiplier(player.PlayerUID, damage));
-        }
-
-        /// <summary>
-        /// Apply ranged bonuses when Combat Overhaul is installed.
-        /// Uses damage tier bonuses instead of percentage damage bonuses.
-        /// CO Focused trait gives +1 ranged slashing tier (not % damage).
-        /// </summary>
-        private static (int damage, int accuracy, int distance) ApplyRangedBonusCO(IServerPlayer player, int level)
-        {
-            if (player?.Entity == null) return (0, 0, 0);
-
-            var cache = GetCachedTraits(player.PlayerUID);
-            bool hasVanillaFocused = cache?.HasFocused ?? PlayerHasVanillaFocusedStatic(player.Entity);
-
-            // In CO: Focused gives +1 ranged slashing tier (not %)
-            // Hunter has Focused (+1 tier already from CO), others can earn up to +1 tier
-            int vanillaTier = hasVanillaFocused ? 1 : 0;
-            int maxEarnableTier = 1; // Cap at 1 tier total for all classes
-
-            // 100 credits = 1 tier
-            int earnedTier = level / 100;
-            int totalTier = Math.Min(vanillaTier + earnedTier, maxEarnableTier);
-            int netEarnedTier = Math.Max(0, totalTier - vanillaTier);
-
-            // Apply tier stat (integer, stored as float for Stats.Set compatibility)
-            player.Entity.Stats.Set(CO_RANGED_TIER_SLASHING, RANGED_DAMAGE_STAT_CODE, (float)netEarnedTier, false);
-
-            // Sync for UI
-            var watchedAttrs = player.Entity.WatchedAttributes;
-            int oldLevel = watchedAttrs.GetInt(WATCHED_RANGED_LEVEL, -1);
-
-            if (oldLevel != level)
-            {
-                watchedAttrs.SetInt(WATCHED_RANGED_LEVEL, level);
-                watchedAttrs.SetInt(WATCHED_CO_RANGED_TIER_BONUS, netEarnedTier);
-                watchedAttrs.SetBool("sitHasVanillaFocused", hasVanillaFocused);
-                watchedAttrs.SetBool("sitCOEnabled", true);
-                watchedAttrs.MarkPathDirty(WATCHED_RANGED_LEVEL);
-
-                // Add our trait to extraTraits only if player doesn't already have Focused
-                UpdateExtraTraitStatic(player.Entity, RANGED_TRAIT_CODE, level > 0 && !hasVanillaFocused);
-            }
-
-            // Return tier as the "damage" value for compatibility (accuracy and distance not used in CO tier system)
-            return (netEarnedTier, 0, 0);
         }
 
         /// <summary>
@@ -3870,14 +3601,6 @@ namespace SeraphLeveling
             {
                 ServerApi.Logger.Error($"[SeraphLeveling] Failed to load {description} progress: {ex.Message}");
             }
-        }
-
-        /// <summary>
-        /// Load armor progress from world save data.
-        /// </summary>
-        private void LoadArmorProgress()
-        {
-            LoadProgress<ArmorProgressData>();
         }
 
         /// <summary>
@@ -4745,67 +4468,6 @@ namespace SeraphLeveling
                 verboseLog.AppendLine($"  [{skillName}] absPos={absolutePosition:F1} - penalty={rawPenalty:F1} -> newAbsPos={newAbsPosition:F1}, cr={newCredits}, acc={newAccumulator:F1}, inc={newIncSize}");
 
             return (newCredits, newAccumulator, newIncSize, creditsLost);
-        }
-
-        /// <summary>
-        /// Binary-search for the minimum rawPenalty that, when water-leveled across per-tool
-        /// absolute positions, reduces the total per-tool credits by at least targetLoss.
-        /// Returns 0 if no drain is needed.
-        /// </summary>
-        private static double ComputeDeathPenaltyRawPenalty(
-            List<(string key, double value)> absPositions,
-            int targetLoss, int baseIncrement, int incrementStep)
-        {
-            if (absPositions.Count == 0 || targetLoss <= 0) return 0;
-
-            double totalAbsPos = 0;
-            int currentCredits = 0;
-            foreach (var e in absPositions)
-            {
-                totalAbsPos += e.value;
-                currentCredits += AbsolutePositionToToolState(e.value, baseIncrement, incrementStep).credits;
-            }
-
-            int targetCredits = Math.Max(0, currentCredits - targetLoss);
-            if (currentCredits <= targetCredits) return 0;
-
-            double lo = 0, hi = totalAbsPos + 1;
-            for (int iter = 0; iter < 50; iter++)
-            {
-                double mid = (lo + hi) / 2;
-                var test = absPositions.Select(e => (e.key, e.value)).ToList();
-                DrainAccumulatorsLeveling(test, mid);
-                int credits = 0;
-                foreach (var e in test)
-                    credits += AbsolutePositionToToolState(e.value, baseIncrement, incrementStep).credits;
-
-                if (credits <= targetCredits)
-                    hi = mid;
-                else
-                    lo = mid;
-            }
-
-            return hi;
-        }
-
-        /// <summary>
-        /// Analytically compute the minimum rawPenalty needed to guarantee losing at least
-        /// intendedLoss credits from a single-accumulator skill.
-        /// </summary>
-        private static double ComputeMinSingleAccumulatorPenalty(
-            double currentAccumulator, int oldTotalCredits, int intendedLoss,
-            int baseIncrement, int incrementStep)
-        {
-            if (intendedLoss <= 0 || oldTotalCredits <= 0) return 0;
-            int targetCredits = Math.Max(0, oldTotalCredits - intendedLoss);
-            double currentAbsPos = (double)oldTotalCredits * baseIncrement +
-                (double)incrementStep * oldTotalCredits * (oldTotalCredits - 1) / 2.0 + Math.Max(0, currentAccumulator);
-            // Max absolute position that still results in targetCredits (just below next credit boundary)
-            double targetSum = (double)targetCredits * baseIncrement +
-                (double)incrementStep * targetCredits * (targetCredits - 1) / 2.0;
-            double nextCost = baseIncrement + targetCredits * incrementStep;
-            double maxAllowed = targetSum + nextCost - 0.01;
-            return Math.Max(0, currentAbsPos - maxAllowed);
         }
 
         /// <summary>
@@ -5740,168 +5402,6 @@ namespace SeraphLeveling
             }
         }
 
-        /// <summary>
-        /// Apply Big Head / Thick Skull handling for Combat Overhaul.
-        /// Clockmaker has Big Head (+50% head/face damage), cancelled by armor credits.
-        /// Malefactor has Thick Skull (-50% head/face damage) from start.
-        /// Other classes can earn Thick Skull via armor credits.
-        /// </summary>
-        private static void ApplyCOBigHeadThickSkull(IServerPlayer player, int armorCredits)
-        {
-            if (!IsCOCompatEnabled) return;
-            if (player?.Entity == null) return;
-
-            var cache = GetCachedTraits(player.PlayerUID);
-            bool hasBigHead = cache?.HasCOBigHead ?? false;     // Clockmaker
-            bool hasThickSkull = cache?.HasCOThickSkull ?? false; // Malefactor
-
-            float headFactor = 0f;
-            float faceFactor = 0f;
-            float remainingPenalty = 0f;
-
-            if (hasBigHead)
-            {
-                // Big Head: +0.5 head/face damage, cancelled by 50 armor credits
-                // After cancellation, can earn Thick Skull bonus (up to -0.5)
-                remainingPenalty = Math.Max(0, CO_BIG_HEAD_PENALTY - armorCredits * 0.01f);
-
-                if (armorCredits >= 50)
-                {
-                    // Penalty cancelled, now earning bonus
-                    int bonusCredits = armorCredits - 50;
-                    float bonus = Math.Min(bonusCredits * 0.01f, CO_THICK_SKULL_BONUS);
-                    headFactor = -bonus;
-                    faceFactor = -bonus;
-                }
-                else
-                {
-                    headFactor = remainingPenalty;
-                    faceFactor = remainingPenalty;
-                }
-            }
-            else if (hasThickSkull)
-            {
-                // Malefactor already has Thick Skull (-0.5), can't earn more
-                headFactor = -CO_THICK_SKULL_BONUS;
-                faceFactor = -CO_THICK_SKULL_BONUS;
-            }
-            else
-            {
-                // Other classes: can earn Thick Skull (up to -0.5)
-                float bonus = Math.Min(armorCredits * 0.01f, CO_THICK_SKULL_BONUS);
-                headFactor = -bonus;
-                faceFactor = -bonus;
-            }
-
-            // headFactor and faceFactor above are the totals we want the player to end up
-            // with. Big Head and Thick Skull have already put their own value into these
-            // stats under the code "trait", and stat values sum, so write the difference.
-            // See TraitStatValue.
-            player.Entity.Stats.Set(CO_HEAD_DAMAGE_FACTOR, CO_STAT_PREFIX + "headDamage",
-                headFactor - TraitStatValue(player.Entity, CO_HEAD_DAMAGE_FACTOR), false);
-            player.Entity.Stats.Set(CO_FACE_DAMAGE_FACTOR, CO_STAT_PREFIX + "faceDamage",
-                faceFactor - TraitStatValue(player.Entity, CO_FACE_DAMAGE_FACTOR), false);
-
-            // Sync for UI
-            player.Entity.WatchedAttributes.SetFloat(WATCHED_CO_BIG_HEAD_REMAINING, remainingPenalty);
-            player.Entity.WatchedAttributes.MarkPathDirty(WATCHED_CO_BIG_HEAD_REMAINING);
-        }
-
-        /// <summary>
-        /// Apply Frightened of Melee / Melee Expert handling for Combat Overhaul.
-        /// Clockmaker has Frightened of Melee (-1 melee slashing tier), cancelled by melee credits.
-        /// Blackguard has Melee Expert (+1 melee slashing tier) from start.
-        /// Other classes can earn up to +1 melee slashing tier via melee credits.
-        /// </summary>
-        private static void ApplyCOMeleeTier(IServerPlayer player, int meleeCredits)
-        {
-            if (!IsCOCompatEnabled) return;
-            if (player?.Entity == null) return;
-
-            var cache = GetCachedTraits(player.PlayerUID);
-            bool hasFrightenedOfMelee = cache?.HasCOFearOfMelee ?? false; // Clockmaker
-            bool hasMeleeExpert = cache?.HasCOMeleeExpert ?? false;        // Blackguard
-
-            int netTier = 0;
-            int remainingPenalty = 0;
-
-            if (hasFrightenedOfMelee)
-            {
-                // -1 tier penalty, 100 credits to cancel
-                remainingPenalty = Math.Max(0, CO_FRIGHTENED_TIER_PENALTY - meleeCredits / 100);
-
-                if (meleeCredits >= 100)
-                {
-                    // Penalty cancelled, can earn positive tier
-                    int bonusCredits = meleeCredits - 100;
-                    int earnedTier = Math.Min(bonusCredits / 100, 1);
-                    netTier = earnedTier;
-                }
-                else
-                {
-                    netTier = -remainingPenalty;
-                }
-            }
-            else if (hasMeleeExpert)
-            {
-                // Blackguard has +1 tier from Melee Expert, can't earn more
-                netTier = CO_MELEE_EXPERT_TIER_BONUS;
-            }
-            else
-            {
-                // Other classes: can earn up to +1 tier
-                netTier = Math.Min(meleeCredits / 100, 1);
-            }
-
-            // netTier is the tier bonus we want in total. Melee Expert and Frightened of
-            // Melee have already put theirs into this stat under the code "trait", so
-            // subtract whatever is actually there. See TraitStatValue.
-            player.Entity.Stats.Set(CO_MELEE_TIER_SLASHING, CO_STAT_PREFIX + "meleeTierSlashing",
-                netTier - TraitStatValue(player.Entity, CO_MELEE_TIER_SLASHING), false);
-
-            // Sync for UI
-            player.Entity.WatchedAttributes.SetInt(WATCHED_CO_FRIGHTENED_REMAINING, remainingPenalty);
-            player.Entity.WatchedAttributes.SetInt(WATCHED_CO_MELEE_TIER_BONUS, netTier);
-            player.Entity.WatchedAttributes.MarkPathDirty(WATCHED_CO_FRIGHTENED_REMAINING);
-            player.Entity.WatchedAttributes.MarkPathDirty(WATCHED_CO_MELEE_TIER_BONUS);
-        }
-
-        /// <summary>
-        /// Apply Leg Day handling for Combat Overhaul.
-        /// Blackguard has Leg Day (+100% leg/feet damage, +25% jump height).
-        /// The leg damage penalty can be reduced by armor credits (100 credits = cancel).
-        /// Jump height bonus is always applied (it's a benefit).
-        /// </summary>
-        private static void ApplyCOLegDay(IServerPlayer player, int armorCredits)
-        {
-            if (!IsCOCompatEnabled) return;
-            if (player?.Entity == null) return;
-
-            var cache = GetCachedTraits(player.PlayerUID);
-            bool hasLegDay = cache?.HasCOLegDay ?? false; // Blackguard
-
-            if (!hasLegDay) return;
-
-            // Leg Day: +1.0 leg/feet damage, +0.25 jump height
-            // Leg damage penalty reduced by armor credits (100 credits = cancel)
-            float remainingPenalty = Math.Max(0, CO_LEG_DAY_PENALTY - armorCredits * 0.01f);
-
-            // The Leg Day trait has already applied its own values under the stat code
-            // "trait", so write the difference between what we want and what it gave.
-            // See TraitStatValue.
-            player.Entity.Stats.Set(CO_LEGS_DAMAGE_FACTOR, CO_STAT_PREFIX + "legsDamage",
-                remainingPenalty - TraitStatValue(player.Entity, CO_LEGS_DAMAGE_FACTOR), false);
-            player.Entity.Stats.Set(CO_FEET_DAMAGE_FACTOR, CO_STAT_PREFIX + "feetDamage",
-                remainingPenalty - TraitStatValue(player.Entity, CO_FEET_DAMAGE_FACTOR), false);
-            // The jump bonus is a benefit the player keeps in full, so we only top up
-            // whatever the trait did not already provide.
-            player.Entity.Stats.Set(CO_JUMP_HEIGHT, CO_STAT_PREFIX + "jumpHeight",
-                CO_LEG_DAY_JUMP_BONUS - TraitStatValue(player.Entity, CO_JUMP_HEIGHT), false);
-
-            // Sync for UI
-            player.Entity.WatchedAttributes.SetFloat(WATCHED_CO_LEG_DAY_REMAINING, remainingPenalty);
-            player.Entity.WatchedAttributes.MarkPathDirty(WATCHED_CO_LEG_DAY_REMAINING);
-        }
 
         /// <summary>
         /// Check if a proficiency is a piercing melee proficiency (affected by Nervous trait).
