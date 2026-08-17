@@ -156,6 +156,11 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "hardy",
             Attributes = [
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.HardyHealth, 1, [
+                    new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.MiningSpeed, ThresholdPercentage = 10 },
+                    // TODO 10% armor durability
+                ]),
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.MiningSpeed, 10),
             ]
         };
 

@@ -78,42 +78,7 @@ namespace SeraphLeveling.Patches
 
             // Process mining progression (Hardy trait)
             // Only show Hardy when miningBonus > 0 (after negative traits are cancelled)
-            if (miningBonus > 0)
-            {
-                string plainMiningTraitName = Lang.Get("seraphleveling:trait-sitminingmastery");
-
-                if (hasVanillaHardy)
-                {
-                    // Class already has Hardy (e.g., Blackguard) - update the existing Hardy's
-                    // mining speed value inline. Vanilla attribute "miningSpeedMul: 0.1" renders
-                    // as "+10% mining speed" via Lang.Get("charattribute-miningSpeedMul-0.1") in
-                    // the player's locale; we swap that exact string for the combined value.
-                    int combinedBonus = SeraphLevelingModSystem.VANILLA_HARDY_MINING_BONUS + miningBonus;
-                    __result = ReplaceVanillaCharAttribute(__result, "miningSpeedMul", 0.1, combinedBonus);
-
-                    // Remove any orphan plain Hardy entry; use orphan-only matching so the
-                    // vanilla Hardy line (which has its own description) is left intact.
-                    __result = RemoveOrphanTraitName(__result, plainMiningTraitName);
-                }
-                else if (hasNoTraits)
-                {
-                    // Commoner or other class with no traits - replace entirely with our dynamic Hardy
-                    // Use mining-only format since we don't have Hardy Health yet
-                    __result = BuildLocalizedTraitLine("hardy", "seraphleveling:trait-hardy-mining-only-dynamic", miningBonus);
-                    hasNoTraits = false; // We now have traits
-                }
-                else if (ContainsOrphanTraitName(__result, plainMiningTraitName))
-                {
-                    // We have our trait but no vanilla Hardy - replace orphan plain name with dynamic version
-                    __result = ReplaceOrphanTraitName(__result, plainMiningTraitName,
-                        BuildLocalizedTraitLine("hardy", "seraphleveling:trait-hardy-mining-only-dynamic", miningBonus));
-                }
-                else
-                {
-                    // Has other traits but no Hardy at all - append our dynamic Hardy
-                    __result = __result + "\n" + BuildLocalizedTraitLine("hardy", "seraphleveling:trait-hardy-mining-only-dynamic", miningBonus);
-                }
-            }
+            TraitDefinitions.Hardy.BuildTraitText(eplr, ref __result);
 
             // Process melee progression (Soldier trait)
             // Only show Soldier melee when meleeBonus > 0 (after negative traits are cancelled)
@@ -479,51 +444,6 @@ namespace SeraphLeveling.Patches
 
             // Process Technical unlock trait (translocator gear cost reduction)
             TraitDefinitions.Technical.BuildTraitText(eplr, ref __result);
-
-            // Process Hardy Health unlock trait (+5 HP)
-            bool hardyHealthUnlocked = eplr.WatchedAttributes.GetBool(SeraphLevelingModSystem.WATCHED_HARDY_HEALTH_UNLOCKED, false);
-            if (hardyHealthUnlocked)
-            {
-                string plainHardyHealthTraitName = Lang.Get("seraphleveling:trait-sithardyhealthmastery");
-                string dynamicHardyHealthTrait = BuildLocalizedTraitLine("hardy", "seraphleveling:trait-hardyhealth-dynamic", SeraphLevelingModSystem.HardyHealthBonus);
-
-                // Re-check hasNoTraits
-                hasNoTraits = HasNoTraits(__result);
-
-                // If the Mining block already added a mining-only Hardy line for this player
-                // (no vanilla Hardy class), fold the health bonus INTO that line instead of
-                // adding a second `• Hardy` entry that would render as a duplicate.
-                var miningOnlyHardyMatch = System.Text.RegularExpressions.Regex.Match(__result,
-                    @"<font color=""#84ff84"">• Hardy </font> <font opacity=""0\.6"">\(\+(?<m>\d+)% mining speed\)</font>");
-                if (miningOnlyHardyMatch.Success)
-                {
-                    int miningPct = int.Parse(miningOnlyHardyMatch.Groups["m"].Value);
-                    string combined = BuildLocalizedTraitLine("hardy", "seraphleveling:trait-hardy-dynamic", miningPct, SeraphLevelingModSystem.HardyHealthBonus);
-                    __result = __result.Substring(0, miningOnlyHardyMatch.Index)
-                        + combined
-                        + __result.Substring(miningOnlyHardyMatch.Index + miningOnlyHardyMatch.Length);
-                }
-                // If vanilla Hardy line already lists health points (Blackguard), skip — the
-                // bonus is already represented by the vanilla line. (Stat is still applied via
-                // ApplyHardyHealthBonusStatic; this only avoids a duplicate display row.)
-                else if (System.Text.RegularExpressions.Regex.IsMatch(__result,
-                    @"<font color=""#84ff84"">• Hardy </font> <font opacity=""0\.6"">\([^)]*\d+ health points[^)]*\)</font>"))
-                {
-                    // intentional no-op
-                }
-                else if (hasNoTraits)
-                {
-                    __result = dynamicHardyHealthTrait;
-                }
-                else if (ContainsOrphanTraitName(__result, plainHardyHealthTraitName))
-                {
-                    __result = ReplaceOrphanTraitName(__result, plainHardyHealthTraitName, dynamicHardyHealthTrait);
-                }
-                else
-                {
-                    __result = __result + "\n" + dynamicHardyHealthTrait;
-                }
-            }
 
             // Process Bowyer unlock trait (crude bow crafting)
             TraitDefinitions.Bowyer.BuildTraitText(eplr, ref __result);

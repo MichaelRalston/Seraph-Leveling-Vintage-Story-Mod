@@ -316,5 +316,15 @@ namespace SeraphLeveling.Data.Attributes
             GlobalMaxCredits = 30,
             StatName = "mechanicalsDamage",
         };
+
+        public static readonly MaxHealthUnlockedAttributeModifierDefinition HardyHealth = new()
+        {
+            Id = "hardyhealth",
+            SkillKey = "hardyhealth",
+            PersistenceHeader = "HDH",
+            Name = "HardyHealth",
+            ModifierAmount = 5,
+            Trait = new(() => Traits.TraitDefinitions.Hardy),
+        };
     }
 }

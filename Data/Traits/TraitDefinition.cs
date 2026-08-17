@@ -126,9 +126,17 @@ namespace SeraphLeveling.Data.Traits
                 string headerText = Lang.Get(DynamicTraitHeaderKey);
                 string contentText = string.Join(", ", Attributes.Where(mod => mod.IsActive(player.Player)).Select(mod => {
                     string modKey = mod.DynamicAttributeContentsKey.ToLowerInvariant();
-                    string retVal = Lang.Get(modKey, combinedAttrBonuses[mod.Attribute].ToString("+0;-#"));
-                    CharacterSystemPatches.ClientApi.Logger.Debug($"      [Verdus] Calling BuildTraitText for trait {Id}: attr={mod.Attribute.Id}, key={mod.DynamicAttributeContentsKey}, lang token={retVal}");
-                    return retVal == modKey ? null : retVal;
+                    if (combinedAttrBonuses.TryGetValue(mod.Attribute, out string combinedBonus))
+                    {
+                        string retVal = Lang.Get(modKey, combinedBonus);
+                        CharacterSystemPatches.ClientApi.Logger.Debug($"      [Verdus] Calling BuildTraitText for trait {Id}: attr={mod.Attribute.Id}, key={mod.DynamicAttributeContentsKey}, lang token={retVal}");
+                        return retVal == modKey ? null : retVal;
+                    }
+                    else
+                    {
+                        CharacterSystemPatches.ClientApi.Logger.Debug($"      [Verdus] Failed to get combined bonus for attribute {mod.Attribute.Id}");
+                        return null;
+                    }
                 }).Where(token => token != null));
                 string fullMessage = string.IsNullOrEmpty(contentText) ? "" : Lang.Get(CharacterSystemPatches.FULL_TRAIT_MESSAGE_KEY, headerText, contentText);
                 bool messageComplete = fullMessage != CharacterSystemPatches.FULL_TRAIT_MESSAGE_KEY;
@@ -140,6 +148,10 @@ namespace SeraphLeveling.Data.Traits
                     if (hasVanillaTrait)
                     {
                         result = CharacterSystemPatches.ReplaceVanillaTraitLine(result, Id, fullMessage);
+                    }
+                    else if (CharacterSystemPatches.HasNoTraits(result))
+                    {
+                        result = fullMessage;
                     }
                     else
                     {
@@ -153,9 +165,9 @@ namespace SeraphLeveling.Data.Traits
             }
         }
 
-        protected virtual Dictionary<ISaveableAttribute, int> GetCombinedAttributeBonuses(EntityPlayer player)
+        protected virtual Dictionary<ISaveableAttribute, string> GetCombinedAttributeBonuses(EntityPlayer player)
         {
-            Dictionary<ISaveableAttribute, int> retVal = [];
+            Dictionary<ISaveableAttribute, string> retVal = [];
             foreach (var mod in Attributes)
             {
                 if (mod.Attribute is ILeveledAttributeModifierDefinition leveledAttr)
@@ -171,7 +183,13 @@ namespace SeraphLeveling.Data.Traits
                             }
                         }
                     }
-                    retVal[leveledAttr] = attrVal;
+                    retVal[leveledAttr] = attrVal.ToString("+0;-#");
+                }
+                else if (mod.Attribute is MaxHealthUnlockedAttributeModifierDefinition maxHealthAttr)
+                {
+                    // Max health modifier values are always displayed separately, without regard for other max health modifiers
+                    float attrVal = maxHealthAttr.ModifierAmount;
+                    retVal[maxHealthAttr] = attrVal.ToString("+0;-#");
                 }
             }
             return retVal;

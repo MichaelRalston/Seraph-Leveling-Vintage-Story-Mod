@@ -137,7 +137,9 @@
   "trait-claustrophobic-dynamic": "-{0}% ore drop rate, -{1}% mining speed",
   "trait-claustrophobic-mining-only-dynamic": "<font color=\"#ff8484\">• Claustrophobic </font> <font opacity=\"0.6\">(-{0}% mining speed)</font>",
 
+  "attribute-hardyhealth-contents": "{0} health points",
   "attribute-maxhealth-contents": "{0} health points",
+  "attribute-miningspeed-contents": "{0}% mining speed",
   "attribute-rangedaccuracy-contents": "{0}% ranged accuracy",
   "attribute-rangeddamage-contents": "{0}% ranged damage",
   "attribute-rangeddistance-contents": "{0}% ranged distance",

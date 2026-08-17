@@ -397,22 +397,6 @@ namespace SeraphLeveling
         public const int VANILLA_PRECISE_MECHANICAL_DAMAGE_BONUS = 25;
 
         // =========================================================================
-        // HARDY HEALTH TRAIT - Unlocks +5 HP after reaching mining and armor thresholds
-        // =========================================================================
-        public const string HARDY_HEALTH_STAT_CODE = "sitHardyHealthBonus";
-        public const string WATCHED_HARDY_HEALTH_UNLOCKED = "sitHardyHealthUnlocked";
-        public const string HARDY_HEALTH_TRAIT_CODE = "sithardyhealthmastery";
-
-        // Hardy health unlock thresholds
-        public static int HardyHealthMiningThreshold = 10;           // 10% mining speed bonus required (10 credits)
-        public static int HardyHealthArmorDurabilityThreshold = 10;  // 10% armor durability bonus required
-        public static int HardyHealthBonus = 5;                      // +5 HP bonus
-
-        // Storage for hardy health progress
-        public static ConcurrentDictionary<string, HardyHealthProgressData> HardyHealthProgress = new ConcurrentDictionary<string, HardyHealthProgressData>();
-        public static volatile bool pendingHardyHealthProgressSave = false;
-
-        // =========================================================================
         // MERCILESS TRAIT - Unlocks shortsword/shield after armor + melee thresholds
         // =========================================================================
         public const string MERCILESS_STAT_CODE = "sitMercilessBonus";
@@ -998,20 +982,6 @@ namespace SeraphLeveling
                     .RequiresPrivilege(Privilege.controlserver)
                     .HandleWith(OnTraitMenderMaxCommand)
                 .EndSubCommand()
-                // Hardy health trait commands
-                .BeginSubCommand("hardyhealth")
-                    .WithDescription("View your hardy health unlock progress")
-                    .RequiresPrivilege(Privilege.chat)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitHardyHealthCommand)
-                .EndSubCommand()
-                .BeginSubCommand("hardyhealthunlock")
-                    .WithDescription("Manually unlock or lock hardy health trait (admin only)")
-                    .WithArgs(api.ChatCommands.Parsers.Bool("unlock"))
-                    .RequiresPrivilege(Privilege.controlserver)
-                    .RequiresPlayer()
-                    .HandleWith(OnTraitHardyHealthUnlockCommand)
-                .EndSubCommand()
                 // Merciless trait commands
                 .BeginSubCommand("merciless")
                     .WithDescription("View your merciless unlock progress")
@@ -1325,7 +1295,6 @@ namespace SeraphLeveling
             api.Event.SaveGameLoaded += LoadAllProgress;
             api.Event.SaveGameLoaded += LoadArmorProgress;
             api.Event.SaveGameLoaded += LoadMenderProgress;
-            api.Event.SaveGameLoaded += LoadHardyHealthProgress;
             api.Event.SaveGameLoaded += LoadMercilessProgress;
             api.Event.SaveGameLoaded += LoadClaustrophobicRemovalProgress;
             api.Event.SaveGameLoaded += LoadCOProgress;
@@ -1495,9 +1464,6 @@ namespace SeraphLeveling
             {
                 definition.GetTraitUnlockableCommandLine(player, sb);
             }
-
-            var hardyHealthProg = HardyHealthProgress.GetOrAdd(playerUid, _ => new HardyHealthProgressData());
-            sb.AppendLine($"Hardy Health: {(hardyHealthProg.IsUnlocked ? "UNLOCKED" : "locked")}");
 
             var mercilessProg = MercilessProgress.GetOrAdd(playerUid, _ => new MercilessProgressData());
             sb.AppendLine($"Merciless: {(mercilessProg.IsUnlocked ? "UNLOCKED" : "locked")}");
@@ -1799,7 +1765,6 @@ namespace SeraphLeveling
                 pendingArmorProgressSave = true;
                 ApplyArmorBonusesStatic(player, progress.TotalDurabilityCredits, progress.TotalWalkSpeedCredits);
                 int bonusPercent = CalculateArmorDurabilityBonusPercent(progress.TotalDurabilityCredits, player.Entity);
-                CheckHardyHealthUnlock(player);
                 CheckMercilessUnlock(player);
                 UpdateSkillActivityDay(playerUid, "armor");
 
@@ -1814,7 +1779,6 @@ namespace SeraphLeveling
                 pendingArmorProgressSave = true;
                 ApplyArmorBonusesStatic(player, progress.TotalDurabilityCredits, progress.TotalWalkSpeedCredits);
                 int bonusPercent = CalculateArmorDurabilityBonusPercent(level, player.Entity);
-                CheckHardyHealthUnlock(player);
                 CheckMercilessUnlock(player);
                 UpdateSkillActivityDay(playerUid, "armor");
 
@@ -2807,7 +2771,6 @@ namespace SeraphLeveling
                                 ApplyArmorBonusesStatic(player, armorProgress.TotalDurabilityCredits, armorProgress.TotalWalkSpeedCredits);
 
                                 // Check for trait unlocks that depend on armor durability
-                                CheckHardyHealthUnlock(player);
                                 CheckMercilessUnlock(player);
                             }
                         }
@@ -2902,7 +2865,6 @@ namespace SeraphLeveling
                             }
 
                             // Check for trait unlocks that depend on armor durability
-                            CheckHardyHealthUnlock(player);
                             CheckMercilessUnlock(player);
                         }
                     }
@@ -3027,7 +2989,6 @@ namespace SeraphLeveling
                     Lang.Get("seraphleveling:message-armor-damage-level-up", armorProgress.TotalDurabilityCredits, armorProgress.TotalDurabilityCredits));
 
                 // Check for trait unlocks that depend on armor durability
-                CheckHardyHealthUnlock(player);
                 CheckMercilessUnlock(player);
             }
         }
@@ -3074,7 +3035,6 @@ namespace SeraphLeveling
                     Lang.Get("seraphleveling:message-armor-repair-level-up", armorProgress.TotalDurabilityCredits, armorProgress.TotalDurabilityCredits));
 
                 // Check for trait unlocks that depend on armor durability
-                CheckHardyHealthUnlock(player);
                 CheckMercilessUnlock(player);
             }
         }
@@ -3354,14 +3314,6 @@ namespace SeraphLeveling
             if (menderCredits > 0)
             {
                 ServerApi.Logger.Debug($"[SeraphLeveling] Applied mender bonus +{menderCredits}% to player {byPlayer.PlayerName}");
-            }
-
-            // Apply hardy health unlock
-            var hardyHealthProg = HardyHealthProgress.GetOrAdd(playerUid, _ => new HardyHealthProgressData());
-            if (hardyHealthProg.IsUnlocked)
-            {
-                ApplyHardyHealthBonusStatic(byPlayer, true);
-                ServerApi.Logger.Debug($"[SeraphLeveling] Applied hardy health +{HardyHealthBonus} HP to player {byPlayer.PlayerName}");
             }
 
             // Apply merciless unlock
@@ -4387,10 +4339,6 @@ namespace SeraphLeveling
                 {
                     PersistMenderProgress();
                 }
-                if (pendingHardyHealthProgressSave || !HardyHealthProgress.IsEmpty)
-                {
-                    PersistHardyHealthProgress();
-                }
                 if (pendingMercilessProgressSave || !MercilessProgress.IsEmpty)
                 {
                     PersistMercilessProgress();
@@ -4437,7 +4385,6 @@ namespace SeraphLeveling
 
             ArmorProgress.Clear();
             MenderProgress.Clear();
-            HardyHealthProgress.Clear();
             MercilessProgress.Clear();
             ClaustrophobicRemovalProgress.Clear();
             lastPlayerPositions.Clear();
@@ -4450,7 +4397,6 @@ namespace SeraphLeveling
             pendingSleepBuffSave = false;
             pendingArmorProgressSave = false;
             pendingMenderProgressSave = false;
-            pendingHardyHealthProgressSave = false;
             pendingMercilessProgressSave = false;
             pendingClaustrophobicRemovalProgressSave = false;
             base.Dispose();
@@ -4484,12 +4430,6 @@ namespace SeraphLeveling
             {
                 PersistMenderProgress();
                 pendingMenderProgressSave = false;
-            }
-
-            if (pendingHardyHealthProgressSave || !HardyHealthProgress.IsEmpty)
-            {
-                PersistHardyHealthProgress();
-                pendingHardyHealthProgressSave = false;
             }
 
             if (pendingMercilessProgressSave || !MercilessProgress.IsEmpty)
@@ -4935,9 +4875,7 @@ namespace SeraphLeveling
 
                 AttributeModifierDefinitions.Technical.GlobalMaxCredits = config.TechnicalRequiredTranslocatorRepairs;
 
-                HardyHealthMiningThreshold = config.HardyHealthMiningThreshold;
-                HardyHealthArmorDurabilityThreshold = config.HardyHealthArmorDurabilityThreshold;
-                HardyHealthBonus = config.HardyHealthBonus;
+                AttributeModifierDefinitions.HardyHealth.ModifierAmount = config.HardyHealthBonus;
 
                 // Auto-save configuration
                 AutoSaveIntervalSeconds = config.AutoSaveIntervalSeconds;
@@ -5165,9 +5103,7 @@ namespace SeraphLeveling
 
                 config.TechnicalRequiredTranslocatorRepairs = AttributeModifierDefinitions.Technical.GlobalMaxCredits;
 
-                config.HardyHealthMiningThreshold = HardyHealthMiningThreshold;
-                config.HardyHealthArmorDurabilityThreshold = HardyHealthArmorDurabilityThreshold;
-                config.HardyHealthBonus = HardyHealthBonus;
+                config.HardyHealthBonus = int.CreateTruncating(AttributeModifierDefinitions.HardyHealth.ModifierAmount);
 
                 config.AutoSaveIntervalSeconds = AutoSaveIntervalSeconds;
 
@@ -7628,61 +7564,6 @@ namespace SeraphLeveling
         // =========================================================================
 
         /// <summary>
-        /// Check and apply Hardy health unlock if thresholds are met.
-        /// Requires 110% mining speed and 10% armor durability.
-        /// </summary>
-        public static void CheckHardyHealthUnlock(IServerPlayer player)
-        {
-            if (player?.Entity == null) return;
-
-            // Check if hardyhealth skill is disabled
-            if (IsSkillDisabled("hardyhealth")) return;
-
-            string playerUid = player.PlayerUID;
-            var progress = HardyHealthProgress.GetOrAdd(playerUid, _ => new HardyHealthProgressData());
-
-            // Already unlocked
-            if (progress.IsUnlocked) return;
-
-            // Check mining speed threshold
-            var miningProgress = AttributeModifierDefinitions.MiningSpeed.GetForPlayer(playerUid);
-            if (miningProgress.TotalCredits < HardyHealthMiningThreshold) return;
-
-            // Check armor durability threshold
-            var armorProgress = ArmorProgress.GetOrAdd(playerUid, _ => new ArmorProgressData());
-            if (armorProgress.TotalDurabilityCredits < HardyHealthArmorDurabilityThreshold) return;
-
-            // Both thresholds met - unlock Hardy health!
-            progress.IsUnlocked = true;
-            pendingHardyHealthProgressSave = true;
-
-            // Apply the health bonus
-            ApplyHardyHealthBonusStatic(player, true);
-
-            // Notify player
-            NotifyLevelUp(player,
-                Lang.Get("seraphleveling:message-hardy-health-unlock", HardyHealthBonus));
-        }
-
-        /// <summary>
-        /// Apply Hardy health bonus (+5 HP).
-        /// </summary>
-        private static void ApplyHardyHealthBonusStatic(IServerPlayer player, bool unlocked)
-        {
-            if (unlocked)
-            {
-                player.Entity.Stats.Set("maxhealthExtraPoints", HARDY_HEALTH_STAT_CODE, HardyHealthBonus, false);
-            }
-            else
-            {
-                player.Entity.Stats.Remove("maxhealthExtraPoints", HARDY_HEALTH_STAT_CODE);
-            }
-
-            player.Entity.WatchedAttributes.SetBool(WATCHED_HARDY_HEALTH_UNLOCKED, unlocked);
-            UpdateExtraTraitStatic(player.Entity, HARDY_HEALTH_TRAIT_CODE, unlocked);
-        }
-
-        /// <summary>
         /// Check and apply Merciless unlock if thresholds are met.
         /// Requires 10% armor durability AND 15% melee damage.
         /// </summary>
@@ -8172,28 +8053,6 @@ namespace SeraphLeveling
         }
 
         /// <summary>
-        /// Handler for /trait hardyhealth command.
-        /// </summary>
-        private TextCommandResult OnTraitHardyHealthCommand(TextCommandCallingArgs args)
-        {
-            IServerPlayer player = args.Caller.Player as IServerPlayer;
-            if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
-
-            string playerUid = player.PlayerUID;
-            var progress = HardyHealthProgress.GetOrAdd(playerUid, _ => new HardyHealthProgressData());
-            var miningProgress = AttributeModifierDefinitions.MiningSpeed.GetForPlayer(playerUid);
-            var armorProgress = ArmorProgress.GetOrAdd(playerUid, _ => new ArmorProgressData());
-
-            var sb = new StringBuilder();
-            sb.AppendLine($"Hardy Health trait: {(progress.IsUnlocked ? $"UNLOCKED (+{HardyHealthBonus} HP)" : "Locked")}");
-            sb.AppendLine($"Requirements:");
-            sb.AppendLine($"  Mining level: {miningProgress.TotalCredits} / {HardyHealthMiningThreshold} ({(miningProgress.TotalCredits >= HardyHealthMiningThreshold ? "✓" : "✗")})");
-            sb.AppendLine($"  Armor durability: {armorProgress.TotalDurabilityCredits} / {HardyHealthArmorDurabilityThreshold} ({(armorProgress.TotalDurabilityCredits >= HardyHealthArmorDurabilityThreshold ? "✓" : "✗")})");
-
-            return TextCommandResult.Success(sb.ToString());
-        }
-
-        /// <summary>
         /// Handler for /trait merciless command.
         /// </summary>
         private TextCommandResult OnTraitMercilessCommand(TextCommandCallingArgs args)
@@ -8244,26 +8103,6 @@ namespace SeraphLeveling
             }
 
             return TextCommandResult.Success(sb.ToString());
-        }
-
-        /// <summary>
-        /// Handler for /trait hardyhealthunlock command.
-        /// </summary>
-        private TextCommandResult OnTraitHardyHealthUnlockCommand(TextCommandCallingArgs args)
-        {
-            IServerPlayer player = args.Caller.Player as IServerPlayer;
-            if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
-
-            bool unlock = (bool)args[0];
-
-            string playerUid = player.PlayerUID;
-            var progress = HardyHealthProgress.GetOrAdd(playerUid, _ => new HardyHealthProgressData());
-            progress.IsUnlocked = unlock;
-
-            pendingHardyHealthProgressSave = true;
-            ApplyHardyHealthBonusStatic(player, unlock);
-
-            return TextCommandResult.Success($"Hardy Health trait {(unlock ? "unlocked" : "locked")}.");
         }
 
         /// <summary>
@@ -8356,14 +8195,6 @@ namespace SeraphLeveling
                 pendingMenderProgressSave = true;
             }
             ApplyMenderBonusStatic(player, 0);
-
-            // Reset Hardy Health
-            if (HardyHealthProgress.TryGetValue(playerUid, out var hardyHealthProg))
-            {
-                hardyHealthProg.IsUnlocked = false;
-                pendingHardyHealthProgressSave = true;
-            }
-            ApplyHardyHealthBonusStatic(player, false);
 
             // Reset Merciless
             if (MercilessProgress.TryGetValue(playerUid, out var mercilessProg))
@@ -8581,12 +8412,6 @@ namespace SeraphLeveling
             menderProg.CurrentIncrementSize = BaseMenderRepairsPerIncrement;
             pendingMenderProgressSave = true;
             ApplyMenderBonusStatic(player, maxMenderCredits);
-
-            // Unlock Hardy Health
-            var hardyHealthProg = HardyHealthProgress.GetOrAdd(playerUid, _ => new HardyHealthProgressData());
-            hardyHealthProg.IsUnlocked = true;
-            pendingHardyHealthProgressSave = true;
-            ApplyHardyHealthBonusStatic(player, true);
 
             // Unlock Merciless
             var mercilessProg = MercilessProgress.GetOrAdd(playerUid, _ => new MercilessProgressData());
@@ -8894,9 +8719,7 @@ namespace SeraphLeveling
             AttributeModifierDefinitions.Technical.GlobalMaxCredits = 5;
 
             // Hardy Health defaults
-            HardyHealthMiningThreshold = 10;
-            HardyHealthArmorDurabilityThreshold = 10;
-            HardyHealthBonus = 5;
+            AttributeModifierDefinitions.HardyHealth.ModifierAmount = 5;
 
             // Skill decay defaults
             EnableSkillDecay = false;
@@ -9461,26 +9284,6 @@ namespace SeraphLeveling
         }
 
         // =========================================================================
-        // HARDY HEALTH TRAIT PERSISTENCE
-        // =========================================================================
-
-        /// <summary>
-        /// Persist hardy health progress to world save data.
-        /// </summary>
-        public static void PersistHardyHealthProgress()
-        {
-            PersistProgress<HardyHealthProgressData>();
-        }
-
-        /// <summary>
-        /// Load hardy health progress from world save data.
-        /// </summary>
-        private void LoadHardyHealthProgress()
-        {
-            LoadProgress<HardyHealthProgressData>();
-        }
-
-        // =========================================================================
         // MERCILESS TRAIT PERSISTENCE
         // =========================================================================
 
@@ -9929,6 +9732,10 @@ namespace SeraphLeveling
             catch (Exception ex)
             {
                 clientApi?.Logger?.Debug($"[SeraphLeveling] Error getting trait text: {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    clientApi?.Logger?.Debug($"   [SeraphLeveling] Error getting trait text inner exception: {ex.InnerException.Message}");
+                }
                 return "";
             }
         }

@@ -121,8 +121,6 @@ namespace SeraphLeveling.Config
         public int TechnicalRequiredTranslocatorRepairs { get; set; } = 5;
 
         // Hardy Health progression
-        public int HardyHealthMiningThreshold { get; set; } = 10;
-        public int HardyHealthArmorDurabilityThreshold { get; set; } = 10;
         public int HardyHealthBonus { get; set; } = 5;
 
         // Auto-save settings
