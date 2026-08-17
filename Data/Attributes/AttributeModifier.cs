@@ -380,7 +380,7 @@ namespace SeraphLeveling.Data.Attributes
 
         private record class Instance : IAttributeModifier
         {
-            private static readonly List<string> DebugAttributes = ["frailhealth"];
+            private static readonly List<string> DebugAttributes = [];
 
             private void DebugLog(bool client, bool server, string message)
             {
@@ -455,7 +455,7 @@ namespace SeraphLeveling.Data.Attributes
                 else if (UnlockWith.All(req => req.IsSatisfied(player)))
                 {
                     // If all unlock requirements are met, or none are specified, then the modifier becomes active
-                    retVal = Attribute.ShouldDisplay(player.Entity);
+                    retVal = UnlockWith.Count > 0 || Attribute.ShouldDisplay(player.Entity);
                 }
                 else
                 {
