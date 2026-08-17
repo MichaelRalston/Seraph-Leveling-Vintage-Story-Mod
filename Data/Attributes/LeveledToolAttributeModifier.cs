@@ -534,7 +534,7 @@ namespace SeraphLeveling.Data.Attributes
             return 0;
         }
 
-        public void ApplyfirstTimeBonus(IServerPlayer player, string toolCode, int score)
+        public void ApplyFirstTimeBonus(IServerPlayer player, string toolCode, int score)
         {
             // Get the player-specific max credits (accounts for Weak/Claustrophobic penalties)
             int maxCredits = Definition.GetMaxCredits(player.Entity);
