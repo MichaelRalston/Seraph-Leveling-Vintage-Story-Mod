@@ -141,7 +141,7 @@
 
   "attribute-animalharvesting-contents": "{0}% animal harvesting speed",
   "attribute-armordurability-contents": "{0}% armor durability",
-  "attribute-armorwalkspeed-contents": "walk speed penalty reduced by {0}%",
+  "attribute-armorwalkspeed-contents": "{0}% walk speed penalty",
   "attribute-foragelooting-contents": "{0}% foraging loot",
   "attribute-foragewildcrop-contents": "{0}% wild crop drops",
   "attribute-furtive-contents": "{0}% animal detection range",

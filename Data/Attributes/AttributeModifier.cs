@@ -79,6 +79,15 @@ namespace SeraphLeveling.Data.Attributes
         /// in a decrease in animal detection range.
         /// </summary>
         public virtual bool IsInverted { get; init; } = false;
+
+        /// <summary>
+        /// Indicates that this attribute, if inverted with IsInverted, should also have its display text inverted, e.g. in
+        /// trait text and command result text. This should be set to false if the modifier, despite decreasing an attribute as
+        /// it increases, should be portrayed as a gain. For example, gaining levels in the ArmorDurability attribute decreases
+        /// the value of the armorDurabilityLoss stat, but is framed in text as an increase in armor durability.
+        /// </summary>
+        /// <see cref="IsInverted"/>
+        public virtual bool InvertedOnDisplay { get; init; } = true;
         public required string PersistenceHeader { get; init; }
         public virtual byte PersistenceVersion { get; init; } = 1;
         public abstract void CollectStatus(IPlayer player, StringBuilder sb);

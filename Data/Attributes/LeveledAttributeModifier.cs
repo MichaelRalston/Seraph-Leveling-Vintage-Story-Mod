@@ -143,7 +143,7 @@ namespace SeraphLeveling.Data.Attributes
 
         public virtual string CalculateDisplayBonus(int bonusPercent)
         {
-            return (IsInverted ? -bonusPercent : bonusPercent).ToString("+0;-#");
+            return (IsInverted && InvertedOnDisplay ? -bonusPercent : bonusPercent).ToString("+0;-#");
         }
 
         public override void ApplyBonusIfExists(IServerPlayer player)
@@ -371,7 +371,7 @@ namespace SeraphLeveling.Data.Attributes
         /// Gets a formatted string representation of this progress data's total credits, taking into account whether
         /// the attribute is inverted.
         /// </summary>
-        public string DisplayCredits => (Definition.IsInverted ? -TotalCredits : TotalCredits).ToString("+0;-#");
+        public string DisplayCredits => (Definition.IsInverted && Definition.InvertedOnDisplay ? -TotalCredits : TotalCredits).ToString("+0;-#");
 
         public void UpdateSkillActivityDay()
         {
