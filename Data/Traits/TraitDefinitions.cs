@@ -137,7 +137,7 @@ namespace SeraphLeveling.Data.Traits
             Attributes = [
                 IAttributeModifier.Bonus(AttributeModifierDefinitions.Tinkerer, 1, [
                     new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Technical },
-                    // TODO Precise 10%
+                    new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.Precise, ThresholdPercentage = 10 },
                 ])
             ],
         };
