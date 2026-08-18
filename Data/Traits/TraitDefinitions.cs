@@ -205,6 +205,9 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "heavyhanded",
             Attributes = [
+                IAttributeModifier.Penalty(AttributeModifierDefinitions.VesselDropRate, 10, [ new LeveledAttributeMaximumRequirement { Attribute = AttributeModifierDefinitions.VesselDropRate, ThresholdPercentage = 0 }]),
+                IAttributeModifier.Penalty(AttributeModifierDefinitions.LootingBonus, 15, [ new LeveledAttributeMaximumRequirement { Attribute = AttributeModifierDefinitions.LootingBonus, ThresholdPercentage = 0 }]),
+                IAttributeModifier.Penalty(AttributeModifierDefinitions.WildCropDropRate, 20, [ new LeveledAttributeMaximumRequirement { Attribute = AttributeModifierDefinitions.WildCropDropRate, ThresholdPercentage = 0 }]),
             ]
         };
 
@@ -228,6 +231,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "civil",
             Attributes = [
+                IAttributeModifier.Penalty(AttributeModifierDefinitions.LootingBonus, 10, [ new LeveledAttributeMaximumRequirement { Attribute = AttributeModifierDefinitions.LootingBonus, ThresholdPercentage = 0 } ]),
             ]
         };
 
@@ -235,8 +239,10 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "weak",
             Attributes = [
+                IAttributeModifier.Penalty(AttributeModifierDefinitions.WeakHealthOffset, 1, [
+                    new LeveledAttributeMaximumRequirement { Attribute = AttributeModifierDefinitions.MiningSpeed, ThresholdPercentage = 0 },
+                ]),
                 IAttributeModifier.Penalty(AttributeModifierDefinitions.MiningSpeed, 10, [ new LeveledAttributeMaximumRequirement { Attribute = AttributeModifierDefinitions.MiningSpeed, ThresholdPercentage = 0 } ]),
-                // TODO Health penalty
             ],
         };
 
@@ -244,6 +250,8 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "kind",
             Attributes = [
+                IAttributeModifier.Penalty(AttributeModifierDefinitions.AnimalDropRate, 10, [ new LeveledAttributeMaximumRequirement { Attribute = AttributeModifierDefinitions.AnimalDropRate, ThresholdPercentage = 0 } ]),
+                IAttributeModifier.Penalty(AttributeModifierDefinitions.AnimalHarvestRate, 10, [ new LeveledAttributeMaximumRequirement { Attribute = AttributeModifierDefinitions.AnimalHarvestRate, ThresholdPercentage = 0 } ]),
             ]
         };
 
