@@ -28,6 +28,7 @@ using Microsoft.CSharp.RuntimeBinder;
 using System.Text.Json;
 using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json;
+using Vintagestory.API.Datastructures;
 
 namespace SeraphLeveling
 {
@@ -405,7 +406,7 @@ namespace SeraphLeveling
         private const string CONFIG_FILE_NAME = "SeraphLeveling.json";
 
         /// <summary>Version stamped into the config file. 1 means the world-save blob has been folded in.</summary>
-        private const int CURRENT_CONFIG_VERSION = 1;
+        private const int CURRENT_CONFIG_VERSION = 2;
 
         /// <summary>ConfigVersion read from the file this run. Zero for files written before 1.19.0.</summary>
         private static int LoadedConfigVersion = 0;
@@ -456,7 +457,7 @@ namespace SeraphLeveling
             var flatAttributeMappings = traits
                     .SelectMany(trait => trait.Attributes, (trait, attrKvp) => new
                     {
-                        Attribute = attrKvp.Attribute,
+                        attrKvp.Attribute,
                         TraitTuple = (Trait: trait, Value: attrKvp.ModifierValue)
                     });
 
@@ -480,6 +481,13 @@ namespace SeraphLeveling
             foreach (var (attrKey, traitList) in TraitsForAttributes)
             {
                 ServerApi.Logger.Notification($"[SeraphLeveling] attribute {attrKey} linked to {traitList.Count} traits.");
+            }
+            foreach (var definition in LoadedAttributes)
+            {
+                if (AttributeConfiguration.TryGetValue(definition.Id, out var dataDict))
+                {
+                    definition.ReadConfigData(dataDict);
+                }
             }
         }
 
@@ -2034,7 +2042,7 @@ namespace SeraphLeveling
             string playerUid = player.PlayerUID;
 
 
-            AttributeModifierDefinitions.ArmorDurability.GetForPlayer(playerUid).DoEvent(player, armorCode, damageBlocked, AttributeModifierDefinitions.ArmorDurabilityProgressTypes.DamageBlocked);
+            AttributeModifierDefinitions.ArmorDurability.GetForPlayer(playerUid).DoEvent(player, armorCode, damageBlocked, ArmorDurabilityProgressTypes.DamageBlocked);
         }
 
         /// <summary>
@@ -2045,7 +2053,7 @@ namespace SeraphLeveling
             if (player?.Entity == null || string.IsNullOrEmpty(armorCode)) return;
 
             string playerUid = player.PlayerUID;
-            AttributeModifierDefinitions.ArmorDurability.GetForPlayer(playerUid).DoEvent(player, armorCode, 1, AttributeModifierDefinitions.ArmorDurabilityProgressTypes.RepairProgress);
+            AttributeModifierDefinitions.ArmorDurability.GetForPlayer(playerUid).DoEvent(player, armorCode, 1, ArmorDurabilityProgressTypes.RepairProgress);
         }
 
         /// <summary>
@@ -3349,12 +3357,12 @@ namespace SeraphLeveling
                             {
                                 var tp = pd.GetToolProgress(kvp.Key);
                                 tp.HasBeenUsed = ikvp.Value.HasBeenEquipped;
-                                tp.PartialCredit[AttributeModifierDefinitions.ArmorDurabilityProgressTypes.DamageBlocked] = new()
+                                tp.PartialCredit[ArmorDurabilityProgressTypes.DamageBlocked] = new()
                                 {
                                     Amount = ikvp.Value.DamageBlockedInIncrement,
                                     IncrementSize = ikvp.Value.CurrentDamageIncrementSize,
                                 };
-                                tp.PartialCredit[AttributeModifierDefinitions.ArmorDurabilityProgressTypes.RepairProgress] = new()
+                                tp.PartialCredit[ArmorDurabilityProgressTypes.RepairProgress] = new()
                                 {
                                     Amount = ikvp.Value.RepairsInIncrement,
                                     IncrementSize = ikvp.Value.CurrentRepairIncrementSize,
@@ -3567,6 +3575,7 @@ namespace SeraphLeveling
         /// If the file doesn't exist, creates one with default values.
         /// These values are used as defaults for new worlds.
         /// </summary>
+        private static Dictionary<string, Dictionary<string, int>> AttributeConfiguration = [];
         private void LoadConfigFile(ICoreServerAPI api)
         {
             try
@@ -3584,42 +3593,22 @@ namespace SeraphLeveling
                     };
                     api.StoreModConfig(config, CONFIG_FILE_NAME);
                     api.Logger.Notification("[SeraphLeveling] Created default config file: ModConfig/" + CONFIG_FILE_NAME);
+                    pendingConfigSave = true; // Let's actually save the full thing, shall we?
                 }
 
                 LoadedConfigVersion = config.ConfigVersion;
 
+                foreach (var definition in LoadedAttributes)
+                {
+                    if (config.AttributeConfiguration.TryGetValue(definition.Id, out var dataDict))
+                    {
+                        definition.ReadConfigData(dataDict);
+                    }
+                }
+                AttributeConfiguration = config.AttributeConfiguration;
+
                 // Apply config values to static variables
-                AttributeModifierDefinitions.MiningSpeed.BaseIncrement = config.MiningBaseBlocksPerIncrement;
-                AttributeModifierDefinitions.MiningSpeed.IncrementStep = config.MiningIncrementStep;
-                AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits = config.MiningMaxPercent;
                 OreMultiplier = config.MiningOreMultiplier;
-
-                BaseDamagePerIncrement = config.MeleeBaseDamagePerIncrement;
-                MeleeIncrementStep = config.MeleeIncrementStep;
-                MaxMeleeDamagePercent = config.MeleeMaxPercent;
-
-                BaseRangedDamagePerIncrement = config.RangedBaseDamagePerIncrement;
-                RangedIncrementStep = config.RangedIncrementStep;
-                AttributeModifierDefinitions.RangedDamage.GlobalMaxCredits = config.RangedMaxDamagePercent;
-                AttributeModifierDefinitions.RangedAccuracy.GlobalMaxCredits = config.RangedMaxAccuracyPercent;
-                AttributeModifierDefinitions.RangedDistance.GlobalMaxCredits = config.RangedMaxDistancePercent;
-
-                AttributeModifierDefinitions.WalkingSpeed.BaseIncrement = config.WalkingBaseBlocksPerIncrement;
-                AttributeModifierDefinitions.WalkingSpeed.IncrementStep = config.WalkingIncrementStep;
-                AttributeModifierDefinitions.WalkingSpeed.GlobalMaxCredits = config.WalkingMaxPercent;
-
-                AttributeModifierDefinitions.HungerRate.BaseIncrement = config.HungerBaseSecondsPerIncrement;
-                AttributeModifierDefinitions.HungerRate.IncrementStep = config.HungerIncrementStep;
-                AttributeModifierDefinitions.HungerRate.GlobalMaxCredits = config.HungerMaxReductionPercent;
-
-                BaseSecondsInArmorPerIncrement = config.ArmorBaseSecondsPerIncrement;
-                ArmorTimeIncrementStep = config.ArmorTimeIncrementStep;
-                BaseDamageBlockedPerIncrement = config.ArmorBaseDamageBlockedPerIncrement;
-                ArmorDamageIncrementStep = config.ArmorDamageIncrementStep;
-                BaseRepairsPerIncrement = config.ArmorBaseRepairsPerIncrement;
-                ArmorRepairIncrementStep = config.ArmorRepairIncrementStep;
-                MaxArmorDurabilityPercent = config.ArmorMaxDurabilityPercent;
-                MaxArmorWalkSpeedPercent = config.ArmorMaxWalkSpeedPercent;
 
                 // First-equip bonus configuration
                 FirstEquipLightBonus = config.ArmorFirstEquipLightDurability;
@@ -3636,45 +3625,13 @@ namespace SeraphLeveling
 
                 // Optional armor features
                 EnableArmorHungerReduction = config.EnableArmorHungerReduction;
-                MaxArmorHungerReductionPercent = config.ArmorMaxHungerReductionPercent;
                 EnableArmorHealingBonus = config.EnableArmorHealingBonus;
-                MaxArmorHealingPercent = config.ArmorMaxHealingPercent;
 
                 AttributeModifierDefinitions.Clothier.RequiredCollectionSize = config.ClothierRequiredUniqueClothes;
                 if (config.ClothierBlacklistedItems != null)
                 {
                     AttributeModifierDefinitions.Clothier.TokenBanList = [.. config.ClothierBlacklistedItems];
                 }
-
-                BaseMenderRepairsPerIncrement = config.MenderBaseRepairsPerIncrement;
-                MenderIncrementStep = config.MenderIncrementStep;
-                MaxMenderPercent = config.MenderMaxPercent;
-
-                BasePilfererPointsPerIncrement = config.PilfererBasePointsPerIncrement;
-                PilfererIncrementStep = config.PilfererIncrementStep;
-                MaxPilfererPercent = config.PilfererMaxPercent;
-
-                BaseResourcefulAnimalsPerIncrement = config.ResourcefulBaseAnimalsPerIncrement;
-                ResourcefulIncrementStep = config.ResourcefulIncrementStep;
-                MaxResourcefulLootPercent = config.ResourcefulMaxLootPercent;
-                MaxResourcefulSpeedPercent = config.ResourcefulMaxSpeedPercent;
-
-                BaseForagerCropsPerIncrement = config.ForagerBaseCropsPerIncrement;
-                ForagerIncrementStep = config.ForagerIncrementStep;
-                MaxForagerLootPercent = config.ForagerMaxLootPercent;
-                MaxForagerWildCropPercent = config.ForagerMaxWildCropPercent;
-
-                AttributeModifierDefinitions.Furtive.BaseIncrement = config.FurtiveBaseSneakBlocksPerIncrement;
-                AttributeModifierDefinitions.Furtive.IncrementStep = config.FurtiveIncrementStep;
-                AttributeModifierDefinitions.Furtive.GlobalMaxCredits = config.FurtiveMaxPercent;
-
-                BasePreciseDamagePerIncrement = config.PreciseBaseDamagePerIncrement;
-                PreciseIncrementStep = config.PreciseIncrementStep;
-                MaxPrecisePercent = config.PreciseMaxPercent;
-
-                AttributeModifierDefinitions.Technical.GlobalMaxCredits = config.TechnicalRequiredTranslocatorRepairs;
-
-                AttributeModifierDefinitions.HardyHealth.ModifierAmount = config.HardyHealthBonus;
 
                 // Auto-save configuration
                 AutoSaveIntervalSeconds = config.AutoSaveIntervalSeconds;
@@ -3822,37 +3779,12 @@ namespace SeraphLeveling
                 config.ConfigVersion = CURRENT_CONFIG_VERSION;
                 LoadedConfigVersion = CURRENT_CONFIG_VERSION;
 
-                config.MiningBaseBlocksPerIncrement = AttributeModifierDefinitions.MiningSpeed.BaseIncrement;
-                config.MiningIncrementStep = AttributeModifierDefinitions.MiningSpeed.IncrementStep;
-                config.MiningMaxPercent = AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits;
+                foreach (var attribute in LoadedAttributes)
+                {
+                    config.AttributeConfiguration[attribute.Id] = attribute.GetConfigData();
+                }
+
                 config.MiningOreMultiplier = OreMultiplier;
-
-                config.MeleeBaseDamagePerIncrement = BaseDamagePerIncrement;
-                config.MeleeIncrementStep = MeleeIncrementStep;
-                config.MeleeMaxPercent = MaxMeleeDamagePercent;
-
-                config.RangedBaseDamagePerIncrement = BaseRangedDamagePerIncrement;
-                config.RangedIncrementStep = RangedIncrementStep;
-                config.RangedMaxDamagePercent = MaxRangedDamagePercent;
-                config.RangedMaxAccuracyPercent = MaxRangedAccuracyPercent;
-                config.RangedMaxDistancePercent = MaxRangedDistancePercent;
-
-                config.WalkingBaseBlocksPerIncrement = AttributeModifierDefinitions.WalkingSpeed.BaseIncrement;
-                config.WalkingIncrementStep = AttributeModifierDefinitions.WalkingSpeed.IncrementStep;
-                config.WalkingMaxPercent = AttributeModifierDefinitions.WalkingSpeed.GlobalMaxCredits;
-
-                config.HungerBaseSecondsPerIncrement = AttributeModifierDefinitions.HungerRate.BaseIncrement;
-                config.HungerIncrementStep = AttributeModifierDefinitions.HungerRate.IncrementStep;
-                config.HungerMaxReductionPercent = AttributeModifierDefinitions.HungerRate.GlobalMaxCredits;
-
-                config.ArmorBaseSecondsPerIncrement = BaseSecondsInArmorPerIncrement;
-                config.ArmorTimeIncrementStep = ArmorTimeIncrementStep;
-                config.ArmorBaseDamageBlockedPerIncrement = BaseDamageBlockedPerIncrement;
-                config.ArmorDamageIncrementStep = ArmorDamageIncrementStep;
-                config.ArmorBaseRepairsPerIncrement = BaseRepairsPerIncrement;
-                config.ArmorRepairIncrementStep = ArmorRepairIncrementStep;
-                config.ArmorMaxDurabilityPercent = MaxArmorDurabilityPercent;
-                config.ArmorMaxWalkSpeedPercent = MaxArmorWalkSpeedPercent;
 
                 config.ArmorFirstEquipLightDurability = FirstEquipLightBonus;
                 config.ArmorFirstEquipChainDurability = FirstEquipChainBonus;
@@ -3867,42 +3799,10 @@ namespace SeraphLeveling
                 config.ArmorFirstEquipPlateWalkSpeed = FirstEquipWalkSpeedPlateBonus;
 
                 config.EnableArmorHungerReduction = EnableArmorHungerReduction;
-                config.ArmorMaxHungerReductionPercent = MaxArmorHungerReductionPercent;
                 config.EnableArmorHealingBonus = EnableArmorHealingBonus;
-                config.ArmorMaxHealingPercent = MaxArmorHealingPercent;
 
                 config.ClothierRequiredUniqueClothes = AttributeModifierDefinitions.Clothier.RequiredCollectionSize;
                 config.ClothierBlacklistedItems = AttributeModifierDefinitions.Clothier.TokenBanList.ToArray();
-
-                config.MenderBaseRepairsPerIncrement = BaseMenderRepairsPerIncrement;
-                config.MenderIncrementStep = MenderIncrementStep;
-                config.MenderMaxPercent = MaxMenderPercent;
-
-                config.PilfererBasePointsPerIncrement = BasePilfererPointsPerIncrement;
-                config.PilfererIncrementStep = PilfererIncrementStep;
-                config.PilfererMaxPercent = MaxPilfererPercent;
-
-                config.ResourcefulBaseAnimalsPerIncrement = BaseResourcefulAnimalsPerIncrement;
-                config.ResourcefulIncrementStep = ResourcefulIncrementStep;
-                config.ResourcefulMaxLootPercent = MaxResourcefulLootPercent;
-                config.ResourcefulMaxSpeedPercent = MaxResourcefulSpeedPercent;
-
-                config.ForagerBaseCropsPerIncrement = BaseForagerCropsPerIncrement;
-                config.ForagerIncrementStep = ForagerIncrementStep;
-                config.ForagerMaxLootPercent = MaxForagerLootPercent;
-                config.ForagerMaxWildCropPercent = MaxForagerWildCropPercent;
-
-                config.FurtiveBaseSneakBlocksPerIncrement = AttributeModifierDefinitions.Furtive.BaseIncrement;
-                config.FurtiveIncrementStep = AttributeModifierDefinitions.Furtive.IncrementStep;
-                config.FurtiveMaxPercent = AttributeModifierDefinitions.Furtive.GlobalMaxCredits;
-
-                config.PreciseBaseDamagePerIncrement = BasePreciseDamagePerIncrement;
-                config.PreciseIncrementStep = PreciseIncrementStep;
-                config.PreciseMaxPercent = MaxPrecisePercent;
-
-                config.TechnicalRequiredTranslocatorRepairs = AttributeModifierDefinitions.Technical.GlobalMaxCredits;
-
-                config.HardyHealthBonus = int.CreateTruncating(AttributeModifierDefinitions.HardyHealth.ModifierAmount);
 
                 config.AutoSaveIntervalSeconds = AutoSaveIntervalSeconds;
 
@@ -5550,254 +5450,6 @@ namespace SeraphLeveling
                     return;
                 }
 
-                using (var ms = new MemoryStream(data))
-                {
-                    using (var reader = new BinaryReader(ms))
-                    {
-                        byte version = reader.ReadByte();
-
-                        if (version <= 2)
-                        {
-                            // Legacy format: just had BaseBlocksPerLevel (now BaseBlocksPerIncrement)
-                            int legacyBase = reader.ReadInt32();
-                            AttributeModifierDefinitions.MiningSpeed.BaseIncrement = legacyBase;
-                            AttributeModifierDefinitions.MiningSpeed.IncrementStep = legacyBase; // Match old behavior
-
-                            if (version >= 2)
-                            {
-                                AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits = reader.ReadInt32();
-                            }
-                            // OreMultiplier uses default (5)
-                            // Melee, Ranged, Walking, and Hunger use defaults
-
-                            // Mark for re-save in new format
-                            pendingConfigSave = true;
-                        }
-                        else if (version == 3)
-                        {
-                            AttributeModifierDefinitions.MiningSpeed.BaseIncrement = reader.ReadInt32();
-                            AttributeModifierDefinitions.MiningSpeed.IncrementStep = reader.ReadInt32();
-                            AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits = reader.ReadInt32();
-                            OreMultiplier = reader.ReadInt32();
-                            // Melee, Ranged, Walking, and Hunger use defaults
-
-                            // Mark for re-save in new format
-                            pendingConfigSave = true;
-                        }
-                        else if (version == 4)
-                        {
-                            // Version 4: has melee config but not ranged, walking, or hunger
-                            AttributeModifierDefinitions.MiningSpeed.BaseIncrement = reader.ReadInt32();
-                            AttributeModifierDefinitions.MiningSpeed.IncrementStep = reader.ReadInt32();
-                            AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits = reader.ReadInt32();
-                            OreMultiplier = reader.ReadInt32();
-                            BaseDamagePerIncrement = reader.ReadInt32();
-                            MeleeIncrementStep = reader.ReadInt32();
-                            MaxMeleeDamagePercent = reader.ReadInt32();
-                            // Ranged, Walking, and Hunger use defaults
-
-                            // Mark for re-save in new format
-                            pendingConfigSave = true;
-                        }
-                        else if (version == 5)
-                        {
-                            // Version 5: has ranged config but not walking or hunger
-                            AttributeModifierDefinitions.MiningSpeed.BaseIncrement = reader.ReadInt32();
-                            AttributeModifierDefinitions.MiningSpeed.IncrementStep = reader.ReadInt32();
-                            AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits = reader.ReadInt32();
-                            OreMultiplier = reader.ReadInt32();
-                            BaseDamagePerIncrement = reader.ReadInt32();
-                            MeleeIncrementStep = reader.ReadInt32();
-                            MaxMeleeDamagePercent = reader.ReadInt32();
-                            BaseRangedDamagePerIncrement = reader.ReadInt32();
-                            RangedIncrementStep = reader.ReadInt32();
-                            MaxRangedDamagePercent = reader.ReadInt32();
-                            MaxRangedAccuracyPercent = reader.ReadInt32();
-                            MaxRangedDistancePercent = reader.ReadInt32();
-                            // Walking and Hunger use defaults
-
-                            // Mark for re-save in new format
-                            pendingConfigSave = true;
-                        }
-                        else if (version == 6)
-                        {
-                            // Version 6: has walking config but not hunger
-                            AttributeModifierDefinitions.MiningSpeed.BaseIncrement = reader.ReadInt32();
-                            AttributeModifierDefinitions.MiningSpeed.IncrementStep = reader.ReadInt32();
-                            AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits = reader.ReadInt32();
-                            OreMultiplier = reader.ReadInt32();
-                            BaseDamagePerIncrement = reader.ReadInt32();
-                            MeleeIncrementStep = reader.ReadInt32();
-                            MaxMeleeDamagePercent = reader.ReadInt32();
-                            BaseRangedDamagePerIncrement = reader.ReadInt32();
-                            RangedIncrementStep = reader.ReadInt32();
-                            MaxRangedDamagePercent = reader.ReadInt32();
-                            MaxRangedAccuracyPercent = reader.ReadInt32();
-                            MaxRangedDistancePercent = reader.ReadInt32();
-                            AttributeModifierDefinitions.WalkingSpeed.BaseIncrement = reader.ReadInt32();
-                            AttributeModifierDefinitions.WalkingSpeed.IncrementStep = reader.ReadInt32();
-                            AttributeModifierDefinitions.WalkingSpeed.GlobalMaxCredits = reader.ReadInt32();
-                            // Hunger uses defaults
-
-                            // Mark for re-save in new format
-                            pendingConfigSave = true;
-                        }
-                        else if (version == 7)
-                        {
-                            // Version 7: has hunger config but not armor
-                            AttributeModifierDefinitions.MiningSpeed.BaseIncrement = reader.ReadInt32();
-                            AttributeModifierDefinitions.MiningSpeed.IncrementStep = reader.ReadInt32();
-                            AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits = reader.ReadInt32();
-                            OreMultiplier = reader.ReadInt32();
-                            BaseDamagePerIncrement = reader.ReadInt32();
-                            MeleeIncrementStep = reader.ReadInt32();
-                            MaxMeleeDamagePercent = reader.ReadInt32();
-                            BaseRangedDamagePerIncrement = reader.ReadInt32();
-                            RangedIncrementStep = reader.ReadInt32();
-                            MaxRangedDamagePercent = reader.ReadInt32();
-                            MaxRangedAccuracyPercent = reader.ReadInt32();
-                            MaxRangedDistancePercent = reader.ReadInt32();
-                            AttributeModifierDefinitions.WalkingSpeed.BaseIncrement = reader.ReadInt32();
-                            AttributeModifierDefinitions.WalkingSpeed.IncrementStep = reader.ReadInt32();
-                            AttributeModifierDefinitions.WalkingSpeed.GlobalMaxCredits = reader.ReadInt32();
-                            AttributeModifierDefinitions.HungerRate.BaseIncrement = reader.ReadInt32();
-                            AttributeModifierDefinitions.HungerRate.IncrementStep = reader.ReadInt32();
-                            AttributeModifierDefinitions.HungerRate.GlobalMaxCredits = reader.ReadInt32();
-                            // Armor uses defaults
-
-                            // Mark for re-save in new format
-                            pendingConfigSave = true;
-                        }
-                        else if (version == 8)
-                        {
-                            // Version 8: has armor config but not CO config
-                            AttributeModifierDefinitions.MiningSpeed.BaseIncrement = reader.ReadInt32();
-                            AttributeModifierDefinitions.MiningSpeed.IncrementStep = reader.ReadInt32();
-                            AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits = reader.ReadInt32();
-                            OreMultiplier = reader.ReadInt32();
-                            BaseDamagePerIncrement = reader.ReadInt32();
-                            MeleeIncrementStep = reader.ReadInt32();
-                            MaxMeleeDamagePercent = reader.ReadInt32();
-                            BaseRangedDamagePerIncrement = reader.ReadInt32();
-                            RangedIncrementStep = reader.ReadInt32();
-                            MaxRangedDamagePercent = reader.ReadInt32();
-                            MaxRangedAccuracyPercent = reader.ReadInt32();
-                            MaxRangedDistancePercent = reader.ReadInt32();
-                            AttributeModifierDefinitions.WalkingSpeed.BaseIncrement = reader.ReadInt32();
-                            AttributeModifierDefinitions.WalkingSpeed.IncrementStep = reader.ReadInt32();
-                            AttributeModifierDefinitions.WalkingSpeed.GlobalMaxCredits = reader.ReadInt32();
-                            AttributeModifierDefinitions.HungerRate.BaseIncrement = reader.ReadInt32();
-                            AttributeModifierDefinitions.HungerRate.IncrementStep = reader.ReadInt32();
-                            AttributeModifierDefinitions.HungerRate.GlobalMaxCredits = reader.ReadInt32();
-                            BaseSecondsInArmorPerIncrement = reader.ReadInt32();
-                            ArmorTimeIncrementStep = reader.ReadInt32();
-                            BaseDamageBlockedPerIncrement = reader.ReadInt32();
-                            ArmorDamageIncrementStep = reader.ReadInt32();
-                            BaseRepairsPerIncrement = reader.ReadInt32();
-                            ArmorRepairIncrementStep = reader.ReadInt32();
-                            MaxArmorDurabilityPercent = reader.ReadInt32();
-                            MaxArmorWalkSpeedPercent = reader.ReadInt32();
-                            // CO config uses defaults
-
-                            // Mark for re-save in new format
-                            pendingConfigSave = true;
-                        }
-                        else if (version == 9)
-                        {
-                            // Version 9: has global CO config but no per-proficiency overrides
-                            AttributeModifierDefinitions.MiningSpeed.BaseIncrement = reader.ReadInt32();
-                            AttributeModifierDefinitions.MiningSpeed.IncrementStep = reader.ReadInt32();
-                            AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits = reader.ReadInt32();
-                            OreMultiplier = reader.ReadInt32();
-                            BaseDamagePerIncrement = reader.ReadInt32();
-                            MeleeIncrementStep = reader.ReadInt32();
-                            MaxMeleeDamagePercent = reader.ReadInt32();
-                            BaseRangedDamagePerIncrement = reader.ReadInt32();
-                            RangedIncrementStep = reader.ReadInt32();
-                            MaxRangedDamagePercent = reader.ReadInt32();
-                            MaxRangedAccuracyPercent = reader.ReadInt32();
-                            MaxRangedDistancePercent = reader.ReadInt32();
-                            AttributeModifierDefinitions.WalkingSpeed.BaseIncrement = reader.ReadInt32();
-                            AttributeModifierDefinitions.WalkingSpeed.IncrementStep = reader.ReadInt32();
-                            AttributeModifierDefinitions.WalkingSpeed.GlobalMaxCredits = reader.ReadInt32();
-                            AttributeModifierDefinitions.HungerRate.BaseIncrement = reader.ReadInt32();
-                            AttributeModifierDefinitions.HungerRate.IncrementStep = reader.ReadInt32();
-                            AttributeModifierDefinitions.HungerRate.GlobalMaxCredits = reader.ReadInt32();
-                            BaseSecondsInArmorPerIncrement = reader.ReadInt32();
-                            ArmorTimeIncrementStep = reader.ReadInt32();
-                            BaseDamageBlockedPerIncrement = reader.ReadInt32();
-                            ArmorDamageIncrementStep = reader.ReadInt32();
-                            BaseRepairsPerIncrement = reader.ReadInt32();
-                            ArmorRepairIncrementStep = reader.ReadInt32();
-                            MaxArmorDurabilityPercent = reader.ReadInt32();
-                            MaxArmorWalkSpeedPercent = reader.ReadInt32();
-                            COBaseDamagePerIncrement = reader.ReadInt32();
-                            COIncrementStep = reader.ReadInt32();
-                            // Per-proficiency overrides use defaults (empty)
-
-                            // Mark for re-save in new format
-                            pendingConfigSave = true;
-                        }
-                        else if (version == 10)
-                        {
-                            // Current format with per-proficiency CO config
-                            AttributeModifierDefinitions.MiningSpeed.BaseIncrement = reader.ReadInt32();
-                            AttributeModifierDefinitions.MiningSpeed.IncrementStep = reader.ReadInt32();
-                            AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits = reader.ReadInt32();
-                            OreMultiplier = reader.ReadInt32();
-                            BaseDamagePerIncrement = reader.ReadInt32();
-                            MeleeIncrementStep = reader.ReadInt32();
-                            MaxMeleeDamagePercent = reader.ReadInt32();
-                            BaseRangedDamagePerIncrement = reader.ReadInt32();
-                            RangedIncrementStep = reader.ReadInt32();
-                            MaxRangedDamagePercent = reader.ReadInt32();
-                            MaxRangedAccuracyPercent = reader.ReadInt32();
-                            MaxRangedDistancePercent = reader.ReadInt32();
-                            AttributeModifierDefinitions.WalkingSpeed.BaseIncrement = reader.ReadInt32();
-                            AttributeModifierDefinitions.WalkingSpeed.IncrementStep = reader.ReadInt32();
-                            AttributeModifierDefinitions.WalkingSpeed.GlobalMaxCredits = reader.ReadInt32();
-                            AttributeModifierDefinitions.HungerRate.BaseIncrement = reader.ReadInt32();
-                            AttributeModifierDefinitions.HungerRate.IncrementStep = reader.ReadInt32();
-                            AttributeModifierDefinitions.HungerRate.GlobalMaxCredits = reader.ReadInt32();
-                            BaseSecondsInArmorPerIncrement = reader.ReadInt32();
-                            ArmorTimeIncrementStep = reader.ReadInt32();
-                            BaseDamageBlockedPerIncrement = reader.ReadInt32();
-                            ArmorDamageIncrementStep = reader.ReadInt32();
-                            BaseRepairsPerIncrement = reader.ReadInt32();
-                            ArmorRepairIncrementStep = reader.ReadInt32();
-                            MaxArmorDurabilityPercent = reader.ReadInt32();
-                            MaxArmorWalkSpeedPercent = reader.ReadInt32();
-                            COBaseDamagePerIncrement = reader.ReadInt32();
-                            COIncrementStep = reader.ReadInt32();
-                            // Per-proficiency base overrides
-                            int baseCount = reader.ReadInt32();
-                            COProficiencyBaseOverrides.Clear();
-                            for (int i = 0; i < baseCount; i++)
-                            {
-                                string key = reader.ReadString();
-                                int val = reader.ReadInt32();
-                                COProficiencyBaseOverrides[key] = val;
-                            }
-                            // Per-proficiency increment overrides
-                            int incCount = reader.ReadInt32();
-                            COProficiencyIncrementOverrides.Clear();
-                            for (int i = 0; i < incCount; i++)
-                            {
-                                string key = reader.ReadString();
-                                int val = reader.ReadInt32();
-                                COProficiencyIncrementOverrides[key] = val;
-                            }
-                        }
-                    }
-                }
-
-                ServerApi.Logger.Notification($"[SeraphLeveling] Config loaded (Mining: Base={AttributeModifierDefinitions.MiningSpeed.BaseIncrement}, Max={AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits}% | Melee: Base={BaseDamagePerIncrement}, Max={MaxMeleeDamagePercent}% | Ranged: Base={BaseRangedDamagePerIncrement}, MaxDmg={MaxRangedDamagePercent}% | Walking: Base={AttributeModifierDefinitions.WalkingSpeed.BaseIncrement}, Max={AttributeModifierDefinitions.WalkingSpeed.GlobalMaxCredits}% | Hunger: Base={AttributeModifierDefinitions.HungerRate.BaseIncrement}, Max={AttributeModifierDefinitions.HungerRate.GlobalMaxCredits}% | Armor: MaxDur={MaxArmorDurabilityPercent}%, MaxWalk={MaxArmorWalkSpeedPercent}%)");
-
-                // Fold the world's values into the config file and drop the blob, so
-                // this world never reads from the save game again. An empty array is
-                // what GetData returns for a missing key, so older builds of the mod
-                // would also treat this as "nothing stored" if the world is opened by
-                // one of them again.
                 SaveConfigFile();
                 ServerApi.WorldManager.SaveGame.StoreData(CONFIG_SAVE_KEY, Array.Empty<byte>());
                 pendingConfigSave = false;

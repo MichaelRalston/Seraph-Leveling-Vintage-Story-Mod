@@ -4,6 +4,7 @@ using System.Text;
 using Vintagestory.API.Server;
 using Vintagestory.API.Config;
 using Vintagestory.API.Common;
+using System.Collections.Generic;
 
 namespace SeraphLeveling.Data.Attributes
 {
@@ -12,6 +13,16 @@ namespace SeraphLeveling.Data.Attributes
         public virtual required int BaseIncrement { get; set; }
         public virtual required int IncrementStep { get; set; }
         public virtual required string IncrementUnits { get; init; }
+        public override void ReadConfigData(Dictionary<string, int> dict)
+        {
+            if (dict.TryGetValue("maxCredits", out var max)) GlobalMaxCredits = max;
+            if (dict.TryGetValue("baseIncrement", out var baseInc)) BaseIncrement = baseInc;
+            if (dict.TryGetValue("step", out var step)) IncrementStep = step;
+        }
+        public override Dictionary<string, int> GetConfigData()
+        {
+            return new() { ["maxCredits"] = GlobalMaxCredits, ["baseIncrement"] = BaseIncrement, ["step"] = IncrementStep };
+        }
         public static LeveledPartialAttributeModifierProgressData Create(LeveledPartialAttributeModifierDefinition definition) { return new LeveledPartialAttributeModifierProgressData(definition); }
         public override void ResetProgress(IServerPlayer player)
         {

@@ -1,8 +1,8 @@
 using System;
 using System.Text;
-using SeraphLeveling.Patches;
 using Vintagestory.API.Common;
 using Vintagestory.API.Server;
+using System.Collections.Generic;
 
 namespace SeraphLeveling.Data.Attributes
 {
@@ -47,6 +47,14 @@ namespace SeraphLeveling.Data.Attributes
             get => field ??= $"sit{Name}BonusPercent"; init;
         }
         public required string StatName { get; init; }
+        public override void ReadConfigData(Dictionary<string, int> dict)
+        {
+            if (dict.TryGetValue("maxCredits", out var max)) GlobalMaxCredits = max;
+        }
+        public override Dictionary<string, int> GetConfigData()
+        {
+            return new() { ["maxCredits"] = GlobalMaxCredits };
+        }
 
         public event CreditsChangedDelegate CreditsChanged;
         public void OnCreditsChanged(IServerPlayer player, int oldCredits, PD progress)
@@ -71,7 +79,7 @@ namespace SeraphLeveling.Data.Attributes
             return GetDict(player).TotalCredits;
         }
 
-        public virtual int GetMaxCredits(EntityPlayer player) => GlobalMaxCredits-CalculateLevelFromTraits(player);
+        public virtual int GetMaxCredits(EntityPlayer player) => GlobalMaxCredits - CalculateLevelFromTraits(player);
 
         public int CalculateLevelFromTraits(EntityPlayer entity)
         {
@@ -119,7 +127,7 @@ namespace SeraphLeveling.Data.Attributes
                 watchedAttrs.SetInt(WatchedLevel, progressData.TotalCredits);
                 watchedAttrs.SetInt(WatchedBonus, bonusPercent);
 
-                OnBonusChanged(player, oldBonus+totalLevelFromTraits, bonusPercent+totalLevelFromTraits);
+                OnBonusChanged(player, oldBonus + totalLevelFromTraits, bonusPercent + totalLevelFromTraits);
 
                 SeraphLevelingModSystem.UpdateExtraTraitStatic(player.Entity, TraitCode, progressData.TotalCredits > 0);
 
@@ -231,7 +239,7 @@ namespace SeraphLeveling.Data.Attributes
 
             var progress = GetDict(player);
 
-            int? newCredits = (int?)args[0+indexOffset];
+            int? newCredits = (int?)args[0 + indexOffset];
             int maxCredits = GetMaxCredits(player.Entity);
 
             // If no value provided, show current level
@@ -271,7 +279,7 @@ namespace SeraphLeveling.Data.Attributes
 
         public override TextCommandResult HandleMaxCommand(TextCommandCallingArgs args, int indexOffset)
         {
-            int? newValue = (int?)args[0+indexOffset];
+            int? newValue = (int?)args[0 + indexOffset];
 
             if (newValue.HasValue)
             {

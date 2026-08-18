@@ -4,6 +4,7 @@ using System.Text;
 using Vintagestory.API.Common;
 using Vintagestory.API.Config;
 using Vintagestory.API.Server;
+using System.Collections.Generic;
 
 namespace SeraphLeveling.Data.Attributes
 {
@@ -12,6 +13,14 @@ namespace SeraphLeveling.Data.Attributes
         public required int GlobalMaxCredits { get; set; }
         public required string CreditDescription { get; init; }
         public string WatchedCreditsAttributeKey { get; init; } = null;
+        public override void ReadConfigData(Dictionary<string, int> dict)
+        {
+            if (dict.TryGetValue("requirement", out var max)) GlobalMaxCredits = max;
+        }
+        public override Dictionary<string, int> GetConfigData()
+        {
+            return new() { ["requirement"] = GlobalMaxCredits };
+        }
 
         public virtual void AddCredits(IServerPlayer player, float toAdd)
         {

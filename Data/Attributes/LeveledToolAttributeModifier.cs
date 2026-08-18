@@ -41,6 +41,17 @@ namespace SeraphLeveling.Data.Attributes
         {
             get => IncrementData[default].IncrementUnits; set { var d = IncrementData.GetOrAdd(default, _ => new IncrementData() { BaseIncrement = 0, IncrementStep = 0, IncrementUnits = value }); d.IncrementUnits = value; }
         }
+        public override void ReadConfigData(Dictionary<string, int> dict)
+        {
+            if (dict.TryGetValue("maxCredits", out var max)) GlobalMaxCredits = max;
+            if (dict.TryGetValue("baseIncrement", out var baseInc)) BaseIncrement = baseInc;
+            if (dict.TryGetValue("step", out var step)) IncrementStep = step;
+
+        }
+        public override Dictionary<string, int> GetConfigData()
+        {
+            return new() { ["maxCredits"] = GlobalMaxCredits, ["baseIncrement"] = BaseIncrement, ["step"] = IncrementStep };
+        }
         public required ToolDefinition Tool { get; init; }
         public override void ResetProgress(IServerPlayer player)
         {

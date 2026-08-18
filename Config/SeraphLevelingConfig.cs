@@ -16,43 +16,9 @@ namespace SeraphLeveling.Config
         /// </summary>
         public int ConfigVersion { get; set; } = 0;
 
-        // Mining progression
-        public int MiningBaseBlocksPerIncrement { get; set; } = 100;
-        public int MiningIncrementStep { get; set; } = 100;
-        public int MiningMaxPercent { get; set; } = 50;
+        public Dictionary<string, Dictionary<string, int>> AttributeConfiguration { get; set; } = [];
+
         public int MiningOreMultiplier { get; set; } = 5;
-
-        // Melee progression
-        public int MeleeBaseDamagePerIncrement { get; set; } = 100;
-        public int MeleeIncrementStep { get; set; } = 100;
-        public int MeleeMaxPercent { get; set; } = 50;
-
-        // Ranged progression
-        public int RangedBaseDamagePerIncrement { get; set; } = 100;
-        public int RangedIncrementStep { get; set; } = 100;
-        public int RangedMaxDamagePercent { get; set; } = 50;
-        public int RangedMaxAccuracyPercent { get; set; } = 50;
-        public int RangedMaxDistancePercent { get; set; } = 50;
-
-        // Walking progression
-        public int WalkingBaseBlocksPerIncrement { get; set; } = 1000;
-        public int WalkingIncrementStep { get; set; } = 1000;
-        public int WalkingMaxPercent { get; set; } = 15;
-
-        // Hunger progression
-        public int HungerBaseSecondsPerIncrement { get; set; } = 300;
-        public int HungerIncrementStep { get; set; } = 60;
-        public int HungerMaxReductionPercent { get; set; } = 25;
-
-        // Armor progression
-        public int ArmorBaseSecondsPerIncrement { get; set; } = 2880;
-        public int ArmorTimeIncrementStep { get; set; } = 2880;
-        public int ArmorBaseDamageBlockedPerIncrement { get; set; } = 100;
-        public int ArmorDamageIncrementStep { get; set; } = 100;
-        public int ArmorBaseRepairsPerIncrement { get; set; } = 1;
-        public int ArmorRepairIncrementStep { get; set; } = 1;
-        public int ArmorMaxDurabilityPercent { get; set; } = 50;
-        public int ArmorMaxWalkSpeedPercent { get; set; } = 50;
 
         // First-equip bonus configuration (durability)
         public int ArmorFirstEquipLightDurability { get; set; } = 1;
@@ -70,12 +36,9 @@ namespace SeraphLeveling.Config
 
         // Armor hunger reduction (optional feature, disabled by default)
         public bool EnableArmorHungerReduction { get; set; } = false;
-        public int ArmorMaxHungerReductionPercent { get; set; } = 50;
 
         // Armor healing effectiveness (optional feature, disabled by default)
         public bool EnableArmorHealingBonus { get; set; } = false;
-        public int ArmorMaxHealingPercent { get; set; } = 25;
-
         // Clothier progression
         public int ClothierRequiredUniqueClothes { get; set; } = 20;
         /// <summary>
@@ -85,43 +48,6 @@ namespace SeraphLeveling.Config
         /// </summary>
         public string[] ClothierBlacklistedItems { get; set; } = null;
 
-        // Mender progression
-        public int MenderBaseRepairsPerIncrement { get; set; } = 5;
-        public int MenderIncrementStep { get; set; } = 1;
-        public int MenderMaxPercent { get; set; } = 25;
-
-        // Pilferer progression
-        public int PilfererBasePointsPerIncrement { get; set; } = 10;
-        public int PilfererIncrementStep { get; set; } = 10;
-        public int PilfererMaxPercent { get; set; } = 20;
-
-        // Resourceful progression
-        public int ResourcefulBaseAnimalsPerIncrement { get; set; } = 10;
-        public int ResourcefulIncrementStep { get; set; } = 10;
-        public int ResourcefulMaxLootPercent { get; set; } = 20;
-        public int ResourcefulMaxSpeedPercent { get; set; } = 25;
-
-        // Forager progression
-        public int ForagerBaseCropsPerIncrement { get; set; } = 10;
-        public int ForagerIncrementStep { get; set; } = 10;
-        public int ForagerMaxLootPercent { get; set; } = 20;
-        public int ForagerMaxWildCropPercent { get; set; } = 20;
-
-        // Furtive progression
-        public int FurtiveBaseSneakBlocksPerIncrement { get; set; } = 100;
-        public int FurtiveIncrementStep { get; set; } = 100;
-        public int FurtiveMaxPercent { get; set; } = 35;
-
-        // Precise progression
-        public int PreciseBaseDamagePerIncrement { get; set; } = 100;
-        public int PreciseIncrementStep { get; set; } = 100;
-        public int PreciseMaxPercent { get; set; } = 30;
-
-        // Technical progression
-        public int TechnicalRequiredTranslocatorRepairs { get; set; } = 5;
-
-        // Hardy Health progression
-        public int HardyHealthBonus { get; set; } = 5;
 
         // Auto-save settings
         /// <summary>

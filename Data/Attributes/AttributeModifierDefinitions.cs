@@ -383,12 +383,6 @@ namespace SeraphLeveling.Data.Attributes
             Trait = new(() => Traits.TraitDefinitions.Weak),
         };
 
-        public enum ArmorDurabilityProgressTypes
-        {
-            DamageBlocked,
-            RepairProgress,
-        };
-
         public static readonly ConcurrentDictionary<ArmorDurabilityProgressTypes, IncrementData> ArmorDurabilityIncrementData = new()
         {
             [ArmorDurabilityProgressTypes.DamageBlocked] = new IncrementData
@@ -404,7 +398,7 @@ namespace SeraphLeveling.Data.Attributes
                 IncrementStep = 1,
             },
         };
-        public static readonly ArmorModifierDefinition<ArmorDurabilityProgressTypes> ArmorDurability = new()
+        public static readonly ArmorDurabilityModifierDefinition ArmorDurability = new()
         {
             Id = "armorDurability",
             Name = "ArmorDurability",
