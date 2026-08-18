@@ -100,7 +100,7 @@ namespace SeraphLeveling.Data.Attributes
             // Cap earned bonus so total (vanilla + earned) doesn't exceed max earnable.
             float maxEarnableBonus = (GlobalMaxCredits - totalLevelFromTraits) / 100f;
             float bonus = Math.Min(rawBonus, Math.Max(0, maxEarnableBonus));
-            int bonusPercent = (int)(bonus * 100);
+            int bonusPercent = (int)Math.Ceiling(bonus * 100);
 
             // Always apply stats (they're not persistent)
             player.Entity.Stats.Set(StatName, StatCode, IsInverted ? -bonus : bonus, false);
