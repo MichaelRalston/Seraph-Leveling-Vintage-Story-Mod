@@ -120,7 +120,7 @@ namespace SeraphLeveling.Data.Attributes
 
         public event SatisfactionChangedDelegate SatisfactionChanged;
 
-        public bool IsSatisfied(IPlayer player) => Attribute.IsUnlockedForPlayer(player);
+        public bool IsSatisfied(IPlayer player) => Attribute.IsUnlockableForPlayer(player);
 
         private void OnRequirementSatisfactionChanged(IServerPlayer player, bool oldUnlock, bool newUnlock)
         {

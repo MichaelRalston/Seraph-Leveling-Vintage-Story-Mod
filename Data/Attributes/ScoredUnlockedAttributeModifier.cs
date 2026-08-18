@@ -35,12 +35,16 @@ namespace SeraphLeveling.Data.Attributes
 
             if (progress.TotalCredits >= GlobalMaxCredits)
             {
-                progress.IsUnlocked = true;
                 FireUnlockChangedEvent(player, false, true);
-                ApplyUnlock(player, progress);
-                SeraphLevelingModSystem.NotifyLevelUp(player, Lang.Get(NotifyLangKey));
             }
         }
+
+        public override bool IsUnlockableForPlayer(IPlayer player)
+        {
+            var progress = GetDict(player);
+            return progress.IsUnlocked || progress.TotalCredits >= GlobalMaxCredits;
+        }
+
 
         public override void ResetProgress(IServerPlayer player)
         {

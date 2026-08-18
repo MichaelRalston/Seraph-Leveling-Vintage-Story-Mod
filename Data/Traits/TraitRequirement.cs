@@ -76,7 +76,7 @@ namespace SeraphLeveling.Data.Traits
 
         public bool IsSatisfied(IServerPlayer player)
         {
-            return Definition.IsUnlockedForPlayer(player);
+            return Definition.IsUnlockableForPlayer(player);
         }
 
         public void CollectStatus(IPlayer player, StringBuilder sb)

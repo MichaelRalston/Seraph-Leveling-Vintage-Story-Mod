@@ -394,7 +394,7 @@ namespace SeraphLeveling.Data.Attributes
 
         private record class Instance : IAttributeModifier
         {
-            private static readonly List<string> DebugAttributes = [];
+            private static readonly List<string> DebugAttributes = ["bowyer"];
 
             private void DebugLog(bool client, bool server, string message)
             {
@@ -482,12 +482,13 @@ namespace SeraphLeveling.Data.Attributes
 
             private void OnRequirementSatisfactionChanged(IServerPlayer player, bool oldValue, bool newValue)
             {
-                DebugLog(false, true, $"[Verdus] Satisfaction of one of {Attribute.Id} modifier requirements has changed from {oldValue} to {newValue}; active status should now be {IsActive(player)}");
-                if (oldValue != newValue && IsActive(player))
+                var active = IsActive(player);
+                DebugLog(false, true, $"[Verdus] Satisfaction of one of {Attribute.Id} modifier requirements has changed from {oldValue} to {newValue}; active status should now be {active}");
+                if ((oldValue != newValue) && active)
                 {
                     Attribute.Unlock(player, true);
                 }
-                ActiveStatusUpdated?.Invoke(player, IsActive(player));
+                ActiveStatusUpdated?.Invoke(player, active);
             }
         }
     }

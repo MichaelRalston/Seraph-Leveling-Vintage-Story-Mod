@@ -14,6 +14,7 @@ namespace SeraphLeveling.Data.Attributes
         public string UnlockedKey { get; }
         public Lazy<TraitDefinition> Trait { get; }
         public bool IsUnlockedForPlayer(IPlayer player);
+        public bool IsUnlockableForPlayer(IPlayer player);
 
         /// <summary>
         /// Registers a method to be called every time the unlock status for this attribute changes for a player
@@ -36,7 +37,11 @@ namespace SeraphLeveling.Data.Attributes
             UnlockChanged?.Invoke(player, oldUnlock, newUnlock);
         }
 
-        public bool IsUnlockedForPlayer(IPlayer player)
+        public virtual bool IsUnlockableForPlayer(IPlayer player)
+        {
+            return GetDict(player).IsUnlocked;
+        }
+        public virtual bool IsUnlockedForPlayer(IPlayer player)
         {
             return GetDict(player).IsUnlocked;
         }
