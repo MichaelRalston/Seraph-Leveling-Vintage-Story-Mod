@@ -398,7 +398,7 @@ namespace SeraphLeveling.Data.Attributes
 
             private void DebugLog(bool client, bool server, string message)
             {
-                if (DebugAttributes.Contains(Attribute.Id))
+                if (DebugAttributes.Contains(Attribute.Id.ToLowerInvariant()))
                 {
                     if (client)
                     {

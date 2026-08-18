@@ -170,10 +170,9 @@ namespace SeraphLeveling.Data.Traits
 
         public static readonly TraitDefinition Merciless = new()
         {
-            Id = "precise",
+            Id = "merciless",
             Attributes = [
                 IAttributeModifier.Bonus(AttributeModifierDefinitions.Merciless, 1, [
-                    new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Merciless },
                     new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.MeleeDamage, ThresholdPercentage = 15 },
                     new LeveledAttributeMinimumRequirement{ Attribute = AttributeModifierDefinitions.ArmorDurability , ThresholdPercentage = 10}
                 ])
