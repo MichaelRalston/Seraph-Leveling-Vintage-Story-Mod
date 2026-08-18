@@ -75,7 +75,7 @@ namespace SeraphLeveling.Data.Attributes
             switch (version)
             {
                 case 1:
-                    TotalCredits = reader.ReadInt32();
+                    TotalCredits = reader.ReadSingle();
                     IsUnlocked = reader.ReadBoolean();
                     break;
                 default:

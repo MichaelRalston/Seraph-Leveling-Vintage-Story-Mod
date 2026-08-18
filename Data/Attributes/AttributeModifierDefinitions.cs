@@ -24,6 +24,7 @@ namespace SeraphLeveling.Data.Attributes
             Name = "Technical",
             GlobalMaxCredits = 5,
             CreditDescription = "translocators",
+            PersistenceVersion = 2,
             Trait = new(() => Traits.TraitDefinitions.Technical),
         };
 

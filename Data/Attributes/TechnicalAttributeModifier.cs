@@ -45,5 +45,22 @@ namespace SeraphLeveling.Data.Attributes
 
     public class TechnicalAttributeModifierProgressData(TechnicalAttributeModifierDefinition definition) : ScoredUnlockedAttributeModifierProgressData<TechnicalAttributeModifierDefinition, TechnicalAttributeModifierProgressData>(definition)
     {
+        public override void ReadVersion(byte version, BinaryReader reader)
+        {
+            switch (version)
+            {
+                case 1:
+                    TotalCredits = reader.ReadInt32();
+                    IsUnlocked = reader.ReadBoolean();
+                    break;
+                case 2:
+                    TotalCredits = reader.ReadSingle();
+                    IsUnlocked = reader.ReadBoolean();
+                    break;
+                default:
+                    throw new NotSupportedException($"Version {version} is not supported");
+            }
+        }
+
     }
 }
