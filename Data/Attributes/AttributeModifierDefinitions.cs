@@ -353,6 +353,16 @@ namespace SeraphLeveling.Data.Attributes
             Trait = new(() => Traits.TraitDefinitions.Hardy),
         };
 
+        public static readonly OreRateUnlockedAttributeModifierDefinition ClaustrophobicOre = new()
+        {
+            Id = "claustrophobic",
+            SkillKey = "claustrophobic",
+            PersistenceHeader = "COR",
+            Name = "ClaustrophobicOre",
+            ModifierAmount = 0.15f,
+            Trait = new(() => Traits.TraitDefinitions.Claustrophobic),
+        };
+
         public static readonly MaxHealthUnlockedAttributeModifierDefinition FrailHealthOffset = new()
         {
             Id = "frailhealth",

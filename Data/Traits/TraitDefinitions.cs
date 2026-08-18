@@ -57,7 +57,10 @@ namespace SeraphLeveling.Data.Traits
             Id = "claustrophobic",
             Attributes = [
                 IAttributeModifier.Penalty(AttributeModifierDefinitions.MiningSpeed, 10, [ new LeveledAttributeMaximumRequirement() { Attribute = AttributeModifierDefinitions.MiningSpeed, ThresholdPercentage = 0 }]),
-                // TODO Ore drop rate penalty
+                IAttributeModifier.Penalty(AttributeModifierDefinitions.ClaustrophobicOre, 1, [
+                    new LeveledAttributeMaximumRequirement { Attribute = AttributeModifierDefinitions.MiningSpeed, ThresholdPercentage = 0 },
+                ]),
+
             ],
         };
 
