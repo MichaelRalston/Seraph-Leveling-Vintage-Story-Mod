@@ -42,10 +42,6 @@ namespace SeraphLeveling.Data.Traits
                     new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.RangedDamage, ThresholdPercentage = 10 },
                 ])
             ],
-            Requirements = [
-                // new RequiredUnlockedAttribute(AttributeModifierDefinitions.Bowyer)
-                // TODO Generic ranged damage 10%
-            ]
         };
 
         public static readonly TraitDefinition Farsighted = new()
@@ -177,9 +173,6 @@ namespace SeraphLeveling.Data.Traits
                     new LeveledAttributeMinimumRequirement{ Attribute = AttributeModifierDefinitions.ArmorDurability , ThresholdPercentage = 10}
                 ])
             ],
-            Requirements = [
-                
-            ]
         };
 
         public static readonly TraitDefinition HungerMastery = new()
@@ -259,8 +252,6 @@ namespace SeraphLeveling.Data.Traits
             Id = "carpenter",
             Attributes = [
             ],
-            Requirements = [
-            ]
         };
 
         public static readonly TraitDefinition Lumberjack = new()
@@ -289,8 +280,6 @@ namespace SeraphLeveling.Data.Traits
             Id = "mason",
             Attributes = [
             ],
-            Requirements = [
-            ]
         };
 
         public static readonly TraitDefinition InteriorDesigner = new()
@@ -298,8 +287,6 @@ namespace SeraphLeveling.Data.Traits
             Id = "interiordesigner",
             Attributes = [
             ],
-            Requirements = [
-            ]
         };
 
         public static readonly TraitDefinition Potter = new()
@@ -307,8 +294,6 @@ namespace SeraphLeveling.Data.Traits
             Id = "potter",
             Attributes = [
             ],
-            Requirements = [
-            ]
         };
 
         public static readonly TraitDefinition Technician = new()
@@ -316,8 +301,6 @@ namespace SeraphLeveling.Data.Traits
             Id = "technician",
             Attributes = [
             ],
-            Requirements = [
-            ]
         };
 
         public static readonly TraitDefinition SiltSeeker = new()
@@ -346,8 +329,6 @@ namespace SeraphLeveling.Data.Traits
             Id = "alchemist",
             Attributes = [
             ],
-            Requirements = [
-            ]
         };
 
         public static readonly TraitDefinition Propagator = new()
@@ -355,8 +336,6 @@ namespace SeraphLeveling.Data.Traits
             Id = "propagator",
             Attributes = [
             ],
-            Requirements = [
-            ]
         };
 
         public static readonly TraitDefinition Naturalist = new()
@@ -378,8 +357,6 @@ namespace SeraphLeveling.Data.Traits
             Id = "mastercraftsman",
             Attributes = [
             ],
-            Requirements = [
-            ]
         };
 
         public static readonly TraitDefinition Blacksmith = new()
@@ -408,8 +385,6 @@ namespace SeraphLeveling.Data.Traits
             Id = "detonator",
             Attributes = [
             ],
-            Requirements = [
-            ]
         };
 
         public static readonly TraitDefinition Stonespeaker = new()
@@ -446,8 +421,6 @@ namespace SeraphLeveling.Data.Traits
             Id = "wildernessexplorer",
             Attributes = [
             ],
-            Requirements = [
-            ]
         };
 
         public static readonly TraitDefinition Butcher = new()
@@ -505,8 +478,6 @@ namespace SeraphLeveling.Data.Traits
             Id = "culinary",
             Attributes = [
             ],
-            Requirements = [
-            ]
         };
 
         public static readonly TraitDefinition Allumette = new()
@@ -521,8 +492,6 @@ namespace SeraphLeveling.Data.Traits
             Id = "weaver",
             Attributes = [
             ],
-            Requirements = [
-            ]
         };
 
         public static readonly TraitDefinition Sacrificial = new()

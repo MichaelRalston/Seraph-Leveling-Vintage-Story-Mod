@@ -41,11 +41,6 @@ namespace SeraphLeveling.Data.Traits
                 field?.ForEach(mod => mod.ActiveStatusUpdated += OnModifierActiveStatusUpdated);
             }
         }
-        public List<IRequirement> Requirements
-        {
-            get;
-            init;
-        } = [];
         public virtual string PlainTraitNameKey
         {
             get => field ??= $"seraphleveling:trait-sit{Id}mastery"; init;
