@@ -159,5 +159,12 @@
   "attribute-resourceful-contents": "{0}% animal loot",
   "attribute-vesseldroprate-contents": "{0}% cracked vessel drops",
   "attribute-walkingspeed-contents": "{0}% walk speed",
-  "attribute-wholevesselrate-contents": "{0}% vessel collection"
+  "attribute-wholevesselrate-contents": "{0}% vessel collection",
+
+  "attribute-bowyer-contents": "Exclusive craftable <a href=\"handbook://item-bow-crude\">crude bow</a> and arrows",
+  "attribute-clothier-contents": "Exclusive craftables: <a href=\"handbook://item-sewingkit\">sewing kit</a> and various clothing",
+  "attribute-improviser-contents": "Exclusive craftable <a href=\"handbook://item-sling\">sling</a>",
+  "attribute-merciless-contents": "Exclusive craftable <a href=\"handbook://item-blade-blackguard\">Blackguard shortsword</a> and <a href=\"handbook://item-shield-blackguard\">Blackguard Shield</a>",
+  "attribute-technical-contents": "-1 temporal gear cost to repair translocators",
+  "attribute-tinkerer-contents": "Exclusive craftable <a href=\"handbook://item-spear-intunedlocust\">Tuning spear</a> to tame locusts"
 }

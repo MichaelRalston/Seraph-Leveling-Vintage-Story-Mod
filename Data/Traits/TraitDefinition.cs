@@ -151,8 +151,17 @@ namespace SeraphLeveling.Data.Traits
                     }
                     else
                     {
-                        DebugLog(true, false, $"      [Verdus] Failed to get combined bonus for attribute {mod.Attribute.Id}");
-                        return null;
+                        string retVal = Lang.Get(modKey);
+                        if (retVal != modKey)
+                        {
+                            DebugLog(true, false, $"      [Verdus] Falling back to parameterless text for trait {Id}: attr={mod.Attribute.Id}, lang token={retVal}");
+                            return retVal;
+                        }
+                        else
+                        {
+                            DebugLog(true, false, $"      [Verdus] Failed to get localized text for trait {Id}: attr={mod.Attribute.Id}, modKey={modKey}");
+                            return DEBUG_SHOW_BROKEN_L10N ? modKey : null;
+                        }
                     }
                 }).Where(token => token != null));
                 string fullMessage = string.IsNullOrEmpty(contentText) ? "" : Lang.Get(CharacterSystemPatches.FULL_TRAIT_MESSAGE_KEY, headerText, contentText);
