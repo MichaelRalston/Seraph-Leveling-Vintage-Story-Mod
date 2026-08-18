@@ -1,4 +1,3 @@
-using Vintagestory.GameContent;
 using Vintagestory.API.Server;
 
 namespace SeraphLeveling.Data.Attributes
@@ -29,7 +28,12 @@ namespace SeraphLeveling.Data.Attributes
                 player.Entity.Stats.Remove(StatName, StatKey);
             }
 
-            player.Entity.GetBehavior<EntityBehaviorHealth>()?.MarkDirty();
+            MarkStatDirty(player);
+        }
+
+        protected virtual void MarkStatDirty(IServerPlayer player)
+        {
+            // Do nothing by default, most stats don't need to be explicitly marked dirty
         }
     }
 

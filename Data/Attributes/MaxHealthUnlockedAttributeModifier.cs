@@ -1,3 +1,6 @@
+using Vintagestory.GameContent;
+using Vintagestory.API.Server;
+
 namespace SeraphLeveling.Data.Attributes
 {
     public class MaxHealthUnlockedAttributeModifierDefinition : UnlockedStatAttributeModifierDefinition
@@ -6,6 +9,11 @@ namespace SeraphLeveling.Data.Attributes
         public MaxHealthUnlockedAttributeModifierDefinition()
         {
             StatName = "maxhealthExtraPoints";
+        }
+
+        protected override void MarkStatDirty(IServerPlayer player)
+        {
+            player.Entity.GetBehavior<EntityBehaviorHealth>()?.MarkDirty();
         }
     }
 }
