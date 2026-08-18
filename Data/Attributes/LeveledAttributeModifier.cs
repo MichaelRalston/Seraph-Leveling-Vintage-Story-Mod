@@ -317,9 +317,10 @@ namespace SeraphLeveling.Data.Attributes
             }
         }
 
-        public override bool ShouldDisplay(EntityPlayer player)
+        public override bool ShouldDisplay(EntityPlayer player, bool hasVanillaTrait)
         {
-            return player.WatchedAttributes.GetInt(WatchedLevel, 0) > 0;
+            var watchedLevel = player.WatchedAttributes.GetInt(WatchedLevel, 0);
+            return watchedLevel > 0 || (hasVanillaTrait && watchedLevel == 0);
         }
 
         public virtual int GetBonusPercent(EntityPlayer player)

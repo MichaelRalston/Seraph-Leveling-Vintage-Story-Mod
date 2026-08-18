@@ -120,23 +120,23 @@ namespace SeraphLeveling.Data.Traits
             return Attributes.Any(mod => mod.Attribute.ShouldDisplay(player));
         }
 
-        protected virtual bool ShouldDisplay(EntityPlayer player)
+        protected virtual bool ShouldDisplay(EntityPlayer player, bool hasVanillaTrait)
         {
-            return Attributes.Any(a => a.IsActive(player.Player));
+            return Attributes.Any(a => a.IsActive(player.Player, hasVanillaTrait));
         }
 
         public virtual void BuildTraitText(EntityPlayer player, ref string result)
         {
-            bool shouldDisplay = ShouldDisplay(player);
-            bool hasEarnedProgress = HasEarnedProgress(player);
             bool hasVanillaTrait = HasVanillaTrait(player);
+            bool shouldDisplay = ShouldDisplay(player, hasVanillaTrait);
+            bool hasEarnedProgress = HasEarnedProgress(player);
 
             DebugLog(true, false, $"[Verdus] Calling BuildTraitText for trait {Id}: shouldDisplay={shouldDisplay}, hasVanillaTrait={hasVanillaTrait}");
             if (shouldDisplay)
             {
                 var combinedAttrBonuses = GetCombinedAttributeBonuses(player);
                 string headerText = Lang.Get(DynamicTraitHeaderKey);
-                string contentText = string.Join(", ", Attributes.Where(mod => mod.IsActive(player.Player)).Select(mod => {
+                string contentText = string.Join(", ", Attributes.Where(mod => mod.IsActive(player.Player, hasVanillaTrait)).Select(mod => {
                     string modKey = mod.DynamicAttributeContentsKey.ToLowerInvariant();
                     if (combinedAttrBonuses.TryGetValue(mod.Attribute, out string combinedBonus))
                     {

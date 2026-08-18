@@ -278,7 +278,7 @@ namespace SeraphLeveling.Patches
                 }
 
                 // Nervous - CO displays as "Nervous" with description about piercing damage
-                if (lowerLine.Contains("nervous") && (lowerLine.Contains("piercing") || lowerLine.Contains("damage") || lowerLine.Contains("tier")))
+                if (lowerLine.Contains("nervous") && lowerLine.Contains("piercing") && lowerLine.Contains("damage"))
                 {
                     // Only filter if it's NOT our display (our display has "piercing tier" in it)
                     if (!lowerLine.Contains("piercing tier"))

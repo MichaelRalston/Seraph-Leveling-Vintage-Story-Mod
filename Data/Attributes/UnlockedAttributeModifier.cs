@@ -160,7 +160,7 @@ namespace SeraphLeveling.Data.Attributes
             sb.AppendLine($"{Name} trait: {(progress.IsUnlocked ? "UNLOCKED" : "Locked")}");
         }
 
-        public override bool ShouldDisplay(EntityPlayer player)
+        public override bool ShouldDisplay(EntityPlayer player, bool hasVanillaTrait)
         {
             return player.WatchedAttributes.GetBool(UnlockedKey, false);
         }

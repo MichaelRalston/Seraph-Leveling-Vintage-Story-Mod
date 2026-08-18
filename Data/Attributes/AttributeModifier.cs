@@ -27,7 +27,7 @@ namespace SeraphLeveling.Data.Attributes
         /// <summary>
         /// Determine whether this attribute should be shown in trait text on the character screen
         /// </summary>
-        public abstract bool ShouldDisplay(EntityPlayer player);
+        public abstract bool ShouldDisplay(EntityPlayer player, bool hasVanillaTrait = false);
 
         public abstract object GetLocalizedTraitTextParam(EntityPlayer player);
     }
@@ -93,7 +93,7 @@ namespace SeraphLeveling.Data.Attributes
         public required string PersistenceHeader { get; init; }
         public virtual byte PersistenceVersion { get; init; } = 1;
         public abstract void CollectStatus(IPlayer player, StringBuilder sb);
-        public abstract bool ShouldDisplay(EntityPlayer player);
+        public abstract bool ShouldDisplay(EntityPlayer player, bool hasVanillaTrait);
         public abstract object GetLocalizedTraitTextParam(EntityPlayer player);
 
         public virtual void ReadConfigData(Dictionary<string, int> dict)
@@ -378,7 +378,7 @@ namespace SeraphLeveling.Data.Attributes
 
         public event ActiveStatusUpdatedDelegate ActiveStatusUpdated;
 
-        public bool IsActive(IPlayer player);
+        public bool IsActive(IPlayer player, bool hasVanillaTrait = false);
 
         /// <summary>
         /// Get a status string for the attribute modifier's requirements when the player uses the /trait command
@@ -409,7 +409,7 @@ namespace SeraphLeveling.Data.Attributes
 
             private void DebugLog(bool client, bool server, string message)
             {
-                if (DebugAttributes.Contains(Attribute.Id.ToLowerInvariant()))
+                if (true || DebugAttributes.Contains(Attribute.Id.ToLowerInvariant()))
                 {
                     if (client)
                     {
@@ -451,7 +451,7 @@ namespace SeraphLeveling.Data.Attributes
                 UnlockWith.ForEach(req => req.CollectStatus(player, sb));
             }
 
-            public bool IsActive(IPlayer player)
+            public bool IsActive(IPlayer player, bool hasVanillaTrait)
             {
                 DebugLog(true, true, $"[Verdus] Calling IsActive for remove requirements for attrmod {Attribute.Id}");
                 foreach (var req in RemoveWith)
@@ -480,7 +480,7 @@ namespace SeraphLeveling.Data.Attributes
                 else if (UnlockWith.All(req => req.IsSatisfied(player)))
                 {
                     // If all unlock requirements are met, or none are specified, then the modifier becomes active
-                    retVal = UnlockWith.Count > 0 || Attribute.ShouldDisplay(player.Entity);
+                    retVal = UnlockWith.Count > 0 || Attribute.ShouldDisplay(player.Entity, hasVanillaTrait) || (hasVanillaTrait && RemoveWith.Count > 0);
                 }
                 else
                 {
@@ -493,7 +493,7 @@ namespace SeraphLeveling.Data.Attributes
 
             private void OnRequirementSatisfactionChanged(IServerPlayer player, bool oldValue, bool newValue)
             {
-                var active = IsActive(player);
+                var active = IsActive(player, false);
                 DebugLog(false, true, $"[Verdus] Satisfaction of one of {Attribute.Id} modifier requirements has changed from {oldValue} to {newValue}; active status should now be {active}");
                 if ((oldValue != newValue) && active)
                 {
