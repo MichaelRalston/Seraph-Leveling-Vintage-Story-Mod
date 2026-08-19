@@ -18,7 +18,7 @@ namespace SeraphLeveling.Data.Traits
 
         private void DebugLog(bool client, bool server, string message)
         {
-            if (DebugTraits.Contains(Id.ToLowerInvariant()))
+            if (DebugTraits.Contains("*") || DebugTraits.Contains(Id.ToLowerInvariant()))
             {
                 if (client)
                 {

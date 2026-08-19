@@ -405,11 +405,11 @@ namespace SeraphLeveling.Data.Attributes
 
         private record class Instance : IAttributeModifier
         {
-            private static readonly List<string> DebugAttributes = ["bowyer"];
+            private static readonly List<string> DebugAttributes = [];
 
             private void DebugLog(bool client, bool server, string message)
             {
-                if (true || DebugAttributes.Contains(Attribute.Id.ToLowerInvariant()))
+                if (DebugAttributes.Contains("*") || DebugAttributes.Contains(Attribute.Id.ToLowerInvariant()))
                 {
                     if (client)
                     {
