@@ -146,9 +146,16 @@ namespace SeraphLeveling.Data.Traits
                     string modKey = mod.DynamicAttributeContentsKey.ToLowerInvariant();
                     if (combinedAttrBonuses.TryGetValue(mod.DisplayAttribute, out string combinedBonus))
                     {
-                        string retVal = Lang.Get(modKey, combinedBonus);
-                        DebugLog(true, false, $"      [Verdus] Calling BuildTraitText for trait {Id}: attr={mod.DisplayAttribute.Id}, key={mod.DynamicAttributeContentsKey}, lang token={retVal}");
-                        return DEBUG_SHOW_BROKEN_L10N || retVal != modKey ? retVal : null;
+                        if (string.IsNullOrEmpty(combinedBonus))
+                        {
+                            return null;
+                        }
+                        else
+                        {
+                            string retVal = Lang.Get(modKey, combinedBonus);
+                            DebugLog(true, false, $"      [Verdus] Calling BuildTraitText for trait {Id}: attr={mod.DisplayAttribute.Id}, key={mod.DynamicAttributeContentsKey}, lang token={retVal}");
+                            return DEBUG_SHOW_BROKEN_L10N || retVal != modKey ? retVal : null;
+                        }
                     }
                     else
                     {
@@ -210,7 +217,7 @@ namespace SeraphLeveling.Data.Traits
                             }
                         }
                     }
-                    retVal[leveledAttr] = leveledAttr.CalculateDisplayBonus(attrVal);
+                    retVal[leveledAttr] = mod.IsInRangeForDisplay(attrVal) ? leveledAttr.CalculateDisplayBonus(attrVal) : "";
                 }
                 else if (mod.DisplayAttribute is UnlockedStatAttributeModifierDefinition statAttr)
                 {

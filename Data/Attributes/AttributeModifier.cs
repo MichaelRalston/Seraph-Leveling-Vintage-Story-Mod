@@ -383,6 +383,7 @@ namespace SeraphLeveling.Data.Attributes
 
         public bool ShouldDisplay(IPlayer player, bool hasVanillaTrait = false);
         public bool ShouldUnlock(IPlayer player, bool hasVanillaTrait = false);
+        public bool IsInRangeForDisplay(int combinedBonusPercentage);
 
         /// <summary>
         /// Get a status string for the attribute modifier's requirements when the player uses the /trait command
@@ -451,6 +452,7 @@ namespace SeraphLeveling.Data.Attributes
             public abstract void CollectRequirementStatus(IPlayer player, StringBuilder sb);
             public abstract bool ShouldDisplay(IPlayer player, bool hasVanillaTrait = false);
             public abstract bool ShouldUnlock(IPlayer player, bool hasVanillaTrait = false);
+            public abstract bool IsInRangeForDisplay(int combinedBonusPercentage);
 
             protected void OnRequirementSatisfactionChanged(IServerPlayer player, bool oldValue, bool newValue)
             {
@@ -485,6 +487,7 @@ namespace SeraphLeveling.Data.Attributes
 
             public override bool ShouldDisplay(IPlayer player, bool hasVanillaTrait = false) => IsActive(player, hasVanillaTrait);
             public override bool ShouldUnlock(IPlayer player, bool hasVanillaTrait = false) => IsActive(player, hasVanillaTrait);
+            public override bool IsInRangeForDisplay(int combinedBonusPercentage) => combinedBonusPercentage > 0;
 
             protected bool IsActive(IPlayer player, bool hasVanillaTrait)
             {
@@ -535,6 +538,7 @@ namespace SeraphLeveling.Data.Attributes
 
             public override bool ShouldDisplay(IPlayer player, bool hasVanillaTrait = false) => IsActive(player, hasVanillaTrait);
             public override bool ShouldUnlock(IPlayer player, bool hasVanillaTrait = false) => IsActive(player, hasVanillaTrait);
+            public override bool IsInRangeForDisplay(int combinedBonusPercentage) => combinedBonusPercentage < 0;
 
             protected bool IsActive(IPlayer player, bool hasVanillaTrait)
             {
@@ -587,6 +591,8 @@ namespace SeraphLeveling.Data.Attributes
                 // Requirement output is specifically for unlocking bonus traits, not removing penalties
                 ApplyWith.ForEach(req => req.CollectStatus(player, sb));
             }
+
+            public override bool IsInRangeForDisplay(int combinedBonusPercentage) => combinedBonusPercentage < 0;
 
             public override bool ShouldDisplay(IPlayer player, bool hasVanillaTrait = false)
             {
