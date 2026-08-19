@@ -344,6 +344,8 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "agoraphobic",
             Attributes = [
+                IAttributeModifier.BasicPenalty(AttributeModifierDefinitions.RangedAccuracy, 20),
+                IAttributeModifier.BasicPenalty(AttributeModifierDefinitions.RangedDamage, 50),
             ]
         };
 
