@@ -14,7 +14,7 @@ namespace SeraphLeveling.Data.Traits
     public record class TraitDefinition
     {
         private const bool DEBUG_SHOW_BROKEN_L10N = true;
-        private static readonly List<string> DebugTraits = [];
+        private static readonly List<string> DebugTraits = ["*"];
 
         private void DebugLog(bool client, bool server, string message)
         {

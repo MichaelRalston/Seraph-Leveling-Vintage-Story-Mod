@@ -405,7 +405,7 @@ namespace SeraphLeveling.Data.Attributes
 
         private abstract record class BaseInstance : IAttributeModifier
         {
-            private static readonly List<string> DebugAttributes = [];
+            private static readonly List<string> DebugAttributes = ["*"];
 
             protected void DebugLog(bool client, bool server, string message)
             {
@@ -545,7 +545,10 @@ namespace SeraphLeveling.Data.Attributes
                 else
                 {
                     // Otherwise, the modifier is active if the attribute should by default be displayed
-                    retVal = Attribute.ShouldDisplay(player.Entity, hasVanillaTrait);
+                    var unlockedAttr = Attribute as IUnlockedAttributeModifierDefinition;
+                    bool hasVanilla = SeraphLevelingModSystem.PlayerHasTrait(player.Entity, unlockedAttr?.Trait?.Value);
+                    retVal = hasVanilla;
+                    DebugLog(true, true, $"   [Verdus] Checking vanilla trait with some remove requirements unsatisfied for attribute {Attribute.Id}: hasVanilla={hasVanilla}, reqCount={RemoveWith.Count}");
                 }
                 DebugLog(true, true, $"[Verdus] Finished calling IsActive for attrmod {Attribute.Id}, active={retVal}");
                 return retVal;
