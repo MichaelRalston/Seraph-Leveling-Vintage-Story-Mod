@@ -403,6 +403,8 @@ namespace SeraphLeveling.Data.Traits
             Id = "stonespeaker",
             Attributes = [
                 IAttributeModifier.Bonus(AttributeModifierDefinitions.MiningSpeed, 220),
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.OreDropRate, 300),
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.StoneDropRate, 300),
             ],
         };
 
@@ -474,6 +476,9 @@ namespace SeraphLeveling.Data.Traits
             Id = "strongarmed",
             Attributes = [
                 IAttributeModifier.Bonus(AttributeModifierDefinitions.MiningSpeed, 100),
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.OreDropRate, 100),
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.StoneDropRate, 100),
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.VesselDropRate, 75),
             ],
         };
 

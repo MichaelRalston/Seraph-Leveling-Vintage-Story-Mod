@@ -594,6 +594,7 @@ namespace SeraphLeveling.Data.Attributes
         }
         public void DoEvent(IServerPlayer player, string toolCode, float score, E scoreType = default)
         {
+            if (SeraphLevelingModSystem.IsSkillDisabled(Definition.SkillKey)) return;
             // Get the player-specific max credits (accounts for Weak/Claustrophobic penalties)
             int maxCredits = Definition.GetMaxCredits(player.Entity);
 

@@ -2,6 +2,8 @@
   "message-mining-progress": "Mining Progress: {0} blocks mined. Level {1} (+{2}% mining speed). {3} more blocks until next level.",
   "message-mining-progress-max": "Mining Progress: {0} blocks mined. Level {1} (+{2}% mining speed). Maximum level reached!",
   "message-mining-level-up": "Mining level up! You are now level {0} with +{1}% mining speed.",
+  "message-orerate-level-up": "Ore drop rate level up! You are now level {0} with +{1}% ore drop rate.",
+  "message-stonerate-level-up": "Ore drop rate level up! You are now level {0} with +{1}% ore drop rate.",
   "trait-hardy-dynamic": "+{0}% mining speed, +{1} health points",
   "trait-hardy-mining-only-dynamic": "+{0}% mining speed",
   "trait-hardy-health-only-dynamic": "+{0} health points",
@@ -162,6 +164,8 @@
   "attribute-walkingspeed-contents": "{0}% walk speed",
   "attribute-weakhealth-contents": "{0} health points",
   "attribute-wholevesselrate-contents": "{0}% vessel collection",
+  "attribute-oredroprate-contents": "{0}% ore drop rate",
+  "attribute-stonedroprate-contents": "{0}% stone drop rate",
 
   "attribute-bowyer-contents": "Exclusive craftable <a href=\"handbook://item-bow-crude\">crude bow</a> and arrows",
   "attribute-clothier-contents": "Exclusive craftables: <a href=\"handbook://item-sewingkit\">sewing kit</a> and various clothing",

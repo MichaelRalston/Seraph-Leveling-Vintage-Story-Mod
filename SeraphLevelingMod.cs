@@ -1972,9 +1972,6 @@ namespace SeraphLeveling
         {
             if (ServerApi == null) return;
 
-            // Skip armor progression if disabled
-            if (IsSkillDisabled("armor")) return;
-
             foreach (IServerPlayer player in ServerApi.World.AllOnlinePlayers)
             {
                 if (player?.Entity == null) continue;
@@ -2061,19 +2058,16 @@ namespace SeraphLeveling
             if (byPlayer?.Entity == null) return;
 
             // Check for Forager progression (wild crops on dirt, not farmland)
-            if (!IsSkillDisabled("forager") && IsWildCropBlock(oldblockId, blockSel?.Position))
+            if (IsWildCropBlock(oldblockId, blockSel?.Position))
             {
                 ProcessWildCropBroken(byPlayer);
             }
 
             // Check for Pilferer progression (cracked vessels only - they can't be re-placed)
-            if (!IsSkillDisabled("pilferer") && IsCrackedVesselBlock(oldblockId))
+            if (IsCrackedVesselBlock(oldblockId))
             {
                 ProcessVesselBreak(byPlayer);
             }
-
-            // Skip mining progression if disabled
-            if (IsSkillDisabled("mining")) return;
 
             // Check if player is using a pickaxe for mining progression
             string pickaxeCode = GetHeldPickaxeCode(byPlayer);
@@ -2087,6 +2081,8 @@ namespace SeraphLeveling
 
             // Get or create player progress data
             AttributeModifierDefinitions.MiningSpeed.GetForPlayer(playerUid).DoEvent(byPlayer, pickaxeCode, points);
+            AttributeModifierDefinitions.OreDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, pickaxeCode, points);
+            AttributeModifierDefinitions.StoneDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, pickaxeCode, points);
         }
 
         /// <summary>
@@ -2095,9 +2091,6 @@ namespace SeraphLeveling
         /// </summary>
         private void OnWalkingTick(float dt)
         {
-            // Skip walking progression if disabled
-            if (IsAttributeModifierDisabled(AttributeModifierDefinitions.WalkingSpeed)) return;
-
             foreach (IServerPlayer player in ServerApi.World.AllOnlinePlayers)
             {
                 if (player?.Entity == null) continue;
@@ -2136,9 +2129,6 @@ namespace SeraphLeveling
         /// </summary>
         private void OnHungerTick(float dt)
         {
-            // Skip hunger progression if disabled
-            if (IsSkillDisabled("hunger")) return;
-
             foreach (IServerPlayer player in ServerApi.World.AllOnlinePlayers)
             {
                 if (player?.Entity == null) continue;
@@ -2656,9 +2646,6 @@ namespace SeraphLeveling
         {
             if (attackerPlayer?.Entity == null || string.IsNullOrEmpty(weaponType)) return;
 
-            // Check if melee skill is disabled
-            if (IsSkillDisabled("melee")) return;
-
             string playerUid = attackerPlayer.PlayerUID;
 
             var damageProgress = AttributeModifierDefinitions.MeleeDamage.GetForPlayer(playerUid);
@@ -2860,9 +2847,6 @@ namespace SeraphLeveling
         public static void ProcessRangedDamage(IServerPlayer attackerPlayer, string weaponCombo, float damage)
         {
             if (attackerPlayer?.Entity == null || string.IsNullOrEmpty(weaponCombo)) return;
-
-            // Check if ranged skill is disabled
-            if (IsSkillDisabled("ranged")) return;
 
             string playerUid = attackerPlayer.PlayerUID;
 
@@ -5634,9 +5618,6 @@ namespace SeraphLeveling
         /// </summary>
         private void OnSneakingTick(float dt)
         {
-            // Skip furtive progression if disabled
-            if (IsSkillDisabled("furtive")) return;
-
             foreach (IServerPlayer player in ServerApi.World.AllOnlinePlayers)
             {
                 if (player?.Entity == null) continue;
@@ -5716,9 +5697,6 @@ namespace SeraphLeveling
         {
             if (attackerPlayer?.Entity == null || damage <= 0) return;
             if (string.IsNullOrEmpty(weaponType)) return;
-
-            // Check if precise skill is disabled
-            if (IsSkillDisabled("precise")) return;
 
             string playerUid = attackerPlayer.PlayerUID;
 
@@ -5878,13 +5856,10 @@ namespace SeraphLeveling
         {
             if (player?.Entity == null) return;
 
-            // Check if technical skill is disabled
-            if (IsAttributeModifierDisabled(AttributeModifierDefinitions.Technical)) return;
-
             string playerUid = player.PlayerUID;
             int modifiedRepairs = ApplyXPMultiplier(playerUid, 1);
 
-            AttributeModifierDefinitions.Technical.AddCredits(player, ApplyXPMultiplier(playerUid, 1));
+            AttributeModifierDefinitions.Technical.AddCredits(player, ApplyXPMultiplier(playerUid, modifiedRepairs));
         }
 
         /// <summary>

@@ -230,12 +230,40 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% mining speed",
             LongDescription = "mining speed",
             PersistenceHeader = "SIT",
-            PersistenceVersion = 5,
             Tool = ToolDefinitions.Pickaxe,
             IncrementData = MiningIncrementData,
             GlobalMaxCredits = 50,
             StatName = "miningSpeedMul"
         };
+
+        public static readonly MiningAttributeModifierDefinition StoneDropRate = new()
+        {
+            Id = "stoneDropRate",
+            SkillKey = "stonerate",
+            Name = "StoneDropRate",
+            Stat = "% bonus stone drop rate",
+            LongDescription = "stone drop rate",
+            PersistenceHeader = "SDR",
+            Tool = ToolDefinitions.Pickaxe,
+            IncrementData = MiningIncrementData,
+            GlobalMaxCredits = 300,
+            StatName = "sacredlib:stoneDropRate"
+        };
+
+        public static readonly MiningAttributeModifierDefinition OreDropRate = new()
+        {
+            Id = "oreDropRate",
+            SkillKey = "orerate",
+            Name = "OreDropRate",
+            Stat = "% bonus ore drop rate",
+            LongDescription = "ore drop rate",
+            PersistenceHeader = "SDR",
+            Tool = ToolDefinitions.Pickaxe,
+            IncrementData = MiningIncrementData,
+            GlobalMaxCredits = 300,
+            StatName = "sacredlib:oreDropRate"
+        };
+
 
         public static readonly ImproviserAttributeModifierDefinition Improviser = new()
         {
@@ -422,7 +450,7 @@ namespace SeraphLeveling.Data.Attributes
                 IncrementStep = 2880,
             },
         };
-        public static readonly ArmorModifierDefinition<SimpleToolProgress> ArmorWalkSpeed = new()
+        public static readonly SimpleArmorModifierDefinition ArmorWalkSpeed = new()
         {
             Id = "armorWalkSpeed",
             Name = "ArmorWalkSpeed",
@@ -435,7 +463,7 @@ namespace SeraphLeveling.Data.Attributes
             IncrementData = ArmorWornIncrementData,
             GlobalMaxCredits = 50,
         };
-        public static readonly ArmorModifierDefinition<SimpleToolProgress> ArmorHungerRate = new()
+        public static readonly SimpleArmorModifierDefinition ArmorHungerRate = new()
         {
             Id = "armorHungerRate",
             Name = "ArmorHungerRate",
@@ -448,7 +476,7 @@ namespace SeraphLeveling.Data.Attributes
             IncrementData = ArmorWornIncrementData,
             GlobalMaxCredits = 50,
         };
-        public static readonly ArmorModifierDefinition<SimpleToolProgress> ArmorHealing = new()
+        public static readonly SimpleArmorModifierDefinition ArmorHealing = new()
         {
             Id = "armorHealing",
             Name = "ArmorHealing",
