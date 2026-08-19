@@ -330,6 +330,9 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "siltseeker",
             Attributes = [
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.ClayDropRate, 50),
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.ClayformSpeed, 100),
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.PeatDropRate, 50),
             ]
         };
 

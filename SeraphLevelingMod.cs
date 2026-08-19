@@ -1592,6 +1592,7 @@ namespace SeraphLeveling
         /// </summary>
         private string GetHeldPickaxeCode(IServerPlayer player) => GetHeldToolCodeInner(player, EnumTool.Pickaxe);
         private string GetHeldAxeCode(IServerPlayer player) => GetHeldToolCodeInner(player, EnumTool.Axe);
+        private string GetHeldShovelCode(IServerPlayer player) => GetHeldToolCodeInner(player, EnumTool.Shovel);
         private string GetHeldShearsCode(IServerPlayer player) => GetHeldToolCodeInner(player, EnumTool.Shears);
 
         private string GetHeldToolCodeInner(IServerPlayer player, EnumTool toolType)
@@ -1627,6 +1628,28 @@ namespace SeraphLeveling
             if (codeToCheck.StartsWith("log-grown-"))
             {
                 return 5;
+            }
+            return 0;
+        }
+
+        private int GetDirtPoints(int blockId)
+        {
+            string codeToCheck = GetBlockCode(blockId);
+            ServerApi.Logger.Debug($"[SeraphLeveling] Checking dirt points for block code {codeToCheck}.");
+            if (codeToCheck.StartsWith("rawclay-"))
+            {
+                // Clay soil
+                return 5;
+            }
+            else if (codeToCheck.StartsWith("peat-"))
+            {
+                // Peat soil
+                return 5;
+            }
+            else if (codeToCheck.StartsWith("soil-") || codeToCheck.StartsWith("forestfloor-") || codeToCheck.StartsWith("farmland-"))
+            {
+                // Ordinary dirt
+                return 1;
             }
             return 0;
         }
@@ -2135,6 +2158,7 @@ namespace SeraphLeveling
             // Check if player is using a tool for progression
             string pickaxeCode = GetHeldPickaxeCode(byPlayer);
             string axeCode = GetHeldAxeCode(byPlayer);
+            string shovelCode = GetHeldShovelCode(byPlayer);
             string shearsCode = GetHeldShearsCode(byPlayer);
 
             // Handle pickaxe specific attributes
@@ -2159,6 +2183,19 @@ namespace SeraphLeveling
                 {
                     AttributeModifierDefinitions.TreeChoppingSpeed.GetForPlayer(playerUid).DoEvent(byPlayer, axeCode, woodPoints);
                     AttributeModifierDefinitions.AxeDamage.GetForPlayer(playerUid).DoEvent(byPlayer, axeCode, woodPoints);
+                }
+            }
+
+            // Handle shovel specific attributes
+            if (shovelCode != null)
+            {
+                // Check block type and get points
+                int dirtPoints = GetDirtPoints(oldblockId);
+                if (dirtPoints > 0)
+                {
+                    AttributeModifierDefinitions.ClayDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, shovelCode, dirtPoints);
+                    AttributeModifierDefinitions.ClayformSpeed.GetForPlayer(playerUid).DoEvent(byPlayer, shovelCode, dirtPoints);
+                    AttributeModifierDefinitions.PeatDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, shovelCode, dirtPoints);
                 }
             }
 

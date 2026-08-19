@@ -651,5 +651,57 @@ namespace SeraphLeveling.Data.Attributes
             GlobalMaxCredits = 20,
             StatName = "sacredlib:charcoalDropRate",
         };
+
+        public static readonly ConcurrentDictionary<SimpleToolProgress, IncrementData> DiggingIncrementData = new()
+        {
+            [default] = new IncrementData
+            {
+                IncrementUnits = "blocks",
+                BaseIncrement = 100,
+                IncrementStep = 100,
+            }
+        };
+
+        public static readonly AxeAttributeModifierDefinition ClayDropRate = new()
+        {
+            Id = "clayDropRate",
+            SkillKey = "clayrate",
+            Name = "ClayDropRate",
+            Stat = "% bonus clay drop rate",
+            LongDescription = "clay drop rate",
+            PersistenceHeader = "CLD",
+            Tool = ToolDefinitions.Shovel,
+            IncrementData = DiggingIncrementData,
+            GlobalMaxCredits = 50,
+            StatName = "sacredlib:clayDropRate"
+        };
+
+        public static readonly AxeAttributeModifierDefinition PeatDropRate = new()
+        {
+            Id = "peatDropRate",
+            SkillKey = "peatrate",
+            Name = "PeatDropRate",
+            Stat = "% bonus peat drop rate",
+            LongDescription = "peat drop rate",
+            PersistenceHeader = "PDR",
+            Tool = ToolDefinitions.Shovel,
+            IncrementData = DiggingIncrementData,
+            GlobalMaxCredits = 50,
+            StatName = "sacredlib:peatDropRate"
+        };
+
+        public static readonly AxeAttributeModifierDefinition ClayformSpeed = new()
+        {
+            Id = "clayformSpeed",
+            SkillKey = "clayformspeed",
+            Name = "ClayformSpeed",
+            Stat = "% clayforming speed",
+            LongDescription = "clayform speed",
+            PersistenceHeader = "CFS",
+            Tool = ToolDefinitions.Shovel,
+            IncrementData = DiggingIncrementData,
+            GlobalMaxCredits = 100,
+            StatName = "ats:handclayformingspeed"
+        };
     }
 }
