@@ -273,6 +273,9 @@ namespace SeraphLeveling.Data.Traits
             Id = "lumberjack",
             Attributes = [
                 IAttributeModifier.Bonus(AttributeModifierDefinitions.TreeChoppingSpeed, 120),
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.AxeDamage, 75),
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.AxeDurability, 70),
+                // TODO Charcoal drop rate
             ]
         };
 

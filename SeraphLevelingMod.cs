@@ -1590,29 +1590,19 @@ namespace SeraphLeveling
         /// <summary>
         /// Gets the pickaxe code from the player's held item, or null if not holding a pickaxe.
         /// </summary>
-        private string GetHeldPickaxeCode(IServerPlayer player)
+        private string GetHeldPickaxeCode(IServerPlayer player) => GetHeldToolCodeInner(player, EnumTool.Pickaxe);
+        private string GetHeldAxeCode(IServerPlayer player) => GetHeldToolCodeInner(player, EnumTool.Axe);
+        private string GetHeldShearsCode(IServerPlayer player) => GetHeldToolCodeInner(player, EnumTool.Shears);
+
+        private string GetHeldToolCodeInner(IServerPlayer player, EnumTool toolType)
         {
             if (player?.Entity == null) return null;
 
             var heldItem = player.Entity.RightHandItemSlot?.Itemstack?.Collectible;
             if (heldItem == null) return null;
 
-            // Check if it's a pickaxe (Tool property = Pickaxe)
-            if (heldItem.Tool != EnumTool.Pickaxe) return null;
-
-            // Return the item code as the pickaxe identifier
-            return heldItem.Code?.ToString();
-        }
-
-        private string GetHeldAxeCode(IServerPlayer player)
-        {
-            if (player?.Entity == null) return null;
-
-            var heldItem = player.Entity.RightHandItemSlot?.Itemstack?.Collectible;
-            if (heldItem == null) return null;
-
-            // Check if it's an axe (Tool property = Axe)
-            if (heldItem.Tool != EnumTool.Axe) return null;
+            // Check if it's the right type of tool
+            if (heldItem.Tool != toolType) return null;
 
             // Return the item code as the pickaxe identifier
             return heldItem.Code?.ToString();
@@ -1637,6 +1627,21 @@ namespace SeraphLeveling
             if (codeToCheck.StartsWith("log-grown-"))
             {
                 return 5;
+            }
+            return 0;
+        }
+
+        private int GetLeavesPoints(int blockId)
+        {
+            string codeToCheck = GetBlockCode(blockId);
+            ServerApi.Logger.Debug($"[SeraphLeveling] Checking leaves points for block code {codeToCheck}.");
+            if (codeToCheck.StartsWith("leavesbranchy-grown"))
+            {
+                return 2;
+            }
+            else if (codeToCheck.StartsWith("leaves-grown") || codeToCheck.StartsWith("leavesnarrow-grown"))
+            {
+                return 1;
             }
             return 0;
         }
@@ -2119,30 +2124,49 @@ namespace SeraphLeveling
                 ProcessVesselBreak(byPlayer);
             }
 
-            // Check if player is using a tool for mining progression
-            string toolCode = GetHeldPickaxeCode(byPlayer);
             string playerUid = byPlayer.PlayerUID;
-            if (toolCode != null)
-            {
 
+            // Check if player is using a tool for progression
+            string pickaxeCode = GetHeldPickaxeCode(byPlayer);
+            string axeCode = GetHeldAxeCode(byPlayer);
+            string shearsCode = GetHeldShearsCode(byPlayer);
+
+            // Handle pickaxe specific attributes
+            if (pickaxeCode != null)
+            {
                 // Check block type and get points
                 int points = GetStoneBlockPoints(oldblockId);
                 if (points > 0)
                 {
-                    AttributeModifierDefinitions.MiningSpeed.GetForPlayer(playerUid).DoEvent(byPlayer, toolCode, points);
-                    AttributeModifierDefinitions.OreDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, toolCode, points);
-                    AttributeModifierDefinitions.StoneDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, toolCode, points);
+                    AttributeModifierDefinitions.MiningSpeed.GetForPlayer(playerUid).DoEvent(byPlayer, pickaxeCode, points);
+                    AttributeModifierDefinitions.OreDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, pickaxeCode, points);
+                    AttributeModifierDefinitions.StoneDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, pickaxeCode, points);
                 }
             }
-            else
+
+            // Handle axe specific attributes
+            if (axeCode != null)
             {
-                toolCode = GetHeldAxeCode(byPlayer);
-                int points = GetWoodLogPoints(oldblockId);
-                if (points > 0)
+                // Check block type and get points
+                int woodPoints = GetWoodLogPoints(oldblockId);
+                if (woodPoints > 0)
                 {
-                    AttributeModifierDefinitions.WoodDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, toolCode, points);
-                    AttributeModifierDefinitions.SeedDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, toolCode, points);
-                    AttributeModifierDefinitions.StickDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, toolCode, points);
+                    AttributeModifierDefinitions.TreeChoppingSpeed.GetForPlayer(playerUid).DoEvent(byPlayer, axeCode, woodPoints);
+                    AttributeModifierDefinitions.AxeDamage.GetForPlayer(playerUid).DoEvent(byPlayer, axeCode, woodPoints);
+                }
+            }
+
+            // Handle attributes satisfied by an axe or shears
+            if (shearsCode != null || axeCode != null)
+            {
+                // Check block type and get points
+                string toolCode = shearsCode ?? axeCode;
+                int leavesPoints = GetLeavesPoints(oldblockId);
+                if (leavesPoints > 0)
+                {
+                    AttributeModifierDefinitions.WoodDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, toolCode, leavesPoints);
+                    AttributeModifierDefinitions.SeedDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, toolCode, leavesPoints);
+                    AttributeModifierDefinitions.StickDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, toolCode, leavesPoints);
                 }
             }
         }

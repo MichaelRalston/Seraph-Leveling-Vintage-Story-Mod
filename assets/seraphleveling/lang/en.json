@@ -168,6 +168,8 @@
   "attribute-weakhealth-contents": "{0} health points",
   "attribute-wholevesselrate-contents": "{0}% vessel collection",
 
+  "attribute-axedamage-contents": "{0}% axe damage",
+  "attribute-axedurability-contents": "{0}% axe durability",
   "attribute-oredroprate-contents": "{0}% ore drop rate",
   "attribute-stonedroprate-contents": "{0}% stone drop rate",
   "attribute-seeddroprate-contents": "{0}% tree seed drop rate",

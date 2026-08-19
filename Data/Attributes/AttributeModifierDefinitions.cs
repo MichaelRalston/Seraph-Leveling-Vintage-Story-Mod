@@ -595,7 +595,7 @@ namespace SeraphLeveling.Data.Attributes
             }
         };
 
-        public static readonly MiningAttributeModifierDefinition TreeChoppingSpeed = new()
+        public static readonly AxeAttributeModifierDefinition TreeChoppingSpeed = new()
         {
             Id = "treeChoppingSpeed",
             SkillKey = "treechopping",
@@ -607,6 +607,35 @@ namespace SeraphLeveling.Data.Attributes
             IncrementData = TreeChoppingIncrementData,
             GlobalMaxCredits = 150,
             StatName = "ats:wood|axe-?-harvestSpeed"
+        };
+
+        public static readonly AxeAttributeModifierDefinition AxeDamage = new()
+        {
+            Id = "axeDamage",
+            Name = "Axe Damage",
+            LongDescription = "axe damage",
+            Stat = "% axe damage",
+            SkillKey = "axedamage",
+            PersistenceHeader = "XDM",
+            Tool = ToolDefinitions.Axe,
+            IncrementData = TreeChoppingIncrementData,
+            GlobalMaxCredits = 100,
+            StatName = "ats:axe-?-meleeDamageMult",
+        };
+
+        public static readonly AxeAttributeModifierDefinition AxeDurability = new()
+        {
+            Id = "axeDurability",
+            Name = "AxeDurability",
+            Stat = "% axe durability bonus",
+            SkillKey = "axedurability",
+            PersistenceHeader = "XDU",
+            IsInverted = true,
+            InvertedOnDisplay = false,
+            StatName = "axeDurabilityLoss",
+            Tool = ToolDefinitions.Axe,
+            IncrementData = TreeChoppingIncrementData,
+            GlobalMaxCredits = 75,
         };
     }
 }
