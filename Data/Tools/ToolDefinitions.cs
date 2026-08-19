@@ -6,6 +6,10 @@ namespace SeraphLeveling.Data.Tools
         {
             Name = "pickaxe",
         };
+        public static readonly ToolDefinition Axe = new()
+        {
+            Name = "axe",
+        };
         public static readonly ToolDefinition Weapon = new()
         {
             Name = "weapon",

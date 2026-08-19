@@ -1582,6 +1582,43 @@ namespace SeraphLeveling
             return heldItem.Code?.ToString();
         }
 
+        private string GetHeldAxeCode(IServerPlayer player)
+        {
+            if (player?.Entity == null) return null;
+
+            var heldItem = player.Entity.RightHandItemSlot?.Itemstack?.Collectible;
+            if (heldItem == null) return null;
+
+            // Check if it's an axe (Tool property = Axe)
+            if (heldItem.Tool != EnumTool.Axe) return null;
+
+            // Return the item code as the pickaxe identifier
+            return heldItem.Code?.ToString();
+        }
+
+        private string GetBlockCode(int blockId)
+        {
+            if (ServerApi == null) return "";
+
+            var block = ServerApi.World.GetBlock(blockId);
+            if (block == null) return "";
+
+            string blockCode = block.Code?.ToString() ?? "";
+
+            // Remove "game:" prefix if present for consistent matching
+            return blockCode.StartsWith("game:") ? blockCode.Substring(5) : blockCode;
+        }
+        private int GetWoodLogPoints(int blockId)
+        {
+            string codeToCheck = GetBlockCode(blockId);
+            ServerApi.Logger.Debug($"[SeraphLeveling] Checking wood log points for block code {codeToCheck}.");
+            if (codeToCheck.StartsWith("log-grown-"))
+            {
+                return 5;
+            }
+            return 0;
+        }
+
         /// <summary>
         /// Determines the point value for a broken block.
         /// Returns OreMultiplier (default 5) for ore blocks, 1 for stone blocks, 0 for other blocks.
@@ -1593,18 +1630,9 @@ namespace SeraphLeveling
         /// Ore block patterns (OreMultiplier points):
         /// - Contains "ore-" (e.g., ore-copper-granite, ore-lignite-chalk)
         /// </summary>
-        private int GetBlockPoints(int blockId)
+        private int GetStoneBlockPoints(int blockId)
         {
-            if (ServerApi == null) return 0;
-
-            var block = ServerApi.World.GetBlock(blockId);
-            if (block == null) return 0;
-
-            string blockCode = block.Code?.ToString() ?? "";
-
-            // Remove "game:" prefix if present for consistent matching
-            string codeToCheck = blockCode.StartsWith("game:") ? blockCode.Substring(5) : blockCode;
-
+            string codeToCheck = GetBlockCode(blockId);
             // Ore blocks: code contains "ore-" (e.g., "ore-lignite-chalk", "ore-copper-granite")
             if (codeToCheck.Contains("ore-"))
             {
@@ -1972,9 +2000,6 @@ namespace SeraphLeveling
         {
             if (ServerApi == null) return;
 
-            // Skip armor progression if disabled
-            if (IsSkillDisabled("armor")) return;
-
             foreach (IServerPlayer player in ServerApi.World.AllOnlinePlayers)
             {
                 if (player?.Entity == null) continue;
@@ -2061,32 +2086,43 @@ namespace SeraphLeveling
             if (byPlayer?.Entity == null) return;
 
             // Check for Forager progression (wild crops on dirt, not farmland)
-            if (!IsSkillDisabled("forager") && IsWildCropBlock(oldblockId, blockSel?.Position))
+            if (IsWildCropBlock(oldblockId, blockSel?.Position))
             {
                 ProcessWildCropBroken(byPlayer);
             }
 
             // Check for Pilferer progression (cracked vessels only - they can't be re-placed)
-            if (!IsSkillDisabled("pilferer") && IsCrackedVesselBlock(oldblockId))
+            if (IsCrackedVesselBlock(oldblockId))
             {
                 ProcessVesselBreak(byPlayer);
             }
 
-            // Skip mining progression if disabled
-            if (IsSkillDisabled("mining")) return;
-
-            // Check if player is using a pickaxe for mining progression
-            string pickaxeCode = GetHeldPickaxeCode(byPlayer);
-            if (pickaxeCode == null) return; // Not using a pickaxe, skip mining
-
-            // Check block type and get points
-            int points = GetBlockPoints(oldblockId);
-            if (points <= 0) return; // Not a stone/ore block, skip
-
+            // Check if player is using a tool for mining progression
+            string toolCode = GetHeldPickaxeCode(byPlayer);
             string playerUid = byPlayer.PlayerUID;
+            if (toolCode != null)
+            {
 
-            // Get or create player progress data
-            AttributeModifierDefinitions.MiningSpeed.GetForPlayer(playerUid).DoEvent(byPlayer, pickaxeCode, points);
+                // Check block type and get points
+                int points = GetStoneBlockPoints(oldblockId);
+                if (points > 0)
+                {
+                    AttributeModifierDefinitions.MiningSpeed.GetForPlayer(playerUid).DoEvent(byPlayer, toolCode, points);
+                    AttributeModifierDefinitions.OreDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, toolCode, points);
+                    AttributeModifierDefinitions.StoneDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, toolCode, points);
+                }
+            }
+            else
+            {
+                toolCode = GetHeldAxeCode(byPlayer);
+                int points = GetWoodLogPoints(oldblockId);
+                if (points > 0)
+                {
+                    AttributeModifierDefinitions.WoodDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, toolCode, points);
+                    AttributeModifierDefinitions.SeedDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, toolCode, points);
+                    AttributeModifierDefinitions.StickDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, toolCode, points);
+                }
+            }
         }
 
         /// <summary>
@@ -2095,9 +2131,6 @@ namespace SeraphLeveling
         /// </summary>
         private void OnWalkingTick(float dt)
         {
-            // Skip walking progression if disabled
-            if (IsAttributeModifierDisabled(AttributeModifierDefinitions.WalkingSpeed)) return;
-
             foreach (IServerPlayer player in ServerApi.World.AllOnlinePlayers)
             {
                 if (player?.Entity == null) continue;
@@ -2136,9 +2169,6 @@ namespace SeraphLeveling
         /// </summary>
         private void OnHungerTick(float dt)
         {
-            // Skip hunger progression if disabled
-            if (IsSkillDisabled("hunger")) return;
-
             foreach (IServerPlayer player in ServerApi.World.AllOnlinePlayers)
             {
                 if (player?.Entity == null) continue;
@@ -2656,9 +2686,6 @@ namespace SeraphLeveling
         {
             if (attackerPlayer?.Entity == null || string.IsNullOrEmpty(weaponType)) return;
 
-            // Check if melee skill is disabled
-            if (IsSkillDisabled("melee")) return;
-
             string playerUid = attackerPlayer.PlayerUID;
 
             var damageProgress = AttributeModifierDefinitions.MeleeDamage.GetForPlayer(playerUid);
@@ -2860,9 +2887,6 @@ namespace SeraphLeveling
         public static void ProcessRangedDamage(IServerPlayer attackerPlayer, string weaponCombo, float damage)
         {
             if (attackerPlayer?.Entity == null || string.IsNullOrEmpty(weaponCombo)) return;
-
-            // Check if ranged skill is disabled
-            if (IsSkillDisabled("ranged")) return;
 
             string playerUid = attackerPlayer.PlayerUID;
 
@@ -5634,9 +5658,6 @@ namespace SeraphLeveling
         /// </summary>
         private void OnSneakingTick(float dt)
         {
-            // Skip furtive progression if disabled
-            if (IsSkillDisabled("furtive")) return;
-
             foreach (IServerPlayer player in ServerApi.World.AllOnlinePlayers)
             {
                 if (player?.Entity == null) continue;
@@ -5716,9 +5737,6 @@ namespace SeraphLeveling
         {
             if (attackerPlayer?.Entity == null || damage <= 0) return;
             if (string.IsNullOrEmpty(weaponType)) return;
-
-            // Check if precise skill is disabled
-            if (IsSkillDisabled("precise")) return;
 
             string playerUid = attackerPlayer.PlayerUID;
 
@@ -5878,13 +5896,10 @@ namespace SeraphLeveling
         {
             if (player?.Entity == null) return;
 
-            // Check if technical skill is disabled
-            if (IsAttributeModifierDisabled(AttributeModifierDefinitions.Technical)) return;
-
             string playerUid = player.PlayerUID;
             int modifiedRepairs = ApplyXPMultiplier(playerUid, 1);
 
-            AttributeModifierDefinitions.Technical.AddCredits(player, ApplyXPMultiplier(playerUid, 1));
+            AttributeModifierDefinitions.Technical.AddCredits(player, ApplyXPMultiplier(playerUid, modifiedRepairs));
         }
 
         /// <summary>

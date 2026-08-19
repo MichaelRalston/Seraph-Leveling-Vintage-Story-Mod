@@ -1,0 +1,14 @@
+[
+    {
+      "op": "addmerge",
+      "path": "/dropsByType/*/0/dropModByStat",
+      "value": "sacredlib:oreDropRate",
+      "file": "game:blocktypes/stone/ore-graded.json"
+    },
+    {
+      "op": "addmerge",
+      "path": "/dropsByType/*/1/dropModByStat",
+      "value": "sacredlib:oreDropRate",
+      "file": "game:blocktypes/stone/ore-graded.json"
+    }
+  ]

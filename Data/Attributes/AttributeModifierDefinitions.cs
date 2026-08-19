@@ -230,12 +230,92 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% mining speed",
             LongDescription = "mining speed",
             PersistenceHeader = "SIT",
-            PersistenceVersion = 5,
             Tool = ToolDefinitions.Pickaxe,
             IncrementData = MiningIncrementData,
             GlobalMaxCredits = 50,
             StatName = "miningSpeedMul"
         };
+
+        public static readonly MiningAttributeModifierDefinition StoneDropRate = new()
+        {
+            Id = "stoneDropRate",
+            SkillKey = "stonerate",
+            Name = "StoneDropRate",
+            Stat = "% bonus stone drop rate",
+            LongDescription = "stone drop rate",
+            PersistenceHeader = "SDR",
+            Tool = ToolDefinitions.Pickaxe,
+            IncrementData = MiningIncrementData,
+            GlobalMaxCredits = 300,
+            StatName = "sacredlib:stoneDropRate"
+        };
+
+        public static readonly MiningAttributeModifierDefinition OreDropRate = new()
+        {
+            Id = "oreDropRate",
+            SkillKey = "orerate",
+            Name = "OreDropRate",
+            Stat = "% bonus ore drop rate",
+            LongDescription = "ore drop rate",
+            PersistenceHeader = "SDR",
+            Tool = ToolDefinitions.Pickaxe,
+            IncrementData = MiningIncrementData,
+            GlobalMaxCredits = 300,
+            StatName = "sacredlib:oreDropRate"
+        };
+
+        public static readonly ConcurrentDictionary<SimpleToolProgress, IncrementData> TreeIncrementData = new()
+        {
+            [default] = new IncrementData
+            {
+                IncrementUnits = "trees",
+                BaseIncrement = 20,
+                IncrementStep = 20,
+            }
+        };
+
+        public static readonly AxeAttributeModifierDefinition WoodDropRate = new()
+        {
+            Id = "woodDropRate",
+            SkillKey = "woodrate",
+            Name = "WoodDropRate",
+            Stat = "% bonus wood drop rate",
+            LongDescription = "wood drop rate",
+            PersistenceHeader = "WDR",
+            Tool = ToolDefinitions.Axe,
+            IncrementData = TreeIncrementData,
+            GlobalMaxCredits = 100,
+            StatName = "sacredlib:woodDropRate"
+        };
+
+        public static readonly AxeAttributeModifierDefinition SeedDropRate = new()
+        {
+            Id = "seedDropRate",
+            SkillKey = "seedrate",
+            Name = "SeedDropRate",
+            Stat = "% bonus tree seed drop rate",
+            LongDescription = "tree seed drop rate",
+            PersistenceHeader = "SDR",
+            Tool = ToolDefinitions.Axe,
+            IncrementData = TreeIncrementData,
+            GlobalMaxCredits = 1000,
+            StatName = "sacredlib:treeseedDropRate"
+        };
+
+        public static readonly AxeAttributeModifierDefinition StickDropRate = new()
+        {
+            Id = "stickDropRate",
+            SkillKey = "stickrate",
+            Name = "StickDropRate",
+            Stat = "% bonus stick drop rate",
+            LongDescription = "stick drop rate",
+            PersistenceHeader = "WDR",
+            Tool = ToolDefinitions.Axe,
+            IncrementData = TreeIncrementData,
+            GlobalMaxCredits = 300,
+            StatName = "sacredlib:stickDropRate"
+        };
+
 
         public static readonly ImproviserAttributeModifierDefinition Improviser = new()
         {
@@ -454,7 +534,7 @@ namespace SeraphLeveling.Data.Attributes
                 IncrementStep = 2880,
             },
         };
-        public static readonly ArmorModifierDefinition<SimpleToolProgress> ArmorWalkSpeed = new()
+        public static readonly SimpleArmorModifierDefinition ArmorWalkSpeed = new()
         {
             Id = "armorWalkSpeed",
             Name = "ArmorWalkSpeed",
@@ -467,7 +547,7 @@ namespace SeraphLeveling.Data.Attributes
             IncrementData = ArmorWornIncrementData,
             GlobalMaxCredits = 50,
         };
-        public static readonly ArmorModifierDefinition<SimpleToolProgress> ArmorHungerRate = new()
+        public static readonly SimpleArmorModifierDefinition ArmorHungerRate = new()
         {
             Id = "armorHungerRate",
             Name = "ArmorHungerRate",
@@ -480,7 +560,7 @@ namespace SeraphLeveling.Data.Attributes
             IncrementData = ArmorWornIncrementData,
             GlobalMaxCredits = 50,
         };
-        public static readonly ArmorModifierDefinition<SimpleToolProgress> ArmorHealing = new()
+        public static readonly SimpleArmorModifierDefinition ArmorHealing = new()
         {
             Id = "armorHealing",
             Name = "ArmorHealing",

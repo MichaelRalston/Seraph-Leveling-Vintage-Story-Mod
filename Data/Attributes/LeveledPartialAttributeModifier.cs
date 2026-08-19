@@ -86,6 +86,7 @@ namespace SeraphLeveling.Data.Attributes
         public int CurrentIncrementSize { get; set; } = definition.BaseIncrement;
         public void DoEvent(IServerPlayer player, float score)
         {
+            if (SeraphLevelingModSystem.IsSkillDisabled(Definition.SkillKey)) return;
             // Skip all processing if already at max - completely invisible
             var maxCredits = Definition.GetMaxCredits(player.Entity);
             if (TotalCredits >= maxCredits) return;
