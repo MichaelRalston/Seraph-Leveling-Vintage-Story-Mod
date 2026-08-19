@@ -527,7 +527,7 @@ namespace SeraphLeveling.Data.Attributes
                 {
                     retVal = false;
                 }
-                else if (RemoveWith.All(req => req.IsSatisfied(player)))
+                else if (RemoveWith.Count > 0 && RemoveWith.All(req => req.IsSatisfied(player)))
                 {
                     // If all remove requirements are met, then the modifier becomes inactive
                     // retVal = RemoveWith.Count > 0 || Attribute.ShouldDisplay(player.Entity, hasVanillaTrait);
@@ -545,10 +545,31 @@ namespace SeraphLeveling.Data.Attributes
                 else
                 {
                     // Otherwise, the modifier is active if the attribute should by default be displayed
-                    var unlockedAttr = Attribute as IUnlockedAttributeModifierDefinition;
-                    bool hasVanilla = SeraphLevelingModSystem.PlayerHasTrait(player.Entity, unlockedAttr?.Trait?.Value);
-                    retVal = hasVanilla;
-                    DebugLog(true, true, $"   [Verdus] Checking vanilla trait with some remove requirements unsatisfied for attribute {Attribute.Id}: hasVanilla={hasVanilla}, reqCount={RemoveWith.Count}");
+                    if (SeraphLevelingModSystem.TraitsForAttributes.TryGetValue(Attribute.Id, out var traitValList))
+                    {
+                        var penaltyTraits = traitValList.Where(tuple => tuple.Value < 0);
+                        string applicableTraits = string.Join(",", penaltyTraits.Select(tuple => tuple.Trait.Id));
+                        DebugLog(true, true, $"   [Verdus] Checking applicable PENALTY traits for attribute {Attribute.Id}: {applicableTraits}");
+                        retVal = false;
+                        foreach ((var traitDef, var traitVal) in penaltyTraits)
+                        {
+                            bool held = SeraphLevelingModSystem.PlayerHasTrait(player.Entity, traitDef);
+                            DebugLog(true, true, $"      [Verdus] Checking PENALTY trait {traitDef.Id} for attribute {Attribute.Id}: {held}");
+                            if (held)
+                            {
+                                retVal = true;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        DebugLog(true, true, $"   [Verdus] No applicable PENALTY traits for attribute {Attribute.Id}!");
+                        retVal = false;
+                    }
+                    // var unlockedAttr = Attribute as IUnlockedAttributeModifierDefinition;
+                    // bool hasVanilla = SeraphLevelingModSystem.PlayerHasTrait(player.Entity, unlockedAttr?.Trait?.Value);
+                    // retVal = hasVanilla;
+                    // DebugLog(true, true, $"   [Verdus] Checking vanilla trait with some remove requirements unsatisfied for attribute {Attribute.Id}: hasVanilla={hasVanilla}, reqCount={RemoveWith.Count}");
                 }
                 DebugLog(true, true, $"[Verdus] Finished calling IsActive for attrmod {Attribute.Id}, active={retVal}");
                 return retVal;
