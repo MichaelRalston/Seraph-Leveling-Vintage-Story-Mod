@@ -264,6 +264,58 @@ namespace SeraphLeveling.Data.Attributes
             StatName = "sacredlib:oreDropRate"
         };
 
+        public static readonly ConcurrentDictionary<SimpleToolProgress, IncrementData> TreeIncrementData = new()
+        {
+            [default] = new IncrementData
+            {
+                IncrementUnits = "trees",
+                BaseIncrement = 20,
+                IncrementStep = 20,
+            }
+        };
+
+        public static readonly AxeAttributeModifierDefinition WoodDropRate = new()
+        {
+            Id = "woodDropRate",
+            SkillKey = "woodrate",
+            Name = "WoodDropRate",
+            Stat = "% bonus wood drop rate",
+            LongDescription = "wood drop rate",
+            PersistenceHeader = "WDR",
+            Tool = ToolDefinitions.Axe,
+            IncrementData = TreeIncrementData,
+            GlobalMaxCredits = 100,
+            StatName = "sacredlib:woodDropRate"
+        };
+
+        public static readonly AxeAttributeModifierDefinition SeedDropRate = new()
+        {
+            Id = "seedDropRate",
+            SkillKey = "seedrate",
+            Name = "SeedDropRate",
+            Stat = "% bonus tree seed drop rate",
+            LongDescription = "tree seed drop rate",
+            PersistenceHeader = "SDR",
+            Tool = ToolDefinitions.Axe,
+            IncrementData = TreeIncrementData,
+            GlobalMaxCredits = 1000,
+            StatName = "sacredlib:treeseedDropRate"
+        };
+
+        public static readonly AxeAttributeModifierDefinition StickDropRate = new()
+        {
+            Id = "stickDropRate",
+            SkillKey = "stickrate",
+            Name = "StickDropRate",
+            Stat = "% bonus stick drop rate",
+            LongDescription = "stick drop rate",
+            PersistenceHeader = "WDR",
+            Tool = ToolDefinitions.Axe,
+            IncrementData = TreeIncrementData,
+            GlobalMaxCredits = 300,
+            StatName = "sacredlib:stickDropRate"
+        };
+
 
         public static readonly ImproviserAttributeModifierDefinition Improviser = new()
         {

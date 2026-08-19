@@ -1582,6 +1582,43 @@ namespace SeraphLeveling
             return heldItem.Code?.ToString();
         }
 
+        private string GetHeldAxeCode(IServerPlayer player)
+        {
+            if (player?.Entity == null) return null;
+
+            var heldItem = player.Entity.RightHandItemSlot?.Itemstack?.Collectible;
+            if (heldItem == null) return null;
+
+            // Check if it's an axe (Tool property = Axe)
+            if (heldItem.Tool != EnumTool.Axe) return null;
+
+            // Return the item code as the pickaxe identifier
+            return heldItem.Code?.ToString();
+        }
+
+        private string GetBlockCode(int blockId)
+        {
+            if (ServerApi == null) return "";
+
+            var block = ServerApi.World.GetBlock(blockId);
+            if (block == null) return "";
+
+            string blockCode = block.Code?.ToString() ?? "";
+
+            // Remove "game:" prefix if present for consistent matching
+            return blockCode.StartsWith("game:") ? blockCode.Substring(5) : blockCode;
+        }
+        private int GetWoodLogPoints(int blockId)
+        {
+            string codeToCheck = GetBlockCode(blockId);
+            ServerApi.Logger.Debug($"[SeraphLeveling] Checking wood log points for block code {codeToCheck}.");
+            if (codeToCheck.StartsWith("log-grown-"))
+            {
+                return 5;
+            }
+            return 0;
+        }
+
         /// <summary>
         /// Determines the point value for a broken block.
         /// Returns OreMultiplier (default 5) for ore blocks, 1 for stone blocks, 0 for other blocks.
@@ -1593,18 +1630,9 @@ namespace SeraphLeveling
         /// Ore block patterns (OreMultiplier points):
         /// - Contains "ore-" (e.g., ore-copper-granite, ore-lignite-chalk)
         /// </summary>
-        private int GetBlockPoints(int blockId)
+        private int GetStoneBlockPoints(int blockId)
         {
-            if (ServerApi == null) return 0;
-
-            var block = ServerApi.World.GetBlock(blockId);
-            if (block == null) return 0;
-
-            string blockCode = block.Code?.ToString() ?? "";
-
-            // Remove "game:" prefix if present for consistent matching
-            string codeToCheck = blockCode.StartsWith("game:") ? blockCode.Substring(5) : blockCode;
-
+            string codeToCheck = GetBlockCode(blockId);
             // Ore blocks: code contains "ore-" (e.g., "ore-lignite-chalk", "ore-copper-granite")
             if (codeToCheck.Contains("ore-"))
             {
@@ -2069,20 +2097,32 @@ namespace SeraphLeveling
                 ProcessVesselBreak(byPlayer);
             }
 
-            // Check if player is using a pickaxe for mining progression
-            string pickaxeCode = GetHeldPickaxeCode(byPlayer);
-            if (pickaxeCode == null) return; // Not using a pickaxe, skip mining
-
-            // Check block type and get points
-            int points = GetBlockPoints(oldblockId);
-            if (points <= 0) return; // Not a stone/ore block, skip
-
+            // Check if player is using a tool for mining progression
+            string toolCode = GetHeldPickaxeCode(byPlayer);
             string playerUid = byPlayer.PlayerUID;
+            if (toolCode != null)
+            {
 
-            // Get or create player progress data
-            AttributeModifierDefinitions.MiningSpeed.GetForPlayer(playerUid).DoEvent(byPlayer, pickaxeCode, points);
-            AttributeModifierDefinitions.OreDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, pickaxeCode, points);
-            AttributeModifierDefinitions.StoneDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, pickaxeCode, points);
+                // Check block type and get points
+                int points = GetStoneBlockPoints(oldblockId);
+                if (points > 0)
+                {
+                    AttributeModifierDefinitions.MiningSpeed.GetForPlayer(playerUid).DoEvent(byPlayer, toolCode, points);
+                    AttributeModifierDefinitions.OreDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, toolCode, points);
+                    AttributeModifierDefinitions.StoneDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, toolCode, points);
+                }
+            }
+            else
+            {
+                toolCode = GetHeldAxeCode(byPlayer);
+                int points = GetWoodLogPoints(oldblockId);
+                if (points > 0)
+                {
+                    AttributeModifierDefinitions.WoodDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, toolCode, points);
+                    AttributeModifierDefinitions.SeedDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, toolCode, points);
+                    AttributeModifierDefinitions.StickDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, toolCode, points);
+                }
+            }
         }
 
         /// <summary>
