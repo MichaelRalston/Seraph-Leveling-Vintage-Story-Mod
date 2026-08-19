@@ -180,5 +180,9 @@
   "attribute-improviser-contents": "Exclusive craftable <a href=\"handbooksearch://sling\">sling</a>",
   "attribute-merciless-contents": "Exclusive craftable Blackguard <a href=\"handbooksearch://blackguard shortsword\">shortsword</a> and <a href=\"handbooksearch://blackguard shield\">shield</a>",
   "attribute-technical-contents": "-1 temporal gear cost to repair translocators",
-  "attribute-tinkerer-contents": "Exclusive craftable <a href=\"handbooksearch://tuning spear\">device</a> to tame locusts"
+  "attribute-tinkerer-contents": "Exclusive craftable <a href=\"handbooksearch://tuning spear\">device</a> to tame locusts",
+
+  "attribute-carpenter-contents": "Exclusive craftable <a href=\"handbooksearch:// board or quarter logs or support beams \">construction material</a>",
+
+  "message-carpenter-unlock": "Carpenter unlocked! You are now better at crafting with wood."
 }
