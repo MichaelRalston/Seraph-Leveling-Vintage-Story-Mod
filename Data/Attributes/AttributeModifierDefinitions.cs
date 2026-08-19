@@ -360,6 +360,7 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "COR",
             Name = "ClaustrophobicOre",
             ModifierAmount = -0.15f,
+            ModifierIsPercentage = true,
             Trait = new(() => Traits.TraitDefinitions.Claustrophobic),
         };
 
@@ -370,6 +371,7 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "COR",
             Name = "ClaustrophobicOre",
             ModifierAmount = 0.15f,
+            ModifierIsPercentage = true,
             Trait = new(() => Traits.TraitDefinitions.Claustrophobic),
         };
 

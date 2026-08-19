@@ -216,7 +216,7 @@ namespace SeraphLeveling.Data.Traits
                 {
                     // Stat modifier values are always displayed separately, without regard for other stat modifiers
                     float attrVal = statAttr.ModifierAmount;
-                    retVal[statAttr] = attrVal.ToString("+0.#;-#.#");
+                    retVal[statAttr] = statAttr.ModifierIsPercentage ? attrVal.ToString("+0.#%;-#.#%") : attrVal.ToString("+0.#;-#.#");
                     CharacterSystemPatches.ClientApi.Logger.Debug($"[Verdus] Formatting modifier amount for {statAttr.Id} from {attrVal} as {retVal[statAttr]}");
                 }
             }
