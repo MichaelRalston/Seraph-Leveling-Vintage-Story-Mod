@@ -15,14 +15,27 @@ namespace SeraphLeveling.Patches
                 if (byPlayer is not IServerPlayer serverPlayer) return;
 
                 string outputCode = __instance?.Output?.Code?.ToString();
-                string playerName = byPlayer?.PlayerName;
-                SeraphLevelingModSystem.ServerApi.Logger.Debug($"[Verdus] Player {playerName} crafted item code {outputCode}, success={__result}, side={byPlayer?.Entity?.Api?.Side}");
+                int quantity = __instance?.Output?.Quantity ?? 0;
 
-                if (outputCode.Contains("plank-", StringComparison.OrdinalIgnoreCase))
+                if (quantity <= 0) return;
+
+                string playerName = byPlayer?.PlayerName;
+#if SPAMMYDEBUG
+                SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Player {playerName} crafted item code {outputCode}, success={__result}, side={byPlayer?.Entity?.Api?.Side}");
+#endif
+
+                // Process boards
+                if (outputCode.StartsWith("plank-"))
                 {
-                    float quantity = __instance?.Output?.Quantity ?? 0;
-                    SeraphLevelingModSystem.ServerApi.Logger.Debug($"[Verdus] Granting {playerName} credit for crafting {quantity} boards");
+                    SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Granting {playerName} credit for crafting {quantity} boards");
                     AttributeModifierDefinitions.Carpenter.AddCredits(serverPlayer, quantity);
+                }
+
+                // Process ashlar blocks
+                if (outputCode.StartsWith("stonebrick-"))
+                {
+                    SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Granting {playerName} credit for crafting {quantity} ashlar blocks");
+                    AttributeModifierDefinitions.Mason.AddCredits(serverPlayer, quantity);
                 }
             }
         }

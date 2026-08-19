@@ -703,5 +703,17 @@ namespace SeraphLeveling.Data.Attributes
             GlobalMaxCredits = 100,
             StatName = "ats:handclayformingspeed"
         };
+
+        public static readonly MasonAttributeModifierDefinition Mason = new()
+        {
+            Id = "mason",
+            SkillKey = "mason",
+            PersistenceHeader = "MAS",
+            Name = "Mason",
+            GlobalMaxCredits = 40,
+            CreditDescription = "ashlar blocks",
+            WatchedCreditsAttributeKey = "sitMasonStoneBricks",
+            Trait = new(() => Traits.TraitDefinitions.Mason),
+        };
     }
 }

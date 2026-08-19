@@ -302,6 +302,10 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "mason",
             Attributes = [
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.Mason, 1, [
+                    new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Mason },
+                    new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.MiningSpeed, ThresholdPercentage = 10 },
+                ])
             ],
         };
 

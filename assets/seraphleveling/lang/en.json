@@ -181,14 +181,16 @@
   "attribute-treechoppingspeed-contents": "{0}% tree chopping speed",
   "attribute-wooddroprate-contents": "{0}% wood drop rate",
 
-  "attribute-bowyer-contents": "Exclusive craftable <a href=\"handbooksearch://crude bow or crude arrow or recurve bow \">bows and arrows</a>",
+  "attribute-bowyer-contents": "Exclusive craftable <a href=\"handbooksearch://crude bow or crude arrow or recurve bow\">bows and arrows</a>",
   "attribute-clothier-contents": "Exclusive craftable <a href=\"handbooksearch://sewing kit or chateau or pastoral or reindeer or moon or minstrel or fortune or nomad or spice or cobalt or azure or thigh-high or fine trousers or high leather\">sewing kit and clothes</a>",
   "attribute-improviser-contents": "Exclusive craftable <a href=\"handbooksearch://sling\">sling</a>",
   "attribute-merciless-contents": "Exclusive craftable Blackguard <a href=\"handbooksearch://blackguard shortsword\">shortsword</a> and <a href=\"handbooksearch://blackguard shield\">shield</a>",
   "attribute-technical-contents": "-1 temporal gear cost to repair translocators",
   "attribute-tinkerer-contents": "Exclusive craftable <a href=\"handbooksearch://tuning spear\">device</a> to tame locusts",
 
-  "attribute-carpenter-contents": "Exclusive craftable <a href=\"handbooksearch:// board or quarter logs or support beams \">construction material</a>",
+  "attribute-carpenter-contents": "Exclusive craftable <a href=\"handbooksearch://board or quarter logs or support beams\">construction material</a>",
+  "attribute-mason-contents": "Exclusive craftable <a href=\"handbooksearch://cobblestone or ashlar block\">stonework items</a>",
 
-  "message-carpenter-unlock": "Carpenter unlocked! You are now better at crafting with wood."
+  "message-carpenter-unlock": "Carpenter unlocked! You are now better at crafting with wood.",
+  "message-mason-unlock": "Mason unlocked! You are now better at crafting with stone."
 }
