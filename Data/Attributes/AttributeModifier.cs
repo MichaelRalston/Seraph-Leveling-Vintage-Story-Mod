@@ -40,6 +40,7 @@ namespace SeraphLeveling.Data.Attributes
         public void ResetProgress();
         public bool PendingSave { get; set; }
         public string SkillKey { get; init; }
+        public string LongDescription { get; init; }
         public void ResetProgress(IServerPlayer player);
         public void ApplyBonusIfExists(IServerPlayer player);
         public void MaxStat(IServerPlayer player);

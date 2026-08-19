@@ -1303,9 +1303,9 @@ namespace SeraphLeveling
 
             var sb = new StringBuilder();
             sb.AppendLine("--- Leveled Traits ---");
-            LoadedAttributes.Where(attr => attr is ILeveledAttributeModifierDefinition).Select(attr => attr.SkillKey).Order().Foreach(str => sb.AppendLine(str));
+            LoadedAttributes.Where(attr => attr is ILeveledAttributeModifierDefinition).OrderBy(attr => attr.SkillKey).Foreach(attr => sb.AppendLine(attr.SkillKey + ": " + attr.LongDescription));
             sb.AppendLine("\n--- Unlocked Traits ---");
-            LoadedAttributes.Where(attr => attr is IUnlockedAttributeModifierDefinition).Select(attr => attr.SkillKey).Order().Foreach(str => sb.AppendLine(str));
+            LoadedAttributes.Where(attr => attr is IUnlockedAttributeModifierDefinition).OrderBy(attr => attr.SkillKey).Foreach(attr => sb.AppendLine(attr.SkillKey + ": " + attr.LongDescription));
             return TextCommandResult.Success(sb.ToString().TrimEnd());
         }
 
