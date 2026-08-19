@@ -2413,61 +2413,103 @@ namespace SeraphLeveling
         /// </summary>
         private void ApplyServerHarmonyPatches(ICoreServerAPI api)
         {
-            serverHarmony = new Harmony("seraphleveling.server");
+            const string HARMONY_SERVER_ID = "seraphleveling.server";
+            serverHarmony = new Harmony(HARMONY_SERVER_ID);
 
             try
             {
-                // Find Entity.ReceiveDamage method
-                var entityType = typeof(Entity);
-                api.Logger.Debug($"[SeraphLeveling] Looking for Entity.ReceiveDamage method in {entityType.FullName}");
-
-                var receiveDamageMethod = entityType.GetMethod("ReceiveDamage",
-                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-
-                if (receiveDamageMethod == null)
+                if (!Harmony.HasAnyPatches(HARMONY_SERVER_ID))
                 {
-                    // Try to list available methods for debugging
-                    var methods = entityType.GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-                    var damageMethodNames = methods.Where(m => m.Name.Contains("Damage")).Select(m => m.Name).ToArray();
-                    api.Logger.Warning($"[SeraphLeveling] Could not find Entity.ReceiveDamage method. Available damage methods: {string.Join(", ", damageMethodNames)}");
-                    return;
+                    // Find Entity.ReceiveDamage method
+                    var entityType = typeof(Entity);
+                    api.Logger.Debug($"[SeraphLeveling] Looking for Entity.ReceiveDamage method in {entityType.FullName}");
+
+                    var receiveDamageMethod = entityType.GetMethod("ReceiveDamage",
+                        System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+
+                    if (receiveDamageMethod == null)
+                    {
+                        // Try to list available methods for debugging
+                        var methods = entityType.GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                        var damageMethodNames = methods.Where(m => m.Name.Contains("Damage")).Select(m => m.Name).ToArray();
+                        api.Logger.Warning($"[SeraphLeveling] Could not find Entity.ReceiveDamage method. Available damage methods: {string.Join(", ", damageMethodNames)}");
+                        return;
+                    }
+
+                    api.Logger.Debug($"[SeraphLeveling] Found Entity.ReceiveDamage: {receiveDamageMethod}");
+
+                    // Get our postfix method
+                    var postfixMethod = AccessTools.Method(typeof(EntityDamagePatches),
+                        nameof(EntityDamagePatches.ReceiveDamage_Postfix));
+
+                    if (postfixMethod == null)
+                    {
+                        api.Logger.Error("[SeraphLeveling] Could not find ReceiveDamage_Postfix method!");
+                        return;
+                    }
+
+                    api.Logger.Debug($"[SeraphLeveling] Found postfix method: {postfixMethod}");
+
+                    serverHarmony.Patch(receiveDamageMethod, postfix: new HarmonyMethod(postfixMethod));
+                    api.Logger.Notification("[SeraphLeveling] Successfully patched Entity.ReceiveDamage for damage tracking");
+
+                    // Patch EntityBehaviorHarvestable.SetHarvested for Resourceful trait (animal harvesting)
+                    PatchAnimalHarvesting(api);
+
+                    // Patch CollectibleObject.OnHeldInteractStep for Mender trait (sewing kit repairs)
+                    PatchSewingKitRepairs(api);
+
+                    // Patch BlockEntityStaticTranslocator.DoRepair for Technical trait (translocator repairs)
+                    PatchTranslocatorRepairs(api);
+
+                    // Patch BEBehaviorBed.DidSleep for sleep buff system
+                    PatchBedSleeping(api);
+
+                    // Patch Entity.Die for death penalty system
+                    PatchEntityDeath(api);
+
+                    // Patch crafting methods for recipe crafting detection
+                    PatchGridCrafting(api);
                 }
-
-                api.Logger.Debug($"[SeraphLeveling] Found Entity.ReceiveDamage: {receiveDamageMethod}");
-
-                // Get our postfix method
-                var postfixMethod = AccessTools.Method(typeof(EntityDamagePatches),
-                    nameof(EntityDamagePatches.ReceiveDamage_Postfix));
-
-                if (postfixMethod == null)
-                {
-                    api.Logger.Error("[SeraphLeveling] Could not find ReceiveDamage_Postfix method!");
-                    return;
-                }
-
-                api.Logger.Debug($"[SeraphLeveling] Found postfix method: {postfixMethod}");
-
-                serverHarmony.Patch(receiveDamageMethod, postfix: new HarmonyMethod(postfixMethod));
-                api.Logger.Notification("[SeraphLeveling] Successfully patched Entity.ReceiveDamage for damage tracking");
-
-                // Patch EntityBehaviorHarvestable.SetHarvested for Resourceful trait (animal harvesting)
-                PatchAnimalHarvesting(api);
-
-                // Patch CollectibleObject.OnHeldInteractStep for Mender trait (sewing kit repairs)
-                PatchSewingKitRepairs(api);
-
-                // Patch BlockEntityStaticTranslocator.DoRepair for Technical trait (translocator repairs)
-                PatchTranslocatorRepairs(api);
-
-                // Patch BEBehaviorBed.DidSleep for sleep buff system
-                PatchBedSleeping(api);
-
-                // Patch Entity.Die for death penalty system
-                PatchEntityDeath(api);
             }
             catch (Exception ex)
             {
                 api.Logger.Error($"[SeraphLeveling] Failed to apply server Harmony patches: {ex.Message}");
+            }
+        }
+
+        private void PatchGridCrafting(ICoreServerAPI api)
+        {
+            try
+            {
+                var gridRecipeType = typeof(GridRecipe);
+                if (gridRecipeType == null)
+                {
+                    api.Logger.Debug("[SeraphLeveling] Could not find GridRecipe type for crafting hooks");
+                    return;
+                }
+
+                var consumeInputMethod = AccessTools.Method(gridRecipeType, "ConsumeInput");
+                if (consumeInputMethod == null)
+                {
+                    api.Logger.Debug("[SeraphLeveling] Could not find GridRecipe.ConsumeInput method for crafting hooks");
+                    return;
+                }
+
+                // Get our postfix method
+                var postfixMethod = AccessTools.Method(typeof(CraftingPatches), nameof(CraftingPatches.GridRecipeConsumeInput_Postfix));
+                if (postfixMethod == null)
+                {
+                    api.Logger.Error("[SeraphLeveling] Could not find GridRecipeConsumeInput_Postfix method!");
+                    return;
+                }
+
+                serverHarmony.Patch(consumeInputMethod, postfix: new HarmonyMethod(postfixMethod));
+                api.Logger.Notification("[SeraphLeveling] Successfully patched GridRecipe.ConsumeInput for crafting hooks");
+            }
+            catch (Exception ex)
+            {
+                api.Logger.Warning($"[SeraphLeveling] Failed to patch GridRecipe.ConsumeInput: {ex.Message}");
             }
         }
 
@@ -7022,11 +7064,15 @@ namespace SeraphLeveling
                 .SetMessageHandler<LevelUpSoundMessage>(OnLevelUpSoundReceived);
 
             // Apply Harmony patches manually for better control
-            harmony = new Harmony("seraphleveling");
+            const string HARMONY_ID = "seraphleveling";
+            harmony = new Harmony(HARMONY_ID);
             try
             {
-                ApplyPatches(api);
-                api.Logger.Notification("[SeraphLeveling] Client-side mod loaded, Harmony patches applied");
+                if (!Harmony.HasAnyPatches(HARMONY_ID))
+                {
+                    ApplyPatches(api);
+                    api.Logger.Notification("[SeraphLeveling] Client-side mod loaded, Harmony patches applied");
+                }
             }
             catch (Exception ex)
             {
