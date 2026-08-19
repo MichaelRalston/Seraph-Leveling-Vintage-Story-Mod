@@ -14,7 +14,7 @@ namespace SeraphLeveling.Data.Traits
     public record class TraitDefinition
     {
         private const bool DEBUG_SHOW_BROKEN_L10N = true;
-        private static readonly List<string> DebugTraits = [];
+        private static readonly List<string> DebugTraits = ["*"];
 
         private void DebugLog(bool client, bool server, string message)
         {
@@ -38,7 +38,7 @@ namespace SeraphLeveling.Data.Traits
             init
             {
                 field = value;
-                field?.ForEach(mod => mod.ActiveStatusUpdated += OnModifierActiveStatusUpdated);
+                field?.ForEach(PrepareAttributeModifier);
             }
         }
         public virtual string PlainTraitNameKey
@@ -64,6 +64,12 @@ namespace SeraphLeveling.Data.Traits
             Attributes?.ForEach(req => req.ActiveStatusUpdated -= OnModifierActiveStatusUpdated);
         }
 
+        private void PrepareAttributeModifier(IAttributeModifier mod)
+        {
+            mod.ApplicableTrait = this;
+            mod.ActiveStatusUpdated += OnModifierActiveStatusUpdated;
+        }
+
         protected void OnModifierActiveStatusUpdated(IServerPlayer player, bool newValue)
         {
             DebugLog(false, true, $"[Verdus] Calling OnModifierActiveStatusUpdated for trait {Id} with newValue={newValue}");
@@ -82,7 +88,7 @@ namespace SeraphLeveling.Data.Traits
             // if (HasVanillaTrait(player.Entity)) return;
 
             // Check prerequisites
-            if (Attributes.All(mod => mod.IsActive(player)))
+            if (Attributes.All(mod => mod.ShouldUnlock(player)))
             {
                 DebugLog(false, true, $"[Verdus] All attributes active for trait {Id}!");
                 Attributes.Select(kvp => kvp.Attribute).Foreach(attr => attr.Unlock(player, true));
@@ -122,7 +128,7 @@ namespace SeraphLeveling.Data.Traits
 
         protected virtual bool ShouldDisplay(EntityPlayer player, bool hasVanillaTrait)
         {
-            return Attributes.Any(a => a.IsActive(player.Player, hasVanillaTrait));
+            return Attributes.Any(a => a.ShouldDisplay(player.Player, hasVanillaTrait));
         }
 
         public virtual void BuildTraitText(EntityPlayer player, ref string result)
@@ -136,25 +142,32 @@ namespace SeraphLeveling.Data.Traits
             {
                 var combinedAttrBonuses = GetCombinedAttributeBonuses(player);
                 string headerText = Lang.Get(DynamicTraitHeaderKey);
-                string contentText = string.Join(", ", Attributes.Where(mod => mod.IsActive(player.Player, hasVanillaTrait)).Select(mod => {
+                string contentText = string.Join(", ", Attributes.Where(mod => mod.ShouldDisplay(player.Player, hasVanillaTrait)).Select(mod => {
                     string modKey = mod.DynamicAttributeContentsKey.ToLowerInvariant();
-                    if (combinedAttrBonuses.TryGetValue(mod.Attribute, out string combinedBonus))
+                    if (combinedAttrBonuses.TryGetValue(mod.DisplayAttribute, out string combinedBonus))
                     {
-                        string retVal = Lang.Get(modKey, combinedBonus);
-                        DebugLog(true, false, $"      [Verdus] Calling BuildTraitText for trait {Id}: attr={mod.Attribute.Id}, key={mod.DynamicAttributeContentsKey}, lang token={retVal}");
-                        return DEBUG_SHOW_BROKEN_L10N || retVal != modKey ? retVal : null;
+                        if (string.IsNullOrEmpty(combinedBonus))
+                        {
+                            return null;
+                        }
+                        else
+                        {
+                            string retVal = Lang.Get(modKey, combinedBonus);
+                            DebugLog(true, false, $"      [Verdus] Calling BuildTraitText for trait {Id}: attr={mod.DisplayAttribute.Id}, key={mod.DynamicAttributeContentsKey}, lang token={retVal}");
+                            return DEBUG_SHOW_BROKEN_L10N || retVal != modKey ? retVal : null;
+                        }
                     }
                     else
                     {
                         string retVal = Lang.Get(modKey);
                         if (retVal != modKey)
                         {
-                            DebugLog(true, false, $"      [Verdus] Falling back to parameterless text for trait {Id}: attr={mod.Attribute.Id}, lang token={retVal}");
+                            DebugLog(true, false, $"      [Verdus] Falling back to parameterless text for trait {Id}: attr={mod.DisplayAttribute.Id}, lang token={retVal}");
                             return retVal;
                         }
                         else
                         {
-                            DebugLog(true, false, $"      [Verdus] Failed to get localized text for trait {Id}: attr={mod.Attribute.Id}, modKey={modKey}");
+                            DebugLog(true, false, $"      [Verdus] Failed to get localized text for trait {Id}: attr={mod.DisplayAttribute.Id}, modKey={modKey}");
                             return DEBUG_SHOW_BROKEN_L10N ? modKey : null;
                         }
                     }
@@ -204,13 +217,13 @@ namespace SeraphLeveling.Data.Traits
                             }
                         }
                     }
-                    retVal[leveledAttr] = leveledAttr.CalculateDisplayBonus(attrVal);
+                    retVal[leveledAttr] = mod.IsInRangeForDisplay(attrVal) ? leveledAttr.CalculateDisplayBonus(attrVal) : "";
                 }
-                else if (mod.Attribute is UnlockedStatAttributeModifierDefinition statAttr)
+                else if (mod.DisplayAttribute is UnlockedStatAttributeModifierDefinition statAttr)
                 {
                     // Stat modifier values are always displayed separately, without regard for other stat modifiers
                     float attrVal = statAttr.ModifierAmount;
-                    retVal[statAttr] = attrVal.ToString("+0.#;-#.#");
+                    retVal[statAttr] = statAttr.ModifierIsPercentage ? attrVal.ToString("+0.#%;-#.#%") : attrVal.ToString("+0.#;-#.#");
                     CharacterSystemPatches.ClientApi.Logger.Debug($"[Verdus] Formatting modifier amount for {statAttr.Id} from {attrVal} as {retVal[statAttr]}");
                 }
             }

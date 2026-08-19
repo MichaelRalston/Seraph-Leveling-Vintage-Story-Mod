@@ -48,7 +48,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "farsighted",
             Attributes = [
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.MeleeDamage, 15, [ new LeveledAttributeMaximumRequirement { Attribute = AttributeModifierDefinitions.MeleeDamage, ThresholdPercentage = 0 }]),
+                IAttributeModifier.Penalty(AttributeModifierDefinitions.MeleeDamage, 15, [ new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.MeleeDamage, ThresholdPercentage = 0 }]),
             ],
         };
 
@@ -56,11 +56,10 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "claustrophobic",
             Attributes = [
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.MiningSpeed, 10, [ new LeveledAttributeMaximumRequirement() { Attribute = AttributeModifierDefinitions.MiningSpeed, ThresholdPercentage = 0 }]),
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.ClaustrophobicOre, 1, [
-                    new LeveledAttributeMaximumRequirement { Attribute = AttributeModifierDefinitions.MiningSpeed, ThresholdPercentage = 0 },
+                IAttributeModifier.PenaltyOffset(AttributeModifierDefinitions.ClaustrophobicOre, 1, AttributeModifierDefinitions.ClaustrophobicOrePenalty, [
+                    new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.MiningSpeed, ThresholdPercentage = 0 },
                 ]),
-
+                IAttributeModifier.Penalty(AttributeModifierDefinitions.MiningSpeed, 10, [ new LeveledAttributeMinimumRequirement() { Attribute = AttributeModifierDefinitions.MiningSpeed, ThresholdPercentage = 0 }]),
             ],
         };
 
@@ -103,10 +102,10 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "frail",
             Attributes = [
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.FrailHealthOffset, 1, [
-                    new LeveledAttributeMaximumRequirement { Attribute = AttributeModifierDefinitions.RangedDistance, ThresholdPercentage = 0 },
+                IAttributeModifier.PenaltyOffset(AttributeModifierDefinitions.FrailHealthOffset, 1, AttributeModifierDefinitions.FrailHealthPenalty, [
+                    new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.RangedDistance, ThresholdPercentage = 0 },
                 ]),
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.RangedDistance, 25, [ new LeveledAttributeMaximumRequirement { Attribute = AttributeModifierDefinitions.RangedDistance, ThresholdPercentage = 0 }]),
+                IAttributeModifier.Penalty(AttributeModifierDefinitions.RangedDistance, 25, [ new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.RangedDistance, ThresholdPercentage = 0 }]),
             ],
         };
 
@@ -114,7 +113,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "nervous",
             Attributes = [
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.MeleeDamage, 15, [ new LeveledAttributeMaximumRequirement { Attribute = AttributeModifierDefinitions.MeleeDamage, ThresholdPercentage = 0 }]),
+                IAttributeModifier.Penalty(AttributeModifierDefinitions.MeleeDamage, 15, [ new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.MeleeDamage, ThresholdPercentage = 0 }]),
             ],
         };
 
@@ -192,7 +191,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "ravenous",
             Attributes = [
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.HungerRate, 30, [ new LeveledAttributeMaximumRequirement { Attribute = AttributeModifierDefinitions.HungerRate, ThresholdPercentage = 0 }])
+                IAttributeModifier.Penalty(AttributeModifierDefinitions.HungerRate, 30, [ new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.HungerRate, ThresholdPercentage = 0 }])
             ],
         };
 
@@ -200,7 +199,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "nearsighted",
             Attributes = [
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.RangedDamage, 15, [ new LeveledAttributeMaximumRequirement { Attribute = AttributeModifierDefinitions.RangedDamage, ThresholdPercentage = 0 }])
+                IAttributeModifier.Penalty(AttributeModifierDefinitions.RangedDamage, 15, [ new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.RangedDamage, ThresholdPercentage = 0 }])
             ],
         };
 
@@ -208,9 +207,9 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "heavyhanded",
             Attributes = [
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.VesselDropRate, 10, [ new LeveledAttributeMaximumRequirement { Attribute = AttributeModifierDefinitions.VesselDropRate, ThresholdPercentage = 0 }]),
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.LootingBonus, 15, [ new LeveledAttributeMaximumRequirement { Attribute = AttributeModifierDefinitions.LootingBonus, ThresholdPercentage = 0 }]),
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.WildCropDropRate, 20, [ new LeveledAttributeMaximumRequirement { Attribute = AttributeModifierDefinitions.WildCropDropRate, ThresholdPercentage = 0 }]),
+                IAttributeModifier.Penalty(AttributeModifierDefinitions.VesselDropRate, 10, [ new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.VesselDropRate, ThresholdPercentage = 0 }]),
+                IAttributeModifier.Penalty(AttributeModifierDefinitions.LootingBonus, 15, [ new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.LootingBonus, ThresholdPercentage = 0 }]),
+                IAttributeModifier.Penalty(AttributeModifierDefinitions.WildCropDropRate, 20, [ new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.WildCropDropRate, ThresholdPercentage = 0 }]),
             ]
         };
 
@@ -234,7 +233,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "civil",
             Attributes = [
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.LootingBonus, 10, [ new LeveledAttributeMaximumRequirement { Attribute = AttributeModifierDefinitions.LootingBonus, ThresholdPercentage = 0 } ]),
+                IAttributeModifier.Penalty(AttributeModifierDefinitions.LootingBonus, 10, [ new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.LootingBonus, ThresholdPercentage = 0 } ]),
             ]
         };
 
@@ -242,10 +241,10 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "weak",
             Attributes = [
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.WeakHealthOffset, 1, [
-                    new LeveledAttributeMaximumRequirement { Attribute = AttributeModifierDefinitions.MiningSpeed, ThresholdPercentage = 0 },
+                IAttributeModifier.PenaltyOffset(AttributeModifierDefinitions.WeakHealthOffset, 1, AttributeModifierDefinitions.WeakHealthPenalty, [
+                    new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.MiningSpeed, ThresholdPercentage = 0 },
                 ]),
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.MiningSpeed, 10, [ new LeveledAttributeMaximumRequirement { Attribute = AttributeModifierDefinitions.MiningSpeed, ThresholdPercentage = 0 } ]),
+                IAttributeModifier.Penalty(AttributeModifierDefinitions.MiningSpeed, 10, [ new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.MiningSpeed, ThresholdPercentage = 0 } ]),
             ],
         };
 
@@ -253,8 +252,8 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "kind",
             Attributes = [
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.AnimalDropRate, 10, [ new LeveledAttributeMaximumRequirement { Attribute = AttributeModifierDefinitions.AnimalDropRate, ThresholdPercentage = 0 } ]),
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.AnimalHarvestRate, 10, [ new LeveledAttributeMaximumRequirement { Attribute = AttributeModifierDefinitions.AnimalHarvestRate, ThresholdPercentage = 0 } ]),
+                IAttributeModifier.Penalty(AttributeModifierDefinitions.AnimalDropRate, 10, [ new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.AnimalDropRate, ThresholdPercentage = 0 } ]),
+                IAttributeModifier.Penalty(AttributeModifierDefinitions.AnimalHarvestRate, 10, [ new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.AnimalHarvestRate, ThresholdPercentage = 0 } ]),
             ]
         };
 

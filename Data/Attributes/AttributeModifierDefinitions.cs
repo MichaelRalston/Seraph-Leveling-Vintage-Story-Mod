@@ -433,6 +433,17 @@ namespace SeraphLeveling.Data.Attributes
             Trait = new(() => Traits.TraitDefinitions.Hardy),
         };
 
+        public static readonly OreRateUnlockedAttributeModifierDefinition ClaustrophobicOrePenalty = new()
+        {
+            Id = "claustrophobicpenalty",
+            SkillKey = "claustrophobic",
+            PersistenceHeader = "COR",
+            Name = "ClaustrophobicOre",
+            ModifierAmount = -0.15f,
+            ModifierIsPercentage = true,
+            Trait = new(() => Traits.TraitDefinitions.Claustrophobic),
+        };
+
         public static readonly OreRateUnlockedAttributeModifierDefinition ClaustrophobicOre = new()
         {
             Id = "claustrophobic",
@@ -440,7 +451,18 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "COR",
             Name = "ClaustrophobicOre",
             ModifierAmount = 0.15f,
+            ModifierIsPercentage = true,
             Trait = new(() => Traits.TraitDefinitions.Claustrophobic),
+        };
+
+        public static readonly MaxHealthUnlockedAttributeModifierDefinition FrailHealthPenalty = new()
+        {
+            Id = "frailhealthpenalty",
+            SkillKey = "frailhealth",
+            PersistenceHeader = "FRH",
+            Name = "FrailHealth",
+            ModifierAmount = -2.5f,
+            Trait = new(() => Traits.TraitDefinitions.Frail),
         };
 
         public static readonly MaxHealthUnlockedAttributeModifierDefinition FrailHealthOffset = new()
@@ -451,6 +473,16 @@ namespace SeraphLeveling.Data.Attributes
             Name = "FrailHealth",
             ModifierAmount = 2.5f,
             Trait = new(() => Traits.TraitDefinitions.Frail),
+        };
+
+        public static readonly MaxHealthUnlockedAttributeModifierDefinition WeakHealthPenalty = new()
+        {
+            Id = "weakhealthpenalty",
+            SkillKey = "weakhealth",
+            PersistenceHeader = "WKH",
+            Name = "WeakHealth",
+            ModifierAmount = -2,
+            Trait = new(() => Traits.TraitDefinitions.Weak),
         };
 
         public static readonly MaxHealthUnlockedAttributeModifierDefinition WeakHealthOffset = new()

@@ -1055,6 +1055,12 @@ namespace SeraphLeveling
                 .RequiresPlayer()
                 .HandleWith(OnTraitAllCommand)
             .EndSubCommand()
+            .BeginSubCommand("list")
+                .WithDescription("View all supported traits for the currently loaded mod set")
+                .RequiresPrivilege(Privilege.chat)
+                .RequiresPlayer()
+                .HandleWith(OnTraitListCommand)
+            .EndSubCommand()
             .BeginSubCommand("soundvolume")
                 .WithDescription("Get or set the level-up ding volume, from 0.0 (silent) to 1.0 (full). Default 0.25. Scale is exponential, so 0.5 is close to 1.0 (admin)")
                 .WithArgs(api.ChatCommands.Parsers.OptionalWord("volume"))
@@ -1284,6 +1290,22 @@ namespace SeraphLeveling
                 definition.GetTraitUnlockableCommandLine(player, sb);
             }
 
+            return TextCommandResult.Success(sb.ToString().TrimEnd());
+        }
+
+        private TextCommandResult OnTraitListCommand(TextCommandCallingArgs args)
+        {
+            var player = args.Caller.Player;
+            if (player?.Entity == null)
+            {
+                return TextCommandResult.Error("Could not find player entity");
+            }
+
+            var sb = new StringBuilder();
+            sb.AppendLine("--- Leveled Traits ---");
+            LoadedAttributes.Where(attr => attr is ILeveledAttributeModifierDefinition).OrderBy(attr => attr.SkillKey).Foreach(attr => sb.AppendLine(attr.SkillKey + ": " + attr.LongDescription));
+            sb.AppendLine("\n--- Unlocked Traits ---");
+            LoadedAttributes.Where(attr => attr is IUnlockedAttributeModifierDefinition).OrderBy(attr => attr.SkillKey).Foreach(attr => sb.AppendLine(attr.SkillKey + ": " + attr.LongDescription));
             return TextCommandResult.Success(sb.ToString().TrimEnd());
         }
 
