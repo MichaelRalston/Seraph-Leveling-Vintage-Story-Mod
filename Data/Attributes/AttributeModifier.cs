@@ -372,6 +372,7 @@ namespace SeraphLeveling.Data.Attributes
     public interface IAttributeModifier
     {
         public ISaveableAttribute Attribute { get; }
+        public ISaveableAttribute DisplayAttribute { get; }
         public int ModifierValue { get; }
         public bool HasRequirements { get; }
         public string DynamicAttributeContentsKey { get; }
@@ -383,7 +384,7 @@ namespace SeraphLeveling.Data.Attributes
         /// <summary>
         /// Get a status string for the attribute modifier's requirements when the player uses the /trait command
         /// </summary>
-        public abstract void CollectRequirementStatus(IPlayer player, StringBuilder sb);
+        public void CollectRequirementStatus(IPlayer player, StringBuilder sb);
 
         public static IAttributeModifier Bonus(ISaveableAttribute attribute, int absModifierValue, List<IAttributeRequirement> unlockWith = null)
         {
@@ -401,6 +402,15 @@ namespace SeraphLeveling.Data.Attributes
                 throw new ArgumentOutOfRangeException(nameof(absModifierValue), absModifierValue, "Modifier value must be given as a positive");
             }
             return new PenaltyInstance(attribute, -absModifierValue, removeWith);
+        }
+
+        public static IAttributeModifier PenaltyOffset(ISaveableAttribute attribute, int absModifierValue, ISaveableAttribute penaltyAttribute, List<IAttributeRequirement> applyWith = null)
+        {
+            if (absModifierValue <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(absModifierValue), absModifierValue, "Modifier value must be given as a positive");
+            }
+            return new PenaltyOffsetInstance(attribute, absModifierValue, penaltyAttribute, applyWith);
         }
 
         private abstract record class BaseInstance : IAttributeModifier
@@ -423,6 +433,7 @@ namespace SeraphLeveling.Data.Attributes
             }
 
             public ISaveableAttribute Attribute { get; init; }
+            public virtual ISaveableAttribute DisplayAttribute => Attribute;
 
             public int ModifierValue { get; init; }
             public abstract bool HasRequirements { get; }
@@ -570,6 +581,59 @@ namespace SeraphLeveling.Data.Attributes
                     // bool hasVanilla = SeraphLevelingModSystem.PlayerHasTrait(player.Entity, unlockedAttr?.Trait?.Value);
                     // retVal = hasVanilla;
                     // DebugLog(true, true, $"   [Verdus] Checking vanilla trait with some remove requirements unsatisfied for attribute {Attribute.Id}: hasVanilla={hasVanilla}, reqCount={RemoveWith.Count}");
+                }
+                DebugLog(true, true, $"[Verdus] Finished calling IsActive for attrmod {Attribute.Id}, active={retVal}");
+                return retVal;
+            }
+        }
+
+        private record class PenaltyOffsetInstance : BaseInstance
+        {
+            private List<IAttributeRequirement> UnlockWith { get; init; }
+            private ISaveableAttribute PenaltyAttribute { get; init; }
+            public override bool HasRequirements => UnlockWith.Count > 0;
+            public override ISaveableAttribute DisplayAttribute => PenaltyAttribute;
+
+            public PenaltyOffsetInstance(ISaveableAttribute attribute, int modifierValue, ISaveableAttribute penaltyAttribute, List<IAttributeRequirement> unlockWith)
+            {
+                Attribute = attribute;
+                ModifierValue = modifierValue;
+                UnlockWith = unlockWith ?? [];
+                UnlockWith.ForEach(req => req.SatisfactionChanged += OnRequirementSatisfactionChanged);
+                PenaltyAttribute = penaltyAttribute;
+            }
+
+            public override void CollectRequirementStatus(IPlayer player, StringBuilder sb)
+            {
+                // Requirement output is specifically for unlocking bonus traits, not removing penalties
+                UnlockWith.ForEach(req => req.CollectStatus(player, sb));
+            }
+
+            public override bool IsActive(IPlayer player, bool hasVanillaTrait)
+            {
+                DebugLog(true, true, $"[Verdus] Calling IsActive for offset requirements for attrmod {Attribute.Id}");
+                foreach (var req in UnlockWith)
+                {
+                    DebugLog(true, true, $"   [Verdus] Req for attribute {req.AttributeId}: curval={req.CurrentValue(player)}, reqval={req.RequiredValue}, satisfied={req.IsSatisfied(player)}");
+                }
+
+                bool retVal;
+                if (player?.Entity == null)
+                {
+                    retVal = false;
+                }
+                else if (UnlockWith.All(req => req.IsSatisfied(player)))
+                {
+                    // If all unlock requirements are met, or none are specified, then DO NOT show anything; the vanilla penalty has been negated
+                    retVal = false;
+                    // retVal = UnlockWith.Count > 0 || Attribute.ShouldDisplay(player.Entity, hasVanillaTrait);
+                    DebugLog(true, true, $"   [Verdus] Checking vanilla trait with all offset requirements satisfied for attribute {Attribute.Id}: hasVanillaTrait={hasVanillaTrait}, reqCount={UnlockWith.Count}");
+                }
+                else
+                {
+                    // Otherwise, show the original penalty
+                    retVal = true;
+                    DebugLog(true, true, $"   [Verdus] Checking vanilla trait with some offset requirements NOT satisfied for attribute {Attribute.Id}: hasVanillaTrait={hasVanillaTrait}, reqCount={UnlockWith.Count}");
                 }
                 DebugLog(true, true, $"[Verdus] Finished calling IsActive for attrmod {Attribute.Id}, active={retVal}");
                 return retVal;

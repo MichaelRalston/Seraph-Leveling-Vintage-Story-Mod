@@ -241,10 +241,10 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "weak",
             Attributes = [
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.WeakHealthOffset, 1, [
-                    new LeveledAttributeMaximumRequirement { Attribute = AttributeModifierDefinitions.MiningSpeed, ThresholdPercentage = 0 },
+                IAttributeModifier.PenaltyOffset(AttributeModifierDefinitions.WeakHealthOffset, 1, AttributeModifierDefinitions.WeakHealthPenalty, [
+                    new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.MiningSpeed, ThresholdPercentage = 0 },
                 ]),
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.MiningSpeed, 10, [ new LeveledAttributeMaximumRequirement { Attribute = AttributeModifierDefinitions.MiningSpeed, ThresholdPercentage = 0 } ]),
+                IAttributeModifier.Penalty(AttributeModifierDefinitions.MiningSpeed, 10, [ new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.MiningSpeed, ThresholdPercentage = 0 } ]),
             ],
         };
 

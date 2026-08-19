@@ -138,10 +138,10 @@ namespace SeraphLeveling.Data.Traits
                 string headerText = Lang.Get(DynamicTraitHeaderKey);
                 string contentText = string.Join(", ", Attributes.Where(mod => mod.IsActive(player.Player, hasVanillaTrait)).Select(mod => {
                     string modKey = mod.DynamicAttributeContentsKey.ToLowerInvariant();
-                    if (combinedAttrBonuses.TryGetValue(mod.Attribute, out string combinedBonus))
+                    if (combinedAttrBonuses.TryGetValue(mod.DisplayAttribute, out string combinedBonus))
                     {
                         string retVal = Lang.Get(modKey, combinedBonus);
-                        DebugLog(true, false, $"      [Verdus] Calling BuildTraitText for trait {Id}: attr={mod.Attribute.Id}, key={mod.DynamicAttributeContentsKey}, lang token={retVal}");
+                        DebugLog(true, false, $"      [Verdus] Calling BuildTraitText for trait {Id}: attr={mod.DisplayAttribute.Id}, key={mod.DynamicAttributeContentsKey}, lang token={retVal}");
                         return DEBUG_SHOW_BROKEN_L10N || retVal != modKey ? retVal : null;
                     }
                     else
@@ -149,12 +149,12 @@ namespace SeraphLeveling.Data.Traits
                         string retVal = Lang.Get(modKey);
                         if (retVal != modKey)
                         {
-                            DebugLog(true, false, $"      [Verdus] Falling back to parameterless text for trait {Id}: attr={mod.Attribute.Id}, lang token={retVal}");
+                            DebugLog(true, false, $"      [Verdus] Falling back to parameterless text for trait {Id}: attr={mod.DisplayAttribute.Id}, lang token={retVal}");
                             return retVal;
                         }
                         else
                         {
-                            DebugLog(true, false, $"      [Verdus] Failed to get localized text for trait {Id}: attr={mod.Attribute.Id}, modKey={modKey}");
+                            DebugLog(true, false, $"      [Verdus] Failed to get localized text for trait {Id}: attr={mod.DisplayAttribute.Id}, modKey={modKey}");
                             return DEBUG_SHOW_BROKEN_L10N ? modKey : null;
                         }
                     }
@@ -206,7 +206,7 @@ namespace SeraphLeveling.Data.Traits
                     }
                     retVal[leveledAttr] = leveledAttr.CalculateDisplayBonus(attrVal);
                 }
-                else if (mod.Attribute is UnlockedStatAttributeModifierDefinition statAttr)
+                else if (mod.DisplayAttribute is UnlockedStatAttributeModifierDefinition statAttr)
                 {
                     // Stat modifier values are always displayed separately, without regard for other stat modifiers
                     float attrVal = statAttr.ModifierAmount;
