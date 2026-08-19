@@ -206,11 +206,12 @@ namespace SeraphLeveling.Data.Traits
                     }
                     retVal[leveledAttr] = leveledAttr.CalculateDisplayBonus(attrVal);
                 }
-                else if (mod.Attribute is MaxHealthUnlockedAttributeModifierDefinition maxHealthAttr)
+                else if (mod.Attribute is UnlockedStatAttributeModifierDefinition statAttr)
                 {
-                    // Max health modifier values are always displayed separately, without regard for other max health modifiers
-                    float attrVal = maxHealthAttr.ModifierAmount;
-                    retVal[maxHealthAttr] = attrVal.ToString("+0;-#");
+                    // Stat modifier values are always displayed separately, without regard for other stat modifiers
+                    float attrVal = statAttr.ModifierAmount;
+                    retVal[statAttr] = attrVal.ToString("+0.#;-#.#");
+                    CharacterSystemPatches.ClientApi.Logger.Debug($"[Verdus] Formatting modifier amount for {statAttr.Id} from {attrVal} as {retVal[statAttr]}");
                 }
             }
             return retVal;
