@@ -440,6 +440,8 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "rancher",
             Attributes = [
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.AnimalHarvestRate, 50),
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.AnimalDropRate, 50),
             ]
         };
 
@@ -454,6 +456,8 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "butcher",
             Attributes = [
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.AnimalHarvestRate, 100),
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.AnimalDropRate, 100),
             ]
         };
 
