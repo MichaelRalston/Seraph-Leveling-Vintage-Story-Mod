@@ -82,7 +82,7 @@ namespace SeraphLeveling.Data.Traits
             // if (HasVanillaTrait(player.Entity)) return;
 
             // Check prerequisites
-            if (Attributes.All(mod => mod.IsActive(player)))
+            if (Attributes.All(mod => mod.ShouldUnlock(player)))
             {
                 DebugLog(false, true, $"[Verdus] All attributes active for trait {Id}!");
                 Attributes.Select(kvp => kvp.Attribute).Foreach(attr => attr.Unlock(player, true));
@@ -122,7 +122,7 @@ namespace SeraphLeveling.Data.Traits
 
         protected virtual bool ShouldDisplay(EntityPlayer player, bool hasVanillaTrait)
         {
-            return Attributes.Any(a => a.IsActive(player.Player, hasVanillaTrait));
+            return Attributes.Any(a => a.ShouldDisplay(player.Player, hasVanillaTrait));
         }
 
         public virtual void BuildTraitText(EntityPlayer player, ref string result)
@@ -136,7 +136,7 @@ namespace SeraphLeveling.Data.Traits
             {
                 var combinedAttrBonuses = GetCombinedAttributeBonuses(player);
                 string headerText = Lang.Get(DynamicTraitHeaderKey);
-                string contentText = string.Join(", ", Attributes.Where(mod => mod.IsActive(player.Player, hasVanillaTrait)).Select(mod => {
+                string contentText = string.Join(", ", Attributes.Where(mod => mod.ShouldDisplay(player.Player, hasVanillaTrait)).Select(mod => {
                     string modKey = mod.DynamicAttributeContentsKey.ToLowerInvariant();
                     if (combinedAttrBonuses.TryGetValue(mod.DisplayAttribute, out string combinedBonus))
                     {
