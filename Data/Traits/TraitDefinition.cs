@@ -38,7 +38,7 @@ namespace SeraphLeveling.Data.Traits
             init
             {
                 field = value;
-                field?.ForEach(mod => mod.ActiveStatusUpdated += OnModifierActiveStatusUpdated);
+                field?.ForEach(PrepareAttributeModifier);
             }
         }
         public virtual string PlainTraitNameKey
@@ -62,6 +62,12 @@ namespace SeraphLeveling.Data.Traits
         ~TraitDefinition()
         {
             Attributes?.ForEach(req => req.ActiveStatusUpdated -= OnModifierActiveStatusUpdated);
+        }
+
+        private void PrepareAttributeModifier(IAttributeModifier mod)
+        {
+            mod.ApplicableTrait = this;
+            mod.ActiveStatusUpdated += OnModifierActiveStatusUpdated;
         }
 
         protected void OnModifierActiveStatusUpdated(IServerPlayer player, bool newValue)

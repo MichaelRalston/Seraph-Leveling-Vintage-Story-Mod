@@ -7,6 +7,7 @@ using Vintagestory.API.Server;
 using Vintagestory.API.Common;
 using System.Linq;
 using SeraphLeveling.Patches;
+using SeraphLeveling.Data.Traits;
 
 namespace SeraphLeveling.Data.Attributes
 {
@@ -376,6 +377,7 @@ namespace SeraphLeveling.Data.Attributes
         public int ModifierValue { get; }
         public bool HasRequirements { get; }
         public string DynamicAttributeContentsKey { get; }
+        public TraitDefinition ApplicableTrait { get; internal set; }
 
         public event ActiveStatusUpdatedDelegate ActiveStatusUpdated;
 
@@ -442,6 +444,7 @@ namespace SeraphLeveling.Data.Attributes
             {
                 get => field ??= $"seraphleveling:attribute-{Attribute.Id}-contents"; init;
             }
+            public TraitDefinition ApplicableTrait { get; set; }
 
             public event ActiveStatusUpdatedDelegate ActiveStatusUpdated;
 
@@ -498,7 +501,7 @@ namespace SeraphLeveling.Data.Attributes
                 }
                 else if (UnlockWith.All(req => req.IsSatisfied(player)))
                 {
-                    // If all unlock requirements are met, or none are specified, then the modifier becomes active
+                    // If all unlock requirements are met, or none are specified but the attribute should be displayed anyway, then the modifier is active
                     retVal = UnlockWith.Count > 0 || Attribute.ShouldDisplay(player.Entity, hasVanillaTrait);
                     DebugLog(true, true, $"   [Verdus] Checking vanilla trait with all unlock requirements satisfied for attribute {Attribute.Id}: hasVanillaTrait={hasVanillaTrait}, reqCount={UnlockWith.Count}");
                 }
@@ -548,34 +551,15 @@ namespace SeraphLeveling.Data.Attributes
                 }
                 else if (RemoveWith.Count > 0 && RemoveWith.All(req => req.IsSatisfied(player)))
                 {
-                    // If all remove requirements are met, then the modifier becomes inactive
+                    // If all remove requirements are met, then the modifier is inactive
                     retVal = false;
                     DebugLog(true, true, $"   [Verdus] Checking vanilla trait with all remove requirements satisfied for attribute {Attribute.Id}: hasVanillaTrait={hasVanillaTrait}, reqCount={RemoveWith.Count}");
                 }
                 else
                 {
-                    // Otherwise, the modifier is active if the attribute should by default be displayed
-                    if (SeraphLevelingModSystem.TraitsForAttributes.TryGetValue(Attribute.Id, out var traitValList))
-                    {
-                        var penaltyTraits = traitValList.Where(tuple => tuple.Value < 0);
-                        string applicableTraits = string.Join(",", penaltyTraits.Select(tuple => tuple.Trait.Id));
-                        DebugLog(true, true, $"   [Verdus] Checking applicable PENALTY traits for attribute {Attribute.Id}: {applicableTraits}");
-                        retVal = false;
-                        foreach ((var traitDef, var traitVal) in penaltyTraits)
-                        {
-                            bool held = SeraphLevelingModSystem.PlayerHasTrait(player.Entity, traitDef);
-                            DebugLog(true, true, $"      [Verdus] Checking PENALTY trait {traitDef.Id} for attribute {Attribute.Id}: {held}");
-                            if (held)
-                            {
-                                retVal = true;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        DebugLog(true, true, $"   [Verdus] No applicable PENALTY traits for attribute {Attribute.Id}!");
-                        retVal = false;
-                    }
+                    // Otherwise, the modifier is active IFF the player has the applicable trait
+                    retVal = SeraphLevelingModSystem.PlayerHasTrait(player.Entity, ApplicableTrait);
+                    DebugLog(true, true, $"      [Verdus] Checking PENALTY trait {ApplicableTrait.Id} for attribute {Attribute.Id}: {retVal}");
                 }
                 DebugLog(true, true, $"[Verdus] Finished calling IsActive for attrmod {Attribute.Id}, active={retVal}");
                 return retVal;
@@ -625,8 +609,8 @@ namespace SeraphLeveling.Data.Attributes
                 }
                 else
                 {
-                    // Otherwise, show the original penalty
-                    retVal = true;
+                    // Otherwise, show the original penalty IFF the player has the applicable trait
+                    retVal = SeraphLevelingModSystem.PlayerHasTrait(player.Entity, ApplicableTrait);
                     DebugLog(true, true, $"   [Verdus] Checking vanilla trait with some offset requirements NOT satisfied for attribute {Attribute.Id}: hasVanillaTrait={hasVanillaTrait}, reqCount={ApplyWith.Count}");
                 }
                 DebugLog(true, true, $"[Verdus] Finished calling IsActive for attrmod {Attribute.Id}, active={retVal}");
@@ -648,8 +632,8 @@ namespace SeraphLeveling.Data.Attributes
                 }
                 else if (ApplyWith.All(req => req.IsSatisfied(player)))
                 {
-                    // If all unlock requirements are met, or none are specified, then we should unlock the offset
-                    retVal = true;
+                    // If all unlock requirements are met, or none are specified, then we should unlock the offset IFF the player has the applicable trait
+                    retVal = SeraphLevelingModSystem.PlayerHasTrait(player.Entity, ApplicableTrait);
                     DebugLog(true, true, $"   [Verdus] Checking vanilla trait with all offset requirements satisfied for attribute {Attribute.Id}: hasVanillaTrait={hasVanillaTrait}, reqCount={ApplyWith.Count}");
                 }
                 else
