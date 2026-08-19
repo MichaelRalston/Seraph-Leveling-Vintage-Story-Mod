@@ -172,6 +172,7 @@
   "attribute-stonedroprate-contents": "{0}% stone drop rate",
   "attribute-seeddroprate-contents": "{0}% tree seed drop rate",
   "attribute-stickdroprate-contents": "{0}% stick drop rate",
+  "attribute-treechoppingspeed-contents": "{0}% tree chopping speed",
   "attribute-wooddroprate-contents": "{0}% wood drop rate",
 
   "attribute-bowyer-contents": "Exclusive craftable <a href=\"handbooksearch://crude bow or crude arrow or recurve bow \">bows and arrows</a>",

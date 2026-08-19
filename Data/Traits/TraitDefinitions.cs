@@ -261,6 +261,10 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "carpenter",
             Attributes = [
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.Carpenter, 1, [
+                    new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Carpenter },
+                    new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.TreeChoppingSpeed, ThresholdPercentage = 10 },
+                ])
             ],
         };
 
@@ -268,6 +272,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "lumberjack",
             Attributes = [
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.TreeChoppingSpeed, 120),
             ]
         };
 

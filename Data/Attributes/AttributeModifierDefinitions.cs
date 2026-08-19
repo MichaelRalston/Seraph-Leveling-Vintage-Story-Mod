@@ -572,5 +572,41 @@ namespace SeraphLeveling.Data.Attributes
             IncrementData = ArmorWornIncrementData,
             GlobalMaxCredits = 25,
         };
+
+        public static readonly CarpenterAttributeModifierDefinition Carpenter = new()
+        {
+            Id = "carpenter",
+            SkillKey = "carpenter",
+            PersistenceHeader = "CRP",
+            Name = "Carpenter",
+            GlobalMaxCredits = 120,
+            CreditDescription = "boards",
+            WatchedCreditsAttributeKey = "sitCarpenterBoards",
+            Trait = new(() => Traits.TraitDefinitions.Carpenter),
+        };
+
+        public static readonly ConcurrentDictionary<SimpleToolProgress, IncrementData> TreeChoppingIncrementData = new()
+        {
+            [default] = new IncrementData
+            {
+                IncrementUnits = "trees",
+                BaseIncrement = 100,
+                IncrementStep = 100,
+            }
+        };
+
+        public static readonly MiningAttributeModifierDefinition TreeChoppingSpeed = new()
+        {
+            Id = "treeChoppingSpeed",
+            SkillKey = "treechopping",
+            Name = "Tree Chopping",
+            Stat = "% chopping speed",
+            LongDescription = "chopping speed",
+            PersistenceHeader = "TRC",
+            Tool = ToolDefinitions.Axe,
+            IncrementData = TreeChoppingIncrementData,
+            GlobalMaxCredits = 150,
+            StatName = "ats:wood|axe-?-harvestSpeed"
+        };
     }
 }
