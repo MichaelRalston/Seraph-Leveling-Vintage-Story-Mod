@@ -2124,6 +2124,12 @@ namespace SeraphLeveling
                 ProcessVesselBreak(byPlayer);
             }
 
+            // Check for Pitmaster progression (ready-to-harvest pit charcoal)
+            if (IsCharcoalPile(oldblockId, out int charcoalPoints))
+            {
+                ProcessCharcoalBreak(byPlayer, charcoalPoints);
+            }
+
             string playerUid = byPlayer.PlayerUID;
 
             // Check if player is using a tool for progression
@@ -5859,6 +5865,14 @@ namespace SeraphLeveling
             AttributeModifierDefinitions.WholeVesselRate.GetForPlayer(playerUid).DoEvent(player, PILFERER_VESSEL_POINTS);
         }
 
+        private static void ProcessCharcoalBreak(IServerPlayer player, int pointValue)
+        {
+            if (player?.Entity == null) return;
+
+            string playerUid = player.PlayerUID;
+
+            AttributeModifierDefinitions.CharcoalDropRate.GetForPlayer(playerUid).DoEvent(player, pointValue);
+        }
 
         /// <summary>
         /// Process animal harvested (called from Harmony patch when player harvests an animal).
@@ -5968,6 +5982,34 @@ namespace SeraphLeveling
 
             // Only loot vessels (cracked vessels) count - they don't drop themselves when broken
             if (blockCode.Contains("lootvessel")) return true;
+
+            return false;
+        }
+
+        private static bool IsCharcoalPile(int blockId, out int points)
+        {
+            // Set a default points output value for failure cases
+            points = 0;
+
+            if (ServerApi == null) return false;
+
+            Block block = ServerApi.World.GetBlock(blockId);
+            if (block == null) return false;
+
+            string blockCode = block.Code?.ToString()?.ToLowerInvariant();
+            if (string.IsNullOrEmpty(blockCode)) return false;
+
+            // Only charcoal piles from charcoal pits count - extract the point value from the number of charcoal in the pile by default
+            const string PREFIX = "charcoalpile-";
+            if (blockCode.StartsWith(PREFIX))
+            {
+                if (!int.TryParse(blockCode[PREFIX.Length..], out points))
+                {
+                    // If for some reason parsing of the block code fails, default to one point
+                    points = 1;
+                }
+                return true;
+            }
 
             return false;
         }

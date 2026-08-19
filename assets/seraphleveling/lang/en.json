@@ -170,6 +170,7 @@
 
   "attribute-axedamage-contents": "{0}% axe damage",
   "attribute-axedurability-contents": "{0}% axe durability",
+  "attribute-charcoaldroprate-contents": "{0}% charcoal drop rate",
   "attribute-oredroprate-contents": "{0}% ore drop rate",
   "attribute-stonedroprate-contents": "{0}% stone drop rate",
   "attribute-seeddroprate-contents": "{0}% tree seed drop rate",

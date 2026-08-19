@@ -275,7 +275,7 @@ namespace SeraphLeveling.Data.Traits
                 IAttributeModifier.Bonus(AttributeModifierDefinitions.TreeChoppingSpeed, 120),
                 IAttributeModifier.Bonus(AttributeModifierDefinitions.AxeDamage, 75),
                 IAttributeModifier.Bonus(AttributeModifierDefinitions.AxeDurability, 70),
-                // TODO Charcoal drop rate
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.CharcoalDropRate, 20),
             ]
         };
 

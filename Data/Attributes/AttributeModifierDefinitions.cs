@@ -637,5 +637,19 @@ namespace SeraphLeveling.Data.Attributes
             IncrementData = TreeChoppingIncrementData,
             GlobalMaxCredits = 75,
         };
+
+        public static readonly GenericLeveledAttributeModifierDefinition CharcoalDropRate = new()
+        {
+            Id = "charcoalDropRate",
+            Name = "CharcoalDropRate",
+            SkillKey = "charcoalrate",
+            PersistenceHeader = "CDR",
+            Stat = "% bonus charcoal drop rate",
+            IncrementUnits = "pit charcoal harvested",
+            BaseIncrement = 50,
+            IncrementStep = 50,
+            GlobalMaxCredits = 20,
+            StatName = "sacredlib:charcoalDropRate",
+        };
     }
 }
