@@ -14,22 +14,6 @@ namespace SeraphLeveling.Data.Traits
     public record class TraitDefinition
     {
         private const bool DEBUG_SHOW_BROKEN_L10N = true;
-        private static readonly List<string> DebugTraits = ["*"];
-
-        private void DebugLog(bool client, bool server, string message)
-        {
-            if (DebugTraits.Contains("*") || DebugTraits.Contains(Id.ToLowerInvariant()))
-            {
-                if (client)
-                {
-                    CharacterSystemPatches.ClientApi.Logger.Debug(message);
-                }
-                if (server)
-                {
-                    SeraphLevelingModSystem.ServerApi.Logger.Debug(message);
-                }
-            }
-        }
 
         public required string Id { get; init; }
         public required List<IAttributeModifier> Attributes
@@ -72,7 +56,6 @@ namespace SeraphLeveling.Data.Traits
 
         protected void OnModifierActiveStatusUpdated(IServerPlayer player, bool newValue)
         {
-            DebugLog(false, true, $"[Verdus] Calling OnModifierActiveStatusUpdated for trait {Id} with newValue={newValue}");
             CheckUnlocks(player);
         }
 
@@ -90,13 +73,8 @@ namespace SeraphLeveling.Data.Traits
             // Check prerequisites
             if (Attributes.All(mod => mod.ShouldUnlock(player)))
             {
-                DebugLog(false, true, $"[Verdus] All attributes active for trait {Id}!");
                 Attributes.Select(kvp => kvp.Attribute).Foreach(attr => attr.Unlock(player, true));
                 UnlockChanged?.Invoke(player, false, true);
-            }
-            else
-            {
-                DebugLog(false, true, $"[Verdus] Not all attributes active for trait {Id}");
             }
         }
 
@@ -137,7 +115,6 @@ namespace SeraphLeveling.Data.Traits
             bool shouldDisplay = ShouldDisplay(player, hasVanillaTrait);
             bool hasEarnedProgress = HasEarnedProgress(player);
 
-            DebugLog(true, false, $"[Verdus] Calling BuildTraitText for trait {Id}: shouldDisplay={shouldDisplay}, hasVanillaTrait={hasVanillaTrait}");
             if (shouldDisplay)
             {
                 var combinedAttrBonuses = GetCombinedAttributeBonuses(player);
@@ -153,7 +130,6 @@ namespace SeraphLeveling.Data.Traits
                         else
                         {
                             string retVal = Lang.Get(modKey, combinedBonus);
-                            DebugLog(true, false, $"      [Verdus] Calling BuildTraitText for trait {Id}: attr={mod.DisplayAttribute.Id}, key={mod.DynamicAttributeContentsKey}, lang token={retVal}");
                             return DEBUG_SHOW_BROKEN_L10N || retVal != modKey ? retVal : null;
                         }
                     }
@@ -162,21 +138,16 @@ namespace SeraphLeveling.Data.Traits
                         string retVal = Lang.Get(modKey);
                         if (retVal != modKey)
                         {
-                            DebugLog(true, false, $"      [Verdus] Falling back to parameterless text for trait {Id}: attr={mod.DisplayAttribute.Id}, lang token={retVal}");
                             return retVal;
                         }
                         else
                         {
-                            DebugLog(true, false, $"      [Verdus] Failed to get localized text for trait {Id}: attr={mod.DisplayAttribute.Id}, modKey={modKey}");
                             return DEBUG_SHOW_BROKEN_L10N ? modKey : null;
                         }
                     }
                 }).Where(token => token != null));
                 string fullMessage = string.IsNullOrEmpty(contentText) ? "" : Lang.Get(CharacterSystemPatches.FULL_TRAIT_MESSAGE_KEY, headerText, contentText);
                 bool messageComplete = DEBUG_SHOW_BROKEN_L10N || fullMessage != CharacterSystemPatches.FULL_TRAIT_MESSAGE_KEY;
-                DebugLog(true, false, $"   [Verdus] Calling BuildTraitText for trait {Id}: headerText={headerText}");
-                DebugLog(true, false, $"   [Verdus] Calling BuildTraitText for trait {Id}: contentText={contentText}");
-                DebugLog(true, false, $"   [Verdus] Calling BuildTraitText for trait {Id}: fullMessage={fullMessage}");
                 if (messageComplete)
                 {
                     if (hasVanillaTrait)
@@ -224,7 +195,6 @@ namespace SeraphLeveling.Data.Traits
                     // Stat modifier values are always displayed separately, without regard for other stat modifiers
                     float attrVal = statAttr.ModifierAmount;
                     retVal[statAttr] = statAttr.ModifierIsPercentage ? attrVal.ToString("+0.#%;-#.#%") : attrVal.ToString("+0.#;-#.#");
-                    CharacterSystemPatches.ClientApi.Logger.Debug($"[Verdus] Formatting modifier amount for {statAttr.Id} from {attrVal} as {retVal[statAttr]}");
                 }
             }
             return retVal;

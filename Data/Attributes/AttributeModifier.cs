@@ -420,23 +420,6 @@ namespace SeraphLeveling.Data.Attributes
 
         private abstract record class BaseInstance : IAttributeModifier
         {
-            private static readonly List<string> DebugAttributes = ["*"];
-
-            protected void DebugLog(bool client, bool server, string message)
-            {
-                if (DebugAttributes.Contains("*") || DebugAttributes.Contains(Attribute.Id.ToLowerInvariant()))
-                {
-                    if (client)
-                    {
-                        CharacterSystemPatches.ClientApi.Logger.Debug(message);
-                    }
-                    if (server)
-                    {
-                        SeraphLevelingModSystem.ServerApi.Logger.Debug(message);
-                    }
-                }
-            }
-
             public ISaveableAttribute Attribute { get; init; }
             public virtual ISaveableAttribute DisplayAttribute => Attribute;
 
@@ -458,7 +441,9 @@ namespace SeraphLeveling.Data.Attributes
             protected void OnRequirementSatisfactionChanged(IServerPlayer player, bool oldValue, bool newValue)
             {
                 var active = ShouldUnlock(player, false);
-                DebugLog(false, true, $"[Verdus] Satisfaction of one of {Attribute.Id} modifier requirements has changed from {oldValue} to {newValue}; active status should now be {active}");
+#if SPAMMYDEBUG
+                SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Satisfaction of one of {Attribute.Id} modifier requirements has changed from {oldValue} to {newValue}; active status should now be {active}");
+#endif
                 if ((oldValue != newValue) && active)
                 {
                     Attribute.Unlock(player, true);
@@ -492,12 +477,6 @@ namespace SeraphLeveling.Data.Attributes
 
             protected bool IsActive(IPlayer player, bool hasVanillaTrait)
             {
-                DebugLog(true, true, $"[Verdus] Calling IsActive for unlock requirements for attrmod {Attribute.Id}");
-                foreach (var req in UnlockWith)
-                {
-                    DebugLog(true, true, $"   [Verdus] Req for attribute {req.AttributeId}: curval={req.CurrentValue(player)}, reqval={req.RequiredValue}, satisfied={req.IsSatisfied(player)}");
-                }
-
                 bool retVal;
                 if (player?.Entity == null)
                 {
@@ -507,14 +486,12 @@ namespace SeraphLeveling.Data.Attributes
                 {
                     // If all unlock requirements are met, or none are specified but the attribute should be displayed anyway, then the modifier is active
                     retVal = UnlockWith.Count > 0 || Attribute.ShouldDisplay(player.Entity, hasVanillaTrait);
-                    DebugLog(true, true, $"   [Verdus] Checking vanilla trait with all unlock requirements satisfied for attribute {Attribute.Id}: hasVanillaTrait={hasVanillaTrait}, reqCount={UnlockWith.Count}");
                 }
                 else
                 {
                     // Otherwise, the modifier is inactive
                     retVal = false;
                 }
-                DebugLog(true, true, $"[Verdus] Finished calling IsActive for attrmod {Attribute.Id}, active={retVal}");
                 return retVal;
             }
         }
@@ -543,12 +520,6 @@ namespace SeraphLeveling.Data.Attributes
 
             protected bool IsActive(IPlayer player, bool hasVanillaTrait)
             {
-                DebugLog(true, true, $"[Verdus] Calling IsActive for remove requirements for attrmod {Attribute.Id}");
-                foreach (var req in RemoveWith)
-                {
-                    DebugLog(true, true, $"   [Verdus] Req for attribute {req.AttributeId}: curval={req.CurrentValue(player)}, reqval={req.RequiredValue}, satisfied={req.IsSatisfied(player)}");
-                }
-
                 bool retVal;
                 if (player?.Entity == null)
                 {
@@ -558,15 +529,12 @@ namespace SeraphLeveling.Data.Attributes
                 {
                     // If all remove requirements are met, then the modifier is inactive
                     retVal = false;
-                    DebugLog(true, true, $"   [Verdus] Checking vanilla trait with all remove requirements satisfied for attribute {Attribute.Id}: hasVanillaTrait={hasVanillaTrait}, reqCount={RemoveWith.Count}");
                 }
                 else
                 {
                     // Otherwise, the modifier is active IFF the player has the applicable trait
                     retVal = SeraphLevelingModSystem.PlayerHasTrait(player.Entity, ApplicableTrait);
-                    DebugLog(true, true, $"      [Verdus] Checking PENALTY trait {ApplicableTrait.Id} for attribute {Attribute.Id}: {retVal}");
                 }
-                DebugLog(true, true, $"[Verdus] Finished calling IsActive for attrmod {Attribute.Id}, active={retVal}");
                 return retVal;
             }
         }
@@ -597,12 +565,6 @@ namespace SeraphLeveling.Data.Attributes
 
             public override bool ShouldDisplay(IPlayer player, bool hasVanillaTrait = false)
             {
-                DebugLog(true, true, $"[Verdus] Calling IsActive for offset requirements for attrmod {Attribute.Id}");
-                foreach (var req in ApplyWith)
-                {
-                    DebugLog(true, true, $"   [Verdus] Req for attribute {req.AttributeId}: curval={req.CurrentValue(player)}, reqval={req.RequiredValue}, satisfied={req.IsSatisfied(player)}");
-                }
-
                 bool retVal;
                 if (player?.Entity == null)
                 {
@@ -612,26 +574,17 @@ namespace SeraphLeveling.Data.Attributes
                 {
                     // If all unlock requirements are met, or none are specified, then DO NOT show anything; the vanilla penalty has been negated
                     retVal = false;
-                    DebugLog(true, true, $"   [Verdus] Checking vanilla trait with all offset requirements satisfied for attribute {Attribute.Id}: hasVanillaTrait={hasVanillaTrait}, reqCount={ApplyWith.Count}");
                 }
                 else
                 {
                     // Otherwise, show the original penalty IFF the player has the applicable trait
                     retVal = SeraphLevelingModSystem.PlayerHasTrait(player.Entity, ApplicableTrait);
-                    DebugLog(true, true, $"   [Verdus] Checking vanilla trait with some offset requirements NOT satisfied for attribute {Attribute.Id}: hasVanillaTrait={hasVanillaTrait}, reqCount={ApplyWith.Count}");
                 }
-                DebugLog(true, true, $"[Verdus] Finished calling IsActive for attrmod {Attribute.Id}, active={retVal}");
                 return retVal;
             }
 
             public override bool ShouldUnlock(IPlayer player, bool hasVanillaTrait = false)
             {
-                DebugLog(true, true, $"[Verdus] Calling IsActive for offset requirements for attrmod {Attribute.Id}");
-                foreach (var req in ApplyWith)
-                {
-                    DebugLog(true, true, $"   [Verdus] Req for attribute {req.AttributeId}: curval={req.CurrentValue(player)}, reqval={req.RequiredValue}, satisfied={req.IsSatisfied(player)}");
-                }
-
                 bool retVal;
                 if (player?.Entity == null)
                 {
@@ -641,15 +594,12 @@ namespace SeraphLeveling.Data.Attributes
                 {
                     // If all unlock requirements are met, or none are specified, then we should unlock the offset IFF the player has the applicable trait
                     retVal = SeraphLevelingModSystem.PlayerHasTrait(player.Entity, ApplicableTrait);
-                    DebugLog(true, true, $"   [Verdus] Checking vanilla trait with all offset requirements satisfied for attribute {Attribute.Id}: hasVanillaTrait={hasVanillaTrait}, reqCount={ApplyWith.Count}");
                 }
                 else
                 {
                     // Otherwise, don't unlock the offset
                     retVal = false;
-                    DebugLog(true, true, $"   [Verdus] Checking vanilla trait with some offset requirements NOT satisfied for attribute {Attribute.Id}: hasVanillaTrait={hasVanillaTrait}, reqCount={ApplyWith.Count}");
                 }
-                DebugLog(true, true, $"[Verdus] Finished calling IsActive for attrmod {Attribute.Id}, active={retVal}");
                 return retVal;
             }
         }
