@@ -1,0 +1,8 @@
+[
+  {
+    "op": "addmerge",
+    "path": "/dropsByType/*/0/dropModbyStat",
+    "value": "sacredlib:stoneDropRate",
+    "file": "game:blocktypes/stone/rock.json"
+  }
+]

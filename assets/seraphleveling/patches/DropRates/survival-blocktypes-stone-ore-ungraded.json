@@ -1,0 +1,32 @@
+[
+  {
+    "op": "addmerge",
+    "path": "/dropsByType/ore-quartz-*/0/dropModByStat",
+    "value": "sacredlib:stoneDropRate",
+    "file": "game:blocktypes/stone/ore-ungraded.json"
+  },
+  {
+    "op": "addmerge",
+    "path": "/dropsByType/ore-quartz-*/1/dropModByStat",
+    "value": "sacredlib:stoneDropRate",
+    "file": "game:blocktypes/stone/ore-ungraded.json"
+  },
+  {
+    "op": "addmerge",
+    "path": "/dropsByType/ore-flint-*/0/dropModByStat",
+    "value": "sacredlib:stoneDropRate",
+    "file": "game:blocktypes/stone/ore-ungraded.json"
+  },
+  {
+    "op": "addmerge",
+    "path": "/dropsByType/ore-sylvite-*/0/dropModByStat",
+    "value": "sacredlib:stoneDropRate",
+    "file": "game:blocktypes/stone/ore-ungraded.json"
+  },
+  {
+    "op": "addmerge",
+    "path": "/dropsByType/*/0/dropModByStat",
+    "value": "sacredlib:stoneDropRate",
+    "file": "game:blocktypes/stone/ore-ungraded.json"
+  }
+]

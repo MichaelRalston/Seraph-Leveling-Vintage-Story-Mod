@@ -1,0 +1,52 @@
+[
+    {
+      "op": "addmerge",
+      "path": "/dropsByType/ore-low-*/0/dropModByStat",
+      "value": "sacredlib:oreDropRate",
+      "file": "game:blocktypes/stone/ore-gem.json"
+    },
+    {
+      "op": "addmerge",
+      "path": "/dropsByType/ore-low-*/1/dropModByStat",
+      "value": "sacredlib:oreDropRate",
+      "file": "game:blocktypes/stone/ore-gem.json"
+    },
+
+    {
+      "op": "addmerge",
+      "path": "/dropsByType/ore-medium-*/0/dropModByStat",
+      "value": "sacredlib:oreDropRate",
+      "file": "game:blocktypes/stone/ore-gem.json"
+    },
+    {
+      "op": "addmerge",
+      "path": "/dropsByType/ore-medium-*/1/dropModByStat",
+      "value": "sacredlib:oreDropRate",
+      "file": "game:blocktypes/stone/ore-gem.json"
+    },
+    {
+      "op": "addmerge",
+      "path": "/dropsByType/ore-medium-*/2/dropModByStat",
+      "value": "sacredlib:oreDropRate",
+      "file": "game:blocktypes/stone/ore-gem.json"
+    },
+
+    {
+      "op": "addmerge",
+      "path": "/dropsByType/ore-high-*/0/dropModByStat",
+      "value": "sacredlib:oreDropRate",
+      "file": "game:blocktypes/stone/ore-gem.json"
+    },
+    {
+      "op": "addmerge",
+      "path": "/dropsByType/ore-high-*/1/dropModByStat",
+      "value": "sacredlib:oreDropRate",
+      "file": "game:blocktypes/stone/ore-gem.json"
+    },
+    {
+      "op": "addmerge",
+      "path": "/dropsByType/ore-high-*/2/dropModByStat",
+      "value": "sacredlib:oreDropRate",
+      "file": "game:blocktypes/stone/ore-gem.json"
+    }
+  ]
