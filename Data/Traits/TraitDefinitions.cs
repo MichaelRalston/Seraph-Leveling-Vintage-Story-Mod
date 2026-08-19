@@ -293,8 +293,8 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "heavyfooted",
             Attributes = [
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.Furtive, 50, [ new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.Furtive, ThresholdPercentage = 0 }]),
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.WalkingSpeed, 10, [ new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.WalkingSpeed, ThresholdPercentage = 0 }]),
+                IAttributeModifier.BasicPenalty(AttributeModifierDefinitions.Furtive, 50),
+                IAttributeModifier.BasicPenalty(AttributeModifierDefinitions.WalkingSpeed, 10),
             ]
         };
 

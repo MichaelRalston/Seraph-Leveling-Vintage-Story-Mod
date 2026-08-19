@@ -409,6 +409,17 @@ namespace SeraphLeveling.Data.Attributes
             return new PenaltyInstance(attribute, -absModifierValue, removeWith);
         }
 
+        public static IAttributeModifier BasicPenalty(ILeveledAttributeModifierDefinition attribute, int absModifierValue)
+        {
+            if (absModifierValue <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(absModifierValue), absModifierValue, "Modifier value must be given as a positive");
+            }
+            return new PenaltyInstance(attribute, -absModifierValue, [
+                new LeveledAttributeMinimumRequirement { Attribute = attribute, ThresholdPercentage = 0 },
+            ]);
+        }
+
         public static IAttributeModifier PenaltyOffset(ISaveableAttribute attribute, int absModifierValue, ISaveableAttribute penaltyAttribute, List<IAttributeRequirement> applyWith = null)
         {
             if (absModifierValue <= 0)
