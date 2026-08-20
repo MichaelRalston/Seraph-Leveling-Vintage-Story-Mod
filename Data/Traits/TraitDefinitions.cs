@@ -425,6 +425,8 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "engineer",
             Attributes = [
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.GearDropRate, 200),
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.Precise, 300),
             ]
         };
 
