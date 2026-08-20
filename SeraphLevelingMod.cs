@@ -3413,19 +3413,19 @@ namespace SeraphLeveling
                 Conversion.PortData<DamageAttributeModifierDefinition, DamageAttributeModifierProgressData>(legacyRangedDamage, AttributeModifierDefinitions.RangedDistance, ServerApi);
                 var legacyForager = new GenericLeveledAttributeModifierDefinition
                 {
-                    Id = AttributeModifierDefinitions.LootingBonus.Id,
+                    Id = AttributeModifierDefinitions.ForageLootingBonus.Id,
                     Name = "Forager",
                     PersistenceHeader = "FRG",
                     SkillKey = "foragerlegacy",
                     SaveKey = "sitForagerProgress",
-                    GlobalMaxCredits = AttributeModifierDefinitions.LootingBonus.GlobalMaxCredits,
-                    Stat = AttributeModifierDefinitions.LootingBonus.Stat,
-                    StatName = AttributeModifierDefinitions.LootingBonus.StatName,
-                    BaseIncrement = AttributeModifierDefinitions.LootingBonus.BaseIncrement,
-                    IncrementStep = AttributeModifierDefinitions.LootingBonus.IncrementStep,
-                    IncrementUnits = AttributeModifierDefinitions.LootingBonus.IncrementUnits,
+                    GlobalMaxCredits = AttributeModifierDefinitions.ForageLootingBonus.GlobalMaxCredits,
+                    Stat = AttributeModifierDefinitions.ForageLootingBonus.Stat,
+                    StatName = AttributeModifierDefinitions.ForageLootingBonus.StatName,
+                    BaseIncrement = AttributeModifierDefinitions.ForageLootingBonus.BaseIncrement,
+                    IncrementStep = AttributeModifierDefinitions.ForageLootingBonus.IncrementStep,
+                    IncrementUnits = AttributeModifierDefinitions.ForageLootingBonus.IncrementUnits,
                 };
-                Conversion.PortData<LeveledPartialAttributeModifierDefinition, LeveledPartialAttributeModifierProgressData>(legacyForager, AttributeModifierDefinitions.LootingBonus, ServerApi);
+                Conversion.PortData<LeveledPartialAttributeModifierDefinition, LeveledPartialAttributeModifierProgressData>(legacyForager, AttributeModifierDefinitions.ForageLootingBonus, ServerApi);
                 Conversion.PortData<LeveledPartialAttributeModifierDefinition, LeveledPartialAttributeModifierProgressData>(legacyForager, AttributeModifierDefinitions.WildCropDropRate, ServerApi);
                 var legacyResourceful = new GenericLeveledAttributeModifierDefinition
                 {
@@ -4689,7 +4689,7 @@ namespace SeraphLeveling
             AppendDecayStatus(sb, "Animal Harvest Rate", "animalharvester", playerUid, currentDay,
                 () => AttributeModifierDefinitions.AnimalHarvestRate.ProgressDictionary.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
             AppendDecayStatus(sb, "Looting Bonus", "foragerlooting", playerUid, currentDay,
-                () => AttributeModifierDefinitions.LootingBonus.ProgressDictionary.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
+                () => AttributeModifierDefinitions.ForageLootingBonus.ProgressDictionary.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
             AppendDecayStatus(sb, "Crop Drop Rate", "forager", playerUid, currentDay,
                 () => AttributeModifierDefinitions.WildCropDropRate.ProgressDictionary.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
 
@@ -5931,7 +5931,7 @@ namespace SeraphLeveling
             if (player?.Entity == null) return;
             string playerUid = player.PlayerUID;
 
-            AttributeModifierDefinitions.LootingBonus.GetForPlayer(playerUid).DoEvent(player, 1);
+            AttributeModifierDefinitions.ForageLootingBonus.GetForPlayer(playerUid).DoEvent(player, 1);
             AttributeModifierDefinitions.WildCropDropRate.GetForPlayer(playerUid).DoEvent(player, 1);
         }
 

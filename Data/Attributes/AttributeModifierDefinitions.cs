@@ -96,7 +96,7 @@ namespace SeraphLeveling.Data.Attributes
             StatName = "hungerrate",
         };
 
-        public static readonly GenericLeveledAttributeModifierDefinition LootingBonus = new()
+        public static readonly GenericLeveledAttributeModifierDefinition ForageLootingBonus = new()
         {
             Id = "forageLooting",
             SkillKey = "foragerlooting",

@@ -67,7 +67,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "forager",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.LootingBonus, 10),
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.ForageLootingBonus, 10),
                 IAttributeModifier.Bonus(AttributeModifierDefinitions.WildCropDropRate, 20),
             ]
         };
@@ -208,7 +208,7 @@ namespace SeraphLeveling.Data.Traits
             Id = "heavyhanded",
             Attributes = [
                 IAttributeModifier.Penalty(AttributeModifierDefinitions.VesselDropRate, 10, [ new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.VesselDropRate, ThresholdPercentage = 0 }]),
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.LootingBonus, 15, [ new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.LootingBonus, ThresholdPercentage = 0 }]),
+                IAttributeModifier.Penalty(AttributeModifierDefinitions.ForageLootingBonus, 15, [ new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.ForageLootingBonus, ThresholdPercentage = 0 }]),
                 IAttributeModifier.Penalty(AttributeModifierDefinitions.WildCropDropRate, 20, [ new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.WildCropDropRate, ThresholdPercentage = 0 }]),
             ]
         };
@@ -233,7 +233,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "civil",
             Attributes = [
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.LootingBonus, 10, [ new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.LootingBonus, ThresholdPercentage = 0 } ]),
+                IAttributeModifier.Penalty(AttributeModifierDefinitions.ForageLootingBonus, 10, [ new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.ForageLootingBonus, ThresholdPercentage = 0 } ]),
             ]
         };
 
