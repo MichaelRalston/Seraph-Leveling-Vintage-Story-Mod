@@ -2247,9 +2247,37 @@ namespace SeraphLeveling
                 if (distance < 0.01f || distance > MAX_DISTANCE_PER_TICK) continue;
 
                 // Get or create player progress data
-                var playerProgress = AttributeModifierDefinitions.WalkingSpeed.GetForPlayer(playerUid);
-                playerProgress.DoEvent(player, distance);
+                AttributeModifierDefinitions.WalkingSpeed.GetForPlayer(playerUid).DoEvent(player, distance);
+
+                if (IsStandingOnPath(player.Entity))
+                {
+                    AttributeModifierDefinitions.Townie.GetForPlayer(playerUid).DoEvent(player, distance);
+                }
+
             }
+        }
+
+        private bool IsStandingOnPath(EntityPlayer entity)
+        {
+            BlockPos feetPos = new BlockPos(
+                (int)Math.Floor(entity.Pos.X),
+                (int)Math.Floor(entity.Pos.Y - 0.05),
+                (int)Math.Floor(entity.Pos.Z)
+            );
+
+            BlockPos belowPos = feetPos.DownCopy();
+
+            return IsPathBlock(feetPos) || IsPathBlock(belowPos);
+        }
+
+        private bool IsPathBlock(BlockPos pos)
+        {
+            Block block = ServerApi.World.BlockAccessor.GetBlock(pos);
+            if (block?.Code == null) return false;
+
+            string code = block.Code.ToString().ToLowerInvariant();
+
+            return code.Contains("path");
         }
 
         /// <summary>

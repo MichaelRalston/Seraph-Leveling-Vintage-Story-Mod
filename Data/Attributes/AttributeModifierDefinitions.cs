@@ -64,6 +64,21 @@ namespace SeraphLeveling.Data.Attributes
             StatName = "walkspeed",
         };
 
+        public static readonly GenericLeveledAttributeModifierDefinition Townie = new()
+        {
+            Id = "townie",
+            SkillKey = "townie",
+            PersistenceHeader = "TOW",
+            Name = "Townie",
+            Stat = "% speed on path",
+            LongDescription = "walking speed on path",
+            IncrementUnits = "blocks",
+            BaseIncrement = 250,
+            IncrementStep = 250,
+            GlobalMaxCredits = 15,
+            StatName = "sacredlib:onTheRoad",
+        };
+
         public static readonly GenericLeveledAttributeModifierDefinition Furtive = new()
         {
             Id = "furtive",

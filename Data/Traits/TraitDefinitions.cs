@@ -348,6 +348,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "townie",
             Attributes = [
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.Townie, 10),
             ]
         };
 
