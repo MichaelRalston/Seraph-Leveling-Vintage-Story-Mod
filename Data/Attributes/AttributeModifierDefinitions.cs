@@ -761,5 +761,17 @@ namespace SeraphLeveling.Data.Attributes
             GlobalMaxCredits = 75,
             StatName = "ats:healitemusetime"
         };
+
+        public static readonly AlchemistAttributeModifierDefinition Alchemist = new()
+        {
+            Id = "alchemist",
+            SkillKey = "alchemist",
+            PersistenceHeader = "ALC",
+            Name = "Alchemist",
+            GlobalMaxCredits = 40,
+            CreditDescription = "poultices",
+            WatchedCreditsAttributeKey = "sitAlchemistPoultices",
+            Trait = new(() => Traits.TraitDefinitions.Alchemist),
+        };
     }
 }

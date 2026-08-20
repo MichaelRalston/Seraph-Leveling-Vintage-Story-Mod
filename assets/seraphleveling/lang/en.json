@@ -190,10 +190,12 @@
   "attribute-technical-contents": "-1 temporal gear cost to repair translocators",
   "attribute-tinkerer-contents": "Exclusive craftable <a href=\"handbooksearch://tuning spear\">device</a> to tame locusts",
 
+  "attribute-alchemist-contents": "Exclusive craftable <a href=\"handbooksearch://medicine or blasting powder\">medicines</a>",
   "attribute-carpenter-contents": "Exclusive craftable <a href=\"handbooksearch://board or quarter logs or support beams\">construction material</a>",
   "attribute-mason-contents": "Exclusive craftable <a href=\"handbooksearch://cobblestone or ashlar block\">stonework items</a>",
   "attribute-technician-contents": "Exclusive craftable <a href=\"handbooksearch://large gear\">cheaper mechanical parts</a>",
 
+  "message-alchemist-unlock": "Alchemist unlocked! You are now more proficient with medicinal compounds.",
   "message-carpenter-unlock": "Carpenter unlocked! You are now better at crafting with wood.",
   "message-mason-unlock": "Mason unlocked! You are now better at crafting with stone.",
   "message-technician-unlock": "Technician unlocked! You are now better at crafting machinery."

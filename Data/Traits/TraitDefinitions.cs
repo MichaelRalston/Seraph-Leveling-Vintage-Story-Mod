@@ -364,6 +364,10 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "alchemist",
             Attributes = [
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.Alchemist, 1, [
+                    new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Alchemist },
+                    new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.HealUseSpeed, ThresholdPercentage = 10 },
+                ])
             ],
         };
 
