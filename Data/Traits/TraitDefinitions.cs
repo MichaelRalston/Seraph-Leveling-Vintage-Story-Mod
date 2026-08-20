@@ -387,6 +387,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "medic",
             Attributes = [
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.HealUseSpeed, 70),
             ]
         };
 
@@ -499,6 +500,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "armymedic",
             Attributes = [
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.HealUseSpeed, 30),
             ]
         };
 

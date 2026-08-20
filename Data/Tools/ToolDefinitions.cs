@@ -22,5 +22,9 @@ namespace SeraphLeveling.Data.Tools
         {
             Name = "armor",
         };
+        public static readonly ToolDefinition Poultice = new()
+        {
+            Name = "poultice",
+        };
     }
 }

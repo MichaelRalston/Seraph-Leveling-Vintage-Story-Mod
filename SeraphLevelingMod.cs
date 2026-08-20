@@ -2537,6 +2537,9 @@ namespace SeraphLeveling
 
                     // Patch crafting methods for recipe crafting detection
                     PatchGridCrafting(api);
+
+                    // Patch ItemPoultice.OnHeldInteractStop for Medic trait (poultice/bandage healing)
+                    PatchPoulticeHealing(api);
                 }
             }
             catch (Exception ex)
@@ -2771,6 +2774,62 @@ namespace SeraphLeveling
             if (!anyPatchSucceeded)
             {
                 api.Logger.Warning("[SeraphLeveling] Could not patch any method for Mender trait (sewing kit repairs)");
+            }
+        }
+
+        /// <summary>
+        /// Patch methods to track poultice healing for the Medic trait.
+        /// Tries multiple approaches since poultice healing can happen in different ways.
+        /// </summary>
+        private void PatchPoulticeHealing(ICoreServerAPI api)
+        {
+            bool anyPatchSucceeded = false;
+
+            // Approach 1: Try to patch ItemPoultice directly if it exists
+            try
+            {
+                var poulticeType = AccessTools.TypeByName("Vintagestory.GameContent.ItemPoultice");
+                if (poulticeType != null)
+                {
+                    // Try to find healing-related methods
+                    var onHeldInteractStopMethod = AccessTools.Method(poulticeType, "OnHeldInteractStop");
+                    if (onHeldInteractStopMethod != null)
+                    {
+                        var postfixMethod = AccessTools.Method(typeof(PoulticePatches),
+                            nameof(PoulticePatches.OnHeldInteractStop_Postfix));
+                        serverHarmony.Patch(onHeldInteractStopMethod, postfix: new HarmonyMethod(postfixMethod));
+                        api.Logger.Notification("[SeraphLeveling] Successfully patched ItemPoultice.OnHeldInteractStop for Medic trait");
+                        anyPatchSucceeded = true;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                api.Logger.Debug($"[SeraphLeveling] ItemPoultice patch attempt: {ex.Message}");
+            }
+
+            // Approach 2: Patch OnHeldInteractStep as fallback
+            try
+            {
+                var collectibleType = typeof(CollectibleObject);
+                var onHeldInteractStepMethod = AccessTools.Method(collectibleType, "OnHeldInteractStep");
+                if (onHeldInteractStepMethod != null)
+                {
+                    var postfixMethod = AccessTools.Method(typeof(PoulticePatches),
+                        nameof(PoulticePatches.OnHeldInteractStep_Postfix));
+                    serverHarmony.Patch(onHeldInteractStepMethod, postfix: new HarmonyMethod(postfixMethod));
+                    api.Logger.Notification("[SeraphLeveling] Successfully patched CollectibleObject.OnHeldInteractStep for Medic trait");
+                    anyPatchSucceeded = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                api.Logger.Debug($"[SeraphLeveling] CollectibleObject.OnHeldInteractStep patch attempt: {ex.Message}");
+            }
+
+            if (!anyPatchSucceeded)
+            {
+                api.Logger.Warning("[SeraphLeveling] Could not patch any method for Medic trait (poultice healing)");
             }
         }
 
@@ -5885,6 +5944,14 @@ namespace SeraphLeveling
 
             string playerUid = player.PlayerUID;
             AttributeModifierDefinitions.Mender.GetForPlayer(playerUid).DoEvent(player, 1);
+        }
+
+        public static void ProcessPoulticeHeal(IServerPlayer player, string poulticeType)
+        {
+            if (player?.Entity == null) return;
+
+            string playerUid = player.PlayerUID;
+            AttributeModifierDefinitions.HealUseSpeed.GetForPlayer(playerUid).DoEvent(player, poulticeType, 1);
         }
 
         /// <summary>

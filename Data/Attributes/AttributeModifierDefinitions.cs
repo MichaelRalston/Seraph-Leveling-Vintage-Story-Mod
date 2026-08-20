@@ -727,5 +727,29 @@ namespace SeraphLeveling.Data.Attributes
             WatchedCreditsAttributeKey = "sitTechnicianLargeGears",
             Trait = new(() => Traits.TraitDefinitions.Technician),
         };
+
+        public static readonly ConcurrentDictionary<SimpleToolProgress, IncrementData> HealingIncrementData = new()
+        {
+            [default] = new IncrementData
+            {
+                IncrementUnits = "items",
+                BaseIncrement = 10,
+                IncrementStep = 10,
+            }
+        };
+
+        public static readonly PoulticeAttributeModifierDefinition HealUseSpeed = new()
+        {
+            Id = "healUseSpeed",
+            SkillKey = "healusespeed",
+            Name = "HealUseSpeed",
+            Stat = "% healing item use speed",
+            LongDescription = "healing item use speed",
+            PersistenceHeader = "HUS",
+            Tool = ToolDefinitions.Poultice,
+            IncrementData = HealingIncrementData,
+            GlobalMaxCredits = 75,
+            StatName = "ats:healitemusetime"
+        };
     }
 }
