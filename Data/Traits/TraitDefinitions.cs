@@ -517,6 +517,8 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "heavyhands",
             Attributes = [
+                IAttributeModifier.Penalty(AttributeModifierDefinitions.WildCropDropRate, 20),
+                IAttributeModifier.Penalty(AttributeModifierDefinitions.ForageLootingBonus, 15),
             ]
         };
 
