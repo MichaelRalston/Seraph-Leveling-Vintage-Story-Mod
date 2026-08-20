@@ -327,6 +327,10 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "technician",
             Attributes = [
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.Technician, 1, [
+                    new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Technician },
+                    new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.Precise, ThresholdPercentage = 10 },
+                ])
             ],
         };
 

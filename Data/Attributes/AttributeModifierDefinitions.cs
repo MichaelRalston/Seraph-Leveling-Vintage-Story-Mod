@@ -715,5 +715,17 @@ namespace SeraphLeveling.Data.Attributes
             WatchedCreditsAttributeKey = "sitMasonStoneBricks",
             Trait = new(() => Traits.TraitDefinitions.Mason),
         };
+
+        public static readonly TechnicianAttributeModifierDefinition Technician = new()
+        {
+            Id = "technician",
+            SkillKey = "technician",
+            PersistenceHeader = "TCN",
+            Name = "Technician",
+            GlobalMaxCredits = 10,
+            CreditDescription = "large gears",
+            WatchedCreditsAttributeKey = "sitTechnicianLargeGears",
+            Trait = new(() => Traits.TraitDefinitions.Technician),
+        };
     }
 }

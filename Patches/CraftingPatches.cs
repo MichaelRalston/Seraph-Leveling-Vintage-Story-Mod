@@ -37,6 +37,13 @@ namespace SeraphLeveling.Patches
                     SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Granting {playerName} credit for crafting {quantity} ashlar blocks");
                     AttributeModifierDefinitions.Mason.AddCredits(serverPlayer, quantity);
                 }
+
+                // Process large gears
+                if (outputCode.Equals("largegear3"))
+                {
+                    SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Granting {playerName} credit for crafting {quantity} large gears");
+                    AttributeModifierDefinitions.Technician.AddCredits(serverPlayer, quantity);
+                }
             }
         }
     }

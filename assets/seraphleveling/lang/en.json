@@ -190,7 +190,9 @@
 
   "attribute-carpenter-contents": "Exclusive craftable <a href=\"handbooksearch://board or quarter logs or support beams\">construction material</a>",
   "attribute-mason-contents": "Exclusive craftable <a href=\"handbooksearch://cobblestone or ashlar block\">stonework items</a>",
+  "attribute-technician-contents": "Exclusive craftable <a href=\"handbooksearch://large gear\">cheaper mechanical parts</a>",
 
   "message-carpenter-unlock": "Carpenter unlocked! You are now better at crafting with wood.",
-  "message-mason-unlock": "Mason unlocked! You are now better at crafting with stone."
+  "message-mason-unlock": "Mason unlocked! You are now better at crafting with stone.",
+  "message-technician-unlock": "Technician unlocked! You are now better at crafting machinery."
 }
