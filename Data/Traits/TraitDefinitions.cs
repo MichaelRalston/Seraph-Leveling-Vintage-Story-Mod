@@ -486,6 +486,8 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "welladjusted",
             Attributes = [
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.ArmorDurability, 10),
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.ArmorWalkSpeed, 25),
             ]
         };
 
@@ -493,6 +495,13 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "bulwark",
             Attributes = [
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.ArmorWalkSpeed, 70),
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.ArmorDurability, 50),
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.BulwarkHealth, 1, [
+                    new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.ArmorWalkSpeed, ThresholdPercentage = 70 },
+                    new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.ArmorDurability, ThresholdPercentage = 50 }
+                ]),
+
             ]
         };
 

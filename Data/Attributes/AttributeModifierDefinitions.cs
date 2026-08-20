@@ -433,6 +433,16 @@ namespace SeraphLeveling.Data.Attributes
             Trait = new(() => Traits.TraitDefinitions.Hardy),
         };
 
+        public static readonly MaxHealthUnlockedAttributeModifierDefinition BulwarkHealth = new()
+        {
+            Id = "bulwarkhealth",
+            SkillKey = "bulwarkhealth",
+            PersistenceHeader = "BWH",
+            Name = "BulwarkHealth",
+            ModifierAmount = 3,
+            Trait = new(() => Traits.TraitDefinitions.Bulwark),
+        };
+
         public static readonly OreRateUnlockedAttributeModifierDefinition ClaustrophobicOrePenalty = new()
         {
             Id = "claustrophobicpenalty",

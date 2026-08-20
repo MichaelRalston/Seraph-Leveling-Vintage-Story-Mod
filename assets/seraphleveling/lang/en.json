@@ -72,6 +72,7 @@
   "traitname-sittechnicalmastery": "Technical",
   "trait-technical-dynamic": "-1 temporal gear cost to repair translocators",
   "message-hardyhealth-unlock": "Hardy Health unlocked! You've grown stronger.",
+  "message-bulwark-unlock": "Bulwark unlocked! You've grown stronger.",
   "trait-sithardyhealthmastery": "<font color=\"#84ff84\">• Hardy </font>",
   "traitname-sithardyhealthmastery": "Hardy",
   "trait-hardyhealth-dynamic": "+{0} health points",
