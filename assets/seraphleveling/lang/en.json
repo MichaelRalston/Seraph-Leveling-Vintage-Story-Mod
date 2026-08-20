@@ -172,6 +172,11 @@
 
   "attribute-axedamage-contents": "{0}% axe damage",
   "attribute-axedurability-contents": "{0}% axe durability",
+  "attribute-pickaxedurability-contents": "{0}% pickaxe durability",
+  "attribute-bowdurability-contents": "{0}% bow durability",
+  "attribute-hoedurability-contents": "{0}% hoe durability",
+  "attribute-scythedurability-contents": "{0}% axe durability",
+  "attribute-hammerdurability-contents": "{0}% hammer durability",
   "attribute-charcoaldroprate-contents": "{0}% charcoal drop rate",
   "attribute-claydroprate-contents": "{0}% clay drop rate",
   "attribute-clayformspeed-contents": "{0}% clayforming speed",

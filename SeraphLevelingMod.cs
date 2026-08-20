@@ -827,7 +827,8 @@ namespace SeraphLeveling
                         sb.AppendLine($"• **/trait {sub.Name}** - {sub.Description}");
                     }
 
-                    return TextCommandResult.Success(sb.ToString());
+                    return TextCommandResult.
+                    Success(sb.ToString());
                 });
             foreach (var definition in LoadedAttributes)
             {
@@ -1624,7 +1625,9 @@ namespace SeraphLeveling
         private int GetWoodLogPoints(int blockId)
         {
             string codeToCheck = GetBlockCode(blockId);
+            #if SPAMMYDEBUG
             ServerApi.Logger.Debug($"[SeraphLeveling] Checking wood log points for block code {codeToCheck}.");
+            #endif
             if (codeToCheck.StartsWith("log-grown-"))
             {
                 return 5;
@@ -1635,7 +1638,9 @@ namespace SeraphLeveling
         private int GetDirtPoints(int blockId)
         {
             string codeToCheck = GetBlockCode(blockId);
+            #if SPAMMYDEBUG
             ServerApi.Logger.Debug($"[SeraphLeveling] Checking dirt points for block code {codeToCheck}.");
+            #endif
             if (codeToCheck.StartsWith("rawclay-"))
             {
                 // Clay soil
@@ -1657,7 +1662,9 @@ namespace SeraphLeveling
         private int GetLeavesPoints(int blockId)
         {
             string codeToCheck = GetBlockCode(blockId);
+            #if SPAMMYDEBUG
             ServerApi.Logger.Debug($"[SeraphLeveling] Checking leaves points for block code {codeToCheck}.");
+            #endif
             if (codeToCheck.StartsWith("leavesbranchy-grown"))
             {
                 return 2;
@@ -2171,6 +2178,7 @@ namespace SeraphLeveling
                     AttributeModifierDefinitions.MiningSpeed.GetForPlayer(playerUid).DoEvent(byPlayer, pickaxeCode, points);
                     AttributeModifierDefinitions.OreDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, pickaxeCode, points);
                     AttributeModifierDefinitions.StoneDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, pickaxeCode, points);
+                    AttributeModifierDefinitions.PickaxeDurability.GetForPlayer(playerUid).DoEvent(byPlayer, pickaxeCode, points, RepairableToolProgress.Usage);
                 }
             }
 
@@ -2183,6 +2191,7 @@ namespace SeraphLeveling
                 {
                     AttributeModifierDefinitions.TreeChoppingSpeed.GetForPlayer(playerUid).DoEvent(byPlayer, axeCode, woodPoints);
                     AttributeModifierDefinitions.AxeDamage.GetForPlayer(playerUid).DoEvent(byPlayer, axeCode, woodPoints);
+                    AttributeModifierDefinitions.AxeDurability.GetForPlayer(playerUid).DoEvent(byPlayer, pickaxeCode, woodPoints, RepairableToolProgress.Usage);
                 }
             }
 
@@ -2210,6 +2219,9 @@ namespace SeraphLeveling
                     AttributeModifierDefinitions.WoodDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, toolCode, leavesPoints);
                     AttributeModifierDefinitions.SeedDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, toolCode, leavesPoints);
                     AttributeModifierDefinitions.StickDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, toolCode, leavesPoints);
+                    if (axeCode != null) {
+                        AttributeModifierDefinitions.AxeDurability.GetForPlayer(playerUid).DoEvent(byPlayer, pickaxeCode, leavesPoints, RepairableToolProgress.Usage);
+                    }
                 }
             }
         }
@@ -3147,34 +3159,27 @@ namespace SeraphLeveling
             // Track unlock-trait progression FIRST, independent of the ranged credit cap.
             // Bowyer and Improviser are separate unlocks that should still progress for players
             // who have already maxed their ranged credits.
-            if (IsSimpleBowOrLongbow(weaponCombo))
+            if (IsBow(weaponCombo))
             {
                 TrackBowyerBowDamage(attackerPlayer, damage);
+                AttributeModifierDefinitions.BowDurability.GetForPlayer(playerUid).DoEvent(attackerPlayer, weaponCombo, damage, RepairableToolProgress.Usage);
             }
             if (IsThrownRock(weaponCombo))
             {
                 TrackImproviserRockDamage(attackerPlayer, damage);
             }
 
-            var damageProgress = AttributeModifierDefinitions.RangedDamage.GetForPlayer(playerUid);
-            damageProgress.DoEvent(attackerPlayer, weaponCombo, damage);
-            var accuracyProgress = AttributeModifierDefinitions.RangedAccuracy.GetForPlayer(playerUid);
-            accuracyProgress.DoEvent(attackerPlayer, weaponCombo, damage);
-            var distanceProgress = AttributeModifierDefinitions.RangedDistance.GetForPlayer(playerUid);
-            distanceProgress.DoEvent(attackerPlayer, weaponCombo, damage);
+            AttributeModifierDefinitions.RangedDamage.GetForPlayer(playerUid).DoEvent(attackerPlayer, weaponCombo, damage);
+            AttributeModifierDefinitions.RangedAccuracy.GetForPlayer(playerUid).DoEvent(attackerPlayer, weaponCombo, damage);
+            AttributeModifierDefinitions.RangedDistance.GetForPlayer(playerUid).DoEvent(attackerPlayer, weaponCombo, damage);
         }
 
-        /// <summary>
-        /// Check if the weapon combo represents a simple bow or longbow.
-        /// </summary>
-        private static bool IsSimpleBowOrLongbow(string weaponCombo)
+        private static bool IsBow(string weaponCombo)
         {
             if (string.IsNullOrEmpty(weaponCombo)) return false;
             string lower = weaponCombo.ToLowerInvariant();
-            return lower.Contains("bow-simple") || lower.Contains("bow-long") ||
-                   lower.StartsWith("simple") || lower.StartsWith("long");
+            return lower.Contains("bow-");
         }
-
         /// <summary>
         /// Check if the weapon combo represents a thrown rock.
         /// </summary>

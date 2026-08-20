@@ -272,10 +272,10 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "lumberjack",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.TreeChoppingSpeed, 120),
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.TreeChoppingSpeed, 120), // TODO: make sure this is right, because it looks like 220 to me in SL's data.
                 IAttributeModifier.Bonus(AttributeModifierDefinitions.AxeDamage, 75),
                 IAttributeModifier.Bonus(AttributeModifierDefinitions.AxeDurability, 70),
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.CharcoalDropRate, 20),
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.CharcoalDropRate, 20), // TODO: is this right, or is it 120? I think it's 120.
             ]
         };
 
@@ -411,6 +411,9 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "blacksmith",
             Attributes = [
+                // TODO: two other attributes.
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.CharcoalDropRate, 200),
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.HammerDurability, 70),
             ]
         };
 
@@ -490,6 +493,9 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "ranger",
             Attributes = [
+                // TODO: Figure out what's up with bow vs ranged damage here.
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.BowDurability, 70),
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.Furtive, 80),
             ]
         };
 
