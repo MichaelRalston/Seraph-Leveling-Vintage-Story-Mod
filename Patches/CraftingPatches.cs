@@ -3,6 +3,7 @@ using SeraphLeveling.Data.Attributes;
 using Vintagestory.API.Common;
 using Vintagestory.API.Config;
 using Vintagestory.API.Server;
+using Vintagestory.GameContent;
 
 namespace SeraphLeveling.Patches
 {
@@ -21,7 +22,7 @@ namespace SeraphLeveling.Patches
 
                 string playerName = byPlayer?.PlayerName;
 #if SPAMMYDEBUG
-                SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Player {playerName} crafted item code {outputCode}, success={__result}, side={byPlayer?.Entity?.Api?.Side}");
+                SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Player {playerName} crafted item code {outputCode} in grid, success={__result}, side={byPlayer?.Entity?.Api?.Side}");
 #endif
 
                 // Process boards
@@ -43,6 +44,32 @@ namespace SeraphLeveling.Patches
                 {
                     SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Granting {playerName} credit for crafting {quantity} large gears");
                     AttributeModifierDefinitions.Technician.AddCredits(serverPlayer, quantity);
+                }
+            }
+        }
+
+        public static void BlockEntityBarrelOnReceivedClientPacket_Postfix(BlockEntityBarrel __instance, IPlayer player, int packetid, byte[] data)
+        {
+            const int SEAL_BARREL_PACKET_ID = 1337;
+            if (player?.Entity?.Api?.Side == EnumAppSide.Server && packetid == SEAL_BARREL_PACKET_ID)
+            {
+                if (player is not IServerPlayer serverPlayer) return;
+                
+                string outputCode = __instance?.CurrentRecipe?.Output?.Code?.ToString();
+                int quantity = __instance?.CurrentRecipe?.Output?.Quantity ?? 0;
+
+                if (quantity <= 0) return;
+
+                string playerName = serverPlayer?.PlayerName;
+#if SPAMMYDEBUG
+                SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Player {playerName} crafted {quantity} of item code {outputCode} in a barrel");
+#endif
+
+                // Process compost
+                if (outputCode.Contains("compost"))
+                {
+                    SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Granting {playerName} credit for crafting {quantity} compost");
+                    AttributeModifierDefinitions.Propagator.AddCredits(serverPlayer, quantity);
                 }
             }
         }

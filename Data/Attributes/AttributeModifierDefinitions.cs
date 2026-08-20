@@ -788,5 +788,17 @@ namespace SeraphLeveling.Data.Attributes
             WatchedCreditsAttributeKey = "sitAlchemistPoultices",
             Trait = new(() => Traits.TraitDefinitions.Alchemist),
         };
+
+        public static readonly PropagatorAttributeModifierDefinition Propagator = new()
+        {
+            Id = "propagator",
+            SkillKey = "propagator",
+            PersistenceHeader = "PRP",
+            Name = "Propagator",
+            GlobalMaxCredits = 80,
+            CreditDescription = "compost",
+            WatchedCreditsAttributeKey = "sitPropagatorCompost",
+            Trait = new(() => Traits.TraitDefinitions.Propagator),
+        };
     }
 }

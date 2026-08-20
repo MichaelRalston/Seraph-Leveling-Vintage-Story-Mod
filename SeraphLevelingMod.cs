@@ -2565,6 +2565,7 @@ namespace SeraphLeveling
 
                     // Patch crafting methods for recipe crafting detection
                     PatchGridCrafting(api);
+                    PatchBarrelCrafting(api);
 
                     // Patch ItemPoultice.OnHeldInteractStop for Medic trait (poultice/bandage healing)
                     PatchPoulticeHealing(api);
@@ -2608,6 +2609,41 @@ namespace SeraphLeveling
             catch (Exception ex)
             {
                 api.Logger.Warning($"[SeraphLeveling] Failed to patch GridRecipe.ConsumeInput: {ex.Message}");
+            }
+        }
+
+        private void PatchBarrelCrafting(ICoreServerAPI api)
+        {
+            try
+            {
+                var barrelType = AccessTools.TypeByName("Vintagestory.GameContent.BlockEntityBarrel");
+                if (barrelType == null)
+                {
+                    api.Logger.Debug("[SeraphLeveling] Could not find BlockEntityBarrel type for crafting hooks");
+                    return;
+                }
+
+                var receiveClientPacketMethod = AccessTools.Method(barrelType, "OnReceivedClientPacket");
+                if (receiveClientPacketMethod == null)
+                {
+                    api.Logger.Debug("[SeraphLeveling] Could not find BlockEntityBarrel.OnReceivedClientPacket method for crafting hooks");
+                    return;
+                }
+
+                // Get our postfix method
+                var postfixMethod = AccessTools.Method(typeof(CraftingPatches), nameof(CraftingPatches.BlockEntityBarrelOnReceivedClientPacket_Postfix));
+                if (postfixMethod == null)
+                {
+                    api.Logger.Error("[SeraphLeveling] Could not find BlockEntityBarrelOnReceivedClientPacket_Postfix method!");
+                    return;
+                }
+
+                serverHarmony.Patch(receiveClientPacketMethod, postfix: new HarmonyMethod(postfixMethod));
+                api.Logger.Notification("[SeraphLeveling] Successfully patched BlockEntityBarrel.OnReceivedClientPacket for crafting hooks");
+            }
+            catch (Exception ex)
+            {
+                api.Logger.Warning($"[SeraphLeveling] Failed to patch BlockEntityBarrel.OnReceivedClientPacket: {ex.Message}");
             }
         }
 

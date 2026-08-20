@@ -376,6 +376,10 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "propagator",
             Attributes = [
+                IAttributeModifier.Bonus(AttributeModifierDefinitions.Propagator, 1, [
+                    new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Propagator },
+                    new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.ForageLootingBonus, ThresholdPercentage = 10 },
+                ])
             ],
         };
 

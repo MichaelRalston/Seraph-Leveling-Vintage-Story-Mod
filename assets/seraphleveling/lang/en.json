@@ -195,10 +195,12 @@
   "attribute-alchemist-contents": "Exclusive craftable <a href=\"handbooksearch://medicine or blasting powder\">medicines</a>",
   "attribute-carpenter-contents": "Exclusive craftable <a href=\"handbooksearch://board or quarter logs or support beams\">construction material</a>",
   "attribute-mason-contents": "Exclusive craftable <a href=\"handbooksearch://cobblestone or ashlar block\">stonework items</a>",
+  "attribute-propagator-contents": "Exclusive craftable <a href=\"handbooksearch://seeds or flower seed or soil booster\">seed bags</a>",
   "attribute-technician-contents": "Exclusive craftable <a href=\"handbooksearch://large gear\">cheaper mechanical parts</a>",
 
   "message-alchemist-unlock": "Alchemist unlocked! You are now more proficient with medicinal compounds.",
   "message-carpenter-unlock": "Carpenter unlocked! You are now better at crafting with wood.",
   "message-mason-unlock": "Mason unlocked! You are now better at crafting with stone.",
+  "message-propagator-unlock": "Propagator unlocked! You've developed quite a green thumb.",
   "message-technician-unlock": "Technician unlocked! You are now better at crafting machinery."
 }
