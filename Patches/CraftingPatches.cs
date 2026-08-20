@@ -40,7 +40,7 @@ namespace SeraphLeveling.Patches
                 }
 
                 // Process large gears
-                if (outputCode.Equals("largegear3"))
+                if (outputCode.Contains("largegear3"))
                 {
                     SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Granting {playerName} credit for crafting {quantity} large gears");
                     AttributeModifierDefinitions.Technician.AddCredits(serverPlayer, quantity);
