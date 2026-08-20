@@ -289,7 +289,7 @@ namespace SeraphLeveling.Data.Attributes
             }
         };
 
-        public static readonly AxeAttributeModifierDefinition WoodDropRate = new()
+        public static readonly GenericToolAttributeModifierDefinition WoodDropRate = new()
         {
             Id = "woodDropRate",
             SkillKey = "woodrate",
@@ -303,7 +303,7 @@ namespace SeraphLeveling.Data.Attributes
             StatName = "sacredlib:woodDropRate"
         };
 
-        public static readonly AxeAttributeModifierDefinition SeedDropRate = new()
+        public static readonly GenericToolAttributeModifierDefinition SeedDropRate = new()
         {
             Id = "seedDropRate",
             SkillKey = "seedrate",
@@ -317,7 +317,7 @@ namespace SeraphLeveling.Data.Attributes
             StatName = "sacredlib:treeseedDropRate"
         };
 
-        public static readonly AxeAttributeModifierDefinition StickDropRate = new()
+        public static readonly GenericToolAttributeModifierDefinition StickDropRate = new()
         {
             Id = "stickDropRate",
             SkillKey = "stickrate",
@@ -620,7 +620,7 @@ namespace SeraphLeveling.Data.Attributes
             }
         };
 
-        public static readonly AxeAttributeModifierDefinition TreeChoppingSpeed = new()
+        public static readonly GenericToolAttributeModifierDefinition TreeChoppingSpeed = new()
         {
             Id = "treeChoppingSpeed",
             SkillKey = "treechopping",
@@ -634,7 +634,7 @@ namespace SeraphLeveling.Data.Attributes
             StatName = "ats:wood|axe-?-harvestSpeed"
         };
 
-        public static readonly AxeAttributeModifierDefinition AxeDamage = new()
+        public static readonly GenericToolAttributeModifierDefinition AxeDamage = new()
         {
             Id = "axeDamage",
             Name = "Axe Damage",
@@ -648,7 +648,7 @@ namespace SeraphLeveling.Data.Attributes
             StatName = "ats:axe-?-meleeDamageMult",
         };
 
-        public static readonly AxeAttributeModifierDefinition AxeDurability = new()
+        public static readonly GenericRepairableToolAttributeModifierDefinition AxeDurability = new()
         {
             Id = "axeDurability",
             Name = "AxeDurability",
@@ -657,9 +657,23 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "XDU",
             IsInverted = true,
             InvertedOnDisplay = false,
-            StatName = "axeDurabilityLoss",
+            StatName = "ats:axe-?-reduceDurabilityLoss",
             Tool = ToolDefinitions.Axe,
-            IncrementData = TreeChoppingIncrementData,
+            IncrementData = new()
+            {
+                [RepairableToolProgress.Usage] = new()
+                {
+                    IncrementUnits = "trees",
+                    BaseIncrement = 100,
+                    IncrementStep = 100,
+                },
+                [RepairableToolProgress.Repair] = new()
+                {
+                    IncrementUnits = "repairs",
+                    BaseIncrement = 1,
+                    IncrementStep = 1,
+                }
+            },
             GlobalMaxCredits = 75,
         };
 
@@ -687,7 +701,7 @@ namespace SeraphLeveling.Data.Attributes
             }
         };
 
-        public static readonly AxeAttributeModifierDefinition ClayDropRate = new()
+        public static readonly GenericToolAttributeModifierDefinition ClayDropRate = new()
         {
             Id = "clayDropRate",
             SkillKey = "clayrate",
@@ -701,7 +715,7 @@ namespace SeraphLeveling.Data.Attributes
             StatName = "sacredlib:clayDropRate"
         };
 
-        public static readonly AxeAttributeModifierDefinition PeatDropRate = new()
+        public static readonly GenericToolAttributeModifierDefinition PeatDropRate = new()
         {
             Id = "peatDropRate",
             SkillKey = "peatrate",
@@ -715,7 +729,7 @@ namespace SeraphLeveling.Data.Attributes
             StatName = "sacredlib:peatDropRate"
         };
 
-        public static readonly AxeAttributeModifierDefinition ClayformSpeed = new()
+        public static readonly GenericToolAttributeModifierDefinition ClayformSpeed = new()
         {
             Id = "clayformSpeed",
             SkillKey = "clayformspeed",
@@ -800,5 +814,146 @@ namespace SeraphLeveling.Data.Attributes
             WatchedCreditsAttributeKey = "sitPropagatorCompost",
             Trait = new(() => Traits.TraitDefinitions.Propagator),
         };
+
+        public static readonly GenericRepairableToolAttributeModifierDefinition HoeDurability = new()
+        {
+            Id = "hoeDurability",
+            SkillKey = "hoedurability",
+            Name = "HoeDurability",
+            Stat = "% hoe durability loss reduction",
+            LongDescription = "hoe durability",
+            PersistenceHeader = "HDR",
+            Tool = ToolDefinitions.Hoe,
+            IncrementData = new()
+            {
+                [RepairableToolProgress.Usage] = new()
+                {
+                    IncrementUnits = "blocks",
+                    BaseIncrement = 100,
+                    IncrementStep = 100,
+                },
+                [RepairableToolProgress.Repair] = new()
+                {
+                    IncrementUnits = "repairs",
+                    BaseIncrement = 1,
+                    IncrementStep = 1,
+                }
+            },
+            GlobalMaxCredits = 75,
+            StatName = "ats:hoe-?-reduceDurabilityLoss"
+        };
+
+        public static readonly GenericRepairableToolAttributeModifierDefinition ScytheDurability = new()
+        {
+            Id = "scytheDurability",
+            SkillKey = "scythedurability",
+            Name = "ScytheDurability",
+            Stat = "% scythe durability loss reduction",
+            LongDescription = "scythe durability",
+            PersistenceHeader = "SDR",
+            Tool = ToolDefinitions.Scythe,
+            IncrementData = new()
+            {
+                [RepairableToolProgress.Usage] = new()
+                {
+                    IncrementUnits = "blocks",
+                    BaseIncrement = 100,
+                    IncrementStep = 100,
+                },
+                [RepairableToolProgress.Repair] = new()
+                {
+                    IncrementUnits = "repairs",
+                    BaseIncrement = 1,
+                    IncrementStep = 1,
+                }
+            },
+            GlobalMaxCredits = 75,
+            StatName = "ats:scythe-?-reduceDurabilityLoss"
+        };
+
+        public static readonly GenericRepairableToolAttributeModifierDefinition HammerDurability = new()
+        {
+            Id = "hammerDurability",
+            SkillKey = "hammerdurability",
+            Name = "HammerDurability",
+            Stat = "% hammer durability loss reduction",
+            LongDescription = "hammer durability",
+            PersistenceHeader = "HDR",
+            Tool = ToolDefinitions.Hammer,
+            IncrementData = new()
+            {
+                [RepairableToolProgress.Usage] = new()
+                {
+                    IncrementUnits = "crafts",
+                    BaseIncrement = 100,
+                    IncrementStep = 100,
+                },
+                [RepairableToolProgress.Repair] = new()
+                {
+                    IncrementUnits = "repairs",
+                    BaseIncrement = 1,
+                    IncrementStep = 1,
+                }
+            },
+            GlobalMaxCredits = 75,
+            StatName = "ats:hammer-?-reduceDurabilityLoss"
+        };
+
+        public static readonly GenericRepairableToolAttributeModifierDefinition PickaxeDurability = new()
+        {
+            Id = "pickaxeDurability",
+            SkillKey = "pickaxedurability",
+            Name = "PickaxeDurability",
+            Stat = "% pickaxe durability loss reduction",
+            LongDescription = "pickaxe durability",
+            PersistenceHeader = "PDR",
+            Tool = ToolDefinitions.Pickaxe,
+            IncrementData = new()
+            {
+                [RepairableToolProgress.Usage] = new()
+                {
+                    IncrementUnits = "blocks",
+                    BaseIncrement = 100,
+                    IncrementStep = 100,
+                },
+                [RepairableToolProgress.Repair] = new()
+                {
+                    IncrementUnits = "repairs",
+                    BaseIncrement = 1,
+                    IncrementStep = 1,
+                }
+            },
+            GlobalMaxCredits = 75,
+            StatName = "ats:pickaxe-?-reduceDurabilityLoss"
+        };
+
+        public static readonly GenericRepairableToolAttributeModifierDefinition BowDurability = new()
+        {
+            Id = "bowDurability",
+            SkillKey = "bowdurability",
+            Name = "BowDurability",
+            Stat = "% bow durability loss reduction",
+            LongDescription = "bow durability",
+            PersistenceHeader = "BDR",
+            Tool = ToolDefinitions.Bow,
+            IncrementData = new()
+            {
+                [RepairableToolProgress.Usage] = new()
+                {
+                    IncrementUnits = "damage",
+                    BaseIncrement = 100,
+                    IncrementStep = 100,
+                },
+                [RepairableToolProgress.Repair] = new()
+                {
+                    IncrementUnits = "repairs",
+                    BaseIncrement = 1,
+                    IncrementStep = 1,
+                }
+            },
+            GlobalMaxCredits = 75,
+            StatName = "ats:bow-?-reduceDurabilityLoss"
+        };
+
     }
 }

@@ -26,5 +26,21 @@ namespace SeraphLeveling.Data.Tools
         {
             Name = "poultice",
         };
+        public static readonly ToolDefinition Bow = new()
+        {
+            Name = "bow",
+        };
+        public static readonly ToolDefinition Hoe = new()
+        {
+            Name = "hoe",
+        };
+        public static readonly ToolDefinition Scythe = new()
+        {
+            Name = "scythe",
+        };
+        public static readonly ToolDefinition Hammer = new()
+        {
+            Name = "hammer",
+        };
     }
 }
