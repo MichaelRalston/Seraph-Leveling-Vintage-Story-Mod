@@ -709,9 +709,9 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "CDR",
             Stat = "% bonus charcoal drop rate",
             IncrementUnits = "pit charcoal harvested",
-            BaseIncrement = 50,
-            IncrementStep = 50,
-            GlobalMaxCredits = 20,
+            BaseIncrement = 30,
+            IncrementStep = 10,
+            GlobalMaxCredits = 200,
             StatName = "sacredlib:charcoalDropRate",
         };
 

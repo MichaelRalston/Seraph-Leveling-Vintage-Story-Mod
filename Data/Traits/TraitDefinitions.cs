@@ -393,7 +393,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "naturalist",
             Attributes = [
-                Bonus(ForageLootingBonus, 100),
+                Bonus(ForageLootingBonus, 200),
                 Bonus(AttributeModifierDefinitions.Furtive, 80),
             ]
         };
