@@ -20,6 +20,8 @@ namespace SeraphLeveling.Data.Attributes
         public event SatisfactionChangedDelegate SatisfactionChanged;
     }
 
+    public delegate void SatisfactionChangedDelegate(IServerPlayer player, bool oldValue, bool newValue);
+
     public abstract record class LeveledAttributeRequirement : IAttributeRequirement
     {
         public required ILeveledAttributeModifierDefinition Attribute
