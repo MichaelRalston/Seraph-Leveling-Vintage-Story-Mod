@@ -157,7 +157,7 @@ namespace SeraphLeveling.Patches
             };
         }
 
-        public static void BlockEntityAnvil_CheckIfFinished_Postfix(BlockEntityClayForm __instance, AnvilCheckIfFinishedState __state, IPlayer byPlayer, ItemStack ___workItemStack)
+        public static void BlockEntityAnvil_CheckIfFinished_Postfix(BlockEntityAnvil __instance, AnvilCheckIfFinishedState __state, IPlayer byPlayer, ItemStack ___workItemStack)
         {
             if (byPlayer?.Entity?.Api?.Side == EnumAppSide.Server)
             {
