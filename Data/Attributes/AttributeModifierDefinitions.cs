@@ -654,7 +654,7 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "TRC",
             Tool = ToolDefinitions.Axe,
             IncrementData = TreeChoppingIncrementData,
-            GlobalMaxCredits = 150,
+            GlobalMaxCredits = 250,
             StatName = "ats:wood|axe-?-harvestSpeed"
         };
 
@@ -709,9 +709,9 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "CDR",
             Stat = "% bonus charcoal drop rate",
             IncrementUnits = "pit charcoal harvested",
-            BaseIncrement = 50,
-            IncrementStep = 50,
-            GlobalMaxCredits = 20,
+            BaseIncrement = 30,
+            IncrementStep = 10,
+            GlobalMaxCredits = 200,
             StatName = "sacredlib:charcoalDropRate",
         };
 
@@ -977,6 +977,33 @@ namespace SeraphLeveling.Data.Attributes
             },
             GlobalMaxCredits = 75,
             StatName = "ats:bow-?-reduceDurabilityLoss"
+        };
+        public static readonly GenericRepairableToolAttributeModifierDefinition BowDamage = new()
+        {
+            Id = "bowDamage",
+            SkillKey = "bowdamage",
+            Name = "BowDamage",
+            Stat = "% bow damage increase",
+            LongDescription = "bow damage",
+            PersistenceHeader = "BDM",
+            Tool = ToolDefinitions.Bow,
+            IncrementData = new()
+            {
+                [RepairableToolProgress.Usage] = new()
+                {
+                    IncrementUnits = "damage",
+                    BaseIncrement = 100,
+                    IncrementStep = 100,
+                },
+                [RepairableToolProgress.Repair] = new()
+                {
+                    IncrementUnits = "repairs",
+                    BaseIncrement = 1,
+                    IncrementStep = 1,
+                }
+            },
+            GlobalMaxCredits = 75,
+            StatName = "ats:bow-?-rangedDamageMult"
         };
 
         public static readonly GenericCollectionUnlockedAttributeModifierDefinition Potter = new()

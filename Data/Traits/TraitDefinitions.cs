@@ -274,10 +274,10 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "lumberjack",
             Attributes = [
-                Bonus(TreeChoppingSpeed, 120), // TODO: make sure this is right, because it looks like 220 to me in SL's data.
+                Bonus(TreeChoppingSpeed, 220),
                 Bonus(AxeDamage, 75),
                 Bonus(AxeDurability, 70),
-                Bonus(CharcoalDropRate, 20), // TODO: is this right, or is it 120? I think it's 120.
+                Bonus(CharcoalDropRate, 120),
             ]
         };
 
@@ -393,7 +393,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "naturalist",
             Attributes = [
-                Bonus(ForageLootingBonus, 100),
+                Bonus(ForageLootingBonus, 200),
                 Bonus(AttributeModifierDefinitions.Furtive, 80),
             ]
         };
@@ -511,7 +511,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "ranger",
             Attributes = [
-                // TODO: Figure out what's up with bow vs ranged damage here.
+                Bonus(BowDamage, 75),
                 Bonus(BowDurability, 70),
                 Bonus(AttributeModifierDefinitions.Furtive, 80),
             ]
