@@ -322,6 +322,10 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "potter",
             Attributes = [
+                Bonus(AttributeModifierDefinitions.Potter, 1, [
+                    new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Potter },
+                    new LeveledAttributeMinimumRequirement { Attribute = ClayDropRate, ThresholdPercentage = 10 },
+                ])
             ],
         };
 

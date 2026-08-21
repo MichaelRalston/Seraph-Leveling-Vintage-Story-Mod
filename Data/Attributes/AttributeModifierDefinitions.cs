@@ -979,5 +979,17 @@ namespace SeraphLeveling.Data.Attributes
             StatName = "ats:bow-?-reduceDurabilityLoss"
         };
 
+        public static readonly PotterAttributeModifierDefinition Potter = new()
+        {
+            Id = "potter",
+            SkillKey = "potter",
+            PersistenceHeader = "POT",
+            Name = "Potter",
+            RequiredCollectionSize = 20,
+            CollectedItemDescription = "items clayformed",
+            CollectedItemCountKey = "sitPotterCount",
+            TokenAllowList = ["*"],
+            Trait = new(() => Traits.TraitDefinitions.Potter),
+        };
     }
 }

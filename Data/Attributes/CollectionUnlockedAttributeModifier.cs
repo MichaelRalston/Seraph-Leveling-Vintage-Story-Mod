@@ -31,6 +31,12 @@ namespace SeraphLeveling.Data.Attributes
                 }
             }
 
+            // If any allow list token is set to a wildcard, then ALLOW if no tokens are in the ban list
+            if (TokenAllowList.Any(pattern => pattern == "*"))
+            {
+                return true;
+            }
+
             // ALLOW if the item code contains any token in the allow list
             foreach (string pattern in TokenAllowList)
             {

@@ -132,7 +132,8 @@ namespace SeraphLeveling.Patches
 
                 if (quantity <= 0) return;
 
-                SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Player {playerName} crafted {quantity} of item code {outputCode} with clay");
+                SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Granting {playerName} credit for clayforming {quantity} of {outputCode}");
+                AttributeModifierDefinitions.Potter.AddCollectedItem(serverPlayer, outputCode);
             }
         }
     }
