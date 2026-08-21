@@ -599,6 +599,10 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "weaver",
             Attributes = [
+                Bonus(AttributeModifierDefinitions.Weaver, 1, [
+                    new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Weaver },
+                    new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Clothier }
+                ])
             ],
         };
 

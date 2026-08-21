@@ -1,6 +1,3 @@
-using System.Text;
-using Vintagestory.API.Common;
-
 namespace SeraphLeveling.Data.Attributes
 {
     public class DetonatorAttributeModifierDefinition : ScoredUnlockedAttributeModifierDefinition<DetonatorAttributeModifierDefinition, DetonatorAttributeModifierProgressData>, IConstructable<DetonatorAttributeModifierDefinition, DetonatorAttributeModifierProgressData>
@@ -10,7 +7,7 @@ namespace SeraphLeveling.Data.Attributes
             return new DetonatorAttributeModifierProgressData(def);
         }
     }
-    
+
     public class DetonatorAttributeModifierProgressData(DetonatorAttributeModifierDefinition definition) : ScoredUnlockedAttributeModifierProgressData<DetonatorAttributeModifierDefinition, DetonatorAttributeModifierProgressData>(definition)
     {
     }

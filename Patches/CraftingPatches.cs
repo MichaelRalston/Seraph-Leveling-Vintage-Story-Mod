@@ -40,6 +40,11 @@ namespace SeraphLeveling.Patches
                     AttributeModifierDefinitions.Mason.AddCredits(serverPlayer, quantity);
                 }
 
+                if (outputCode == "linen-normal-down") {
+                    SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Granting {playerName} credit for crafting {quantity} linen cloth");
+                    AttributeModifierDefinitions.Weaver.AddCredits(serverPlayer, quantity);
+                }
+
                 // Process large gears
                 if (outputCode.Contains("largegear3"))
                 {

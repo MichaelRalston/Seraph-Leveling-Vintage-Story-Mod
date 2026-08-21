@@ -40,6 +40,17 @@ namespace SeraphLeveling.Data.Attributes
             Trait = new(() => Traits.TraitDefinitions.Detonator),
         };
 
+        public static readonly WeaverAttributeModifierDefinition Weaver = new()
+        {
+            Id = "weaver",
+            SkillKey = "weaver",
+            PersistenceHeader = "WVR",
+            Name = "Weaver",
+            GlobalMaxCredits = 25,
+            CreditDescription = "linen",
+            Trait = new(() => Traits.TraitDefinitions.Weaver),
+        };
+
         public static readonly BowyerAttributeModifierDefinition Bowyer = new()
         {
             Id = "bowyer",
