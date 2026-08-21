@@ -432,6 +432,11 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "armourer", // not a typo
             Attributes = [
+                Bonus(ArmorDurability, 25),
+                Bonus(ArmorWalkSpeed, 50),
+                Bonus(HammerDamage, 75),
+                Bonus(TemperingPowerLoss, 10),
+                Bonus(QuenchingShatter, 1),
             ]
         };
 

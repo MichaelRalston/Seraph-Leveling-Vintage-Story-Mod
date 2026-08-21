@@ -1080,5 +1080,49 @@ namespace SeraphLeveling.Data.Attributes
             GlobalMaxCredits = 100,
             StatName = "ats:bitrecoveryrate"
         };
+
+        public static readonly GenericToolAttributeModifierDefinition HammerDamage = new()
+        {
+            Id = "hammerDamage",
+            Name = "Hammer Damage",
+            LongDescription = "hammer damage",
+            Stat = "% hammer damage",
+            SkillKey = "hammerdamage",
+            PersistenceHeader = "HDM",
+            Tool = ToolDefinitions.Hammer,
+            IncrementData = DamageIncrementData,
+            GlobalMaxCredits = 100,
+            StatName = "ats:hammer-?-meleeDamageMult",
+        };
+
+        public static readonly GenericToolAttributeModifierDefinition TemperingPowerLoss = new()
+        {
+            Id = "temperPowerLoss",
+            Name = "Tempering Power Loss",
+            LongDescription = "tempering power loss",
+            Stat = "% tempering power loss",
+            SkillKey = "temperpowerloss",
+            PersistenceHeader = "TPL",
+            Tool = ToolDefinitions.Hammer,
+            IncrementData = DamageIncrementData,
+            GlobalMaxCredits = 10,
+            StatName = "ats:temperingpowerlossrate",
+            IsInverted = true,
+        };
+
+        public static readonly GenericToolAttributeModifierDefinition QuenchingShatter = new()
+        {
+            Id = "quenchShatter",
+            Name = "Quenching Shatter Chance",
+            LongDescription = "quenching shatter chance",
+            Stat = "% quenching shatter chance reduction",
+            SkillKey = "quenchshatter",
+            PersistenceHeader = "QNS",
+            Tool = ToolDefinitions.Hammer,
+            IncrementData = DamageIncrementData,
+            GlobalMaxCredits = 5,
+            StatName = "ats:quenchshatterrate",
+            IsInverted = true,
+        };
     }
 }

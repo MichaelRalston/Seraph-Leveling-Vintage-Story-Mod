@@ -3084,8 +3084,22 @@ namespace SeraphLeveling
 
             string playerUid = attackerPlayer.PlayerUID;
 
+            if (IsHammer(weaponType))
+            {
+                AttributeModifierDefinitions.HammerDamage.GetForPlayer(playerUid).DoEvent(attackerPlayer, weaponType, damage);
+                AttributeModifierDefinitions.TemperingPowerLoss.GetForPlayer(playerUid).DoEvent(attackerPlayer, weaponType, damage);
+                AttributeModifierDefinitions.QuenchingShatter.GetForPlayer(playerUid).DoEvent(attackerPlayer, weaponType, damage);
+            }
+
             var damageProgress = AttributeModifierDefinitions.MeleeDamage.GetForPlayer(playerUid);
             damageProgress.DoEvent(attackerPlayer, weaponType, damage);
+        }
+
+        private static bool IsHammer(string weaponType)
+        {
+            if (string.IsNullOrEmpty(weaponType)) return false;
+            string lower = weaponType.ToLowerInvariant();
+            return lower.Contains("hammer-");
         }
 
         /// <summary>
