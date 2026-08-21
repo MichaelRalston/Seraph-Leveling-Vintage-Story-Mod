@@ -20,7 +20,7 @@ namespace SeraphLeveling.Data.Attributes
             base.CollectStatus(player, sb);
 
             var progress = GetDict(player);
-            sb.AppendLine($"Bow damage: {progress.TotalCredits:F0} / {GlobalMaxCredits:F0} ({(progress.TotalCredits >= GlobalMaxCredits ? "✓" : "✗")})");
+            sb.AppendLine($"Bow damage: {progress.TotalCredits:F0} / {GlobalMaxCredits:F0} ({(progress.TotalCredits >= GlobalMaxCredits ? "UNLOCKED" : "locked")})");
         }
     }
 

@@ -28,6 +28,17 @@ namespace SeraphLeveling.Data.Attributes
             Trait = new(() => Traits.TraitDefinitions.Technical),
         };
 
+        public static readonly DetonatorAttributeModifierDefinition Detonator = new()
+        {
+            Id = "detonator",
+            SkillKey = "detonator",
+            PersistenceHeader = "DET",
+            Name = "Detonator",
+            GlobalMaxCredits = 80,
+            CreditDescription = "bombs",
+            Trait = new(() => Traits.TraitDefinitions.Detonator),
+        };
+
         public static readonly BowyerAttributeModifierDefinition Bowyer = new()
         {
             Id = "bowyer",

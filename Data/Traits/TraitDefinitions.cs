@@ -447,6 +447,10 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "detonator",
             Attributes = [
+                Bonus(AttributeModifierDefinitions.Detonator, 1, [
+                    new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Detonator },
+                    new LeveledAttributeMinimumRequirement { Attribute = MiningSpeed, ThresholdPercentage = 10 }
+                ])
             ],
         };
 
