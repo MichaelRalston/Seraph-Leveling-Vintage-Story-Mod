@@ -33,6 +33,12 @@ namespace SeraphLeveling.Patches
                     AttributeModifierDefinitions.Carpenter.AddCredits(serverPlayer, quantity);
                 }
 
+                if (outputCode.StartsWith("table-") || outputCode.StartsWith("chair-"))
+                {
+                    SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Granting {playerName} credit for crafting {quantity} furniture");
+                    AttributeModifierDefinitions.InteriorDesigner.AddCredits(serverPlayer, quantity);
+                }
+
                 // Process ashlar blocks
                 if (outputCode.StartsWith("stonebrick-"))
                 {

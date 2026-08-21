@@ -51,6 +51,17 @@ namespace SeraphLeveling.Data.Attributes
             Trait = new(() => Traits.TraitDefinitions.Weaver),
         };
 
+        public static readonly InteriorDesignerAttributeModifierDefinition InteriorDesigner = new()
+        {
+            Id = "interiorDesigner",
+            SkillKey = "interiordesigner",
+            PersistenceHeader = "IDR",
+            Name = "InteriorDesigner",
+            GlobalMaxCredits = 20,
+            CreditDescription = "furniture",
+            Trait = new(() => Traits.TraitDefinitions.InteriorDesigner),
+        };
+
         public static readonly BowyerAttributeModifierDefinition Bowyer = new()
         {
             Id = "bowyer",
