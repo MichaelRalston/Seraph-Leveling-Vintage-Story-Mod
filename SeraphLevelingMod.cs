@@ -2772,15 +2772,15 @@ namespace SeraphLeveling
                     return;
                 }
 
-                // Get our postfix method
-                var postfixMethod = AccessTools.Method(typeof(CraftingPatches), nameof(CraftingPatches.BlockEntityAnvil_OnUseOver_Postfix));
-                if (postfixMethod == null)
+                // Get our prefix method
+                var prefixMethod = AccessTools.Method(typeof(CraftingPatches), nameof(CraftingPatches.BlockEntityAnvil_OnUseOver_Prefix));
+                if (prefixMethod == null)
                 {
                     api.Logger.Error("[SeraphLeveling] Could not find BlockEntityAnvil_OnUseOver_Postfix method!");
                     return;
                 }
 
-                serverHarmony.Patch(onUseOverMethod, postfix: new HarmonyMethod(postfixMethod));
+                serverHarmony.Patch(onUseOverMethod, prefix: new HarmonyMethod(prefixMethod));
                 api.Logger.Notification("[SeraphLeveling] Successfully patched BlockEntityAnvil.OnUseOver for crafting hooks");
             }
             catch (Exception ex)

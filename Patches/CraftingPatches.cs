@@ -175,7 +175,7 @@ namespace SeraphLeveling.Patches
             }
         }
 
-        public static void BlockEntityAnvil_OnUseOver_Postfix(BlockEntityAnvil __instance, IPlayer byPlayer, Vec3i voxelPos, BlockSelection blockSel)
+        public static void BlockEntityAnvil_OnUseOver_Prefix(BlockEntityAnvil __instance, IPlayer byPlayer, Vec3i voxelPos, BlockSelection blockSel)
         {
             if (byPlayer?.Entity?.Api?.Side == EnumAppSide.Server)
             {
@@ -185,7 +185,7 @@ namespace SeraphLeveling.Patches
                 ItemSlot slot = byPlayer?.InventoryManager?.ActiveHotbarSlot;
                 if (voxelPos == null || __instance.SelectedRecipe == null || slot == null || !__instance.CanWorkCurrent) return;
 
-                int toolMode = slot.Itemstack.Collectible.GetToolMode(slot, byPlayer, blockSel);
+                int toolMode = slot?.Itemstack?.Collectible?.GetToolMode(slot, byPlayer, blockSel) ?? -1;
                 byte voxelVal = __instance.Voxels[voxelPos.X, voxelPos.Y, voxelPos.Z];
                 bool validHit = toolMode switch
                 {
@@ -201,8 +201,13 @@ namespace SeraphLeveling.Patches
 
                 if (validHit)
                 {
+                    string playerUid = byPlayer?.PlayerUID;
                     string playerName = serverPlayer?.PlayerName;
-                    SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Noticed {playerName} striking a voxel on an anvil");
+                    string toolCode = slot?.Itemstack?.Collectible?.Code;
+                    SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Granting {playerName} credit for striking a voxel on an anvil with {toolCode}");
+                    AttributeModifierDefinitions.SmithingSpeed.GetForPlayer(playerUid).DoEvent(serverPlayer, toolCode, 1, RepairableToolProgress.Usage);
+                    AttributeModifierDefinitions.BitRecoveryRate.GetForPlayer(playerUid).DoEvent(serverPlayer, toolCode, 1, RepairableToolProgress.Usage);
+                    AttributeModifierDefinitions.HammerDurability.GetForPlayer(playerUid).DoEvent(serverPlayer, toolCode, 1, RepairableToolProgress.Usage);
                 }
             }
         }

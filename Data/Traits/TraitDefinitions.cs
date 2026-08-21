@@ -421,9 +421,10 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "blacksmith",
             Attributes = [
-                // TODO: two other attributes.
-                Bonus(CharcoalDropRate, 200),
+                Bonus(SmithingSpeed, 100),
+                Bonus(BitRecoveryRate, 100),
                 Bonus(HammerDurability, 70),
+                Bonus(CharcoalDropRate, 200),
             ]
         };
 

@@ -908,7 +908,7 @@ namespace SeraphLeveling.Data.Attributes
             {
                 [RepairableToolProgress.Usage] = new()
                 {
-                    IncrementUnits = "crafts",
+                    IncrementUnits = "smithing strikes",
                     BaseIncrement = 100,
                     IncrementStep = 100,
                 },
@@ -1030,6 +1030,44 @@ namespace SeraphLeveling.Data.Attributes
             CollectedItemCountKey = "sitMasterCraftsmanCount",
             TokenAllowList = ["*"],
             Trait = new(() => Traits.TraitDefinitions.MasterCraftsman),
+        };
+
+        public static readonly ConcurrentDictionary<RepairableToolProgress, IncrementData> SmithingIncrementData = new()
+        {
+            [RepairableToolProgress.Usage] = new IncrementData
+            {
+                IncrementUnits = "smithing strikes",
+                BaseIncrement = 100,
+                IncrementStep = 100,
+            }
+        };
+
+        public static readonly GenericRepairableToolAttributeModifierDefinition SmithingSpeed = new()
+        {
+            Id = "smithingSpeed",
+            SkillKey = "smithing",
+            Name = "Smithing Speed",
+            Stat = "% smithing speed",
+            LongDescription = "smithing speed",
+            PersistenceHeader = "SMS",
+            Tool = ToolDefinitions.Hammer,
+            IncrementData = SmithingIncrementData,
+            GlobalMaxCredits = 100,
+            StatName = "ats:handsmithingspeed"
+        };
+
+        public static readonly GenericRepairableToolAttributeModifierDefinition BitRecoveryRate = new()
+        {
+            Id = "bitRecoveryRate",
+            SkillKey = "bitrecoveryrate",
+            Name = "Bit Recovery Rate",
+            Stat = "% bit recovery rate",
+            LongDescription = "bit recovery rate",
+            PersistenceHeader = "BRR",
+            Tool = ToolDefinitions.Hammer,
+            IncrementData = SmithingIncrementData,
+            GlobalMaxCredits = 100,
+            StatName = "ats:bitrecoveryrate"
         };
     }
 }
