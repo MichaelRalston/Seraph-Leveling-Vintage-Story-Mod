@@ -49,6 +49,15 @@ namespace SeraphLeveling.Data.Attributes
             Trait = new(() => Traits.TraitDefinitions.Merciless)
         };
 
+        public static readonly CaveExplorerAttributeModifierDefinition CaveExplorer = new()
+        {
+            Id = "caveExplorer",
+            SkillKey = "caveexplorer",
+            PersistenceHeader = "CEX",
+            Name = "CaveExplorer",
+            Trait = new(() => Traits.TraitDefinitions.CaveExplorer),
+        };
+
         public static readonly GenericLeveledAttributeModifierDefinition WalkingSpeed = new()
         {
             Id = "walkingSpeed",

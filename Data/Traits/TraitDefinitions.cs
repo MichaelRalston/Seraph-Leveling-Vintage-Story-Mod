@@ -456,6 +456,11 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "caveexplorer",
             Attributes = [
+                Bonus(AttributeModifierDefinitions.CaveExplorer, 120, [
+                    new LeveledAttributeMinimumRequirement { Attribute = PickaxeDurability, ThresholdPercentage = 20 },
+                    new LeveledAttributeMinimumRequirement { Attribute = WalkingSpeed, ThresholdPercentage = 10 },
+                ]),
+                Bonus(PickaxeDurability, 70),
             ]
         };
 
