@@ -654,7 +654,7 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "TRC",
             Tool = ToolDefinitions.Axe,
             IncrementData = TreeChoppingIncrementData,
-            GlobalMaxCredits = 150,
+            GlobalMaxCredits = 250,
             StatName = "ats:wood|axe-?-harvestSpeed"
         };
 
