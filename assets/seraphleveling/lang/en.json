@@ -204,6 +204,8 @@
   "attribute-hammerdamage-contents": "{0}% hammer damage",
   "attribute-temperpowerloss-contents": "{0}% tempering power loss",
   "attribute-quenchshatter-contents": "{0}% quenching shatter chance",
+  "attribute-knifedamage-contents": "{0}% knife damage",
+  "attribute-knifedurability-contents": "{0}% knife durability",
 
   "attribute-bowyer-contents": "Exclusive craftable <a href=\"handbooksearch://crude bow or crude arrow or recurve bow\">bows and arrows</a>",
   "attribute-clothier-contents": "Exclusive craftable <a href=\"handbooksearch://sewing kit or chateau or pastoral or reindeer or moon or minstrel or fortune or nomad or spice or cobalt or azure or thigh-high or fine trousers or high leather\">sewing kit and clothes</a>",

@@ -78,6 +78,9 @@ namespace SeraphLeveling.Patches
                         case EnumTool.Hammer:
                             AttributeModifierDefinitions.HammerDurability.GetForPlayer(playerUid).DoEvent(serverPlayer, outputCode, quantity, RepairableToolProgress.Repair);
                             break;
+                        case EnumTool.Knife:
+                            AttributeModifierDefinitions.KnifeDurability.GetForPlayer(playerUid).DoEvent(serverPlayer, outputCode, quantity, RepairableToolProgress.Repair);
+                            break;
                     }
                 }
             }

@@ -42,5 +42,9 @@ namespace SeraphLeveling.Data.Tools
         {
             Name = "hammer",
         };
+        public static readonly ToolDefinition Knife = new()
+        {
+            Name = "knife",
+        };
     }
 }

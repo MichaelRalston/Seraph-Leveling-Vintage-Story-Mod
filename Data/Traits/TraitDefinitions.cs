@@ -589,6 +589,8 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "allumette",
             Attributes = [
+                Bonus(KnifeDamage, 100),
+                Bonus(KnifeDurability, 75),
             ]
         };
 

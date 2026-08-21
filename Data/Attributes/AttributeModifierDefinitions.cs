@@ -1124,5 +1124,47 @@ namespace SeraphLeveling.Data.Attributes
             StatName = "ats:quenchshatterrate",
             IsInverted = true,
         };
+
+        public static readonly GenericToolAttributeModifierDefinition KnifeDamage = new()
+        {
+            Id = "knifeDamage",
+            Name = "Knife Damage",
+            LongDescription = "knife damage",
+            Stat = "% knife damage",
+            SkillKey = "knifedamage",
+            PersistenceHeader = "KDM",
+            Tool = ToolDefinitions.Knife,
+            IncrementData = DamageIncrementData,
+            GlobalMaxCredits = 100,
+            StatName = "ats:knife-?-meleeDamageMult",
+        };
+
+        public static readonly GenericRepairableToolAttributeModifierDefinition KnifeDurability = new()
+        {
+            Id = "knifeDurability",
+            SkillKey = "knifedurability",
+            Name = "Knife Durability",
+            Stat = "% knife durability loss reduction",
+            LongDescription = "knife durability",
+            PersistenceHeader = "KDR",
+            Tool = ToolDefinitions.Knife,
+            IncrementData = new()
+            {
+                [RepairableToolProgress.Usage] = new()
+                {
+                    IncrementUnits = "damage",
+                    BaseIncrement = 100,
+                    IncrementStep = 100,
+                },
+                [RepairableToolProgress.Repair] = new()
+                {
+                    IncrementUnits = "repairs",
+                    BaseIncrement = 1,
+                    IncrementStep = 1,
+                }
+            },
+            GlobalMaxCredits = 75,
+            StatName = "ats:knife-?-reduceDurabilityLoss"
+        };
     }
 }

@@ -3091,8 +3091,21 @@ namespace SeraphLeveling
                 AttributeModifierDefinitions.QuenchingShatter.GetForPlayer(playerUid).DoEvent(attackerPlayer, weaponType, damage);
             }
 
+            if (IsKnife(weaponType))
+            {
+                AttributeModifierDefinitions.KnifeDamage.GetForPlayer(playerUid).DoEvent(attackerPlayer, weaponType, damage);
+                AttributeModifierDefinitions.KnifeDurability.GetForPlayer(playerUid).DoEvent(attackerPlayer, weaponType, damage, RepairableToolProgress.Usage);
+            }
+
             var damageProgress = AttributeModifierDefinitions.MeleeDamage.GetForPlayer(playerUid);
             damageProgress.DoEvent(attackerPlayer, weaponType, damage);
+        }
+
+        private static bool IsKnife(string weaponType)
+        {
+            if (string.IsNullOrEmpty(weaponType)) return false;
+            string lower = weaponType.ToLowerInvariant();
+            return lower.Contains("knife-");
         }
 
         private static bool IsHammer(string weaponType)
