@@ -73,6 +73,14 @@ namespace SeraphLeveling.Data.Attributes
             var progress = GetDict(player);
             sb.AppendLine($"{Name}: {progress.TotalCredits}/{GlobalMaxCredits} {CreditDescription} ({(progress.IsUnlocked ? "UNLOCKED" : "locked")})");
         }
+        public override void CollectStatus(IPlayer player, StringBuilder sb)
+        {
+            base.CollectStatus(player, sb);
+
+            var progress = GetDict(player);
+            sb.AppendLine($"{Name}: {progress.TotalCredits}/{GlobalMaxCredits} {CreditDescription} ({(progress.IsUnlocked ? "UNLOCKED" : "locked")})");
+        }
+
     }
 
     public class ScoredUnlockedAttributeModifierProgressData<D, PD>(D definition) : UnlockedAttributeModifierProgressData<D, PD>(definition) where PD : ScoredUnlockedAttributeModifierProgressData<D, PD> where D : ScoredUnlockedAttributeModifierDefinition<D, PD>, IConstructable<D, PD>

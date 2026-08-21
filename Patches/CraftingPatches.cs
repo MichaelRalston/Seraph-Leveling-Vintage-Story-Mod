@@ -16,7 +16,7 @@ namespace SeraphLeveling.Patches
             {
                 if (byPlayer is not IServerPlayer serverPlayer) return;
 
-                string outputCode = __instance?.Output?.Code?.ToString();
+                string outputCode = __instance?.Output?.Code?.Path;
                 int quantity = __instance?.Output?.Quantity ?? 0;
 
                 if (quantity <= 0) return;
@@ -45,6 +45,12 @@ namespace SeraphLeveling.Patches
                 {
                     SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Granting {playerName} credit for crafting {quantity} large gears");
                     AttributeModifierDefinitions.Technician.AddCredits(serverPlayer, quantity);
+                }
+
+                if (outputCode.StartsWith("bomb-"))
+                {
+                    SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Granting {playerName} credit for crafting {quantity} bombs");
+                    AttributeModifierDefinitions.Detonator.AddCredits(serverPlayer, quantity);
                 }
 
                 var toolType = __instance?.Output?.ResolvedItemStack?.Item?.Tool;

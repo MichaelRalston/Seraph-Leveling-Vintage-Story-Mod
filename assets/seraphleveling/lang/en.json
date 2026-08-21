@@ -217,6 +217,7 @@
   "attribute-propagator-contents": "Exclusive craftable <a href=\"handbooksearch://seeds or flower seed or soil booster\">seed bags</a>",
   "attribute-technician-contents": "Exclusive craftable <a href=\"handbooksearch://large gear\">cheaper mechanical parts</a>",
   "attribute-caveexplorer-contents": "Partial night vision in deep caves",
+  "attribute-detonator-contents": "Exclusive craftable <a href=\"handbooksearch:// bomb-ore or bomb-stone \">explosives</a>",
 
   "message-alchemist-unlock": "Alchemist unlocked! You are now more proficient with medicinal compounds.",
   "message-carpenter-unlock": "Carpenter unlocked! You are now better at crafting with wood.",
@@ -225,5 +226,6 @@
   "message-potter-unlock": "Potter unlocked! You are now better at crafting with ceramics.",
   "message-propagator-unlock": "Propagator unlocked! You've developed quite a green thumb.",
   "message-technician-unlock": "Technician unlocked! You are now better at crafting machinery.",
-  "message-caveexplorer-unlock": "Cave Explorer unlocked! You can now see better in the depths."
+  "message-caveexplorer-unlock": "Cave Explorer unlocked! You can now see better in the depths.",
+  "message-detonator-unlock": "Detonator unlocked! You can now make better booms."
 }
