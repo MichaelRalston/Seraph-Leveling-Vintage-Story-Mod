@@ -100,5 +100,40 @@ namespace SeraphLeveling.Patches
                 }
             }
         }
+
+        /// <summary>
+        /// Stores the state of the CheckIfFinished method.
+        /// </summary>
+        public class ClayFormCheckIfFinishedState
+        {
+            public ItemStack workItemStack;
+            public ClayFormingRecipe recipe;
+        }
+        
+        public static void BlockEntityClayForm_CheckIfFinished_Prefix(BlockEntityClayForm __instance, out ClayFormCheckIfFinishedState __state, IPlayer byPlayer, int layer, ItemStack ___workItemStack)
+        {
+            // Pass necessary state on to postfix method
+            __state = new()
+            {
+                workItemStack = ___workItemStack,
+                recipe = __instance.SelectedRecipe
+            };
+        }
+
+        public static void BlockEntityClayForm_CheckIfFinished_Postfix(BlockEntityClayForm __instance, ClayFormCheckIfFinishedState __state, IPlayer byPlayer, int layer, ItemStack ___workItemStack)
+        {
+            if (byPlayer?.Entity?.Api?.Side == EnumAppSide.Server)
+            {
+                if (byPlayer is not IServerPlayer serverPlayer || ___workItemStack != null || __state.recipe == null) return;
+
+                string playerName = serverPlayer?.PlayerName;
+                string outputCode = __state.recipe.Output?.ResolvedItemstack?.Collectible?.Code?.ToString();
+                int quantity = __state.recipe.Output?.ResolvedItemstack?.StackSize ?? 0;
+
+                if (quantity <= 0) return;
+
+                SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Player {playerName} crafted {quantity} of item code {outputCode} with clay");
+            }
+        }
     }
 }

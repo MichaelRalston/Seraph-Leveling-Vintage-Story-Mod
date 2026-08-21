@@ -2578,6 +2578,7 @@ namespace SeraphLeveling
                     // Patch crafting methods for recipe crafting detection
                     PatchGridCrafting(api);
                     PatchBarrelCrafting(api);
+                    PatchClayformCrafting(api);
 
                     // Patch ItemPoultice.OnHeldInteractStop for Medic trait (poultice/bandage healing)
                     PatchPoulticeHealing(api);
@@ -2656,6 +2657,49 @@ namespace SeraphLeveling
             catch (Exception ex)
             {
                 api.Logger.Warning($"[SeraphLeveling] Failed to patch BlockEntityBarrel.OnReceivedClientPacket: {ex.Message}");
+            }
+        }
+
+        private void PatchClayformCrafting(ICoreServerAPI api)
+        {
+            try
+            {
+                var barrelType = AccessTools.TypeByName("Vintagestory.GameContent.BlockEntityClayForm");
+                if (barrelType == null)
+                {
+                    api.Logger.Debug("[SeraphLeveling] Could not find BlockEntityClayForm type for crafting hooks");
+                    return;
+                }
+
+                var receiveClientPacketMethod = AccessTools.Method(barrelType, "CheckIfFinished");
+                if (receiveClientPacketMethod == null)
+                {
+                    api.Logger.Debug("[SeraphLeveling] Could not find BlockEntityClayForm.CheckIfFinished method for crafting hooks");
+                    return;
+                }
+
+                // Get our prefix method
+                var prefixMethod = AccessTools.Method(typeof(CraftingPatches), nameof(CraftingPatches.BlockEntityClayForm_CheckIfFinished_Prefix));
+                if (prefixMethod == null)
+                {
+                    api.Logger.Error("[SeraphLeveling] Could not find BlockEntityClayForm_CheckIfFinished_Prefix method!");
+                    return;
+                }
+
+                // Get our postfix method
+                var postfixMethod = AccessTools.Method(typeof(CraftingPatches), nameof(CraftingPatches.BlockEntityClayForm_CheckIfFinished_Postfix));
+                if (postfixMethod == null)
+                {
+                    api.Logger.Error("[SeraphLeveling] Could not find BlockEntityClayForm_CheckIfFinished_Postfix method!");
+                    return;
+                }
+
+                serverHarmony.Patch(receiveClientPacketMethod, prefix: new HarmonyMethod(prefixMethod), postfix: new HarmonyMethod(postfixMethod));
+                api.Logger.Notification("[SeraphLeveling] Successfully patched BlockEntityClayForm.CheckIfFinished for crafting hooks");
+            }
+            catch (Exception ex)
+            {
+                api.Logger.Warning($"[SeraphLeveling] Failed to patch BlockEntityClayForm.CheckIfFinished: {ex.Message}");
             }
         }
 
