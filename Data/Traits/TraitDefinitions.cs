@@ -507,7 +507,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "ranger",
             Attributes = [
-                // TODO: Figure out what's up with bow vs ranged damage here.
+                Bonus(BowDamage, 75),
                 Bonus(BowDurability, 70),
                 Bonus(AttributeModifierDefinitions.Furtive, 80),
             ]

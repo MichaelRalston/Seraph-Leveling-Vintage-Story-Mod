@@ -3213,6 +3213,7 @@ namespace SeraphLeveling
             {
                 TrackBowyerBowDamage(attackerPlayer, damage);
                 AttributeModifierDefinitions.BowDurability.GetForPlayer(playerUid).DoEvent(attackerPlayer, weaponCombo, damage, RepairableToolProgress.Usage);
+                AttributeModifierDefinitions.BowDamage.GetForPlayer(playerUid).DoEvent(attackerPlayer, weaponCombo, damage, RepairableToolProgress.Usage);
             }
             if (IsThrownRock(weaponCombo))
             {

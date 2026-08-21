@@ -978,6 +978,33 @@ namespace SeraphLeveling.Data.Attributes
             GlobalMaxCredits = 75,
             StatName = "ats:bow-?-reduceDurabilityLoss"
         };
+        public static readonly GenericRepairableToolAttributeModifierDefinition BowDamage = new()
+        {
+            Id = "bowDamage",
+            SkillKey = "bowdamage",
+            Name = "BowDamage",
+            Stat = "% bow damage increase",
+            LongDescription = "bow damage",
+            PersistenceHeader = "BDM",
+            Tool = ToolDefinitions.Bow,
+            IncrementData = new()
+            {
+                [RepairableToolProgress.Usage] = new()
+                {
+                    IncrementUnits = "damage",
+                    BaseIncrement = 100,
+                    IncrementStep = 100,
+                },
+                [RepairableToolProgress.Repair] = new()
+                {
+                    IncrementUnits = "repairs",
+                    BaseIncrement = 1,
+                    IncrementStep = 1,
+                }
+            },
+            GlobalMaxCredits = 75,
+            StatName = "ats:bow-?-rangedDamageMult"
+        };
 
         public static readonly GenericCollectionUnlockedAttributeModifierDefinition Potter = new()
         {

@@ -57,6 +57,7 @@ namespace SeraphLeveling.Patches
                             break;
                         case EnumTool.Bow:
                             AttributeModifierDefinitions.BowDurability.GetForPlayer(playerUid).DoEvent(serverPlayer, outputCode, quantity, RepairableToolProgress.Repair);
+                            AttributeModifierDefinitions.BowDamage.GetForPlayer(playerUid).DoEvent(serverPlayer, outputCode, quantity, RepairableToolProgress.Repair);
                             break;
                         case EnumTool.Pickaxe:
                             AttributeModifierDefinitions.PickaxeDurability.GetForPlayer(playerUid).DoEvent(serverPlayer, outputCode, quantity, RepairableToolProgress.Repair);
