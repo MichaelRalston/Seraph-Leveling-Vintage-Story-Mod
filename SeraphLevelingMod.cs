@@ -2586,6 +2586,7 @@ namespace SeraphLeveling
                     PatchBarrelCrafting(api);
                     PatchClayformCrafting(api);
                     PatchSmithingCrafting(api);
+                    PatchSmithingVoxelStrike(api);
 
                     // Patch ItemPoultice.OnHeldInteractStop for Medic trait (poultice/bandage healing)
                     PatchPoulticeHealing(api);
@@ -2750,6 +2751,41 @@ namespace SeraphLeveling
             catch (Exception ex)
             {
                 api.Logger.Warning($"[SeraphLeveling] Failed to patch BlockEntityAnvil.CheckIfFinished: {ex.Message}");
+            }
+        }
+
+        private void PatchSmithingVoxelStrike(ICoreServerAPI api)
+        {
+            try
+            {
+                var anvilType = AccessTools.TypeByName("Vintagestory.GameContent.BlockEntityAnvil");
+                if (anvilType == null)
+                {
+                    api.Logger.Debug("[SeraphLeveling] Could not find BlockEntityAnvil type for crafting hooks");
+                    return;
+                }
+
+                var onUseOverMethod = AccessTools.Method(anvilType, "OnUseOver", [typeof(IPlayer), typeof(Vec3i), typeof(BlockSelection)]);
+                if (onUseOverMethod == null)
+                {
+                    api.Logger.Debug("[SeraphLeveling] Could not find BlockEntityAnvil.OnUseOver method for crafting hooks");
+                    return;
+                }
+
+                // Get our postfix method
+                var postfixMethod = AccessTools.Method(typeof(CraftingPatches), nameof(CraftingPatches.BlockEntityAnvil_OnUseOver_Postfix));
+                if (postfixMethod == null)
+                {
+                    api.Logger.Error("[SeraphLeveling] Could not find BlockEntityAnvil_OnUseOver_Postfix method!");
+                    return;
+                }
+
+                serverHarmony.Patch(onUseOverMethod, postfix: new HarmonyMethod(postfixMethod));
+                api.Logger.Notification("[SeraphLeveling] Successfully patched BlockEntityAnvil.OnUseOver for crafting hooks");
+            }
+            catch (Exception ex)
+            {
+                api.Logger.Warning($"[SeraphLeveling] Failed to patch BlockEntityAnvil.OnUseOver: {ex.Message}");
             }
         }
 

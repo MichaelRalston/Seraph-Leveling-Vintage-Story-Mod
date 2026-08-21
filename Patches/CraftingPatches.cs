@@ -2,6 +2,7 @@ using System;
 using SeraphLeveling.Data.Attributes;
 using Vintagestory.API.Common;
 using Vintagestory.API.Config;
+using Vintagestory.API.MathTools;
 using Vintagestory.API.Server;
 using Vintagestory.GameContent;
 
@@ -172,6 +173,48 @@ namespace SeraphLeveling.Patches
                 SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Granting {playerName} credit for smithing {quantity} of {outputCode}");
                 AttributeModifierDefinitions.MasterCraftsman.AddCollectedItem(serverPlayer, outputCode);
             }
+        }
+
+        public static void BlockEntityAnvil_OnUseOver_Postfix(BlockEntityAnvil __instance, IPlayer byPlayer, Vec3i voxelPos, BlockSelection blockSel)
+        {
+            if (byPlayer?.Entity?.Api?.Side == EnumAppSide.Server)
+            {
+                if (byPlayer is not IServerPlayer serverPlayer) return;
+
+                // If the event handling would have aborted, abort here as well
+                ItemSlot slot = byPlayer?.InventoryManager?.ActiveHotbarSlot;
+                if (voxelPos == null || __instance.SelectedRecipe == null || slot == null || !__instance.CanWorkCurrent) return;
+
+                int toolMode = slot.Itemstack.Collectible.GetToolMode(slot, byPlayer, blockSel);
+                byte voxelVal = __instance.Voxels[voxelPos.X, voxelPos.Y, voxelPos.Z];
+                bool validHit = toolMode switch
+                {
+                    // OnHit
+                    0 => voxelVal == (byte)EnumVoxelMaterial.Metal && voxelPos.Y > 0,
+                    // OnUpset
+                    >= 1 and <= 4 => IsValidSmithingUpset(__instance, voxelPos),
+                    // OnSplit
+                    5 => voxelVal == (byte)EnumVoxelMaterial.Metal || voxelVal == (byte)EnumVoxelMaterial.Slag,
+                    // default
+                    _ => false
+                };
+
+                if (validHit)
+                {
+                    string playerName = serverPlayer?.PlayerName;
+                    SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Noticed {playerName} striking a voxel on an anvil");
+                }
+            }
+        }
+
+        private static bool IsValidSmithingUpset(BlockEntityAnvil instance, Vec3i voxelPos)
+        {
+            // Can only move metal
+            if (instance.Voxels[voxelPos.X, voxelPos.Y, voxelPos.Z] != (byte)EnumVoxelMaterial.Metal) return false;
+            // Can't move if metal is above
+            if (voxelPos.Y < 5 && instance.Voxels[voxelPos.X, voxelPos.Y + 1, voxelPos.Z] != (byte)EnumVoxelMaterial.Empty) return false;
+
+            return true;
         }
     }
 }
