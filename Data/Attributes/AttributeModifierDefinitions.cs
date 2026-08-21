@@ -141,6 +141,21 @@ namespace SeraphLeveling.Data.Attributes
             StatName = "wildCropDropRate",
         };
 
+        public static readonly GenericLeveledAttributeModifierDefinition FarmedCropDropRate = new()
+        {
+            Id = "cropRate",
+            SkillKey = "croprate",
+            PersistenceHeader = "FCR",
+            Name = "CropRate",
+            LongDescription = "produce drop rate",
+            Stat = "% produce drop rate",
+            BaseIncrement = 15,
+            IncrementStep = 15,
+            GlobalMaxCredits = 250,
+            IncrementUnits = "crops",
+            StatName = "sacredlib:produceDropRate",
+        };
+
         public static readonly GenericLeveledAttributeModifierDefinition AnimalDropRate = new()
         {
             Id = "Resourceful",

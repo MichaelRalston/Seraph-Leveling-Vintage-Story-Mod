@@ -1,5 +1,7 @@
 using System;
 using SeraphLeveling.Data.Attributes;
+using static SeraphLeveling.Data.Attributes.AttributeModifierDefinitions;
+using static SeraphLeveling.Data.Attributes.IAttributeModifier;
 
 namespace SeraphLeveling.Data.Traits
 {
@@ -9,9 +11,9 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "focused",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.RangedDamage, 20),
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.RangedAccuracy, 30),
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.RangedDistance, 20),
+                Bonus(RangedDamage, 20),
+                Bonus(RangedAccuracy, 30),
+                Bonus(RangedDistance, 20),
             ],
         };
 
@@ -19,8 +21,8 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "resourceful",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.AnimalDropRate, 10),
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.AnimalHarvestRate, 25),
+                Bonus(AnimalDropRate, 10),
+                Bonus(AnimalHarvestRate, 25),
             ],
         };
 
@@ -29,7 +31,7 @@ namespace SeraphLeveling.Data.Traits
             Id = "fleetfooted",
             PlainTraitNameKey = "seraphleveling:trait-sitwalkingmastery",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.WalkingSpeed, 10),
+                Bonus(WalkingSpeed, 10),
             ],
         };
 
@@ -37,9 +39,9 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "bowyer",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.Bowyer, 1, [
+                Bonus(AttributeModifierDefinitions.Bowyer, 1, [
                     new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Bowyer },
-                    new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.RangedDamage, ThresholdPercentage = 10 },
+                    new LeveledAttributeMinimumRequirement { Attribute = RangedDamage, ThresholdPercentage = 10 },
                 ])
             ],
         };
@@ -48,7 +50,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "farsighted",
             Attributes = [
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.MeleeDamage, 15, [ new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.MeleeDamage, ThresholdPercentage = 0 }]),
+                Penalty(MeleeDamage, 15, [ new LeveledAttributeMinimumRequirement { Attribute = MeleeDamage, ThresholdPercentage = 0 }]),
             ],
         };
 
@@ -56,10 +58,10 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "claustrophobic",
             Attributes = [
-                IAttributeModifier.PenaltyOffset(AttributeModifierDefinitions.ClaustrophobicOre, 1, AttributeModifierDefinitions.ClaustrophobicOrePenalty, [
-                    new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.MiningSpeed, ThresholdPercentage = 0 },
+                PenaltyOffset(ClaustrophobicOre, 1, ClaustrophobicOrePenalty, [
+                    new LeveledAttributeMinimumRequirement { Attribute = MiningSpeed, ThresholdPercentage = 0 },
                 ]),
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.MiningSpeed, 10, [ new LeveledAttributeMinimumRequirement() { Attribute = AttributeModifierDefinitions.MiningSpeed, ThresholdPercentage = 0 }]),
+                Penalty(MiningSpeed, 10, [ new LeveledAttributeMinimumRequirement() { Attribute = MiningSpeed, ThresholdPercentage = 0 }]),
             ],
         };
 
@@ -67,8 +69,8 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "forager",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.ForageLootingBonus, 10),
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.WildCropDropRate, 20),
+                Bonus(ForageLootingBonus, 10),
+                Bonus(WildCropDropRate, 20),
             ]
         };
 
@@ -76,9 +78,9 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "pilferer",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.GearDropRate, 10),
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.VesselDropRate, 15),
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.WholeVesselRate, 12),
+                Bonus(GearDropRate, 10),
+                Bonus(VesselDropRate, 15),
+                Bonus(WholeVesselRate, 12),
             ]
         };
 
@@ -86,7 +88,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "furtive",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.Furtive, 35),
+                Bonus(AttributeModifierDefinitions.Furtive, 35),
             ],
         };
 
@@ -94,7 +96,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "improviser",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.Improviser, 1, [ new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Improviser } ])
+                Bonus(AttributeModifierDefinitions.Improviser, 1, [ new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Improviser } ])
             ],
         };
 
@@ -102,10 +104,10 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "frail",
             Attributes = [
-                IAttributeModifier.PenaltyOffset(AttributeModifierDefinitions.FrailHealthOffset, 1, AttributeModifierDefinitions.FrailHealthPenalty, [
-                    new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.RangedDistance, ThresholdPercentage = 0 },
+                PenaltyOffset(FrailHealthOffset, 1, FrailHealthPenalty, [
+                    new LeveledAttributeMinimumRequirement { Attribute = RangedDistance, ThresholdPercentage = 0 },
                 ]),
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.RangedDistance, 25, [ new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.RangedDistance, ThresholdPercentage = 0 }]),
+                Penalty(RangedDistance, 25, [ new LeveledAttributeMinimumRequirement { Attribute = RangedDistance, ThresholdPercentage = 0 }]),
             ],
         };
 
@@ -113,7 +115,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "nervous",
             Attributes = [
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.MeleeDamage, 15, [ new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.MeleeDamage, ThresholdPercentage = 0 }]),
+                Penalty(MeleeDamage, 15, [ new LeveledAttributeMinimumRequirement { Attribute = MeleeDamage, ThresholdPercentage = 0 }]),
             ],
         };
 
@@ -121,7 +123,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "precise",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.Precise, 25),
+                Bonus(AttributeModifierDefinitions.Precise, 25),
             ],
         };
 
@@ -129,7 +131,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "technical",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.Technical, 1, [ new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Technical } ])
+                Bonus(AttributeModifierDefinitions.Technical, 1, [ new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Technical } ])
             ],
         };
 
@@ -137,7 +139,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "tinkerer",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.Tinkerer, 1, [
+                Bonus(AttributeModifierDefinitions.Tinkerer, 1, [
                     new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Technical },
                     new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.Precise, ThresholdPercentage = 10 },
                 ])
@@ -148,9 +150,9 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "soldier",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.MeleeDamage, 30),
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.ArmorDurability, 15),
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.ArmorWalkSpeed, 25),
+                Bonus(MeleeDamage, 30),
+                Bonus(ArmorDurability, 15),
+                Bonus(ArmorWalkSpeed, 25),
             ],
         };
 
@@ -158,11 +160,11 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "hardy",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.HardyHealth, 1, [
-                    new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.MiningSpeed, ThresholdPercentage = 10 },
-                    new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.ArmorDurability, ThresholdPercentage = 10 }
+                Bonus(HardyHealth, 1, [
+                    new LeveledAttributeMinimumRequirement { Attribute = MiningSpeed, ThresholdPercentage = 10 },
+                    new LeveledAttributeMinimumRequirement { Attribute = ArmorDurability, ThresholdPercentage = 10 }
                 ]),
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.MiningSpeed, 10),
+                Bonus(MiningSpeed, 10),
             ]
         };
 
@@ -170,9 +172,9 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "merciless",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.Merciless, 1, [
-                    new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.MeleeDamage, ThresholdPercentage = 15 },
-                    new LeveledAttributeMinimumRequirement{ Attribute = AttributeModifierDefinitions.ArmorDurability , ThresholdPercentage = 10}
+                Bonus(AttributeModifierDefinitions.Merciless, 1, [
+                    new LeveledAttributeMinimumRequirement { Attribute = MeleeDamage, ThresholdPercentage = 15 },
+                    new LeveledAttributeMinimumRequirement{ Attribute = ArmorDurability , ThresholdPercentage = 10}
                 ])
             ],
         };
@@ -183,7 +185,7 @@ namespace SeraphLeveling.Data.Traits
             Id = "hungermastery",
             DynamicTraitHeaderKey = "seraphleveling:trait-hungermastery",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.HungerRate, 1),
+                Bonus(HungerRate, 1),
             ],
         };
 
@@ -191,7 +193,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "ravenous",
             Attributes = [
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.HungerRate, 30, [ new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.HungerRate, ThresholdPercentage = 0 }])
+                Penalty(HungerRate, 30, [ new LeveledAttributeMinimumRequirement { Attribute = HungerRate, ThresholdPercentage = 0 }])
             ],
         };
 
@@ -199,7 +201,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "nearsighted",
             Attributes = [
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.RangedDamage, 15, [ new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.RangedDamage, ThresholdPercentage = 0 }])
+                Penalty(RangedDamage, 15, [ new LeveledAttributeMinimumRequirement { Attribute = RangedDamage, ThresholdPercentage = 0 }])
             ],
         };
 
@@ -207,9 +209,9 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "heavyhanded",
             Attributes = [
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.VesselDropRate, 10, [ new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.VesselDropRate, ThresholdPercentage = 0 }]),
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.ForageLootingBonus, 15, [ new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.ForageLootingBonus, ThresholdPercentage = 0 }]),
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.WildCropDropRate, 20, [ new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.WildCropDropRate, ThresholdPercentage = 0 }]),
+                Penalty(VesselDropRate, 10, [ new LeveledAttributeMinimumRequirement { Attribute = VesselDropRate, ThresholdPercentage = 0 }]),
+                Penalty(ForageLootingBonus, 15, [ new LeveledAttributeMinimumRequirement { Attribute = ForageLootingBonus, ThresholdPercentage = 0 }]),
+                Penalty(WildCropDropRate, 20, [ new LeveledAttributeMinimumRequirement { Attribute = WildCropDropRate, ThresholdPercentage = 0 }]),
             ]
         };
 
@@ -217,7 +219,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "clothier",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.Clothier, 1, [ new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Clothier } ])
+                Bonus(AttributeModifierDefinitions.Clothier, 1, [ new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Clothier } ])
             ],
         };
 
@@ -225,7 +227,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "mender",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.Mender, 25)
+                Bonus(AttributeModifierDefinitions.Mender, 25)
             ]
         };
 
@@ -233,7 +235,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "civil",
             Attributes = [
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.ForageLootingBonus, 10, [ new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.ForageLootingBonus, ThresholdPercentage = 0 } ]),
+                Penalty(ForageLootingBonus, 10, [ new LeveledAttributeMinimumRequirement { Attribute = ForageLootingBonus, ThresholdPercentage = 0 } ]),
             ]
         };
 
@@ -241,10 +243,10 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "weak",
             Attributes = [
-                IAttributeModifier.PenaltyOffset(AttributeModifierDefinitions.WeakHealthOffset, 1, AttributeModifierDefinitions.WeakHealthPenalty, [
-                    new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.MiningSpeed, ThresholdPercentage = 0 },
+                PenaltyOffset(WeakHealthOffset, 1, WeakHealthPenalty, [
+                    new LeveledAttributeMinimumRequirement { Attribute = MiningSpeed, ThresholdPercentage = 0 },
                 ]),
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.MiningSpeed, 10, [ new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.MiningSpeed, ThresholdPercentage = 0 } ]),
+                Penalty(MiningSpeed, 10, [ new LeveledAttributeMinimumRequirement { Attribute = MiningSpeed, ThresholdPercentage = 0 } ]),
             ],
         };
 
@@ -252,8 +254,8 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "kind",
             Attributes = [
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.AnimalDropRate, 10, [ new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.AnimalDropRate, ThresholdPercentage = 0 } ]),
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.AnimalHarvestRate, 10, [ new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.AnimalHarvestRate, ThresholdPercentage = 0 } ]),
+                Penalty(AnimalDropRate, 10, [ new LeveledAttributeMinimumRequirement { Attribute = AnimalDropRate, ThresholdPercentage = 0 } ]),
+                Penalty(AnimalHarvestRate, 10, [ new LeveledAttributeMinimumRequirement { Attribute = AnimalHarvestRate, ThresholdPercentage = 0 } ]),
             ]
         };
 
@@ -261,9 +263,9 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "carpenter",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.Carpenter, 1, [
+                Bonus(AttributeModifierDefinitions.Carpenter, 1, [
                     new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Carpenter },
-                    new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.TreeChoppingSpeed, ThresholdPercentage = 10 },
+                    new LeveledAttributeMinimumRequirement { Attribute = TreeChoppingSpeed, ThresholdPercentage = 10 },
                 ])
             ],
         };
@@ -272,10 +274,10 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "lumberjack",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.TreeChoppingSpeed, 120), // TODO: make sure this is right, because it looks like 220 to me in SL's data.
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.AxeDamage, 75),
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.AxeDurability, 70),
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.CharcoalDropRate, 20), // TODO: is this right, or is it 120? I think it's 120.
+                Bonus(TreeChoppingSpeed, 120), // TODO: make sure this is right, because it looks like 220 to me in SL's data.
+                Bonus(AxeDamage, 75),
+                Bonus(AxeDurability, 70),
+                Bonus(CharcoalDropRate, 20), // TODO: is this right, or is it 120? I think it's 120.
             ]
         };
 
@@ -283,9 +285,9 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "treewhisperer",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.WoodDropRate, 75),
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.SeedDropRate, 1000),
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.StickDropRate, 300),
+                Bonus(WoodDropRate, 75),
+                Bonus(SeedDropRate, 1000),
+                Bonus(StickDropRate, 300),
             ]
         };
 
@@ -293,8 +295,8 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "heavyfooted",
             Attributes = [
-                IAttributeModifier.BasicPenalty(AttributeModifierDefinitions.Furtive, 50),
-                IAttributeModifier.BasicPenalty(AttributeModifierDefinitions.WalkingSpeed, 10),
+                BasicPenalty(AttributeModifierDefinitions.Furtive, 50),
+                BasicPenalty(WalkingSpeed, 10),
             ]
         };
 
@@ -302,9 +304,9 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "mason",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.Mason, 1, [
+                Bonus(AttributeModifierDefinitions.Mason, 1, [
                     new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Mason },
-                    new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.MiningSpeed, ThresholdPercentage = 10 },
+                    new LeveledAttributeMinimumRequirement { Attribute = MiningSpeed, ThresholdPercentage = 10 },
                 ])
             ],
         };
@@ -327,7 +329,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "technician",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.Technician, 1, [
+                Bonus(AttributeModifierDefinitions.Technician, 1, [
                     new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Technician },
                     new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.Precise, ThresholdPercentage = 10 },
                 ])
@@ -338,9 +340,9 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "siltseeker",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.ClayDropRate, 50),
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.ClayformSpeed, 100),
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.PeatDropRate, 50),
+                Bonus(ClayDropRate, 50),
+                Bonus(ClayformSpeed, 100),
+                Bonus(PeatDropRate, 50),
             ]
         };
 
@@ -348,7 +350,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "townie",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.Townie, 10),
+                Bonus(AttributeModifierDefinitions.Townie, 10),
             ]
         };
 
@@ -356,8 +358,8 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "agoraphobic",
             Attributes = [
-                IAttributeModifier.BasicPenalty(AttributeModifierDefinitions.RangedAccuracy, 20),
-                IAttributeModifier.BasicPenalty(AttributeModifierDefinitions.RangedDamage, 50),
+                BasicPenalty(RangedAccuracy, 20),
+                BasicPenalty(RangedDamage, 50),
             ]
         };
 
@@ -365,9 +367,9 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "alchemist",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.Alchemist, 1, [
+                Bonus(AttributeModifierDefinitions.Alchemist, 1, [
                     new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Alchemist },
-                    new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.HealUseSpeed, ThresholdPercentage = 10 },
+                    new LeveledAttributeMinimumRequirement { Attribute = HealUseSpeed, ThresholdPercentage = 10 },
                 ])
             ],
         };
@@ -376,9 +378,9 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "propagator",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.Propagator, 1, [
+                Bonus(AttributeModifierDefinitions.Propagator, 1, [
                     new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Propagator },
-                    new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.ForageLootingBonus, ThresholdPercentage = 10 },
+                    new LeveledAttributeMinimumRequirement { Attribute = ForageLootingBonus, ThresholdPercentage = 10 },
                 ])
             ],
         };
@@ -387,8 +389,8 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "naturalist",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.ForageLootingBonus, 100),
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.Furtive, 80),
+                Bonus(ForageLootingBonus, 100),
+                Bonus(AttributeModifierDefinitions.Furtive, 80),
             ]
         };
 
@@ -396,7 +398,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "medic",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.HealUseSpeed, 70),
+                Bonus(HealUseSpeed, 70),
             ]
         };
 
@@ -412,8 +414,8 @@ namespace SeraphLeveling.Data.Traits
             Id = "blacksmith",
             Attributes = [
                 // TODO: two other attributes.
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.CharcoalDropRate, 200),
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.HammerDurability, 70),
+                Bonus(CharcoalDropRate, 200),
+                Bonus(HammerDurability, 70),
             ]
         };
 
@@ -428,8 +430,8 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "engineer",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.GearDropRate, 200),
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.Precise, 300),
+                Bonus(GearDropRate, 200),
+                Bonus(AttributeModifierDefinitions.Precise, 300),
             ]
         };
 
@@ -444,9 +446,9 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "stonespeaker",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.MiningSpeed, 220),
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.OreDropRate, 300),
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.StoneDropRate, 300),
+                Bonus(MiningSpeed, 220),
+                Bonus(OreDropRate, 300),
+                Bonus(StoneDropRate, 300),
             ],
         };
 
@@ -461,6 +463,9 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "earthsinger",
             Attributes = [
+                Bonus(FarmedCropDropRate, 220),
+                Bonus(HoeDurability, 70),
+                Bonus(ScytheDurability, 70),
             ]
         };
 
@@ -468,8 +473,8 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "rancher",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.AnimalHarvestRate, 50),
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.AnimalDropRate, 50),
+                Bonus(AnimalHarvestRate, 50),
+                Bonus(AnimalDropRate, 50),
             ]
         };
 
@@ -484,8 +489,8 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "butcher",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.AnimalHarvestRate, 100),
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.AnimalDropRate, 100),
+                Bonus(AnimalHarvestRate, 100),
+                Bonus(AnimalDropRate, 100),
             ]
         };
 
@@ -494,8 +499,8 @@ namespace SeraphLeveling.Data.Traits
             Id = "ranger",
             Attributes = [
                 // TODO: Figure out what's up with bow vs ranged damage here.
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.BowDurability, 70),
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.Furtive, 80),
+                Bonus(BowDurability, 70),
+                Bonus(AttributeModifierDefinitions.Furtive, 80),
             ]
         };
 
@@ -503,8 +508,8 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "welladjusted",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.ArmorDurability, 10),
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.ArmorWalkSpeed, 25),
+                Bonus(ArmorDurability, 10),
+                Bonus(ArmorWalkSpeed, 25),
             ]
         };
 
@@ -512,11 +517,11 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "bulwark",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.ArmorWalkSpeed, 70),
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.ArmorDurability, 50),
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.BulwarkHealth, 1, [
-                    new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.ArmorWalkSpeed, ThresholdPercentage = 70 },
-                    new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.ArmorDurability, ThresholdPercentage = 50 }
+                Bonus(ArmorWalkSpeed, 70),
+                Bonus(ArmorDurability, 50),
+                Bonus(BulwarkHealth, 1, [
+                    new LeveledAttributeMinimumRequirement { Attribute = ArmorWalkSpeed, ThresholdPercentage = 70 },
+                    new LeveledAttributeMinimumRequirement { Attribute = ArmorDurability, ThresholdPercentage = 50 }
                 ]),
 
             ]
@@ -526,7 +531,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "armymedic",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.HealUseSpeed, 30),
+                Bonus(HealUseSpeed, 30),
             ]
         };
 
@@ -534,10 +539,10 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "strongarmed",
             Attributes = [
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.MiningSpeed, 100),
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.OreDropRate, 100),
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.StoneDropRate, 100),
-                IAttributeModifier.Bonus(AttributeModifierDefinitions.VesselDropRate, 75),
+                Bonus(MiningSpeed, 100),
+                Bonus(OreDropRate, 100),
+                Bonus(StoneDropRate, 100),
+                Bonus(VesselDropRate, 75),
             ],
         };
 
@@ -545,8 +550,8 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "heavyhands",
             Attributes = [
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.WildCropDropRate, 20),
-                IAttributeModifier.Penalty(AttributeModifierDefinitions.ForageLootingBonus, 15),
+                Penalty(WildCropDropRate, 20),
+                Penalty(ForageLootingBonus, 15),
             ]
         };
 

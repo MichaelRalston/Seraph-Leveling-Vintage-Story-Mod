@@ -1625,9 +1625,9 @@ namespace SeraphLeveling
         private int GetWoodLogPoints(int blockId)
         {
             string codeToCheck = GetBlockCode(blockId);
-            #if SPAMMYDEBUG
+#if SPAMMYDEBUG
             ServerApi.Logger.Debug($"[SeraphLeveling] Checking wood log points for block code {codeToCheck}.");
-            #endif
+#endif
             if (codeToCheck.StartsWith("log-grown-"))
             {
                 return 5;
@@ -1638,9 +1638,9 @@ namespace SeraphLeveling
         private int GetDirtPoints(int blockId)
         {
             string codeToCheck = GetBlockCode(blockId);
-            #if SPAMMYDEBUG
+#if SPAMMYDEBUG
             ServerApi.Logger.Debug($"[SeraphLeveling] Checking dirt points for block code {codeToCheck}.");
-            #endif
+#endif
             if (codeToCheck.StartsWith("rawclay-"))
             {
                 // Clay soil
@@ -1662,9 +1662,9 @@ namespace SeraphLeveling
         private int GetLeavesPoints(int blockId)
         {
             string codeToCheck = GetBlockCode(blockId);
-            #if SPAMMYDEBUG
+#if SPAMMYDEBUG
             ServerApi.Logger.Debug($"[SeraphLeveling] Checking leaves points for block code {codeToCheck}.");
-            #endif
+#endif
             if (codeToCheck.StartsWith("leavesbranchy-grown"))
             {
                 return 2;
@@ -2148,6 +2148,11 @@ namespace SeraphLeveling
                 ProcessWildCropBroken(byPlayer);
             }
 
+            if (IsFarmedCropBlock(oldblockId, blockSel?.Position))
+            {
+                ProcessFarmedCropBroken(byPlayer);
+            }
+
             // Check for Pilferer progression (cracked vessels only - they can't be re-placed)
             if (IsCrackedVesselBlock(oldblockId))
             {
@@ -2219,7 +2224,8 @@ namespace SeraphLeveling
                     AttributeModifierDefinitions.WoodDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, toolCode, leavesPoints);
                     AttributeModifierDefinitions.SeedDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, toolCode, leavesPoints);
                     AttributeModifierDefinitions.StickDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, toolCode, leavesPoints);
-                    if (axeCode != null) {
+                    if (axeCode != null)
+                    {
                         AttributeModifierDefinitions.AxeDurability.GetForPlayer(playerUid).DoEvent(byPlayer, pickaxeCode, leavesPoints, RepairableToolProgress.Usage);
                     }
                 }
@@ -6115,6 +6121,13 @@ namespace SeraphLeveling
             AttributeModifierDefinitions.WildCropDropRate.GetForPlayer(playerUid).DoEvent(player, 1);
         }
 
+        public static void ProcessFarmedCropBroken(IServerPlayer player)
+        {
+            if (player?.Entity == null) return;
+            string playerUid = player.PlayerUID;
+
+            AttributeModifierDefinitions.FarmedCropDropRate.GetForPlayer(playerUid).DoEvent(player, 1);
+        }
         /// <summary>
         /// Check if a block is a wild crop (for Forager progression).
         /// Wild crops are crops like turnip, flax, spelt that grow on dirt/soil (not farmland).
@@ -6178,6 +6191,40 @@ namespace SeraphLeveling
             // - berry- (berry bushes can be replanted)
             // - wildvine (can be replanted/grown)
 
+            return false;
+        }
+
+        private static bool IsFarmedCropBlock(int blockId, BlockPos blockPos)
+        {
+            if (ServerApi == null) return false;
+
+            Block block = ServerApi.World.GetBlock(blockId);
+            if (block == null) return false;
+
+            string blockCode = block.Code?.ToString()?.ToLowerInvariant();
+            if (string.IsNullOrEmpty(blockCode)) return false;
+
+            // Check if it's a crop block (like crop-turnip-4, crop-flax-7, etc.)
+            if (blockCode.Contains("crop-"))
+            {
+                // Skip if it's explicitly a "wild" block - those are already wild
+                // Regular crops on farmland should NOT count
+                // Wild crops spawn on dirt/soil naturally
+
+                // Check if the block below is farmland - if so, this is a planted crop, not wild
+                if (blockPos != null)
+                {
+                    BlockPos belowPos = blockPos.DownCopy();
+                    Block blockBelow = ServerApi.World.BlockAccessor.GetBlock(belowPos);
+                    string belowCode = blockBelow?.Code?.ToString()?.ToLowerInvariant() ?? "";
+
+                    // If on farmland, this is a cultivated crop - don't count it
+                    if (belowCode.Contains("farmland"))
+                    {
+                        return true;
+                    }
+                }
+            }
             return false;
         }
 

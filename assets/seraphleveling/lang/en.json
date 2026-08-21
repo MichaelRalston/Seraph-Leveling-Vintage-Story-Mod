@@ -189,6 +189,7 @@
   "attribute-treechoppingspeed-contents": "{0}% tree chopping speed",
   "attribute-wooddroprate-contents": "{0}% wood drop rate",
   "attribute-townie-contents": "{0}% walk speed on paths",
+  "attribute-croprate-contents": "{0}% produce drop rate",
 
   "attribute-bowyer-contents": "Exclusive craftable <a href=\"handbooksearch://crude bow or crude arrow or recurve bow\">bows and arrows</a>",
   "attribute-clothier-contents": "Exclusive craftable <a href=\"handbooksearch://sewing kit or chateau or pastoral or reindeer or moon or minstrel or fortune or nomad or spice or cobalt or azure or thigh-high or fine trousers or high leather\">sewing kit and clothes</a>",
