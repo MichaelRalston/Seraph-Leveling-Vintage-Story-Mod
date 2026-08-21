@@ -46,5 +46,9 @@ namespace SeraphLeveling.Data.Tools
         {
             Name = "knife",
         };
+        public static readonly ToolDefinition Cleaver = new()
+        {
+            Name = "cleaver",
+        };
     }
 }

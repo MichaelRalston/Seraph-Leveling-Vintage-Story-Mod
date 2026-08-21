@@ -8,12 +8,17 @@ using Vintagestory.API.Common;
 using System.Linq;
 using SeraphLeveling.Patches;
 using SeraphLeveling.Data.Traits;
+using SeraphLeveling.Data.Mods;
 
 namespace SeraphLeveling.Data.Attributes
 {
     public interface IAttribute
     {
         public string Id { get; }
+
+        public Lazy<ModDefinition> RequiredMod { get; }
+
+        public bool IsRequiredModLoaded { get; }
 
         /// <summary>
         /// Unlock the attribute if it can be unlocked
@@ -71,6 +76,9 @@ namespace SeraphLeveling.Data.Attributes
     {
         public required string Id { get; init; }
         public required string Name { get; init; }
+
+        public virtual Lazy<ModDefinition> RequiredMod { get; init; } = null;
+        public virtual bool IsRequiredModLoaded => RequiredMod == null || SeraphLevelingModSystem.LoadedMods.Contains(RequiredMod.Value);
 
         public required string SkillKey { get; init; }
         public virtual string SaveKey { get => field ??= $"sit{Name}Progress"; init; }

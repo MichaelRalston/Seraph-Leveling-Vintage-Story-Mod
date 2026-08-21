@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using SeraphLeveling.Data.Mods;
 using SeraphLeveling.Data.Tools;
 
 namespace SeraphLeveling.Data.Attributes
@@ -1165,6 +1166,21 @@ namespace SeraphLeveling.Data.Attributes
             },
             GlobalMaxCredits = 75,
             StatName = "ats:knife-?-reduceDurabilityLoss"
+        };
+
+        public static readonly GenericToolAttributeModifierDefinition CleaverDamage = new()
+        {
+            Id = "cleaverDamage",
+            RequiredMod = new(() => ModDefinitions.Butchering),
+            Name = "Cleaver Damage",
+            LongDescription = "Cleaver damage",
+            Stat = "% cleaver damage",
+            SkillKey = "cleaverdamage",
+            PersistenceHeader = "CDM",
+            Tool = ToolDefinitions.Knife,
+            IncrementData = DamageIncrementData,
+            GlobalMaxCredits = 100,
+            StatName = "ats:aculinaryartillery:cleaver-?-meleeDamageMult",
         };
     }
 }

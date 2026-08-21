@@ -39,5 +39,11 @@ namespace SeraphLeveling.Data.Mods
                 CharacterClassDefinitions.SacredClassesDummy,
             ]
         };
+
+        public static readonly ModDefinition Butchering = new()
+        {
+            ModId = "butchering",
+            CharacterClasses = [],
+        };
     }
 }

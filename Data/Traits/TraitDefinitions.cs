@@ -591,6 +591,7 @@ namespace SeraphLeveling.Data.Traits
             Attributes = [
                 Bonus(KnifeDamage, 100),
                 Bonus(KnifeDurability, 75),
+                Bonus(CleaverDamage, 100),
             ]
         };
 

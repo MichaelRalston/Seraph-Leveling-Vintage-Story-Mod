@@ -441,13 +441,19 @@ namespace SeraphLeveling
             HashSet<ModDefinition> activeMods = [ModDefinitions.Vanilla];
             Instance.DetectCombatOverhaul(modLoader);
             Instance.DetectSacredLib(modLoader);
-            if (IsSacredLibLoaded)
+            if (IsSacredLibCompatEnabled)
             {
                 // Sacred Classes replaces the vanilla set of classes
                 activeMods.Remove(ModDefinitions.Vanilla);
                 activeMods.Add(ModDefinitions.SacredClasses);
             }
+            Instance.DetectButchering(modLoader);
+            if (IsButcheringCompatEnabled)
+            {
+                activeMods.Add(ModDefinitions.Butchering);
+            }
             LoadedMods = activeMods;
+
             var traits = activeMods
                     .SelectMany(mod => mod.CharacterClasses)
                     .SelectMany(charClass => charClass.Traits)
@@ -459,7 +465,8 @@ namespace SeraphLeveling
                     {
                         attrKvp.Attribute,
                         TraitTuple = (Trait: trait, Value: attrKvp.ModifierValue)
-                    });
+                    })
+                    .Where(x => x.Attribute.IsRequiredModLoaded);
 
             // 3. Extract the unique attributes
             LoadedAttributes = flatAttributeMappings
@@ -488,6 +495,46 @@ namespace SeraphLeveling
                 {
                     definition.ReadConfigData(dataDict);
                 }
+            }
+        }
+
+        // =========================================================================
+        // BUTCHERING COMPATIBILITY
+        // =========================================================================
+
+        /// <summary>Whether Butchering mod is loaded.</summary>
+        public static bool IsButcheringLoaded { get; internal set; } = false;
+
+        public static bool IsButcheringCompatEnabled => IsButcheringLoaded && ButcheringEnableCompat;
+
+        public static bool ButcheringEnableCompat = true;
+
+        public static bool DetectAnyButchering(IModLoader modLoader)
+        {
+            if (modLoader == null) return false;
+            return modLoader.IsModEnabled("butchering");
+        }
+
+        /// <summary>
+        /// Detect if Sacred Classes mod is loaded and log the result.
+        /// </summary>
+        private void DetectButchering(IModLoader modLoader)
+        {
+            IsButcheringLoaded = DetectAnyButchering(modLoader);
+            if (IsButcheringLoaded)
+            {
+                if (ButcheringEnableCompat)
+                {
+                    ServerApi.Logger.Notification($"[SeraphLeveling] Butchering mod detected. Compatibility enabled.");
+                }
+                else
+                {
+                    ServerApi.Logger.Notification($"[SeraphLeveling] Butchering mod detected, but compatibility is disabled in config.");
+                }
+            }
+            else
+            {
+                ServerApi.Logger.Notification($"[SeraphLeveling] Butchering mod not detected. Compatibility disabled.");
             }
         }
 
@@ -780,16 +827,11 @@ namespace SeraphLeveling
         };
 
         /// <summary>
-        /// Check if a skill is disabled in the config.
+        /// Check if a skill is disabled in the config or if a required mod for the skill isn't loaded.
         /// </summary>
-        public static bool IsSkillDisabled(string skillName)
-        {
-            return DisabledSkills.Contains(skillName);
-        }
-
         public static bool IsAttributeModifierDisabled(ISaveableAttribute attribute)
         {
-            return DisabledSkills.Contains(attribute.Id);
+            return DisabledSkills.Contains(attribute.SkillKey) || !attribute.IsRequiredModLoaded;
         }
 
         public override void StartServerSide(ICoreServerAPI api)
@@ -3095,6 +3137,7 @@ namespace SeraphLeveling
             {
                 AttributeModifierDefinitions.KnifeDamage.GetForPlayer(playerUid).DoEvent(attackerPlayer, weaponType, damage);
                 AttributeModifierDefinitions.KnifeDurability.GetForPlayer(playerUid).DoEvent(attackerPlayer, weaponType, damage, RepairableToolProgress.Usage);
+                AttributeModifierDefinitions.CleaverDamage.GetForPlayer(playerUid).DoEvent(attackerPlayer, weaponType, damage);
             }
 
             var damageProgress = AttributeModifierDefinitions.MeleeDamage.GetForPlayer(playerUid);
