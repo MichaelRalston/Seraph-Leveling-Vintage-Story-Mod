@@ -368,7 +368,7 @@ namespace SeraphLeveling.Data.Attributes
             Trait = new(() => Traits.TraitDefinitions.Improviser),
         };
 
-        public static readonly ClothierAttributeModifierDefinition Clothier = new()
+        public static readonly GenericCollectionUnlockedAttributeModifierDefinition Clothier = new()
         {
             Id = "clothier",
             SkillKey = "clothier",
@@ -979,7 +979,7 @@ namespace SeraphLeveling.Data.Attributes
             StatName = "ats:bow-?-reduceDurabilityLoss"
         };
 
-        public static readonly PotterAttributeModifierDefinition Potter = new()
+        public static readonly GenericCollectionUnlockedAttributeModifierDefinition Potter = new()
         {
             Id = "potter",
             SkillKey = "potter",
