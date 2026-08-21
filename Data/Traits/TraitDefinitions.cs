@@ -410,6 +410,10 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "mastercraftsman",
             Attributes = [
+                Bonus(AttributeModifierDefinitions.MasterCraftsman, 1, [
+                    new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.MasterCraftsman },
+                    new LeveledAttributeMinimumRequirement { Attribute = HammerDurability, ThresholdPercentage = 10 },
+                ])
             ],
         };
 

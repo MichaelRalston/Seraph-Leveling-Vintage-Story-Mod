@@ -991,5 +991,18 @@ namespace SeraphLeveling.Data.Attributes
             TokenAllowList = ["*"],
             Trait = new(() => Traits.TraitDefinitions.Potter),
         };
+
+        public static readonly GenericCollectionUnlockedAttributeModifierDefinition MasterCraftsman = new()
+        {
+            Id = "masterCraftsman",
+            SkillKey = "mastercraftsman",
+            PersistenceHeader = "MCR",
+            Name = "MasterCraftsman",
+            RequiredCollectionSize = 20,
+            CollectedItemDescription = "items smithed",
+            CollectedItemCountKey = "sitMasterCraftsmanCount",
+            TokenAllowList = ["*"],
+            Trait = new(() => Traits.TraitDefinitions.MasterCraftsman),
+        };
     }
 }

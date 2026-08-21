@@ -102,7 +102,7 @@ namespace SeraphLeveling.Patches
         }
 
         /// <summary>
-        /// Stores the state of the CheckIfFinished method.
+        /// Stores the state of the clayform CheckIfFinished method.
         /// </summary>
         public class ClayFormCheckIfFinishedState
         {
@@ -134,6 +134,42 @@ namespace SeraphLeveling.Patches
 
                 SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Granting {playerName} credit for clayforming {quantity} of {outputCode}");
                 AttributeModifierDefinitions.Potter.AddCollectedItem(serverPlayer, outputCode);
+            }
+        }
+
+        /// <summary>
+        /// Stores the state of the anvil CheckIfFinished method.
+        /// </summary>
+        public class AnvilCheckIfFinishedState
+        {
+            public ItemStack workItemStack;
+            public SmithingRecipe recipe;
+        }
+        
+        public static void BlockEntityAnvil_CheckIfFinished_Prefix(BlockEntityAnvil __instance, out AnvilCheckIfFinishedState __state, IPlayer byPlayer, ItemStack ___workItemStack)
+        {
+            // Pass necessary state on to postfix method
+            __state = new()
+            {
+                workItemStack = ___workItemStack,
+                recipe = __instance.SelectedRecipe
+            };
+        }
+
+        public static void BlockEntityAnvil_CheckIfFinished_Postfix(BlockEntityClayForm __instance, AnvilCheckIfFinishedState __state, IPlayer byPlayer, ItemStack ___workItemStack)
+        {
+            if (byPlayer?.Entity?.Api?.Side == EnumAppSide.Server)
+            {
+                if (byPlayer is not IServerPlayer serverPlayer || ___workItemStack != null || __state.recipe == null) return;
+
+                string playerName = serverPlayer?.PlayerName;
+                string outputCode = __state.recipe.Output?.ResolvedItemstack?.Collectible?.Code?.ToString();
+                int quantity = __state.recipe.Output?.ResolvedItemstack?.StackSize ?? 0;
+
+                if (quantity <= 0) return;
+
+                SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Granting {playerName} credit for smithing {quantity} of {outputCode}");
+                AttributeModifierDefinitions.MasterCraftsman.AddCollectedItem(serverPlayer, outputCode);
             }
         }
     }
