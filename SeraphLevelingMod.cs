@@ -3211,7 +3211,9 @@ namespace SeraphLeveling
             // who have already maxed their ranged credits.
             if (IsBow(weaponCombo))
             {
-                TrackBowyerBowDamage(attackerPlayer, damage);
+                if (!weaponCombo.ToLowerInvariant().Contains("crude")) {
+                    TrackBowyerBowDamage(attackerPlayer, damage);
+                }
                 AttributeModifierDefinitions.BowDurability.GetForPlayer(playerUid).DoEvent(attackerPlayer, weaponCombo, damage, RepairableToolProgress.Usage);
             }
             if (IsThrownRock(weaponCombo))
