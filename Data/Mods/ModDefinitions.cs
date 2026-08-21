@@ -35,7 +35,8 @@ namespace SeraphLeveling.Data.Mods
                 CharacterClassDefinitions.Guardsman,
                 CharacterClassDefinitions.Hearthmaster,
                 CharacterClassDefinitions.Haberdasher,
-                CharacterClassDefinitions.Zealot
+                CharacterClassDefinitions.Zealot,
+                CharacterClassDefinitions.SacredClassesDummy,
             ]
         };
     }

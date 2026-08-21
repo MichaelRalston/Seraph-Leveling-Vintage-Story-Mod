@@ -233,5 +233,12 @@ namespace SeraphLeveling.Data.CharacterClasses
             ]
         };
 
+        public static readonly CharacterClassDefinition SacredClassesDummy = new()
+        {
+            Id = "sacredclassesdummy",
+            Traits = [
+                TraitDefinitions.HungerMastery,
+            ]
+        };
     }
 }
