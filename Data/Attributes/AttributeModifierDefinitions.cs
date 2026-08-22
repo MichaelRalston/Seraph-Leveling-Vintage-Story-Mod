@@ -1233,8 +1233,8 @@ namespace SeraphLeveling.Data.Attributes
             IncrementUnits = "seconds",
             LongDescription = "temporal instability damage received",
             Stat = "% temporal instability damage received",
-            BaseIncrement = 30, // FIXME 300
-            IncrementStep = 15, // FIXME 60
+            BaseIncrement = 300,
+            IncrementStep = 60,
             GlobalMaxCredits = 80,
             StatName = "ats:temporalstabilitydamagereceived",
         };
