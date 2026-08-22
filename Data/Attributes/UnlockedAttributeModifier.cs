@@ -125,6 +125,7 @@ namespace SeraphLeveling.Data.Attributes
 
         public override void HandleLogin(IServerPlayer player)
         {
+            Trait.Value.CheckUnlocks(player);
             var progress = GetDict(player);
             ApplyUnlock(player, progress);
             if (progress.IsUnlocked)
