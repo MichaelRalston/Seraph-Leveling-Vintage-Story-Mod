@@ -509,6 +509,10 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "wildernessexplorer",
             Attributes = [
+                Bonus(AttributeModifierDefinitions.WildernessExplorer, 1, [
+                    new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.Furtive, ThresholdPercentage = 15 },
+                    new LeveledAttributeMinimumRequirement{ Attribute = AnimalHarvestRate , ThresholdPercentage = 10 }
+                ])
             ],
         };
 
@@ -588,7 +592,7 @@ namespace SeraphLeveling.Data.Traits
             Attributes = [
                 Bonus(AttributeModifierDefinitions.Culinary, 1, [
                     new LeveledAttributeMinimumRequirement { Attribute = KnifeDamage, ThresholdPercentage = 10 },
-                    new LeveledAttributeMinimumRequirement{ Attribute = AnimalHarvestRate , ThresholdPercentage = 10}
+                    new LeveledAttributeMinimumRequirement{ Attribute = AnimalHarvestRate , ThresholdPercentage = 10 }
                 ])
             ],
         };

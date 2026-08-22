@@ -1213,5 +1213,14 @@ namespace SeraphLeveling.Data.Attributes
             Name = "Culinary",
             Trait = new(() => Traits.TraitDefinitions.Culinary)
         };
+
+        public static readonly GenericUnlockedAttributeModifierDefinition WildernessExplorer = new()
+        {
+            Id = "wildernessExplorer",
+            SkillKey = "wildernessexplorer",
+            PersistenceHeader = "WEX",
+            Name = "Wilderness Explorer",
+            Trait = new(() => Traits.TraitDefinitions.WildernessExplorer)
+        };
     }
 }

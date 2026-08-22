@@ -227,6 +227,7 @@
   "attribute-detonator-contents": "Exclusive craftable <a href=\"handbooksearch:// bomb-ore or bomb-stone \">explosives</a>",
   "attribute-weaver-contents": "Exclusive craftable <a href=\"handbooksearch:// linen or flax twine \">weaving items</a>",
   "attribute-interiordesigner-contents": "Exclusive craftable <a href=\"handbooksearch:// wallpaper \">wallpapers</a>",
+  "attribute-wildernessexplorer-contents": "Exclusive craftable <a href=\"handbooksearch://Huntsman's bag\">Huntsman's bag</a>",
 
   "message-alchemist-unlock": "Alchemist unlocked! You are now more proficient with medicinal compounds.",
   "message-carpenter-unlock": "Carpenter unlocked! You are now better at crafting with wood.",
@@ -239,5 +240,6 @@
   "message-caveexplorer-unlock": "Cave Explorer unlocked! Your body has adapted to a life underground.",
   "message-detonator-unlock": "Detonator unlocked! You are now skilled in the art of explosives.",
   "message-weaver-unlock": "Weaver unlocked! You are now a master of the weaving arts.",
+  "message-wildernessexplorer-unlock": "Wilderness Explorer unlocked! You are now better able to carry the spoils of your hunts.",
   "message-interiordesigner-unlock": "Interior Designer unlocked! You now know the tricks to make a house into a home."
 }
