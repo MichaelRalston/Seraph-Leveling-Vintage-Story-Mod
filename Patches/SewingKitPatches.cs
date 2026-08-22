@@ -143,51 +143,42 @@ namespace SeraphLeveling.Patches
         }
 
         /// <summary>
-        /// Postfix for CollectibleObject.OnHeldInteractStep - tracks sewing kit repairs during use.
-        /// This is a fallback for when the sewing kit is used in a world interaction context.
+        /// Prefix for CollectibleBehaviorWearable.TryMergeStacks: captures the
+        /// clothing's condition before the merge so the postfix can tell whether
+        /// a repair actually happened.
         /// </summary>
-        public static void OnHeldInteractStep_Postfix(
-            CollectibleObject __instance,
-            float secondsUsed,
-            ItemSlot slot,
-            EntityAgent byEntity,
-            BlockSelection blockSel,
-            EntitySelection entitySel,
-            bool __result)
+        public static void TryMergeStacks_Prefix(ItemStackMergeOperation op, out float __state)
+        {
+            __state = op?.SinkSlot?.Itemstack?.Attributes?.GetFloat("condition", 1f) ?? 1f;
+        }
+
+        /// <summary>
+        /// Postfix for CollectibleBehaviorWearable.TryMergeStacks: merging a
+        /// sewing kit onto damaged clothing is the vanilla repair mechanic. The
+        /// merge raises the clothing's "condition" attribute and consumes one
+        /// kit, so a condition increase IS a completed repair. This cannot be
+        /// farmed: every credit costs a sewing kit spent on actually damaged
+        /// clothing.
+        /// </summary>
+        public static void TryMergeStacks_Postfix(ItemStackMergeOperation op, float __state)
         {
             try
             {
-                // Only process if interaction is still ongoing
-                if (!__result) return;
-
-                // Check if this is a sewing kit
-                string itemCode = __instance.Code?.ToString();
-                if (itemCode == null || !itemCode.Contains("sewingkit")) return;
-
-                // Get the player
-                var playerEntity = byEntity as EntityPlayer;
-                if (playerEntity == null) return;
-
-                var player = playerEntity.Player as IServerPlayer;
-                if (player == null) return;
-
-                // Give credit every 0.5 seconds of repair (rate-limited)
-                long currentTick = playerEntity.World?.ElapsedMilliseconds ?? 0;
-                string playerKey = player.PlayerUID + "_step";
-
-                if (LastRepairTime.TryGetValue(playerKey, out long lastTime) &&
-                    currentTick - lastTime < 500) // 500ms cooldown
+                var player = op?.ActingPlayer as IServerPlayer;
+                float newCondition = op?.SinkSlot?.Itemstack?.Attributes?.GetFloat("condition", 1f) ?? 1f;
+                if (SeraphLevelingModSystem.DebugLoggingEnabled)
                 {
-                    return;
+                    SeraphLevelingModSystem.ServerApi?.Logger.Debug(
+                        $"[SeraphLeveling] TryMergeStacks postfix: before={__state:F2} after={newCondition:F2} actor={op?.ActingPlayer?.PlayerName ?? "null"} isServerPlayer={player != null}");
                 }
 
-                // Update last repair time and give credit
-                LastRepairTime[playerKey] = currentTick;
+                if (player == null) return;
+                if (newCondition <= __state + 0.001f) return;
                 SeraphLevelingModSystem.ProcessMenderRepair(player);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[SeraphLeveling] Error in OnHeldInteractStep_Postfix: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[SeraphLeveling] Error in TryMergeStacks_Postfix: {ex.Message}");
             }
         }
     }

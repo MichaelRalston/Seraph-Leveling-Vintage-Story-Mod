@@ -11,6 +11,34 @@ namespace SeraphLeveling.Patches
     public static class BedSleepPatches
     {
         /// <summary>
+        /// The buff requires at least this many in-game hours in bed. Real sleep
+        /// accelerates the calendar, so a night passes this easily. Hopping in
+        /// and out of a bed passes almost no game time and grants nothing.
+        /// </summary>
+        public const double MIN_SLEEP_HOURS = 0.5;
+
+        /// <summary>
+        /// Postfix for BlockEntityBed.DidMount - records when the player got
+        /// into bed so DidUnmount can verify they actually slept.
+        /// </summary>
+        public static void DidMount_Postfix(EntityAgent entityAgent)
+        {
+            try
+            {
+                var serverApi = SeraphLevelingModSystem.ServerApi;
+                if (serverApi == null) return;
+
+                var playerEntity = entityAgent as EntityPlayer;
+                if (playerEntity?.PlayerUID == null) return;
+
+                SeraphLevelingModSystem.SleepMountHours[playerEntity.PlayerUID] = serverApi.World.Calendar.TotalHours;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[SeraphLeveling] Error in DidMount_Postfix: {ex.Message}");
+            }
+        }
+        /// <summary>
         /// Postfix for BlockEntityBed.DidUnmount - applies sleep buff when player gets out of bed.
         /// DidUnmount(EntityAgent) is called when a player unmounts from the bed after sleeping.
         /// __instance is the BlockEntityBed itself (a BlockEntity subclass).
@@ -22,14 +50,27 @@ namespace SeraphLeveling.Patches
                 if (!SeraphLevelingModSystem.EnableSleepBuff) return;
                 if (entityAgent == null) return;
 
-                var playerEntity = entityAgent as EntityPlayer;
-                if (playerEntity == null) return;
+                if (entityAgent is not EntityPlayer playerEntity) return;
 
-                var serverPlayer = SeraphLevelingModSystem.ServerApi?.World?.PlayerByUid(playerEntity.PlayerUID) as IServerPlayer;
-                if (serverPlayer == null) return;
+                if (SeraphLevelingModSystem.ServerApi?.World?.PlayerByUid(playerEntity.PlayerUID) is not IServerPlayer serverPlayer) return;
 
                 string playerUid = serverPlayer.PlayerUID;
                 if (string.IsNullOrEmpty(playerUid)) return;
+                // Require real sleep: the mount record must exist and enough
+                // game time must have passed while in bed. TryRemove also makes
+                // the head/foot double-fire a no-op.
+                if (!SeraphLevelingModSystem.SleepMountHours.TryRemove(playerUid, out double mountHours)) return;
+                double currentHours = SeraphLevelingModSystem.ServerApi?.World?.Calendar?.TotalHours ?? mountHours;
+                double hoursSlept = currentHours - mountHours;
+                if (hoursSlept < MIN_SLEEP_HOURS)
+                {
+                    if (SeraphLevelingModSystem.DebugLoggingEnabled)
+                    {
+                        SeraphLevelingModSystem.ServerApi?.Logger.Debug(
+                            $"[SeraphLeveling] No sleep buff for {serverPlayer.PlayerName}: only {hoursSlept:F2} game hours in bed.");
+                    }
+                    return;
+                }
 
                 // Dedup: beds have two parts (head + foot), so DidUnmount fires twice.
                 // Skip if we already applied the buff within the last 2 seconds (real time).

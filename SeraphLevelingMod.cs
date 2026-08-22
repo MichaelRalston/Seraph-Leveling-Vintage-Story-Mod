@@ -195,16 +195,16 @@ namespace SeraphLeveling
         // MENDER TRAIT - Tracks sewing kit repairs for durability bonus
         // =========================================================================
         // Durability tracking for repair detection - key is "playerUid_slotId", value is last known durability
-        private static ConcurrentDictionary<string, int> TrackedItemDurabilities = new ConcurrentDictionary<string, int>();
+        private static ConcurrentDictionary<string, int> TrackedItemDurabilities = new();
 
         // Sewing kit consumption tracking - key is playerUid, value is last known sewing kit count on mouse cursor
-        private static ConcurrentDictionary<string, int> TrackedSewingKitCounts = new ConcurrentDictionary<string, int>();
+        public static ConcurrentDictionary<string, double> SleepMountHours = new();
 
         public const int PILFERER_VESSEL_POINTS = 2;            // Points per broken loot vessel
 
         // Storage for furtive progress
         // Tracking last known positions for sneaking distance calculation (using Position2D to avoid Vec3d allocations)
-        private static ConcurrentDictionary<string, Position2D> lastSneakingPositions = new ConcurrentDictionary<string, Position2D>();
+        private static ConcurrentDictionary<string, Position2D> lastSneakingPositions = new();
 
         // =========================================================================
         // NEGATIVE TRAIT CONSTANTS - Used for cancellation calculations
@@ -2234,6 +2234,7 @@ namespace SeraphLeveling
             playerEquippedArmor.TryRemove(playerUid, out _);
             VanillaTraitsCache.TryRemove(playerUid, out _);
             LastDecayCheckDay.TryRemove(playerUid, out _);
+            SleepMountHours.TryRemove(playerUid, out _);
 
             // Save all pending progress data to prevent data loss on disconnect
             SaveAllPendingProgress();
@@ -2692,8 +2693,6 @@ namespace SeraphLeveling
         /// </summary>
         private void PatchBedSleeping(ICoreServerAPI api)
         {
-            if (!EnableSleepBuff) return; // Only patch if sleep buff is enabled
-
             try
             {
                 // BlockEntityBed is in Vintagestory.GameContent (already imported)
@@ -2704,28 +2703,30 @@ namespace SeraphLeveling
                     return;
                 }
 
-                // Find the DidUnmount method (called when player gets out of bed)
+                var didMountMethod = AccessTools.Method(bedBehaviorType, "DidMount");
                 var didUnmountMethod = AccessTools.Method(bedBehaviorType, "DidUnmount");
-                if (didUnmountMethod == null)
+                if (didUnmountMethod == null || didMountMethod == null)
                 {
-                    api.Logger.Debug("[SeraphLeveling] Could not find BlockEntityBed.DidUnmount method for sleep buff");
+                    api.Logger.Debug("[SeraphLeveling] Could not find BlockEntityBed.DidMount/DidUnmount method for sleep buff");
                     return;
                 }
 
                 // Get our postfix method
-                var postfixMethod = AccessTools.Method(typeof(BedSleepPatches), nameof(BedSleepPatches.DidUnmount_Postfix));
-                if (postfixMethod == null)
+                var mountPostfix = AccessTools.Method(typeof(BedSleepPatches), nameof(BedSleepPatches.DidMount_Postfix));
+                var unmountPostfix = AccessTools.Method(typeof(BedSleepPatches), nameof(BedSleepPatches.DidUnmount_Postfix));
+                if (mountPostfix == null || unmountPostfix == null)
                 {
-                    api.Logger.Error("[SeraphLeveling] Could not find DidUnmount_Postfix method!");
+                    api.Logger.Error("[SeraphLeveling] Could not find DidMount_Postfix/DidUnmount_Postfix method!");
                     return;
                 }
 
-                serverHarmony.Patch(didUnmountMethod, postfix: new HarmonyMethod(postfixMethod));
-                api.Logger.Notification("[SeraphLeveling] Successfully patched BlockEntityBed.DidUnmount for sleep buff");
+                serverHarmony.Patch(didMountMethod, postfix: new HarmonyMethod(mountPostfix));
+                serverHarmony.Patch(didUnmountMethod, postfix: new HarmonyMethod(unmountPostfix));
+                api.Logger.Notification("[SeraphLeveling] Successfully patched BlockEntityBed.DidMount/DidUnmount for sleep buff");
             }
             catch (Exception ex)
             {
-                api.Logger.Warning($"[SeraphLeveling] Failed to patch BlockEntityBed.DidUnmount: {ex.Message}");
+                api.Logger.Warning($"[SeraphLeveling] Failed to patch BlockEntityBed sleep methods: {ex.Message}");
             }
         }
 
@@ -2843,24 +2844,46 @@ namespace SeraphLeveling
             // Approach 1: Try to patch ItemSewingKit directly if it exists
             try
             {
-                var sewingKitType = AccessTools.TypeByName("Vintagestory.GameContent.ItemSewingKit");
-                if (sewingKitType != null)
+                var wearableBehaviorType = AccessTools.TypeByName("Vintagestory.GameContent.CollectibleBehaviorWearable");
+                if (wearableBehaviorType != null)
                 {
-                    // Try to find repair-related methods
-                    var onHeldInteractStopMethod = AccessTools.Method(sewingKitType, "OnHeldInteractStop");
-                    if (onHeldInteractStopMethod != null)
+                    var prefixMethod = AccessTools.Method(typeof(SewingKitPatches),
+                        nameof(SewingKitPatches.TryMergeStacks_Prefix));
+                    var postfixMethod = AccessTools.Method(typeof(SewingKitPatches),
+                        nameof(SewingKitPatches.TryMergeStacks_Postfix));
+                    var paramTypes = new[] { typeof(ItemStackMergeOperation), typeof(EnumHandling).MakeByRefType() };
+                    int patched = 0;
+                    foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
                     {
-                        var postfixMethod = AccessTools.Method(typeof(SewingKitPatches),
-                            nameof(SewingKitPatches.OnHeldInteractStop_Postfix));
-                        serverHarmony.Patch(onHeldInteractStopMethod, postfix: new HarmonyMethod(postfixMethod));
-                        api.Logger.Notification("[SeraphLeveling] Successfully patched ItemSewingKit.OnHeldInteractStop for Mender trait");
-                        anyPatchSucceeded = true;
+                        Type[] types;
+                        try { types = asm.GetTypes(); }
+                        catch { continue; }
+                        foreach (var type in types)
+                        {
+                            if (!wearableBehaviorType.IsAssignableFrom(type)) continue;
+                            var m = type.GetMethod("TryMergeStacks",
+                                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic,
+                                null, paramTypes, null);
+                            if (m == null || m.DeclaringType != type) continue;
+                            serverHarmony.Patch(m, prefix: new HarmonyMethod(prefixMethod), postfix: new HarmonyMethod(postfixMethod));
+                            api.Logger.Notification($"[SeraphLeveling] Patched {type.FullName}.TryMergeStacks for Mender trait");
+                            patched++;
+                        }
                     }
+                    anyPatchSucceeded = patched > 0;
+                    if (patched == 0)
+                    {
+                        api.Logger.Warning("[SeraphLeveling] Found no TryMergeStacks declarations to patch for Mender trait");
+                    }
+                }
+                else
+                {
+                    api.Logger.Warning("[SeraphLeveling] Could not find CollectibleBehaviorWearable for Mender trait");
                 }
             }
             catch (Exception ex)
             {
-                api.Logger.Debug($"[SeraphLeveling] ItemSewingKit patch attempt: {ex.Message}");
+                api.Logger.Debug($"[SeraphLeveling] TryMergeStacks patch attempt: {ex.Message}");
             }
 
             // Approach 2: Patch CollectibleObject.OnModifiedInInventorySlot to detect durability restoration
@@ -2880,25 +2903,6 @@ namespace SeraphLeveling
             catch (Exception ex)
             {
                 api.Logger.Debug($"[SeraphLeveling] OnModifiedInInventorySlot patch attempt: {ex.Message}");
-            }
-
-            // Approach 3: Patch OnHeldInteractStep as fallback
-            try
-            {
-                var collectibleType = typeof(CollectibleObject);
-                var onHeldInteractStepMethod = AccessTools.Method(collectibleType, "OnHeldInteractStep");
-                if (onHeldInteractStepMethod != null)
-                {
-                    var postfixMethod = AccessTools.Method(typeof(SewingKitPatches),
-                        nameof(SewingKitPatches.OnHeldInteractStep_Postfix));
-                    serverHarmony.Patch(onHeldInteractStepMethod, postfix: new HarmonyMethod(postfixMethod));
-                    api.Logger.Notification("[SeraphLeveling] Successfully patched CollectibleObject.OnHeldInteractStep for Mender trait");
-                    anyPatchSucceeded = true;
-                }
-            }
-            catch (Exception ex)
-            {
-                api.Logger.Debug($"[SeraphLeveling] OnHeldInteractStep patch attempt: {ex.Message}");
             }
 
             if (!anyPatchSucceeded)
@@ -5882,50 +5886,7 @@ namespace SeraphLeveling
                 string playerUid = player.PlayerUID;
 
                 // =============================================
-                // METHOD 1: Track sewing kit consumption from mouse cursor
-                // When player holds sewing kits and clicks on clothing, the count decreases
-                // =============================================
-                var mouseSlot = player.InventoryManager?.MouseItemSlot;
-                if (mouseSlot?.Itemstack?.Collectible != null)
-                {
-                    string mouseItemCode = mouseSlot.Itemstack.Collectible.Code?.ToString()?.ToLowerInvariant() ?? "";
-
-                    if (mouseItemCode.Contains("sewingkit"))
-                    {
-                        int currentCount = mouseSlot.Itemstack.StackSize;
-
-                        if (TrackedSewingKitCounts.TryGetValue(playerUid, out int previousCount))
-                        {
-                            if (currentCount < previousCount)
-                            {
-                                // Sewing kit was consumed - repair happened!
-                                int kitsUsed = previousCount - currentCount;
-                                ServerApi.Logger.Debug($"[SeraphLeveling] Player {player.PlayerName} used {kitsUsed} sewing kit(s) for repair");
-
-                                for (int i = 0; i < kitsUsed; i++)
-                                {
-                                    ProcessMenderRepair(player);
-                                }
-                            }
-                        }
-
-                        // Update tracked count
-                        TrackedSewingKitCounts[playerUid] = currentCount;
-                    }
-                    else
-                    {
-                        // Not holding sewing kit anymore, clear tracking
-                        TrackedSewingKitCounts.TryRemove(playerUid, out _);
-                    }
-                }
-                else
-                {
-                    // Mouse slot empty, clear tracking
-                    TrackedSewingKitCounts.TryRemove(playerUid, out _);
-                }
-
-                // =============================================
-                // METHOD 2: Track durability increases on wearable items (backup)
+                // Track durability increases on wearable items (grid repair backup)
                 // =============================================
                 var characterInventory = player.InventoryManager?.GetOwnInventory(GlobalConstants.characterInvClassName);
                 if (characterInventory == null) continue;
@@ -7395,327 +7356,327 @@ namespace SeraphLeveling
     /// Uses Harmony to patch the CharacterSystem's trait display method and adds scrollable traits UI.
     /// </summary>
     public class SeraphLevelingClientSystem : ModSystem
-{
-    private ICoreClientAPI clientApi;
-    private Harmony harmony;
-
-    // Scroll-related fields for traits UI
-    private GuiDialogCharacterBase charDlg;
-    private ElementBounds clippingBounds;
-    private ElementBounds scrollbarBounds;
-    private GuiElementRichtext richtextElem;
-    private bool hasHookedDialog = false;
-    private object characterSystemInstance;
-
-    public override bool ShouldLoad(EnumAppSide forSide)
     {
-        return forSide == EnumAppSide.Client;
-    }
+        private ICoreClientAPI clientApi;
+        private Harmony harmony;
 
-    public override void StartClientSide(ICoreClientAPI api)
-    {
-        base.StartClientSide(api);
-        clientApi = api;
-        // Mirror the server's mod detection on the client.
-        SeraphLevelingModSystem.DetectLoadedMods(api.ModLoader);
+        // Scroll-related fields for traits UI
+        private GuiDialogCharacterBase charDlg;
+        private ElementBounds clippingBounds;
+        private ElementBounds scrollbarBounds;
+        private GuiElementRichtext richtextElem;
+        private bool hasHookedDialog = false;
+        private object characterSystemInstance;
 
-        // Register network channel for receiving level-up sounds from server
-        api.Network.RegisterChannel("seraphleveling")
-            .RegisterMessageType<LevelUpSoundMessage>()
-            .SetMessageHandler<LevelUpSoundMessage>(OnLevelUpSoundReceived);
-
-        // Apply Harmony patches manually for better control
-        const string HARMONY_ID = "seraphleveling";
-        harmony = new Harmony(HARMONY_ID);
-        try
+        public override bool ShouldLoad(EnumAppSide forSide)
         {
-            if (!Harmony.HasAnyPatches(HARMONY_ID))
-            {
-                ApplyPatches(api);
-                api.Logger.Notification("[SeraphLeveling] Client-side mod loaded, Harmony patches applied");
-            }
-        }
-        catch (Exception ex)
-        {
-            api.Logger.Error($"[SeraphLeveling] Failed to apply Harmony patches: {ex.Message}");
-            api.Logger.Error($"[SeraphLeveling] Stack trace: {ex.StackTrace}");
+            return forSide == EnumAppSide.Client;
         }
 
-        // Register event to hook into character dialog when it's loaded
-        api.Event.PlayerJoin += OnPlayerJoin;
-    }
-
-    /// <summary>
-    /// Called when the server sends a level-up sound message. Plays the sound locally on the client.
-    /// </summary>
-    private void OnLevelUpSoundReceived(LevelUpSoundMessage message)
-    {
-        try
+        public override void StartClientSide(ICoreClientAPI api)
         {
-            var player = clientApi?.World?.Player?.Entity;
-            if (player != null && !string.IsNullOrEmpty(message?.SoundName))
-            {
-                float clamped = Math.Clamp(message.Volume, 0f, 1f);
-                clientApi.World.PlaySoundAt(new AssetLocation(message.SoundName), player, null, true, 16f, clamped);
+            base.StartClientSide(api);
+            clientApi = api;
+            // Mirror the server's mod detection on the client.
+            SeraphLevelingModSystem.DetectLoadedMods(api.ModLoader);
 
-                if (message.IsTest)
+            // Register network channel for receiving level-up sounds from server
+            api.Network.RegisterChannel("seraphleveling")
+                .RegisterMessageType<LevelUpSoundMessage>()
+                .SetMessageHandler<LevelUpSoundMessage>(OnLevelUpSoundReceived);
+
+            // Apply Harmony patches manually for better control
+            const string HARMONY_ID = "seraphleveling";
+            harmony = new Harmony(HARMONY_ID);
+            try
+            {
+                if (!Harmony.HasAnyPatches(HARMONY_ID))
                 {
-                    string rawVolStr = message.Volume.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
-                    string playedVolStr = clamped.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
-                    string label = $"[SeraphLeveling] Test sound received. sound={message.SoundName}, volume sent={rawVolStr}, volume played={playedVolStr}";
-                    clientApi.Logger.Notification(label);
-                    clientApi.ShowChatMessage(label);
+                    ApplyPatches(api);
+                    api.Logger.Notification("[SeraphLeveling] Client-side mod loaded, Harmony patches applied");
                 }
             }
-        }
-        catch (Exception ex)
-        {
-            clientApi?.Logger.Warning($"[SeraphLeveling] Failed to play level-up sound: {ex.Message}");
-        }
-    }
-
-    private void OnPlayerJoin(IClientPlayer byPlayer)
-    {
-        // Try to hook into the character dialog after a short delay to ensure it's loaded
-        clientApi.Event.RegisterCallback(TryHookCharacterDialog, 500);
-    }
-
-    private void TryHookCharacterDialog(float dt)
-    {
-        if (hasHookedDialog) return;
-
-        try
-        {
-            // Find the character dialog in loaded GUIs
-            charDlg = clientApi.Gui.LoadedGuis.Find(dlg => dlg is GuiDialogCharacterBase) as GuiDialogCharacterBase;
-
-            if (charDlg == null)
+            catch (Exception ex)
             {
-                // Dialog not loaded yet, try again later
-                clientApi.Event.RegisterCallback(TryHookCharacterDialog, 1000);
-                return;
+                api.Logger.Error($"[SeraphLeveling] Failed to apply Harmony patches: {ex.Message}");
+                api.Logger.Error($"[SeraphLeveling] Stack trace: {ex.StackTrace}");
             }
 
-            // Find the CharacterSystem instance to call getClassTraitText
-            var characterSystemType = AccessTools.TypeByName("Vintagestory.GameContent.CharacterSystem");
-            if (characterSystemType != null)
-            {
-                // Get the mod system using the type's full name
-                characterSystemInstance = clientApi.ModLoader.GetModSystem(characterSystemType.FullName);
-            }
-
-            // Remove the vanilla CharacterSystem's trait tab handler and track its position
-            Action<GuiComposer> handlerToRemove = null;
-            int handlerIndex = -1;
-            for (int i = 0; i < charDlg.RenderTabHandlers.Count; i++)
-            {
-                var handler = charDlg.RenderTabHandlers[i];
-                if (handler.Target?.ToString()?.Contains("CharacterSystem") == true)
-                {
-                    handlerToRemove = handler;
-                    handlerIndex = i;
-                    break;
-                }
-            }
-
-            if (handlerToRemove != null)
-            {
-                charDlg.RenderTabHandlers.Remove(handlerToRemove);
-                clientApi.Logger.Debug("[SeraphLeveling] Removed vanilla CharacterSystem trait tab handler at index {0}", handlerIndex);
-            }
-
-            // Insert our scrollable trait tab handler at the same position (or at index 1 if not found)
-            int insertIndex = handlerIndex >= 0 ? handlerIndex : Math.Min(1, charDlg.RenderTabHandlers.Count);
-            charDlg.RenderTabHandlers.Insert(insertIndex, ComposeTraitsTab);
-            clientApi.Logger.Debug("[SeraphLeveling] Inserted our trait tab handler at index {0}", insertIndex);
-            hasHookedDialog = true;
-
-            clientApi.Logger.Notification("[SeraphLeveling] Successfully hooked into character dialog for scrollable traits");
-        }
-        catch (Exception ex)
-        {
-            clientApi.Logger.Error($"[SeraphLeveling] Failed to hook character dialog: {ex.Message}");
-            // Retry after a delay
-            clientApi.Event.RegisterCallback(TryHookCharacterDialog, 2000);
-        }
-    }
-
-    /// <summary>
-    /// Composes the traits tab with scrolling support.
-    /// </summary>
-    private void ComposeTraitsTab(GuiComposer compo)
-    {
-        // Get the trait text from the CharacterSystem (our postfix patch will modify it)
-        string traitText = GetClassTraitText();
-
-        // Define bounds for the scrollable area
-        // Standard traits tab area is approximately 385x310 pixels
-        clippingBounds = ElementBounds.Fixed(0, 25, 385, 310);
-
-        // Begin clip area for scrollable content
-        compo.BeginClip(clippingBounds);
-
-        // Add richtext element for trait display
-        // Use a tall container to hold all traits (will be clipped and scrolled)
-        ElementBounds textBounds = ElementBounds.Fixed(0, 0, 370, 1000);
-        compo.AddRichtext(traitText, CairoFont.WhiteDetailText().WithLineHeightMultiplier(1.15), textBounds, "traitsText");
-
-        compo.EndClip();
-
-        // Add scrollbar to the right of the clipping area
-        scrollbarBounds = clippingBounds.RightCopy().WithFixedWidth(10).WithFixedPadding(3, 0);
-        compo.AddVerticalScrollbar(OnNewScrollbarValue, scrollbarBounds, "traitsScrollbar");
-
-        // Get reference to the richtext element for scroll updates
-        richtextElem = compo.GetRichtext("traitsText");
-
-        // Calculate and set scroll heights after composition
-        // We need to set this after the composer has composed to get accurate heights
-        compo.OnComposed += () =>
-        {
-            SetScrollbarHeights(compo);
-        };
-    }
-
-    /// <summary>
-    /// Sets the scrollbar heights based on actual content size.
-    /// </summary>
-    private void SetScrollbarHeights(GuiComposer compo)
-    {
-        try
-        {
-            var scrollbar = compo.GetScrollbar("traitsScrollbar");
-            var richtext = compo.GetRichtext("traitsText");
-
-            if (scrollbar != null && richtext != null)
-            {
-                float visibleHeight = (float)clippingBounds.fixedHeight;
-                // Get actual content height from richtext bounds
-                float totalHeight = (float)richtext.Bounds.fixedHeight;
-
-                // If content fits, use visible height as total (no scrolling needed)
-                if (totalHeight < visibleHeight)
-                {
-                    totalHeight = visibleHeight;
-                }
-
-                scrollbar.SetHeights(visibleHeight, totalHeight);
-            }
-        }
-        catch (Exception ex)
-        {
-            clientApi?.Logger?.Debug($"[SeraphLeveling] Error setting scrollbar heights: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// Callback when scrollbar value changes - adjusts content position.
-    /// </summary>
-    private void OnNewScrollbarValue(float value)
-    {
-        if (richtextElem != null)
-        {
-            richtextElem.Bounds.fixedY = 0 - value;
-            richtextElem.Bounds.CalcWorldBounds();
-        }
-    }
-
-    /// <summary>
-    /// Gets the trait text by calling the CharacterSystem's getClassTraitText method.
-    /// Our postfix patch will modify this text to include dynamic trait values.
-    /// </summary>
-    private string GetClassTraitText()
-    {
-        try
-        {
-            if (characterSystemInstance != null)
-            {
-                var method = AccessTools.Method(characterSystemInstance.GetType(), "getClassTraitText");
-                if (method != null)
-                {
-                    return method.Invoke(characterSystemInstance, null) as string ?? "";
-                }
-            }
-
-            // Fallback: return empty if we can't get the trait text
-            return Lang.Get("charactersheet-notraits");
-        }
-        catch (Exception ex)
-        {
-            clientApi?.Logger?.Debug($"[SeraphLeveling] Error getting trait text: {ex.Message}");
-            if (ex.InnerException != null)
-            {
-                clientApi?.Logger?.Debug($"   [SeraphLeveling] Error getting trait text inner exception: {ex.InnerException.Message}");
-            }
-            return "";
-        }
-    }
-
-    private void ApplyPatches(ICoreClientAPI api)
-    {
-        // Set the API reference for the patch to use
-        CharacterSystemPatches.ClientApi = api;
-
-        // Find the CharacterSystem type
-        var characterSystemType = AccessTools.TypeByName("Vintagestory.GameContent.CharacterSystem");
-        if (characterSystemType == null)
-        {
-            api.Logger.Warning("[SeraphLeveling] Could not find CharacterSystem type");
-            return;
+            // Register event to hook into character dialog when it's loaded
+            api.Event.PlayerJoin += OnPlayerJoin;
         }
 
-        // Find the getClassTraitText method
-        var targetMethod = AccessTools.Method(characterSystemType, "getClassTraitText");
-        if (targetMethod == null)
-        {
-            api.Logger.Warning("[SeraphLeveling] Could not find getClassTraitText method");
-
-            // List available methods for debugging
-            var methods = characterSystemType.GetMethods(System.Reflection.BindingFlags.Instance |
-                System.Reflection.BindingFlags.Static |
-                System.Reflection.BindingFlags.Public |
-                System.Reflection.BindingFlags.NonPublic);
-            api.Logger.Debug($"[SeraphLeveling] Available methods in CharacterSystem:");
-            foreach (var m in methods)
-            {
-                if (m.Name.ToLower().Contains("trait"))
-                {
-                    api.Logger.Debug($"  - {m.Name}({string.Join(", ", m.GetParameters().Select(p => p.ParameterType.Name + " " + p.Name))}) -> {m.ReturnType.Name}");
-                }
-            }
-            return;
-        }
-
-        api.Logger.Debug($"[SeraphLeveling] Found method: {targetMethod.Name}, params: {string.Join(", ", targetMethod.GetParameters().Select(p => p.ParameterType.Name + " " + p.Name))}");
-
-        // Get our postfix method
-        var postfixMethod = AccessTools.Method(typeof(CharacterSystemPatches), nameof(CharacterSystemPatches.GetClassTraitText_Postfix));
-
-        // Apply the patch
-        harmony.Patch(targetMethod, postfix: new HarmonyMethod(postfixMethod));
-        api.Logger.Notification("[SeraphLeveling] Successfully patched getClassTraitText");
-    }
-
-    public override void Dispose()
-    {
-        harmony?.UnpatchAll("seraphleveling");
-
-        // Unhook from character dialog
-        if (charDlg != null && hasHookedDialog)
+        /// <summary>
+        /// Called when the server sends a level-up sound message. Plays the sound locally on the client.
+        /// </summary>
+        private void OnLevelUpSoundReceived(LevelUpSoundMessage message)
         {
             try
             {
-                charDlg.RenderTabHandlers.Remove(ComposeTraitsTab);
+                var player = clientApi?.World?.Player?.Entity;
+                if (player != null && !string.IsNullOrEmpty(message?.SoundName))
+                {
+                    float clamped = Math.Clamp(message.Volume, 0f, 1f);
+                    clientApi.World.PlaySoundAt(new AssetLocation(message.SoundName), player, null, true, 16f, clamped);
+
+                    if (message.IsTest)
+                    {
+                        string rawVolStr = message.Volume.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+                        string playedVolStr = clamped.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+                        string label = $"[SeraphLeveling] Test sound received. sound={message.SoundName}, volume sent={rawVolStr}, volume played={playedVolStr}";
+                        clientApi.Logger.Notification(label);
+                        clientApi.ShowChatMessage(label);
+                    }
+                }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                clientApi?.Logger.Warning($"[SeraphLeveling] Failed to play level-up sound: {ex.Message}");
+            }
         }
 
-        if (clientApi != null)
+        private void OnPlayerJoin(IClientPlayer byPlayer)
         {
-            clientApi.Event.PlayerJoin -= OnPlayerJoin;
+            // Try to hook into the character dialog after a short delay to ensure it's loaded
+            clientApi.Event.RegisterCallback(TryHookCharacterDialog, 500);
         }
 
-        base.Dispose();
+        private void TryHookCharacterDialog(float dt)
+        {
+            if (hasHookedDialog) return;
+
+            try
+            {
+                // Find the character dialog in loaded GUIs
+                charDlg = clientApi.Gui.LoadedGuis.Find(dlg => dlg is GuiDialogCharacterBase) as GuiDialogCharacterBase;
+
+                if (charDlg == null)
+                {
+                    // Dialog not loaded yet, try again later
+                    clientApi.Event.RegisterCallback(TryHookCharacterDialog, 1000);
+                    return;
+                }
+
+                // Find the CharacterSystem instance to call getClassTraitText
+                var characterSystemType = AccessTools.TypeByName("Vintagestory.GameContent.CharacterSystem");
+                if (characterSystemType != null)
+                {
+                    // Get the mod system using the type's full name
+                    characterSystemInstance = clientApi.ModLoader.GetModSystem(characterSystemType.FullName);
+                }
+
+                // Remove the vanilla CharacterSystem's trait tab handler and track its position
+                Action<GuiComposer> handlerToRemove = null;
+                int handlerIndex = -1;
+                for (int i = 0; i < charDlg.RenderTabHandlers.Count; i++)
+                {
+                    var handler = charDlg.RenderTabHandlers[i];
+                    if (handler.Target?.ToString()?.Contains("CharacterSystem") == true)
+                    {
+                        handlerToRemove = handler;
+                        handlerIndex = i;
+                        break;
+                    }
+                }
+
+                if (handlerToRemove != null)
+                {
+                    charDlg.RenderTabHandlers.Remove(handlerToRemove);
+                    clientApi.Logger.Debug("[SeraphLeveling] Removed vanilla CharacterSystem trait tab handler at index {0}", handlerIndex);
+                }
+
+                // Insert our scrollable trait tab handler at the same position (or at index 1 if not found)
+                int insertIndex = handlerIndex >= 0 ? handlerIndex : Math.Min(1, charDlg.RenderTabHandlers.Count);
+                charDlg.RenderTabHandlers.Insert(insertIndex, ComposeTraitsTab);
+                clientApi.Logger.Debug("[SeraphLeveling] Inserted our trait tab handler at index {0}", insertIndex);
+                hasHookedDialog = true;
+
+                clientApi.Logger.Notification("[SeraphLeveling] Successfully hooked into character dialog for scrollable traits");
+            }
+            catch (Exception ex)
+            {
+                clientApi.Logger.Error($"[SeraphLeveling] Failed to hook character dialog: {ex.Message}");
+                // Retry after a delay
+                clientApi.Event.RegisterCallback(TryHookCharacterDialog, 2000);
+            }
+        }
+
+        /// <summary>
+        /// Composes the traits tab with scrolling support.
+        /// </summary>
+        private void ComposeTraitsTab(GuiComposer compo)
+        {
+            // Get the trait text from the CharacterSystem (our postfix patch will modify it)
+            string traitText = GetClassTraitText();
+
+            // Define bounds for the scrollable area
+            // Standard traits tab area is approximately 385x310 pixels
+            clippingBounds = ElementBounds.Fixed(0, 25, 385, 310);
+
+            // Begin clip area for scrollable content
+            compo.BeginClip(clippingBounds);
+
+            // Add richtext element for trait display
+            // Use a tall container to hold all traits (will be clipped and scrolled)
+            ElementBounds textBounds = ElementBounds.Fixed(0, 0, 370, 1000);
+            compo.AddRichtext(traitText, CairoFont.WhiteDetailText().WithLineHeightMultiplier(1.15), textBounds, "traitsText");
+
+            compo.EndClip();
+
+            // Add scrollbar to the right of the clipping area
+            scrollbarBounds = clippingBounds.RightCopy().WithFixedWidth(10).WithFixedPadding(3, 0);
+            compo.AddVerticalScrollbar(OnNewScrollbarValue, scrollbarBounds, "traitsScrollbar");
+
+            // Get reference to the richtext element for scroll updates
+            richtextElem = compo.GetRichtext("traitsText");
+
+            // Calculate and set scroll heights after composition
+            // We need to set this after the composer has composed to get accurate heights
+            compo.OnComposed += () =>
+            {
+                SetScrollbarHeights(compo);
+            };
+        }
+
+        /// <summary>
+        /// Sets the scrollbar heights based on actual content size.
+        /// </summary>
+        private void SetScrollbarHeights(GuiComposer compo)
+        {
+            try
+            {
+                var scrollbar = compo.GetScrollbar("traitsScrollbar");
+                var richtext = compo.GetRichtext("traitsText");
+
+                if (scrollbar != null && richtext != null)
+                {
+                    float visibleHeight = (float)clippingBounds.fixedHeight;
+                    // Get actual content height from richtext bounds
+                    float totalHeight = (float)richtext.Bounds.fixedHeight;
+
+                    // If content fits, use visible height as total (no scrolling needed)
+                    if (totalHeight < visibleHeight)
+                    {
+                        totalHeight = visibleHeight;
+                    }
+
+                    scrollbar.SetHeights(visibleHeight, totalHeight);
+                }
+            }
+            catch (Exception ex)
+            {
+                clientApi?.Logger?.Debug($"[SeraphLeveling] Error setting scrollbar heights: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Callback when scrollbar value changes - adjusts content position.
+        /// </summary>
+        private void OnNewScrollbarValue(float value)
+        {
+            if (richtextElem != null)
+            {
+                richtextElem.Bounds.fixedY = 0 - value;
+                richtextElem.Bounds.CalcWorldBounds();
+            }
+        }
+
+        /// <summary>
+        /// Gets the trait text by calling the CharacterSystem's getClassTraitText method.
+        /// Our postfix patch will modify this text to include dynamic trait values.
+        /// </summary>
+        private string GetClassTraitText()
+        {
+            try
+            {
+                if (characterSystemInstance != null)
+                {
+                    var method = AccessTools.Method(characterSystemInstance.GetType(), "getClassTraitText");
+                    if (method != null)
+                    {
+                        return method.Invoke(characterSystemInstance, null) as string ?? "";
+                    }
+                }
+
+                // Fallback: return empty if we can't get the trait text
+                return Lang.Get("charactersheet-notraits");
+            }
+            catch (Exception ex)
+            {
+                clientApi?.Logger?.Debug($"[SeraphLeveling] Error getting trait text: {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    clientApi?.Logger?.Debug($"   [SeraphLeveling] Error getting trait text inner exception: {ex.InnerException.Message}");
+                }
+                return "";
+            }
+        }
+
+        private void ApplyPatches(ICoreClientAPI api)
+        {
+            // Set the API reference for the patch to use
+            CharacterSystemPatches.ClientApi = api;
+
+            // Find the CharacterSystem type
+            var characterSystemType = AccessTools.TypeByName("Vintagestory.GameContent.CharacterSystem");
+            if (characterSystemType == null)
+            {
+                api.Logger.Warning("[SeraphLeveling] Could not find CharacterSystem type");
+                return;
+            }
+
+            // Find the getClassTraitText method
+            var targetMethod = AccessTools.Method(characterSystemType, "getClassTraitText");
+            if (targetMethod == null)
+            {
+                api.Logger.Warning("[SeraphLeveling] Could not find getClassTraitText method");
+
+                // List available methods for debugging
+                var methods = characterSystemType.GetMethods(System.Reflection.BindingFlags.Instance |
+                    System.Reflection.BindingFlags.Static |
+                    System.Reflection.BindingFlags.Public |
+                    System.Reflection.BindingFlags.NonPublic);
+                api.Logger.Debug($"[SeraphLeveling] Available methods in CharacterSystem:");
+                foreach (var m in methods)
+                {
+                    if (m.Name.ToLower().Contains("trait"))
+                    {
+                        api.Logger.Debug($"  - {m.Name}({string.Join(", ", m.GetParameters().Select(p => p.ParameterType.Name + " " + p.Name))}) -> {m.ReturnType.Name}");
+                    }
+                }
+                return;
+            }
+
+            api.Logger.Debug($"[SeraphLeveling] Found method: {targetMethod.Name}, params: {string.Join(", ", targetMethod.GetParameters().Select(p => p.ParameterType.Name + " " + p.Name))}");
+
+            // Get our postfix method
+            var postfixMethod = AccessTools.Method(typeof(CharacterSystemPatches), nameof(CharacterSystemPatches.GetClassTraitText_Postfix));
+
+            // Apply the patch
+            harmony.Patch(targetMethod, postfix: new HarmonyMethod(postfixMethod));
+            api.Logger.Notification("[SeraphLeveling] Successfully patched getClassTraitText");
+        }
+
+        public override void Dispose()
+        {
+            harmony?.UnpatchAll("seraphleveling");
+
+            // Unhook from character dialog
+            if (charDlg != null && hasHookedDialog)
+            {
+                try
+                {
+                    charDlg.RenderTabHandlers.Remove(ComposeTraitsTab);
+                }
+                catch { }
+            }
+
+            if (clientApi != null)
+            {
+                clientApi.Event.PlayerJoin -= OnPlayerJoin;
+            }
+
+            base.Dispose();
+        }
     }
-}
 }
