@@ -37,15 +37,10 @@ namespace SeraphLeveling
         public static ICoreServerAPI ServerApi { get; private set; }
         public static SeraphLevelingModSystem Instance { get; private set; }
 
-        // Keys for mining progression system
-        public const string BLOCKS_MINED_KEY = "sitBlocksMined";
-        public const string MINING_STAT_CODE = "sitMiningBonus";
         // WatchedAttributes keys for client sync
         public const string WATCHED_MINING_LEVEL = "sitMiningLevel";
-        public const string WATCHED_MINING_BONUS = "sitMiningBonusPercent";
 
         // Trait code for the mining mastery trait
-        public const string MINING_TRAIT_CODE = "sitminingmastery";
 
         // Mining progression configuration
         // Base blocks for first 1%: 100 blocks
@@ -54,53 +49,22 @@ namespace SeraphLeveling
         public static int OreMultiplier = 5;             // Ore blocks count for 5x points
 
         // Keys for melee damage progression system
-        public const string MELEE_DAMAGE_KEY = "sitMeleeDamage";
-        public const string MELEE_STAT_CODE = "sitMeleeBonus";
         // WatchedAttributes keys for client sync (melee)
         public const string WATCHED_MELEE_LEVEL = "sitMeleeLevel";
-        public const string WATCHED_MELEE_BONUS = "sitMeleeBonusPercent";
 
-        // Trait code for the melee mastery trait (Soldier)
-        public const string MELEE_TRAIT_CODE = "sitmeleemastery";
 
         // Melee damage progression configuration
         // Base damage for first 1%: 100 damage
         // Each subsequent 1% requires +100 more damage (100, 200, 300, etc.)
         // Switching weapon types resets the increment counter back to base
         public static int BaseDamagePerIncrement = 100;   // Base damage needed for first credit
-        public static int MeleeIncrementStep = 100;       // How much more damage each subsequent credit needs
         public static int MaxMeleeDamagePercent = 50;     // 50% max bonus
 
-        // Vanilla Soldier trait melee damage bonus (used for cap calculations)
-        public const int VANILLA_SOLDIER_MELEE_BONUS = 30;
-
-        // Keys for ranged damage progression system
-        public const string RANGED_DAMAGE_KEY = "sitRangedDamage";
-        public const string RANGED_DAMAGE_STAT_CODE = "sitRangedDamageBonus";
-        public const string RANGED_ACCURACY_STAT_CODE = "sitRangedAccuracyBonus";
-        public const string RANGED_DISTANCE_STAT_CODE = "sitRangedDistanceBonus";
         // WatchedAttributes keys for client sync (ranged)
         public const string WATCHED_RANGED_LEVEL = "sitRangedLevel";
-        public const string WATCHED_RANGED_DAMAGE_BONUS = "sitRangedDamageBonusPercent";
-        public const string WATCHED_RANGED_ACCURACY_BONUS = "sitRangedAccuracyBonusPercent";
-        public const string WATCHED_RANGED_DISTANCE_BONUS = "sitRangedDistanceBonusPercent";
-
-        // Trait code for the ranged mastery trait (Focused)
-        public const string RANGED_TRAIT_CODE = "sitrangedmastery";
-
-        // Ranged damage progression configuration
-        // Base damage for first 1%: 100 damage
-        // Each subsequent 1% requires +100 more damage (100, 200, 300, etc.)
-        // Switching weapon combinations resets the increment counter back to base
-        public static int BaseRangedDamagePerIncrement = 100;   // Base damage needed for first credit
-        public static int RangedIncrementStep = 100;             // How much more damage each subsequent credit needs
-        public static int MaxRangedDamagePercent = 50;           // 50% max bonus for damage
-        public static int MaxRangedAccuracyPercent = 50;         // 50% max bonus for accuracy
-        public static int MaxRangedDistancePercent = 50;         // 50% max bonus for distance
 
         // WatchedAttributes keys for client sync (walking)
         public const string WATCHED_WALKING_LEVEL = "sitWalkingLevel";
-        public const string WATCHED_WALKING_BONUS = "sitWalkingBonusPercent";
 
         // Tracking last known positions for walking distance calculation (using Position2D to avoid Vec3d allocations)
         private static ConcurrentDictionary<string, Position2D> lastPlayerPositions = new ConcurrentDictionary<string, Position2D>();
@@ -113,31 +77,24 @@ namespace SeraphLeveling
 
         // WatchedAttributes keys for client sync (hunger)
         public const string WATCHED_HUNGER_LEVEL = "sitHungerLevel";
-        public const string WATCHED_HUNGER_BONUS = "sitHungerBonusPercent";
 
         // Vanilla Ravenous trait hunger rate increase (used for cap calculations)
         // Blackguard has +30% hunger rate, so earning 25% brings them back to nearly normal
         public const int VANILLA_RAVENOUS_HUNGER_PENALTY = 30;
-        public const string WATCHED_RAVENOUS_REMAINING = "sitRavenousRemaining";
 
         // WatchedAttributes keys for client sync (armor)
         public const string WATCHED_ARMOR_DURABILITY_LEVEL = "sitArmorDurabilityLevel";
-        public const string WATCHED_ARMOR_DURABILITY_BONUS = "sitArmorDurabilityBonusPercent";
         public const string WATCHED_ARMOR_WALKSPEED_LEVEL = "sitArmorWalkSpeedLevel";
-        public const string WATCHED_ARMOR_WALKSPEED_BONUS = "sitArmorWalkSpeedBonusPercent";
 
         // Armor progression configuration
         // Time-based progression: 1 VS day (48 min) base, +1 VS day increment per credit (gives -1% walk speed penalty per credit)
         public static int BaseSecondsInArmorPerIncrement = 2880;  // Base seconds (1 VS day = 48 min) for first credit
-        public static int ArmorTimeIncrementStep = 2880;          // How many more seconds each subsequent credit needs (1 VS day)
 
         // Damage-based progression: 100 damage base, +100 increment per credit (gives +1% durability per credit)
         public static int BaseDamageBlockedPerIncrement = 100;     // Base damage blocked for first credit
-        public static int ArmorDamageIncrementStep = 100;          // How much more damage each subsequent credit needs
 
         // Repair-based progression: 1 repair base, +1 increment per credit (gives +1% durability per credit)
         public static int BaseRepairsPerIncrement = 1;             // Base repairs for first credit
-        public static int ArmorRepairIncrementStep = 1;            // How many more repairs each subsequent credit needs
 
         // First-equip bonuses (durability):
         // +1% for light armor and chain, +2% for brigandine, +3% for scale and plate
@@ -163,9 +120,7 @@ namespace SeraphLeveling
 
         // Optional armor features (disabled by default)
         public static bool EnableArmorHungerReduction = false;     // If true, armor time grants hunger rate reduction
-        public static int MaxArmorHungerReductionPercent = 50;     // Max hunger rate reduction from armor
         public static bool EnableArmorHealingBonus = false;        // If true, armor time grants healing effectiveness
-        public static int MaxArmorHealingPercent = 25;             // Max healing effectiveness from armor
 
 
         // Vanilla Soldier trait armor bonuses (used for cap calculations)
@@ -239,121 +194,17 @@ namespace SeraphLeveling
         // =========================================================================
         // MENDER TRAIT - Tracks sewing kit repairs for durability bonus
         // =========================================================================
-        public const string WATCHED_MENDER_LEVEL = "sitMenderLevel";
-        public const string WATCHED_MENDER_BONUS = "sitMenderBonusPercent";
-
-        // Mender progression configuration
-        public static int BaseMenderRepairsPerIncrement = 5;   // Base repairs for first credit
-        public static int MenderIncrementStep = 1;              // Increment step per credit
-        public static int MaxMenderPercent = 25;                // 25% total cap (matches vanilla Mender +25% so Tailor and non-Tailor end up equal)
-
-        // Vanilla Mender trait bonus (used for cap calculations)
-        // Vanilla Mender shows "+25% armor durability" (armorDurabilityLoss: -0.25). This is
-        // used both for cap math (Tailor's earnable = MaxMenderPercent - 25, so total caps at
-        // MaxMenderPercent like every other class) and for inline display Replace.
-        public const int VANILLA_MENDER_ARMOR_DURABILITY_BONUS = 25;
-
         // Durability tracking for repair detection - key is "playerUid_slotId", value is last known durability
         private static ConcurrentDictionary<string, int> TrackedItemDurabilities = new ConcurrentDictionary<string, int>();
 
         // Sewing kit consumption tracking - key is playerUid, value is last known sewing kit count on mouse cursor
         private static ConcurrentDictionary<string, int> TrackedSewingKitCounts = new ConcurrentDictionary<string, int>();
 
-        // =========================================================================
-        // PILFERER TRAIT - Tracks chests/vessels for loot bonuses
-        // =========================================================================
-        public const string WATCHED_PILFERER_LEVEL = "sitPilfererLevel";
-        // Per-stat displayed bonuses. Pilferer's three stats have different vanilla values
-        // (vessel +15%, rusty gear +10%, whole vessel +12%), so a single shared bonus value
-        // can't drive all three to the same cap simultaneously for Malefactor (vanilla
-        // Pilferer). Tracking each stat's earned amount independently keeps every class at
-        // exactly +20% per stat at maxall.
-        public const string WATCHED_PILFERER_VESSEL_BONUS = "sitPilfererVesselBonus";
-        public const string WATCHED_PILFERER_RUSTY_BONUS = "sitPilfererRustyBonus";
-        public const string WATCHED_PILFERER_WHOLE_BONUS = "sitPilfererWholeBonus";
-
-        // Pilferer progression configuration
-        public static int BasePilfererPointsPerIncrement = 10;  // Base points for first credit
-        public static int PilfererIncrementStep = 10;           // Increment step per credit
-        public static int MaxPilfererPercent = 20;              // 20% max bonus for all three stats
         public const int PILFERER_VESSEL_POINTS = 2;            // Points per broken loot vessel
-
-        // Vanilla Pilferer trait bonuses (Malefactor exclusive)
-        public const int VANILLA_PILFERER_RUSTY_GEAR_BONUS = 10;
-        public const int VANILLA_PILFERER_VESSEL_CONTENTS_BONUS = 15;
-        public const int VANILLA_PILFERER_WHOLE_VESSEL_BONUS = 12;
-
-        // =========================================================================
-        // RESOURCEFUL TRAIT - Tracks animal harvesting for loot/speed bonuses
-        // =========================================================================
-        public const string WATCHED_RESOURCEFUL_LEVEL = "sitResourcefulLevel";
-        public const string WATCHED_RESOURCEFUL_LOOT_BONUS = "sitResourcefulLootBonusPercent";
-        public const string WATCHED_RESOURCEFUL_SPEED_BONUS = "sitResourcefulSpeedBonusPercent";
-
-        // Resourceful progression configuration
-        public static int BaseResourcefulAnimalsPerIncrement = 10;  // Base animals for first credit
-        public static int ResourcefulIncrementStep = 10;            // Increment step per credit
-        public static int MaxResourcefulLootPercent = 20;           // 20% max animal loot bonus
-        public static int MaxResourcefulSpeedPercent = 25;          // 25% max harvesting speed bonus
-
-        // Vanilla Resourceful trait bonuses (Hunter/Malefactor)
-        public const int VANILLA_RESOURCEFUL_LOOT_BONUS = 10;
-        public const int VANILLA_RESOURCEFUL_SPEED_BONUS = 25;
-
-        // =========================================================================
-        // FORAGER TRAIT - Tracks wild crop breaking for foraging loot bonuses
-        // =========================================================================
-        public const string FORAGER_LOOT_STAT_CODE = "sitForagerLoot";
-        public const string FORAGER_WILD_CROP_STAT_CODE = "sitForagerWildCrop";
-        public const string WATCHED_FORAGER_LEVEL = "sitForagerLevel";
-        public const string WATCHED_FORAGER_LOOT_BONUS = "sitForagerLootBonusPercent";
-        public const string WATCHED_FORAGER_WILD_CROP_BONUS = "sitForagerWildCropBonusPercent";
-        public const string FORAGER_TRAIT_CODE = "sitforagermastery";
-
-        // Forager progression configuration
-        public static int BaseForagerCropsPerIncrement = 10;    // Base crops for first credit
-        public static int ForagerIncrementStep = 10;            // Increment step per credit
-        public static int MaxForagerLootPercent = 20;           // 20% max foraging loot bonus
-        public static int MaxForagerWildCropPercent = 20;       // 20% max wild crop drop bonus
-
-        // Vanilla Forager trait bonuses (Hunter/Malefactor)
-        public const int VANILLA_FORAGER_LOOT_BONUS = 10;
-        public const int VANILLA_FORAGER_WILD_CROP_BONUS = 20;
-
-        // =========================================================================
-        // FURTIVE TRAIT - Tracks sneaking blocks for animal detection range reduction
-        // =========================================================================
-        public const string WATCHED_FURTIVE_LEVEL = "sitFurtiveLevel";
-        public const string WATCHED_FURTIVE_BONUS = "sitFurtiveBonusPercent";
-
-        // Vanilla Furtive trait bonus (Malefactor)
-        public const int VANILLA_FURTIVE_DETECTION_REDUCTION = 35;
 
         // Storage for furtive progress
         // Tracking last known positions for sneaking distance calculation (using Position2D to avoid Vec3d allocations)
         private static ConcurrentDictionary<string, Position2D> lastSneakingPositions = new ConcurrentDictionary<string, Position2D>();
-
-        // =========================================================================
-        // PRECISE TRAIT - Tracks damage to mechanicals for damage bonus
-        // =========================================================================
-        public const string PRECISE_STAT_CODE = "sitPreciseBonus";
-        public const string WATCHED_PRECISE_LEVEL = "sitPreciseLevel";
-        public const string WATCHED_PRECISE_BONUS = "sitPreciseBonusPercent";
-        public const string PRECISE_TRAIT_CODE = "sitprecisemastery";
-
-        // Precise progression configuration
-        public static int BasePreciseDamagePerIncrement = 100;  // Base damage for first credit
-        public static int PreciseIncrementStep = 100;            // Increment step per credit
-        public static int MaxPrecisePercent = 30;                // 30% max damage bonus to mechanicals
-
-        // Vanilla Precise trait bonus (Clockmaker)
-        public const int VANILLA_PRECISE_MECHANICAL_DAMAGE_BONUS = 25;
-
-        // =========================================================================
-        // MERCILESS TRAIT - Unlocks shortsword/shield after armor + melee thresholds
-        // =========================================================================
-        public const string MERCILESS_STAT_CODE = "sitMercilessBonus";
-        public const string WATCHED_MERCILESS_UNLOCKED = "sitMercilessUnlocked";
 
         // =========================================================================
         // NEGATIVE TRAIT CONSTANTS - Used for cancellation calculations
@@ -361,46 +212,34 @@ namespace SeraphLeveling
 
         // Farsighted (Hunter): -15% melee damage
         public const int VANILLA_FARSIGHTED_MELEE_PENALTY = 15;
-        public const string WATCHED_FARSIGHTED_REMAINING = "sitFarsightedRemaining";
 
         // Nervous (Malefactor, Clockmaker): -15% melee damage
         public const int VANILLA_NERVOUS_MELEE_PENALTY = 15;
-        public const string WATCHED_NERVOUS_REMAINING = "sitNervousRemaining";
 
         // Nearsighted (Blackguard): -15% ranged damage
         public const int VANILLA_NEARSIGHTED_RANGED_PENALTY = 15;
-        public const string WATCHED_NEARSIGHTED_REMAINING = "sitNearsightedRemaining";
 
         // Frail (Malefactor, Clockmaker): -2.5 HP, -25% ranged distance
         public const int VANILLA_FRAIL_DISTANCE_PENALTY = 25;
 
         // Civil (Tailor): -10% loot from foraging
         public const int VANILLA_CIVIL_FORAGING_PENALTY = 10;
-        public const string WATCHED_CIVIL_REMAINING = "sitCivilRemaining";
 
         // Weak (Tailor): -2 HP, -10% mining speed
         public const int VANILLA_WEAK_MINING_PENALTY = 10;
-        public const string WATCHED_WEAK_HP_REMAINING = "sitWeakHpRemaining";
-        public const string WATCHED_WEAK_MINING_REMAINING = "sitWeakMiningRemaining";
 
         // Kind (Tailor): -10% animal loot, -25% harvesting speed
         public const int VANILLA_KIND_LOOT_PENALTY = 10;
         public const int VANILLA_KIND_SPEED_PENALTY = 25;
-        public const string WATCHED_KIND_LOOT_REMAINING = "sitKindLootRemaining";
-        public const string WATCHED_KIND_SPEED_REMAINING = "sitKindSpeedRemaining";
 
         // Heavyhanded (Blackguard): -10% vessel loot, -15% foraging, -20% wild crop
         public const int VANILLA_HEAVYHANDED_VESSEL_PENALTY = 10;
         public const int VANILLA_HEAVYHANDED_FORAGING_PENALTY = 15;
         public const int VANILLA_HEAVYHANDED_WILD_CROP_PENALTY = 20;
-        public const string WATCHED_HEAVYHANDED_VESSEL_REMAINING = "sitHeavyhandedVesselRemaining";
-        public const string WATCHED_HEAVYHANDED_FORAGING_REMAINING = "sitHeavyhandedForagingRemaining";
-        public const string WATCHED_HEAVYHANDED_WILD_CROP_REMAINING = "sitHeavyhandedWildCropRemaining";
 
         // Claustrophobic (Hunter): -15% ore drop, -10% mining speed - already defined above
         public const int VANILLA_CLAUSTROPHOBIC_ORE_PENALTY = 15;
         public const int VANILLA_CLAUSTROPHOBIC_MINING_PENALTY = 10;
-        public const string WATCHED_CLAUSTROPHOBIC_MINING_REMAINING = "sitClaustrophobicMiningRemaining";
 
         private const string CONFIG_SAVE_KEY = "sitConfig";
         private const string CONFIG_FILE_NAME = "SeraphLeveling.json";
@@ -410,9 +249,6 @@ namespace SeraphLeveling
 
         /// <summary>ConfigVersion read from the file this run. Zero for files written before 1.19.0.</summary>
         private static int LoadedConfigVersion = 0;
-
-        // Vanilla Hardy trait mining speed bonus (used for cap calculations)
-        public const int VANILLA_HARDY_MINING_BONUS = 10;
 
         // Lock object for persistence operations
         public static readonly object persistLock = new object();
@@ -715,11 +551,7 @@ namespace SeraphLeveling
 
         // CO Damage Tier Stats (armor penetration)
         public const string CO_RANGED_TIER_SLASHING = "rangedDamageTierBonusSlashingAttack";
-        public const string CO_RANGED_TIER_PIERCING = "rangedDamageTierBonusPiercingAttack";
-        public const string CO_RANGED_TIER_BLUNT = "rangedDamageTierBonusBluntAttack";
         public const string CO_MELEE_TIER_SLASHING = "meleeDamageTierBonusSlashingAttack";
-        public const string CO_MELEE_TIER_PIERCING = "meleeDamageTierBonusPiercingAttack";
-        public const string CO_MELEE_TIER_BLUNT = "meleeDamageTierBonusBluntAttack";
 
         // CO Body Damage Stats
         public const string CO_HEAD_DAMAGE_FACTOR = "playerHeadDamageFactor";
@@ -727,14 +559,6 @@ namespace SeraphLeveling
         public const string CO_LEGS_DAMAGE_FACTOR = "playerLegsDamageFactor";
         public const string CO_FEET_DAMAGE_FACTOR = "playerFeetDamageFactor";
         public const string CO_JUMP_HEIGHT = "jumpHeightMul";
-
-        // CO Big Head / Thick Skull / Leg Day penalties and bonuses
-        public const float CO_BIG_HEAD_PENALTY = 0.5f;      // +50% head/face damage (Clockmaker)
-        public const float CO_THICK_SKULL_BONUS = 0.5f;     // -50% head/face damage (earnable)
-        public const float CO_LEG_DAY_PENALTY = 1.0f;       // +100% leg/feet damage (Blackguard)
-        public const float CO_LEG_DAY_JUMP_BONUS = 0.25f;   // +25% jump height (Blackguard)
-        public const int CO_MELEE_EXPERT_TIER_BONUS = 1;    // +1 melee slashing tier (Blackguard)
-        public const int CO_FRIGHTENED_TIER_PENALTY = 1;    // -1 melee slashing tier (Clockmaker)
 
         // WatchedAttributes keys for CO (client sync)
         public const string WATCHED_CO_STEADY_AIM_CREDITS = "sitCOSteadyAimCredits";
@@ -744,13 +568,6 @@ namespace SeraphLeveling
         public const string WATCHED_CO_FEAR_OF_MELEE_REMAINING = "sitCOFearOfMeleeRemaining";
         public const string WATCHED_CO_WEAK_HAND_REMAINING = "sitCOWeakHandRemaining";
         public const string WATCHED_CO_NERVOUS_REMAINING = "sitCONervousRemaining";
-
-        // WatchedAttributes for Big Head / Thick Skull / Leg Day / Melee Expert
-        public const string WATCHED_CO_BIG_HEAD_REMAINING = "sitCOBigHeadRemaining";
-        public const string WATCHED_CO_LEG_DAY_REMAINING = "sitCOLegDayRemaining";
-        public const string WATCHED_CO_FRIGHTENED_REMAINING = "sitCOFrightenedRemaining";
-        public const string WATCHED_CO_MELEE_TIER_BONUS = "sitCOMeleeTierBonus";
-        public const string WATCHED_CO_RANGED_TIER_BONUS = "sitCORangedTierBonus";
 
         // CO stat codes (prefixed to avoid collisions)
         public const string CO_STAT_PREFIX = "sitCO";
