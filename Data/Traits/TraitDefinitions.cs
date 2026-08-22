@@ -317,7 +317,7 @@ namespace SeraphLeveling.Data.Traits
             Attributes = [
                 Bonus(AttributeModifierDefinitions.InteriorDesigner, 1, [
                     new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.InteriorDesigner },
-                    new LeveledAttributeMinimumRequirement { Attribute = Townie, ThresholdPercentage = 10 },
+                    new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.Townie, ThresholdPercentage = 10 },
                 ])
             ],
         };
