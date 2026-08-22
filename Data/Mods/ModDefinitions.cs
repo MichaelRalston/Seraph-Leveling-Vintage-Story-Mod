@@ -45,5 +45,11 @@ namespace SeraphLeveling.Data.Mods
             ModId = "butchering",
             CharacterClasses = [],
         };
+
+        public static readonly ModDefinition ExoticMilk = new()
+        {
+            ModId = "exoticmilk",
+            CharacterClasses = [],
+        };
     }
 }

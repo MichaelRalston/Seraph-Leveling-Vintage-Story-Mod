@@ -618,6 +618,17 @@ namespace SeraphLeveling.Data.Traits
             ],
         };
 
+        public static readonly TraitDefinition LactoseEnthusiast = new()
+        {
+            Id = "lactoseenthusiast",
+            Attributes = [
+                Bonus(AttributeModifierDefinitions.LactoseEnthusiast, 1, [
+                    new LeveledAttributeMinimumRequirement{ Attribute = TemporalStabilityDamageReceived , ThresholdPercentage = 15 },
+                    new LeveledAttributeMinimumRequirement{ Attribute = AnimalDropRate , ThresholdPercentage = 10 }
+                ])
+            ],
+        };
+
         public static readonly TraitDefinition Sacrificial = new()
         {
             Id = "sacrificial",

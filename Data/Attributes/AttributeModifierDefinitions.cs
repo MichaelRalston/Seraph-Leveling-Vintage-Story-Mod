@@ -1238,5 +1238,15 @@ namespace SeraphLeveling.Data.Attributes
             GlobalMaxCredits = 80,
             StatName = "ats:temporalstabilitydamagereceived",
         };
+
+        public static readonly GenericUnlockedAttributeModifierDefinition LactoseEnthusiast = new()
+        {
+            Id = "lactoseenthusiast",
+            RequiredMod = new(() => ModDefinitions.ExoticMilk),
+            SkillKey = "lactoseenthusiast",
+            PersistenceHeader = "LEN",
+            Name = "Lactose Enthusiast",
+            Trait = new(() => Traits.TraitDefinitions.Culinary)
+        };
     }
 }

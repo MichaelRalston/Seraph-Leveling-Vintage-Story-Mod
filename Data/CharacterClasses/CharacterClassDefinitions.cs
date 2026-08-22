@@ -227,6 +227,7 @@ namespace SeraphLeveling.Data.CharacterClasses
         {
             Id = "zealot",
             Traits = [
+                TraitDefinitions.LactoseEnthusiast,
                 TraitDefinitions.Sacrificial,
                 TraitDefinitions.Insane,
                 TraitDefinitions.Nudist
