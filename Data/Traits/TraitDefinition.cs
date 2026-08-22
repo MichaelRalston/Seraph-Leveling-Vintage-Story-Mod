@@ -125,7 +125,7 @@ namespace SeraphLeveling.Data.Traits
             return Attributes.Any(a => a.ShouldDisplay(player.Player, hasVanillaTrait));
         }
 
-        public virtual void BuildTraitText(EntityPlayer player, ref string result)
+        public virtual void BuildTraitText(EntityPlayer player, HashSet<IAttribute> processedModifiers, ref string result)
         {
             bool hasVanillaTrait = HasVanillaTrait(player);
             bool shouldDisplay = ShouldDisplay(player, hasVanillaTrait);
@@ -135,7 +135,9 @@ namespace SeraphLeveling.Data.Traits
             {
                 var combinedAttrBonuses = GetCombinedAttributeBonuses(player);
                 string headerText = Lang.Get(DynamicTraitHeaderKey);
-                string contentText = string.Join(", ", Attributes.Where(mod => mod.ShouldDisplay(player.Player, hasVanillaTrait)).Select(mod => {
+                string contentText = string.Join(", ", Attributes.Where(mod => !processedModifiers.Contains(mod.Attribute) && mod.ShouldDisplay(player.Player, hasVanillaTrait)).Select(mod => {
+                    CharacterSystemPatches.ClientApi.Logger.Debug($"[Verdus] Adding attribute {mod.Attribute.Id} to de-duplication set during processing of trait {Id}");
+                    processedModifiers.Add(mod.Attribute);
                     string modKey = mod.DynamicAttributeContentsKey.ToLowerInvariant();
                     if (combinedAttrBonuses.TryGetValue(mod.DisplayAttribute, out string combinedBonus))
                     {

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using SeraphLeveling.Data.Attributes;
 using SeraphLeveling.Data.Traits;
@@ -48,12 +49,15 @@ namespace SeraphLeveling.Patches
 
             // Process loaded traits
             var displayTraits = SeraphLevelingModSystem.LoadedTraits
-                    .OrderBy(trait => SeraphLevelingModSystem.PlayerHasTrait(eplr, trait))
+                    .OrderByDescending(trait => SeraphLevelingModSystem.PlayerHasTrait(eplr, trait))
                     .ThenBy(trait => trait.TraitType)
                     .ThenBy(trait => Lang.Get(trait.DynamicTraitHeaderKey));
+            var displayTraitStr = string.Join("\n", displayTraits.Select(t => t.Id));
+            ClientApi.Logger.Debug($"[Verdus] Processing character screen attributes in this order:\n{displayTraitStr}");
+            HashSet<IAttribute> processedAttributes = [];
             foreach (var trait in displayTraits)
             {
-                trait.BuildTraitText(eplr, ref __result);
+                trait.BuildTraitText(eplr, processedAttributes, ref __result);
             }
 
             // =========================================================================
