@@ -39,37 +39,6 @@ namespace SeraphLeveling.Patches
             string escapedResult = __result?.Replace("\n", "\\n").Replace("\r", "\\r") ?? "NULL";
             ClientApi.Logger.Debug($"[SeraphLeveling] RAW getClassTraitText result: {escapedResult}");
 
-            // Get mining progression data
-            int miningLevel = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_MINING_LEVEL, 0);
-            int miningBonus = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_MINING_BONUS, 0);
-            bool hasVanillaHardy = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Hardy);
-
-            // Get melee progression data
-            int meleeLevel = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_MELEE_LEVEL, 0);
-            int meleeBonus = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_MELEE_BONUS, 0);
-            bool hasVanillaSoldier = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Soldier);
-
-            // Get ranged progression data
-            int rangedLevel = eplr.WatchedAttributes.GetInt(AttributeModifierDefinitions.RangedDamage.WatchedLevel, 0);
-            int rangedDamageBonus = eplr.WatchedAttributes.GetInt(AttributeModifierDefinitions.RangedDamage.WatchedBonus, 0);
-            int rangedAccuracyBonus = eplr.WatchedAttributes.GetInt(AttributeModifierDefinitions.RangedAccuracy.WatchedBonus, 0);
-            int rangedDistanceBonus = eplr.WatchedAttributes.GetInt(AttributeModifierDefinitions.RangedDistance.WatchedBonus, 0);
-            bool hasVanillaFocused = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Focused);
-
-            // Get walking progression data
-            int walkingLevel = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_WALKING_LEVEL, 0);
-            int walkingBonus = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_WALKING_BONUS, 0);
-            bool hasVanillaFleetfooted = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Fleetfooted);
-
-            // Get armor progression data
-            int armorDurabilityLevel = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_ARMOR_DURABILITY_LEVEL, 0);
-            int armorDurabilityBonus = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_ARMOR_DURABILITY_BONUS, 0);
-            int armorWalkSpeedLevel = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_ARMOR_WALKSPEED_LEVEL, 0);
-            int armorWalkSpeedBonus = eplr.WatchedAttributes.GetInt(SeraphLevelingModSystem.WATCHED_ARMOR_WALKSPEED_BONUS, 0);
-            bool hasVanillaSoldierArmor = SeraphLevelingModSystem.PlayerHasTrait(eplr, TraitDefinitions.Soldier);
-
-            ClientApi.Logger.Debug($"[SeraphLeveling] getClassTraitText postfix called. Mining: Level={miningLevel}, Bonus={miningBonus}%, HasHardy={hasVanillaHardy} | Melee: Level={meleeLevel}, Bonus={meleeBonus}%, HasSoldier={hasVanillaSoldier} | Ranged: Level={rangedLevel}, HasFocused={hasVanillaFocused} | Walking: Level={walkingLevel}, HasFleetfooted={hasVanillaFleetfooted} | Armor: Dur={armorDurabilityLevel}, Walk={armorWalkSpeedLevel}");
-
             ClientApi.Logger.Debug($"[SeraphLeveling] Original result: '{__result}', noTraitsMsg: '{Lang.Get(NO_TRAITS_KEY)}'");
 
             // Check if we have NO real traits (only "no traits" message or empty)
