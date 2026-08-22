@@ -622,6 +622,8 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "sacrificial",
             Attributes = [
+                BasicPenalty(AnimalHarvestRate, 50),
+                Bonus(AnimalDropRate, 150),
             ]
         };
 
