@@ -239,6 +239,12 @@ namespace SeraphLeveling.Data.CharacterClasses
             Id = "sacredclassesdummy",
             Traits = [
                 TraitDefinitions.HungerMastery,
+                TraitDefinitions.Focused,
+                TraitDefinitions.Fleetfooted,
+                TraitDefinitions.Forager,
+                TraitDefinitions.Soldier,
+                TraitDefinitions.Hardy,
+                TraitDefinitions.Mender,
             ]
         };
     }
