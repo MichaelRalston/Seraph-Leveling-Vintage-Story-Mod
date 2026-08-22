@@ -79,7 +79,7 @@ namespace SeraphLeveling.Data.Attributes
             return GetDict(player).TotalCredits;
         }
 
-        public virtual int GetMaxCredits(EntityPlayer player) => GlobalMaxCredits - CalculateLevelFromTraits(player);
+        public virtual int GetMaxCredits(EntityPlayer player) => Math.Max(0, GlobalMaxCredits - CalculateLevelFromTraits(player));
 
         public int CalculateLevelFromTraits(EntityPlayer entity)
         {
