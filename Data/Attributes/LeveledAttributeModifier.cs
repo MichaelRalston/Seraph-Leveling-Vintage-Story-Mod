@@ -3,6 +3,7 @@ using System.Text;
 using Vintagestory.API.Common;
 using Vintagestory.API.Server;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace SeraphLeveling.Data.Attributes
 {
@@ -32,7 +33,16 @@ namespace SeraphLeveling.Data.Attributes
     public abstract class LeveledAttributeModifierDefinition<D, PD> : AttributeModifierDefinition<D, PD>, ILeveledAttributeModifierDefinition where PD : LeveledAttributeModifierProgressData<D, PD> where D : LeveledAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
     {
         public required string Stat { get; init; }
-        public required int GlobalMaxCredits { get; set; }
+        public required int GlobalMaxCredits { get; init; }
+        protected int? ConfiguredMaxCredits {
+            get;
+            private set
+            {
+                field = value;
+                CachedBaseMaxCredits = null;
+            }
+        } = null;
+        private int? CachedBaseMaxCredits { get; set; } = null;
         public override byte PersistenceVersion { get; init; } = 2;
         public virtual string StatCode
         {
@@ -49,11 +59,11 @@ namespace SeraphLeveling.Data.Attributes
         public required string StatName { get; init; }
         public override void ReadConfigData(Dictionary<string, int> dict)
         {
-            if (dict.TryGetValue("maxCredits", out var max)) GlobalMaxCredits = max;
+            if (dict.TryGetValue("maxCredits", out var max)) ConfiguredMaxCredits = max;
         }
         public override Dictionary<string, int> GetConfigData()
         {
-            return new() { ["maxCredits"] = GlobalMaxCredits };
+            return ConfiguredMaxCredits.HasValue ? new() { ["maxCredits"] = ConfiguredMaxCredits.Value } : [];
         }
 
         public event CreditsChangedDelegate CreditsChanged;
@@ -79,7 +89,34 @@ namespace SeraphLeveling.Data.Attributes
             return GetDict(player).TotalCredits;
         }
 
-        public virtual int GetMaxCredits(EntityPlayer player) => Math.Max(0, GlobalMaxCredits - CalculateLevelFromTraits(player));
+        public virtual int GetMaxCredits(EntityPlayer player) => Math.Max(0, GetBaseMaxCredits() - CalculateLevelFromTraits(player));
+
+        protected virtual int GetBaseMaxCredits()
+        {
+            if (!CachedBaseMaxCredits.HasValue)
+            {
+                int retVal;
+                if (ConfiguredMaxCredits.HasValue)
+                {
+                    retVal = ConfiguredMaxCredits.Value;
+                }
+                else
+                {
+                    int maxCreditsFromTraits = 0;
+                    if (SeraphLevelingModSystem.TraitsForAttributes.TryGetValue(Id, out var traitList))
+                    {
+                        maxCreditsFromTraits = traitList.Select(tuple => tuple.Value).OrderDescending().FirstOrDefault(val => val > 0, 0);
+                    }
+                    retVal = Math.Max(GlobalMaxCredits, maxCreditsFromTraits);
+                }
+                CachedBaseMaxCredits = retVal;
+                return retVal;
+            }
+            else
+            {
+                return CachedBaseMaxCredits.Value;
+            }
+        }
 
         public int CalculateLevelFromTraits(EntityPlayer entity)
         {
@@ -106,7 +143,7 @@ namespace SeraphLeveling.Data.Attributes
             float rawBonus = progressData.TotalCredits * 0.01f;
 
             // Cap earned bonus so total (vanilla + earned) doesn't exceed max earnable.
-            float maxEarnableBonus = (GlobalMaxCredits - totalLevelFromTraits) / 100f;
+            float maxEarnableBonus = (GetBaseMaxCredits() - totalLevelFromTraits) / 100f;
             float bonus = Math.Min(rawBonus, Math.Max(0, maxEarnableBonus));
             int bonusPercent = (int)Math.Ceiling(bonus * 100);
 
@@ -140,7 +177,7 @@ namespace SeraphLeveling.Data.Attributes
         public virtual int CalculateBonus(EntityPlayer entity, PD progress)
         {
             int totalLevelFromTraits = CalculateLevelFromTraits(entity);
-            int earnableBonus = Math.Max(0, GlobalMaxCredits - totalLevelFromTraits);
+            int earnableBonus = Math.Max(0, GetBaseMaxCredits() - totalLevelFromTraits);
             return Math.Min(progress.TotalCredits, earnableBonus);
         }
 
@@ -288,7 +325,7 @@ namespace SeraphLeveling.Data.Attributes
                     return TextCommandResult.Error($"Max {LongDescription} percent must be at least 1");
                 }
 
-                GlobalMaxCredits = newValue.Value;
+                ConfiguredMaxCredits = newValue.Value;
                 PendingSave = true;
 
                 // Recalculate and reapply bonuses for all online players
@@ -299,11 +336,11 @@ namespace SeraphLeveling.Data.Attributes
                     ApplyBonus(player, progress);
                 }
 
-                return TextCommandResult.Success($"Max {LongDescription} bonus set to {CalculateDisplayBonus(GlobalMaxCredits)}%. All player bonuses recalculated.");
+                return TextCommandResult.Success($"Max {LongDescription} bonus set to {CalculateDisplayBonus(GetBaseMaxCredits())}%. All player bonuses recalculated.");
             }
             else
             {
-                return TextCommandResult.Success($"Current max {LongDescription} bonus: {CalculateDisplayBonus(GlobalMaxCredits)}%");
+                return TextCommandResult.Success($"Current max {LongDescription} bonus: {CalculateDisplayBonus(GetBaseMaxCredits())}%");
             }
         }
 

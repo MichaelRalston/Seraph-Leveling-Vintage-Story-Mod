@@ -43,14 +43,18 @@ namespace SeraphLeveling.Data.Attributes
         }
         public override void ReadConfigData(Dictionary<string, int> dict)
         {
-            if (dict.TryGetValue("maxCredits", out var max)) GlobalMaxCredits = max;
+            base.ReadConfigData(dict);
             if (dict.TryGetValue("baseIncrement", out var baseInc)) BaseIncrement = baseInc;
             if (dict.TryGetValue("step", out var step)) IncrementStep = step;
 
         }
         public override Dictionary<string, int> GetConfigData()
         {
-            return new() { ["maxCredits"] = GlobalMaxCredits, ["baseIncrement"] = BaseIncrement, ["step"] = IncrementStep };
+            return new(base.GetConfigData())
+            {
+                ["baseIncrement"] = BaseIncrement,
+                ["step"] = IncrementStep,
+            };
         }
         public required ToolDefinition Tool { get; init; }
         public override void ResetProgress(IServerPlayer player)

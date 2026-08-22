@@ -17,7 +17,7 @@ namespace SeraphLeveling.Data.Attributes
     {
         public override void ReadConfigData(Dictionary<string, int> dict)
         {
-            if (dict.TryGetValue("maxCredits", out var max)) GlobalMaxCredits = max;
+            base.ReadConfigData(dict);
             if (dict.TryGetValue("damageBlockedIncrement", out var baseInc))
             {
                 var id = IncrementData[ArmorDurabilityProgressTypes.DamageBlocked];
@@ -38,30 +38,13 @@ namespace SeraphLeveling.Data.Attributes
                 var id = IncrementData[ArmorDurabilityProgressTypes.DamageBlocked];
                 id.IncrementStep = repairStep;
             }
-
         }
-        public override Dictionary<string, int> GetConfigData()
-        {
-            return new() { ["maxCredits"] = GlobalMaxCredits, ["baseIncrement"] = BaseIncrement, ["step"] = IncrementStep };
-        }
-
     };
 
     public class SimpleArmorModifierDefinition : ArmorModifierDefinition<SimpleToolProgress> { };
     public class ArmorModifierProgressData<E>(ArmorModifierDefinition<E> definition) : LeveledToolAttributeModifierProgressData<ArmorModifierDefinition<E>, ArmorModifierProgressData<E>, E>(definition) where E : Enum { };
     public class ArmorModifierDefinition<E> : LeveledToolAttributeModifierDefinition<ArmorModifierDefinition<E>, ArmorModifierProgressData<E>, E>, IConstructable<ArmorModifierDefinition<E>, ArmorModifierProgressData<E>> where E : Enum
     {
-        public override void ReadConfigData(Dictionary<string, int> dict)
-        {
-            if (dict.TryGetValue("maxCredits", out var max)) GlobalMaxCredits = max;
-            if (dict.TryGetValue("baseIncrement", out var baseInc)) BaseIncrement = baseInc;
-            if (dict.TryGetValue("step", out var step)) IncrementStep = step;
-
-        }
-        public override Dictionary<string, int> GetConfigData()
-        {
-            return new() { ["maxCredits"] = GlobalMaxCredits, ["baseIncrement"] = BaseIncrement, ["step"] = IncrementStep };
-        }
         public static ArmorModifierProgressData<E> Create(ArmorModifierDefinition<E> definition) { return new ArmorModifierProgressData<E>(definition); }
         public override int ApplyDecay(IServerPlayer player, double currentDay, StringBuilder sb, StringBuilder verboseSb)
         {
