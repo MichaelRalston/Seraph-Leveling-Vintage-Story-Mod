@@ -274,11 +274,6 @@ namespace SeraphLeveling.Data.Attributes
 #endif
             lock (SeraphLevelingModSystem.persistLock)
             {
-                if (progress.IsEmpty)
-                {
-                    return;
-                }
-
                 try
                 {
                     var snapshot = progress.ToArray();

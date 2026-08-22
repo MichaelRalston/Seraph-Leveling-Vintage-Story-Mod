@@ -708,6 +708,20 @@ namespace SeraphLeveling
                     .RequiresPlayer()
                     .HandleWith(OnTraitResetCommand)
                 .EndSubCommand()
+                // Reset one named player's progression (admin only)
+                .BeginSubCommand("resetplayer")
+                    .WithDescription("Reset ALL trait progression to 0 for a named online player (admin only)")
+                    .WithArgs(api.ChatCommands.Parsers.Word("playername"))
+                    .RequiresPrivilege(Privilege.controlserver)
+                    .HandleWith(OnTraitResetPlayerCommand)
+                .EndSubCommand()
+                // Reset every player on the server, online and offline (admin only)
+                .BeginSubCommand("resetall")
+                    .WithDescription("Reset ALL trait progression for EVERY player, online and offline. Type /trait resetall confirm to run it. (admin only)")
+                    .WithArgs(api.ChatCommands.Parsers.OptionalWord("confirm"))
+                    .RequiresPrivilege(Privilege.controlserver)
+                    .HandleWith(OnTraitResetAllCommand)
+                .EndSubCommand()
                 // Export full progression to a JSON file for cross-world transfer (admin only)
                 .BeginSubCommand("export")
                     .WithDescription("Export your (or a named player's) full progression to a JSON file you can carry to another world. Admin only.")
@@ -6301,6 +6315,67 @@ namespace SeraphLeveling
 
             string coNote = IsCombatOverhaulLoaded ? " (including Combat Overhaul proficiencies)" : "";
             return TextCommandResult.Success($"All trait progression has been reset to 0{coNote}.");
+        }
+
+        /// <summary>
+        /// Handler for /trait resetplayer command.
+        /// Resets all trait progression to 0 for a named online player.
+        /// </summary>
+        private TextCommandResult OnTraitResetPlayerCommand(TextCommandCallingArgs args)
+        {
+            string nameArg = args[0] as string;
+            if (string.IsNullOrWhiteSpace(nameArg))
+                return TextCommandResult.Error("Usage: /trait resetplayer &lt;playername&gt;");
+
+            IServerPlayer target = ResolvePlayerByName(nameArg);
+            if (target?.Entity == null)
+                return TextCommandResult.Error($"Could not find online player matching '{nameArg}'. The player must be online, or use /trait resetall for a full wipe.");
+
+            ResetProgressForPlayer(target);
+            SaveAllPendingProgress();
+
+            target.SendMessage(GlobalConstants.GeneralChatGroup,
+                "An admin has reset all of your trait progression to 0.", EnumChatType.Notification);
+            return TextCommandResult.Success($"All trait progression has been reset to 0 for {target.PlayerName}.");
+        }
+
+        /// <summary>
+        /// Handler for /trait resetall command.
+        /// Wipes every progression system for every player, online and offline.
+        /// Online players get their live stats stripped and reapplied; offline
+        /// players simply have no stored data left, and stats are recomputed from
+        /// that on their next join. Requires the literal word "confirm".
+        /// </summary>
+        private TextCommandResult OnTraitResetAllCommand(TextCommandCallingArgs args)
+        {
+            if (ServerApi == null) return TextCommandResult.Error("Server API not available.");
+
+            string confirmArg = args[0] as string;
+            if (!string.Equals(confirmArg, "confirm", StringComparison.OrdinalIgnoreCase))
+            {
+                return TextCommandResult.Error(
+                    "This wipes ALL trait progression for EVERY player on this server, online and offline. There is no undo. Run /trait resetall confirm to proceed.");
+            }
+
+            // Strip live stats and traits from everyone online.
+            int onlineReset = 0;
+            foreach (var onlinePlayer in ServerApi.World.AllOnlinePlayers)
+            {
+                if (onlinePlayer is IServerPlayer sp && sp.Entity != null)
+                {
+                    ResetProgressForPlayer(sp);
+                    onlineReset++;
+                }
+            }
+
+            foreach (var attribute in LoadedAttributes)
+            {
+                attribute.ResetProgress();
+                attribute.PendingSave = true;
+            }
+            ServerApi.Logger.Notification($"[SeraphLeveling] /trait resetall by {args.Caller.Player?.PlayerName ?? "console"}: wiped all progression ({onlineReset} online players reset live).");
+            return TextCommandResult.Success(
+                $"Wiped ALL trait progression for every player. {onlineReset} online player(s) were reset live; offline players are reset the next time they join.");
         }
 
         /// <summary>
