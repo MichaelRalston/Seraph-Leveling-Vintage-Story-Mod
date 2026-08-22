@@ -3,7 +3,7 @@
   "message-mining-progress-max": "Mining Progress: {0} blocks mined. Level {1} (+{2}% mining speed). Maximum level reached!",
   "message-mining-level-up": "Mining level up! You are now level {0} with +{1}% mining speed.",
   "message-orerate-level-up": "Ore drop rate level up! You are now level {0} with +{1}% ore drop rate.",
-  "message-stonerate-level-up": "Ore drop rate level up! You are now level {0} with +{1}% ore drop rate.",
+  "message-stonerate-level-up": "Stone drop rate level up! You are now level {0} with +{1}% stone drop rate.",
   "message-woodrate-level-up": "Wood drop rate level up! You are now level {0} with +{1}% wood drop rate.",
   "message-seedrate-level-up": "Tree seed drop rate level up! You are now level {0} with +{1}% tree seed drop rate.",
   "message-stickrate-level-up": "Stick drop rate level up! You are now level {0} with +{1}% stick drop rate.",
