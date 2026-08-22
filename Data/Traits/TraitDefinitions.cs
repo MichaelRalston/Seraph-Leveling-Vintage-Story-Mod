@@ -637,6 +637,8 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "nudist",
             Attributes = [
+                BasicPenalty(ArmorWalkSpeed, 100),
+                BasicPenalty(ArmorDurability, 400),
             ]
         };
     }
