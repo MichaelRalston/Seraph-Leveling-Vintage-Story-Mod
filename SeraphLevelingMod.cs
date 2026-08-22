@@ -2819,6 +2819,36 @@ namespace SeraphLeveling
             {
                 api.Logger.Warning($"[SeraphLeveling] Failed to patch EntityBehaviorHarvestable: {ex.Message}");
             }
+
+            if (IsButcheringCompatEnabled)
+            {
+                try
+                {
+                    var tableType = AccessTools.TypeByName("Butchering.src.common.blockentity.BlockEntityButcherTable");
+                    if (tableType == null)
+                    {
+                        api.Logger.Warning("[SeraphLeveling] Could not find the Butcher Table block entity");
+                        return;
+                    }
+                    var processItemMethod = AccessTools.Method(tableType, "processItem");
+                    if (processItemMethod == null)
+                    {
+                        api.Logger.Warning("[SeraphLeveling] Could not find processItem method in BlockEntityButcherTable");
+                        return;
+                    }
+
+                    // Get our postfix method
+                    var postfixMethod = AccessTools.Method(typeof(HarvestingPatches),
+                        nameof(HarvestingPatches.ProcessItem_Postfix));
+
+                    serverHarmony.Patch(processItemMethod, postfix: new HarmonyMethod(postfixMethod));
+                    api.Logger.Notification("[SeraphLeveling] Successfully patched BlockEntityButcherTable.processItem for Resourceful trait");
+                }
+                catch (Exception ex)
+                {
+                    api.Logger.Warning($"[SeraphLeveling] Failed to patch BlockEntityButcherTable: {ex.Message}");
+                }
+            }
         }
 
         private void PatchItemDamage(ICoreServerAPI api)
