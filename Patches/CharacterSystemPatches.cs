@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using SeraphLeveling.Data.Attributes;
 using SeraphLeveling.Data.Traits;
 using Vintagestory.API.Client;
@@ -46,7 +47,11 @@ namespace SeraphLeveling.Patches
             bool hasNoTraits = HasNoTraits(__result);
 
             // Process loaded traits
-            foreach (var trait in SeraphLevelingModSystem.LoadedTraits)
+            var displayTraits = SeraphLevelingModSystem.LoadedTraits
+                    .OrderBy(trait => SeraphLevelingModSystem.PlayerHasTrait(eplr, trait))
+                    .ThenBy(trait => trait.TraitType)
+                    .ThenBy(trait => Lang.Get(trait.DynamicTraitHeaderKey));
+            foreach (var trait in displayTraits)
             {
                 trait.BuildTraitText(eplr, ref __result);
             }
