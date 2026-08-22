@@ -629,6 +629,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "insane",
             Attributes = [
+                Bonus(TemporalStabilityDamageReceived, 80),
             ]
         };
 

@@ -1195,6 +1195,9 @@ namespace SeraphLeveling
             // Register decay tick (every 10 seconds, checks for daily decay while online)
             api.Event.RegisterGameTickListener(OnDecayTick, 10000);
 
+            // Register game tick listener for temporal stability tracking (every 1000ms / 1 second)
+            api.Event.RegisterGameTickListener(OnTemporalStabilityTick, 1000);
+
             // Register auto-save timer if enabled
             if (AutoSaveIntervalSeconds > 0)
             {
@@ -2365,6 +2368,24 @@ namespace SeraphLeveling
 
                 var playerProgress = AttributeModifierDefinitions.HungerRate.GetForPlayer(playerUid);
                 playerProgress.DoEvent(player, 1f);
+            }
+        }
+
+        private void OnTemporalStabilityTick(float dt)
+        {
+            foreach (IServerPlayer player in ServerApi.World.AllOnlinePlayers.Cast<IServerPlayer>())
+            {
+                if (player?.Entity == null) continue;
+
+                string playerUid = player.PlayerUID;
+
+                // Get the player's temporal stability data from WatchedAttributes
+                var stability = player.Entity.WatchedAttributes.GetDouble("temporalStability", 1);
+
+                // Only count time when at or below half stability
+                if (stability > 0.5D) continue;
+
+                AttributeModifierDefinitions.TemporalStabilityDamageReceived.GetForPlayer(playerUid).DoEvent(player, 1f);
             }
         }
 

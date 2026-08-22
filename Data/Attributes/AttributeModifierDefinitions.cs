@@ -1222,5 +1222,21 @@ namespace SeraphLeveling.Data.Attributes
             Name = "Wilderness Explorer",
             Trait = new(() => Traits.TraitDefinitions.WildernessExplorer)
         };
+
+        public static readonly GenericLeveledAttributeModifierDefinition TemporalStabilityDamageReceived = new()
+        {
+            Id = "temporalStabilityDamage",
+            SkillKey = "temporalstabilitydamage",
+            PersistenceHeader = "TSD",
+            Name = "Temporal Stability Damage",
+            IsInverted = true,
+            IncrementUnits = "seconds",
+            LongDescription = "temporal instability damage received",
+            Stat = "% temporal instability damage received",
+            BaseIncrement = 30, // FIXME 300
+            IncrementStep = 15, // FIXME 60
+            GlobalMaxCredits = 80,
+            StatName = "ats:temporalstabilitydamagereceived",
+        };
     }
 }

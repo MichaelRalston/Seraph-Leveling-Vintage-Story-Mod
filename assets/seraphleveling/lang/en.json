@@ -15,6 +15,7 @@
   "message-bowdurability-level-up": "Bow durability level up! You are now level {0} with -{1}% bow durability loss rate.",
   "message-hammerdurability-level-up": "Hammer durability level up! You are now level {0} with -{1}% hammer durability loss rate.",
   "message-bowdamage-level-up": "Bow damage level up! You are now level {0} with +{1}% bow damage.",
+  "message-temporalstabilitydamage-level-up": "Insanity level up! You are now level {0} with -{1}% temporal instability damage taken.",
   "trait-hardy-dynamic": "+{0}% mining speed, +{1} health points",
   "trait-hardy-mining-only-dynamic": "+{0}% mining speed",
   "trait-hardy-health-only-dynamic": "+{0} health points",
@@ -207,6 +208,7 @@
   "attribute-knifedamage-contents": "{0}% knife damage",
   "attribute-knifedurability-contents": "{0}% knife durability",
   "attribute-cleaverdamage-contents": "{0}% cleaver damage",
+  "attribute-temporalstabilitydamage-contents": "{0}% temporal instability damage",
 
   "attribute-bowyer-contents": "Exclusive craftable <a href=\"handbooksearch://crude bow or crude arrow or recurve bow\">bows and arrows</a>",
   "attribute-clothier-contents": "Exclusive craftable <a href=\"handbooksearch://sewing kit or chateau or pastoral or reindeer or moon or minstrel or fortune or nomad or spice or cobalt or azure or thigh-high or fine trousers or high leather\">sewing kit and clothes</a>",
