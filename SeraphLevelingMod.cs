@@ -293,7 +293,9 @@ namespace SeraphLeveling
             var traits = activeMods
                     .SelectMany(mod => mod.CharacterClasses)
                     .SelectMany(charClass => charClass.Traits)
-                    .DistinctBy(trait => trait.Id);
+                    .DistinctBy(trait => trait.Id)
+                    .OrderBy(trait => trait.TraitType)
+                    .ThenBy(trait => Lang.Get(trait.DynamicTraitHeaderKey));
             LoadedTraits = traits.ToList();
 
             var flatAttributeMappings = traits

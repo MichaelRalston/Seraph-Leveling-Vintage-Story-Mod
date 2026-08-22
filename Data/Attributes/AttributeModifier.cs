@@ -379,11 +379,19 @@ namespace SeraphLeveling.Data.Attributes
 
     public delegate void ActiveStatusUpdatedDelegate(IServerPlayer player, bool newValue);
 
+    public enum AttributeModifierType
+    {
+        UNLOCK = 0,
+        BONUS = 1,
+        PENALTY = 2
+    }
+
     public interface IAttributeModifier
     {
         public ISaveableAttribute Attribute { get; }
         public ISaveableAttribute DisplayAttribute { get; }
         public int ModifierValue { get; }
+        public AttributeModifierType ModifierType { get; }
         public bool HasRequirements { get; }
         public string DynamicAttributeContentsKey { get; }
         public TraitDefinition ApplicableTrait { get; internal set; }
@@ -405,7 +413,12 @@ namespace SeraphLeveling.Data.Attributes
             {
                 throw new ArgumentOutOfRangeException(nameof(absModifierValue), absModifierValue, "Modifier value must be given as a positive");
             }
-            return new BonusInstance(attribute, absModifierValue, unlockWith);
+            return new BonusInstance(AttributeModifierType.BONUS, attribute, absModifierValue, unlockWith);
+        }
+
+        public static IAttributeModifier Unlock(ISaveableAttribute attribute, List<IAttributeRequirement> unlockWith)
+        {
+            return new BonusInstance(AttributeModifierType.UNLOCK, attribute, 1, unlockWith);
         }
 
         public static IAttributeModifier Penalty(ISaveableAttribute attribute, int absModifierValue, List<IAttributeRequirement> removeWith = null)
@@ -443,6 +456,7 @@ namespace SeraphLeveling.Data.Attributes
             public virtual ISaveableAttribute DisplayAttribute => Attribute;
 
             public int ModifierValue { get; init; }
+            public AttributeModifierType ModifierType { get; init; }
             public abstract bool HasRequirements { get; }
             public string DynamicAttributeContentsKey
             {
@@ -476,8 +490,9 @@ namespace SeraphLeveling.Data.Attributes
             private List<IAttributeRequirement> UnlockWith { get; init; }
             public override bool HasRequirements => UnlockWith.Count > 0;
 
-            public BonusInstance(ISaveableAttribute attribute, int modifierValue, List<IAttributeRequirement> unlockWith)
+            public BonusInstance(AttributeModifierType type, ISaveableAttribute attribute, int modifierValue, List<IAttributeRequirement> unlockWith)
             {
+                ModifierType = type;
                 Attribute = attribute;
                 ModifierValue = modifierValue;
                 UnlockWith = unlockWith ?? [];
@@ -522,6 +537,7 @@ namespace SeraphLeveling.Data.Attributes
 
             public PenaltyInstance(ISaveableAttribute attribute, int modifierValue, List<IAttributeRequirement> removeWith)
             {
+                ModifierType = AttributeModifierType.PENALTY;
                 Attribute = attribute;
                 ModifierValue = modifierValue;
                 RemoveWith = removeWith ?? [];
@@ -567,6 +583,7 @@ namespace SeraphLeveling.Data.Attributes
 
             public PenaltyOffsetInstance(ISaveableAttribute attribute, int modifierValue, ISaveableAttribute penaltyAttribute, List<IAttributeRequirement> unlockWith)
             {
+                ModifierType = AttributeModifierType.PENALTY;
                 Attribute = attribute;
                 ModifierValue = modifierValue;
                 ApplyWith = unlockWith ?? [];

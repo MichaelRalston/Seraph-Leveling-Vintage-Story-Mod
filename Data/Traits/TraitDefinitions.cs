@@ -39,7 +39,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "bowyer",
             Attributes = [
-                Bonus(AttributeModifierDefinitions.Bowyer, 1, [
+                Unlock(AttributeModifierDefinitions.Bowyer, [
                     new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Bowyer },
                     new LeveledAttributeMinimumRequirement { Attribute = RangedDamage, ThresholdPercentage = 10 },
                 ])
@@ -96,7 +96,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "improviser",
             Attributes = [
-                Bonus(AttributeModifierDefinitions.Improviser, 1, [ new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Improviser } ])
+                Unlock(AttributeModifierDefinitions.Improviser, [ new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Improviser } ])
             ],
         };
 
@@ -131,7 +131,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "technical",
             Attributes = [
-                Bonus(AttributeModifierDefinitions.Technical, 1, [ new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Technical } ])
+                Unlock(AttributeModifierDefinitions.Technical, [ new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Technical } ])
             ],
         };
 
@@ -139,7 +139,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "tinkerer",
             Attributes = [
-                Bonus(AttributeModifierDefinitions.Tinkerer, 1, [
+                Unlock(AttributeModifierDefinitions.Tinkerer, [
                     new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Technical },
                     new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.Precise, ThresholdPercentage = 10 },
                 ])
@@ -160,7 +160,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "hardy",
             Attributes = [
-                Bonus(HardyHealth, 1, [
+                Unlock(HardyHealth, [
                     new LeveledAttributeMinimumRequirement { Attribute = MiningSpeed, ThresholdPercentage = 10 },
                     new LeveledAttributeMinimumRequirement { Attribute = ArmorDurability, ThresholdPercentage = 10 }
                 ]),
@@ -172,7 +172,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "merciless",
             Attributes = [
-                Bonus(AttributeModifierDefinitions.Merciless, 1, [
+                Unlock(AttributeModifierDefinitions.Merciless, [
                     new LeveledAttributeMinimumRequirement { Attribute = MeleeDamage, ThresholdPercentage = 15 },
                     new LeveledAttributeMinimumRequirement{ Attribute = ArmorDurability , ThresholdPercentage = 10}
                 ])
@@ -219,7 +219,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "clothier",
             Attributes = [
-                Bonus(AttributeModifierDefinitions.Clothier, 1, [ new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Clothier } ])
+                Unlock(AttributeModifierDefinitions.Clothier, [ new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Clothier } ])
             ],
         };
 
@@ -263,7 +263,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "carpenter",
             Attributes = [
-                Bonus(AttributeModifierDefinitions.Carpenter, 1, [
+                Unlock(AttributeModifierDefinitions.Carpenter, [
                     new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Carpenter },
                     new LeveledAttributeMinimumRequirement { Attribute = TreeChoppingSpeed, ThresholdPercentage = 10 },
                 ])
@@ -304,7 +304,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "mason",
             Attributes = [
-                Bonus(AttributeModifierDefinitions.Mason, 1, [
+                Unlock(AttributeModifierDefinitions.Mason, [
                     new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Mason },
                     new LeveledAttributeMinimumRequirement { Attribute = MiningSpeed, ThresholdPercentage = 10 },
                 ])
@@ -315,7 +315,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "interiordesigner",
             Attributes = [
-                Bonus(AttributeModifierDefinitions.InteriorDesigner, 1, [
+                Unlock(AttributeModifierDefinitions.InteriorDesigner, [
                     new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.InteriorDesigner },
                     new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.Townie, ThresholdPercentage = 10 },
                 ])
@@ -326,7 +326,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "potter",
             Attributes = [
-                Bonus(AttributeModifierDefinitions.Potter, 1, [
+                Unlock(AttributeModifierDefinitions.Potter, [
                     new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Potter },
                     new LeveledAttributeMinimumRequirement { Attribute = ClayDropRate, ThresholdPercentage = 10 },
                 ])
@@ -337,7 +337,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "technician",
             Attributes = [
-                Bonus(AttributeModifierDefinitions.Technician, 1, [
+                Unlock(AttributeModifierDefinitions.Technician, [
                     new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Technician },
                     new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.Precise, ThresholdPercentage = 10 },
                 ])
@@ -375,7 +375,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "alchemist",
             Attributes = [
-                Bonus(AttributeModifierDefinitions.Alchemist, 1, [
+                Unlock(AttributeModifierDefinitions.Alchemist, [
                     new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Alchemist },
                     new LeveledAttributeMinimumRequirement { Attribute = HealUseSpeed, ThresholdPercentage = 10 },
                 ])
@@ -386,7 +386,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "propagator",
             Attributes = [
-                Bonus(AttributeModifierDefinitions.Propagator, 1, [
+                Unlock(AttributeModifierDefinitions.Propagator, [
                     new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Propagator },
                     new LeveledAttributeMinimumRequirement { Attribute = ForageLootingBonus, ThresholdPercentage = 10 },
                 ])
@@ -414,7 +414,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "mastercraftsman",
             Attributes = [
-                Bonus(AttributeModifierDefinitions.MasterCraftsman, 1, [
+                Unlock(AttributeModifierDefinitions.MasterCraftsman, [
                     new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.MasterCraftsman },
                     new LeveledAttributeMinimumRequirement { Attribute = HammerDurability, ThresholdPercentage = 10 },
                 ])
@@ -457,7 +457,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "detonator",
             Attributes = [
-                Bonus(AttributeModifierDefinitions.Detonator, 1, [
+                Unlock(AttributeModifierDefinitions.Detonator, [
                     new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Detonator },
                     new LeveledAttributeMinimumRequirement { Attribute = MiningSpeed, ThresholdPercentage = 10 }
                 ])
@@ -509,7 +509,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "wildernessexplorer",
             Attributes = [
-                Bonus(AttributeModifierDefinitions.WildernessExplorer, 1, [
+                Unlock(AttributeModifierDefinitions.WildernessExplorer, [
                     new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.Furtive, ThresholdPercentage = 15 },
                     new LeveledAttributeMinimumRequirement{ Attribute = AnimalHarvestRate , ThresholdPercentage = 10 }
                 ])
@@ -550,7 +550,7 @@ namespace SeraphLeveling.Data.Traits
             Attributes = [
                 Bonus(ArmorWalkSpeed, 70),
                 Bonus(ArmorDurability, 50),
-                Bonus(BulwarkHealth, 1, [
+                Unlock(BulwarkHealth, [
                     new LeveledAttributeMinimumRequirement { Attribute = ArmorWalkSpeed, ThresholdPercentage = 70 },
                     new LeveledAttributeMinimumRequirement { Attribute = ArmorDurability, ThresholdPercentage = 50 }
                 ]),
@@ -590,7 +590,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "culinary",
             Attributes = [
-                Bonus(AttributeModifierDefinitions.Culinary, 1, [
+                Unlock(AttributeModifierDefinitions.Culinary, [
                     new LeveledAttributeMinimumRequirement { Attribute = KnifeDamage, ThresholdPercentage = 10 },
                     new LeveledAttributeMinimumRequirement{ Attribute = AnimalHarvestRate , ThresholdPercentage = 10 }
                 ])
@@ -611,7 +611,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "weaver",
             Attributes = [
-                Bonus(AttributeModifierDefinitions.Weaver, 1, [
+                Unlock(AttributeModifierDefinitions.Weaver, [
                     new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Weaver },
                     new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Clothier }
                 ])
@@ -622,7 +622,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "lactoseenthusiast",
             Attributes = [
-                Bonus(AttributeModifierDefinitions.LactoseEnthusiast, 1, [
+                Unlock(AttributeModifierDefinitions.LactoseEnthusiast, [
                     new LeveledAttributeMinimumRequirement{ Attribute = TemporalStabilityDamageReceived , ThresholdPercentage = 15 },
                     new LeveledAttributeMinimumRequirement{ Attribute = AnimalDropRate , ThresholdPercentage = 10 }
                 ])

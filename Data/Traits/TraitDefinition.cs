@@ -11,6 +11,13 @@ using Vintagestory.API.Util;
 
 namespace SeraphLeveling.Data.Traits
 {
+    public enum TraitType
+    {
+        UNLOCK = 0,
+        BONUS = 1,
+        PENALTY = 2
+    }
+
     public record class TraitDefinition
     {
         private const bool DEBUG_SHOW_BROKEN_L10N = true;
@@ -36,6 +43,15 @@ namespace SeraphLeveling.Data.Traits
         public virtual string DynamicTraitHeaderKey
         {
             get => field ??= $"trait-{Id}"; init;
+        }
+        public TraitType TraitType
+        {
+            get
+            {
+                if (Attributes.All(mod => mod.ModifierType == AttributeModifierType.UNLOCK)) return TraitType.UNLOCK;
+                if (Attributes.Any(mod => mod.ModifierType == AttributeModifierType.BONUS)) return TraitType.BONUS;
+                return TraitType.PENALTY;
+            }
         }
 
         /// <summary>
