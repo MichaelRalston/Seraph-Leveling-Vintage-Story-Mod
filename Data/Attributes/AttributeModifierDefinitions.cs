@@ -8,7 +8,7 @@ namespace SeraphLeveling.Data.Attributes
 {
     public static class AttributeModifierDefinitions
     {
-        public static readonly TinkererAttributeModifierDefinition Tinkerer = new()
+        public static readonly GenericUnlockedAttributeModifierDefinition Tinkerer = new()
         {
             Id = "tinkerer",
             SkillKey = "tinkerer",
@@ -74,7 +74,7 @@ namespace SeraphLeveling.Data.Attributes
             Trait = new(() => Traits.TraitDefinitions.Bowyer),
         };
 
-        public static readonly MercilessAttributeModifierDefinition Merciless = new()
+        public static readonly GenericUnlockedAttributeModifierDefinition Merciless = new()
         {
             Id = "merciless",
             SkillKey = "merciless",
@@ -1203,6 +1203,15 @@ namespace SeraphLeveling.Data.Attributes
             IncrementData = DamageIncrementData,
             GlobalMaxCredits = 100,
             StatName = "ats:aculinaryartillery:cleaver-?-meleeDamageMult",
+        };
+
+        public static readonly GenericUnlockedAttributeModifierDefinition Culinary = new()
+        {
+            Id = "culinary",
+            SkillKey = "culinary",
+            PersistenceHeader = "CUL",
+            Name = "Culinary",
+            Trait = new(() => Traits.TraitDefinitions.Culinary)
         };
     }
 }
