@@ -66,36 +66,8 @@ namespace SeraphLeveling.Patches
                     AttributeModifierDefinitions.Detonator.AddCredits(serverPlayer, quantity);
                 }
 
-                var toolType = __instance?.Output?.ResolvedItemStack?.Item?.Tool;
-                if (toolType != null && byPlayer != null)
-                {
-                    string playerUid = byPlayer?.PlayerUID;
-                    switch (toolType)
-                    {
-                        case EnumTool.Axe:
-                            AttributeModifierDefinitions.AxeDurability.GetForPlayer(playerUid).DoEvent(serverPlayer, outputCode, quantity, RepairableToolProgress.Repair);
-                            break;
-                        case EnumTool.Bow:
-                            AttributeModifierDefinitions.BowDurability.GetForPlayer(playerUid).DoEvent(serverPlayer, outputCode, quantity, RepairableToolProgress.Repair);
-                            AttributeModifierDefinitions.BowDamage.GetForPlayer(playerUid).DoEvent(serverPlayer, outputCode, quantity, RepairableToolProgress.Repair);
-                            break;
-                        case EnumTool.Pickaxe:
-                            AttributeModifierDefinitions.PickaxeDurability.GetForPlayer(playerUid).DoEvent(serverPlayer, outputCode, quantity, RepairableToolProgress.Repair);
-                            break;
-                        case EnumTool.Hoe:
-                            AttributeModifierDefinitions.HoeDurability.GetForPlayer(playerUid).DoEvent(serverPlayer, outputCode, quantity, RepairableToolProgress.Repair);
-                            break;
-                        case EnumTool.Scythe:
-                            AttributeModifierDefinitions.ScytheDurability.GetForPlayer(playerUid).DoEvent(serverPlayer, outputCode, quantity, RepairableToolProgress.Repair);
-                            break;
-                        case EnumTool.Hammer:
-                            AttributeModifierDefinitions.HammerDurability.GetForPlayer(playerUid).DoEvent(serverPlayer, outputCode, quantity, RepairableToolProgress.Repair);
-                            break;
-                        case EnumTool.Knife:
-                            AttributeModifierDefinitions.KnifeDurability.GetForPlayer(playerUid).DoEvent(serverPlayer, outputCode, quantity, RepairableToolProgress.Repair);
-                            break;
-                    }
-                }
+                // Fire event for all attributes listening for tool repairs
+                TriggerToolRepair?.Invoke(serverPlayer, outputCode, quantity);
             }
         }
 

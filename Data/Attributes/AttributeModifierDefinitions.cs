@@ -734,7 +734,6 @@ namespace SeraphLeveling.Data.Attributes
                 }
             },
             GlobalMaxCredits = 75,
-            ToolRepairListeners = [ CraftingPatches.TriggerToolRepair ],
         };
 
         public static readonly GenericLeveledAttributeModifierDefinition CharcoalDropRate = new()

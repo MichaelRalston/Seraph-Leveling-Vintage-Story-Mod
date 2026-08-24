@@ -42,7 +42,7 @@ namespace SeraphLeveling.Data.Tools
             }
             else
             {
-                return itemCode.Contains(MatchPrefix, StringComparison.OrdinalIgnoreCase);
+                return itemCode.StartsWith(MatchPrefix, StringComparison.OrdinalIgnoreCase);
             }
         }
     }
