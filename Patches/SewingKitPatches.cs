@@ -80,9 +80,9 @@ namespace SeraphLeveling.Patches
                 if (world?.Side != EnumAppSide.Server) return;
 
                 // Only track wearable items (clothing and armor)
-                string itemCode = __instance.Code?.ToString();
+                var itemCode = __instance.Code;
                 if (itemCode == null) return;
-                if (!itemCode.Contains("clothes-") && !itemCode.Contains("armor-")) return;
+                if (!itemCode.Path.Contains("clothes-") && !itemCode.Path.Contains("armor-")) return;
 
                 // Get the current durability
                 var currentStack = slot?.Itemstack;

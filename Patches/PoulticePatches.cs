@@ -50,7 +50,7 @@ namespace SeraphLeveling.Patches
 
                 // Update last repair time and give credit
                 LastHealTime[playerKey] = currentTick;
-                SeraphLevelingModSystem.ProcessPoulticeHeal(player, __instance.Code?.ToString());
+                SeraphLevelingModSystem.ProcessPoulticeHeal(player, __instance.Code);
             }
             catch (Exception ex)
             {
@@ -77,8 +77,8 @@ namespace SeraphLeveling.Patches
                 if (!__result) return;
 
                 // Check if this is a poultice or bandage
-                string itemCode = __instance.Code?.ToString();
-                if (itemCode == null || (!itemCode.StartsWith("poultice-") && !itemCode.StartsWith("bandage-"))) return;
+                var itemCode = __instance.Code;
+                if (itemCode == null || (!itemCode.Path.StartsWith("poultice-") && !itemCode.Path.StartsWith("bandage-"))) return;
 
                 // Get the player
                 if (byEntity is not EntityPlayer playerEntity) return;

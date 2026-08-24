@@ -18,14 +18,14 @@ namespace SeraphLeveling.Data.Attributes
         public HashSet<string> TokenBanList { get; set; } = [];
         public HashSet<string> TokenAllowList { get; set; } = [];
 
-        public virtual bool IsItemValid(string itemCode)
+        public virtual bool IsItemValid(AssetLocation itemCode)
         {
-            if (string.IsNullOrEmpty(itemCode)) return false;
+            if (itemCode == null || !itemCode.Valid) return false;
 
-            // DENY if the item code contains any token in the ban list
+            // DENY if the item code path contains any token in the ban list
             foreach (string pattern in TokenBanList)
             {
-                if (!string.IsNullOrEmpty(pattern) && itemCode.Contains(pattern, StringComparison.OrdinalIgnoreCase))
+                if (!string.IsNullOrEmpty(pattern) && itemCode.Path.Contains(pattern, StringComparison.OrdinalIgnoreCase))
                 {
                     return false;
                 }
@@ -37,10 +37,10 @@ namespace SeraphLeveling.Data.Attributes
                 return true;
             }
 
-            // ALLOW if the item code contains any token in the allow list
+            // ALLOW if the item code path contains any token in the allow list
             foreach (string pattern in TokenAllowList)
             {
-                if (!string.IsNullOrEmpty(pattern) && itemCode.Contains(pattern, StringComparison.OrdinalIgnoreCase))
+                if (!string.IsNullOrEmpty(pattern) && itemCode.Path.Contains(pattern, StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }
@@ -50,10 +50,10 @@ namespace SeraphLeveling.Data.Attributes
             return false;
         }
 
-        public virtual void AddCollectedItem(IServerPlayer player, string toAdd)
+        public virtual void AddCollectedItem(IServerPlayer player, AssetLocation toAdd)
         {
             // Added item is invalid - abort
-            if (string.IsNullOrWhiteSpace(toAdd) || !IsItemValid(toAdd)) return;
+            if (toAdd == null || !toAdd.Valid || !IsItemValid(toAdd)) return;
 
             var progress = GetDict(player);
 
@@ -153,7 +153,7 @@ namespace SeraphLeveling.Data.Attributes
 
     public class CollectionUnlockedAttributeModifierProgressData<D, PD>(D definition) : UnlockedAttributeModifierProgressData<D, PD>(definition) where PD : CollectionUnlockedAttributeModifierProgressData<D, PD> where D : CollectionUnlockedAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
     {
-        public HashSet<string> CollectedItems { get; private set; } = [];
+        public HashSet<AssetLocation> CollectedItems { get; private set; } = [];
 
         public override void ReadVersion(byte version, BinaryReader reader)
         {
@@ -161,7 +161,7 @@ namespace SeraphLeveling.Data.Attributes
             {
                 case 1:
                     IsUnlocked = reader.ReadBoolean();
-                    CollectedItems = [.. reader.ReadStringArray()];
+                    CollectedItems = reader.ReadStringArray().Select(str => AssetLocation.Create(str)).ToHashSet();
                     break;
                 default:
                     throw new NotSupportedException($"Version {version} is not supported");
@@ -171,7 +171,7 @@ namespace SeraphLeveling.Data.Attributes
         public override void WriteOut(BinaryWriter writer)
         {
             writer.Write(IsUnlocked);
-            writer.WriteArray(CollectedItems.ToArray());
+            writer.WriteArray(CollectedItems.Select(loc => loc.ToString()).ToArray());
         }
 
         public virtual TextCommandResult SetLevelFromCommand(IServerPlayer player, int newLevel, TextCommandCallingArgs args, int indexOffset)
@@ -182,7 +182,7 @@ namespace SeraphLeveling.Data.Attributes
             // Add placeholder entries up to the desired level
             for (int i = 0; i < newLevel; i++)
             {
-                CollectedItems.Add($"__placeholder_{i}");
+                CollectedItems.Add(AssetLocation.Create($"__placeholder_{i}"));
             }
 
             // Set unlock status based on whether we've reached the required amount

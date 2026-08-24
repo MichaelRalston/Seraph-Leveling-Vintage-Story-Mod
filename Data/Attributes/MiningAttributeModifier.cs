@@ -29,7 +29,7 @@ namespace SeraphLeveling.Data.Attributes
                     break;
                 case 2:
                     TotalCredits = reader.ReadInt32();
-                    string currentPickaxeCode = reader.ReadString();
+                    var currentPickaxeCode = AssetLocation.Create(reader.ReadString());
                     int partialCredit = reader.ReadInt32();
                     int currentIncrementSize = reader.ReadInt32();
 
@@ -54,7 +54,7 @@ namespace SeraphLeveling.Data.Attributes
                     pickaxeCount = reader.ReadInt32();
                     for (int j = 0; j < pickaxeCount; j++)
                     {
-                        string pickaxeCode = reader.ReadString();
+                        var pickaxeCode = AssetLocation.Create(reader.ReadString());
                         var toolProgressRecord = new LevelableTool<MiningAttributeModifierDefinition, MiningAttributeModifierProgressData, SimpleToolProgress>
                         {
                             Definition = Definition,
@@ -78,7 +78,7 @@ namespace SeraphLeveling.Data.Attributes
                     pickaxeCount = reader.ReadInt32();
                     for (int j = 0; j < pickaxeCount; j++)
                     {
-                        string pickaxeCode = reader.ReadString();
+                        var pickaxeCode = AssetLocation.Create(reader.ReadString());
                         var toolProgressRecord = new LevelableTool<MiningAttributeModifierDefinition, MiningAttributeModifierProgressData, SimpleToolProgress>
                         {
                             Definition = Definition,
