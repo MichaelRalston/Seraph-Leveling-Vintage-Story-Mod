@@ -11,6 +11,7 @@ namespace SeraphLeveling.Patches
     public static class CraftingPatches
     {
         public static event TriggerToolRepairDelegate TriggerToolRepair;
+        public static event TriggerGridCraftingResultDelegate TriggerGridCrafted;
 
         public static void GridRecipeConsumeInput_Postfix(GridRecipe __instance, IPlayer byPlayer, ItemSlot[] inputSlots, int gridWidth, bool __result)
         {
@@ -19,53 +20,17 @@ namespace SeraphLeveling.Patches
                 if (byPlayer is not IServerPlayer serverPlayer) return;
 
                 var outputCode = __instance?.Output?.Code;
-                string outputPath = outputCode?.Path;
                 int quantity = __instance?.Output?.Quantity ?? 0;
 
-                if (outputPath == null || quantity <= 0) return;
+                if (outputCode == null || quantity <= 0) return;
 
                 string playerName = byPlayer?.PlayerName;
 #if SPAMMYDEBUG
                 SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Player {playerName} crafted item code {outputCode} in grid, success={__result}, side={byPlayer?.Entity?.Api?.Side}");
 #endif
 
-                // Process boards
-                if (outputPath.StartsWith("plank-"))
-                {
-                    SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Granting {playerName} credit for crafting {quantity} boards");
-                    AttributeModifierDefinitions.Carpenter.AddCredits(serverPlayer, quantity);
-                }
-
-                if (outputPath.StartsWith("table-") || outputPath.StartsWith("chair-"))
-                {
-                    SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Granting {playerName} credit for crafting {quantity} furniture");
-                    AttributeModifierDefinitions.InteriorDesigner.AddCredits(serverPlayer, quantity);
-                }
-
-                // Process ashlar blocks
-                if (outputPath.StartsWith("stonebrick-"))
-                {
-                    SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Granting {playerName} credit for crafting {quantity} ashlar blocks");
-                    AttributeModifierDefinitions.Mason.AddCredits(serverPlayer, quantity);
-                }
-
-                if (outputPath == "linen-normal-down") {
-                    SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Granting {playerName} credit for crafting {quantity} linen cloth");
-                    AttributeModifierDefinitions.Weaver.AddCredits(serverPlayer, quantity);
-                }
-
-                // Process large gears
-                if (outputPath.Contains("largegear3"))
-                {
-                    SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Granting {playerName} credit for crafting {quantity} large gears");
-                    AttributeModifierDefinitions.Technician.AddCredits(serverPlayer, quantity);
-                }
-
-                if (outputPath.StartsWith("bomb-"))
-                {
-                    SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Granting {playerName} credit for crafting {quantity} bombs");
-                    AttributeModifierDefinitions.Detonator.AddCredits(serverPlayer, quantity);
-                }
+                // Fire event for all attributes listening for grid crafts
+                TriggerGridCrafted?.Invoke(serverPlayer, outputCode, quantity);
 
                 // Fire event for all attributes listening for tool repairs
                 TriggerToolRepair?.Invoke(serverPlayer, outputCode, quantity);

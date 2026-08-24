@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using SeraphLeveling.Data.Mods;
 using SeraphLeveling.Data.Tools;
 using SeraphLeveling.Patches;
+using SeraphLeveling.Util;
+using static SeraphLeveling.Util.IAssetLocationMatcher;
 
 namespace SeraphLeveling.Data.Attributes
 {
@@ -30,7 +32,7 @@ namespace SeraphLeveling.Data.Attributes
             Trait = new(() => Traits.TraitDefinitions.Technical),
         };
 
-        public static readonly DetonatorAttributeModifierDefinition Detonator = new()
+        public static readonly GenericGridCraftUnlockedAttributeModifierDefinition Detonator = new()
         {
             Id = "detonator",
             SkillKey = "detonator",
@@ -39,9 +41,11 @@ namespace SeraphLeveling.Data.Attributes
             GlobalMaxCredits = 80,
             CreditDescription = "bombs",
             Trait = new(() => Traits.TraitDefinitions.Detonator),
+            CraftedItemName = "Bombs",
+            ResultAllowList = Simple("bomb-"),
         };
 
-        public static readonly WeaverAttributeModifierDefinition Weaver = new()
+        public static readonly GenericGridCraftUnlockedAttributeModifierDefinition Weaver = new()
         {
             Id = "weaver",
             SkillKey = "weaver",
@@ -50,9 +54,11 @@ namespace SeraphLeveling.Data.Attributes
             GlobalMaxCredits = 25,
             CreditDescription = "linen",
             Trait = new(() => Traits.TraitDefinitions.Weaver),
+            CraftedItemName = "Linen cloth",
+            ResultAllowList = Simple("linen-normal-down", MatcherType.PathExact),
         };
 
-        public static readonly InteriorDesignerAttributeModifierDefinition InteriorDesigner = new()
+        public static readonly GenericGridCraftUnlockedAttributeModifierDefinition InteriorDesigner = new()
         {
             Id = "interiorDesigner",
             SkillKey = "interiordesigner",
@@ -61,6 +67,8 @@ namespace SeraphLeveling.Data.Attributes
             GlobalMaxCredits = 20,
             CreditDescription = "furniture",
             Trait = new(() => Traits.TraitDefinitions.InteriorDesigner),
+            CraftedItemName = "Furniture",
+            ResultAllowList = Or(Simple("table-"), Simple("chair-")),
         };
 
         public static readonly BowyerAttributeModifierDefinition Bowyer = new()
@@ -657,7 +665,7 @@ namespace SeraphLeveling.Data.Attributes
             GlobalMaxCredits = 25,
         };
 
-        public static readonly CarpenterAttributeModifierDefinition Carpenter = new()
+        public static readonly GenericGridCraftUnlockedAttributeModifierDefinition Carpenter = new()
         {
             Id = "carpenter",
             SkillKey = "carpenter",
@@ -667,6 +675,8 @@ namespace SeraphLeveling.Data.Attributes
             CreditDescription = "boards",
             WatchedCreditsAttributeKey = "sitCarpenterBoards",
             Trait = new(() => Traits.TraitDefinitions.Carpenter),
+            CraftedItemName = "Boards",
+            ResultAllowList = Simple("plank-"),
         };
 
         public static readonly ConcurrentDictionary<SimpleToolProgress, IncrementData> TreeChoppingIncrementData = new()
@@ -802,7 +812,7 @@ namespace SeraphLeveling.Data.Attributes
             StatName = "ats:handclayformingspeed"
         };
 
-        public static readonly MasonAttributeModifierDefinition Mason = new()
+        public static readonly GenericGridCraftUnlockedAttributeModifierDefinition Mason = new()
         {
             Id = "mason",
             SkillKey = "mason",
@@ -812,9 +822,11 @@ namespace SeraphLeveling.Data.Attributes
             CreditDescription = "ashlar blocks",
             WatchedCreditsAttributeKey = "sitMasonStoneBricks",
             Trait = new(() => Traits.TraitDefinitions.Mason),
+            CraftedItemName = "Ashlar blocks",
+            ResultAllowList = Simple("stonebrick-"),
         };
 
-        public static readonly TechnicianAttributeModifierDefinition Technician = new()
+        public static readonly GenericGridCraftUnlockedAttributeModifierDefinition Technician = new()
         {
             Id = "technician",
             SkillKey = "technician",
@@ -824,6 +836,8 @@ namespace SeraphLeveling.Data.Attributes
             CreditDescription = "large gears",
             WatchedCreditsAttributeKey = "sitTechnicianLargeGears",
             Trait = new(() => Traits.TraitDefinitions.Technician),
+            CraftedItemName = "Large gears",
+            ResultAllowList = Simple("largegear3", MatcherType.PathExact),
         };
 
         public static readonly ConcurrentDictionary<SimpleToolProgress, IncrementData> HealingIncrementData = new()
