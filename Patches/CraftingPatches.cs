@@ -197,11 +197,10 @@ namespace SeraphLeveling.Patches
                 {
                     string playerUid = byPlayer?.PlayerUID;
                     string playerName = serverPlayer?.PlayerName;
-                    string toolCode = slot?.Itemstack?.Collectible?.Code;
+                    string toolCode = slot?.Itemstack?.Collectible?.Code?.Path;
                     SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Granting {playerName} credit for striking a voxel on an anvil with {toolCode}");
                     AttributeModifierDefinitions.SmithingSpeed.GetForPlayer(playerUid).DoEvent(serverPlayer, toolCode, 1, RepairableToolProgress.Usage);
                     AttributeModifierDefinitions.BitRecoveryRate.GetForPlayer(playerUid).DoEvent(serverPlayer, toolCode, 1, RepairableToolProgress.Usage);
-                    AttributeModifierDefinitions.HammerDurability.GetForPlayer(playerUid).DoEvent(serverPlayer, toolCode, 1, RepairableToolProgress.Usage);
                 }
             }
         }
