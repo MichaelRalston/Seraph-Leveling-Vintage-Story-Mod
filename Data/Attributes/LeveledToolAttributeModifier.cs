@@ -623,7 +623,7 @@ namespace SeraphLeveling.Data.Attributes
                 // Earn a credit
                 TotalCredits++;
                 partialCredit.Amount -= partialCredit.IncrementSize;
-                partialCredit.IncrementSize += Definition.IncrementStep;
+                partialCredit.IncrementSize += Definition.IncrementData[scoreType].IncrementStep;
 
                 SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Player {player.PlayerName} earned credit {TotalCredits} with {toolCode}, next requires {partialCredit.IncrementSize} points");
             }
