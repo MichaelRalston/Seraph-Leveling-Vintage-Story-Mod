@@ -181,8 +181,8 @@ namespace SeraphLeveling.Data.Attributes
 
     public abstract class LeveledToolAttributeModifierProgressData<D, PD, E>(D def) : LeveledAttributeModifierProgressData<D, PD>(def) where PD : LeveledToolAttributeModifierProgressData<D, PD, E> where D : LeveledToolAttributeModifierDefinition<D, PD, E>, IConstructable<D, PD> where E : Enum
     {
-        public ConcurrentDictionary<string, LevelableTool<D, PD, E>> ToolProgress { get; init; } = [];
-        public LevelableTool<D, PD, E> GetToolProgress(string toolCode)
+        public ConcurrentDictionary<AssetLocation, LevelableTool<D, PD, E>> ToolProgress { get; init; } = [];
+        public LevelableTool<D, PD, E> GetToolProgress(AssetLocation toolCode)
         {
             if (!ToolProgress.TryGetValue(toolCode, out var progress))
             {
@@ -195,7 +195,7 @@ namespace SeraphLeveling.Data.Attributes
             return progress;
         }
 
-        public TextCommandResult SetLevel(IServerPlayer player, int level, string toolName)
+        public TextCommandResult SetLevel(IServerPlayer player, int level, AssetLocation toolName)
         {
             int maxCredits = Definition.GetMaxCredits(player.Entity);
             int oldCredits = TotalCredits;
@@ -261,7 +261,7 @@ namespace SeraphLeveling.Data.Attributes
         }
         public override TextCommandResult SetLevelFromCommand(IServerPlayer player, int level, TextCommandCallingArgs args, int indexOffset)
         {
-            string toolName = (string)args[1 + indexOffset];
+            string toolName = AssetLocation.Create((string)args[1 + indexOffset]);
             return SetLevel(player, level, toolName);
         }
         public override void ReadVersion(byte version, BinaryReader reader)
@@ -274,7 +274,7 @@ namespace SeraphLeveling.Data.Attributes
                     toolCount = reader.ReadInt32();
                     for (int i = 0; i < toolCount; i++)
                     {
-                        var toolCode = reader.ReadString();
+                        var toolCode = AssetLocation.Create(reader.ReadString());
                         var partialCredit = reader.ReadSingle();
                         var incrementSize = reader.ReadInt32();
                         var toolProgressRecord = new LevelableTool<D, PD, E>
@@ -296,7 +296,7 @@ namespace SeraphLeveling.Data.Attributes
                     toolCount = reader.ReadInt32();
                     for (int i = 0; i < toolCount; i++)
                     {
-                        var toolCode = reader.ReadString();
+                        var toolCode = AssetLocation.Create(reader.ReadString());
                         var partialCredit = reader.ReadSingle();
                         var incrementSize = reader.ReadInt32();
                         var toolProgressRecord = new LevelableTool<D, PD, E>
@@ -318,7 +318,7 @@ namespace SeraphLeveling.Data.Attributes
                     toolCount = reader.ReadInt32();
                     for (int i = 0; i < toolCount; i++)
                     {
-                        var toolCode = reader.ReadString();
+                        var toolCode = AssetLocation.Create(reader.ReadString());
                         var hasBeenUsed = reader.ReadBoolean();
                         var length = reader.ReadInt32();
                         var toolProgressRecord = new LevelableTool<D, PD, E>
@@ -352,7 +352,7 @@ namespace SeraphLeveling.Data.Attributes
             writer.Write(toolSnapshot.Length);
             foreach (var toolKvp in toolSnapshot)
             {
-                writer.Write(toolKvp.Key); // Pickaxe code
+                writer.Write(toolKvp.Key.ToString()); // Pickaxe code
                 toolKvp.Value.WriteOut(writer);
             }
         }
@@ -363,10 +363,8 @@ namespace SeraphLeveling.Data.Attributes
                 sb.AppendLine($"\nPer-{Definition.Tool.Name} progress:");
                 foreach (var kvp in ToolProgress.OrderBy(p => p.Value.PartialCredit.Sum(t => p.Value.GetLevel(t.Key))))
                 {
-                    string toolName = kvp.Key;
                     // Simplify the display name (remove "game:" prefix if present)
-                    if (toolName.StartsWith("game:"))
-                        toolName = toolName.Substring(5);
+                    string toolName = kvp.Key.ToShortString();
 
                     foreach (var pcKvp in kvp.Value.PartialCredit)
                     {
@@ -380,7 +378,7 @@ namespace SeraphLeveling.Data.Attributes
             }
         }
 
-        public static double DrainAccumulatorsLeveling(List<(string key, E e, double value)> accumulators, double penalty)
+        public static double DrainAccumulatorsLeveling(List<(AssetLocation key, E e, double value)> accumulators, double penalty)
         {
             if (accumulators == null || accumulators.Count == 0 || penalty <= 0) return penalty;
 
@@ -448,14 +446,14 @@ namespace SeraphLeveling.Data.Attributes
 
 
         public static (int newTotalCredits, int creditsLost) ApplyAbsolutePositionDecay(
-            List<(string key, E e, double accumulator, int incrementSize)> toolEntries,
+            List<(AssetLocation key, E e, double accumulator, int incrementSize)> toolEntries,
             double rawPenalty, int baseIncrement, int incrementStep, int oldTotalCredits,
-            Action<string, E, double, int> writeBack,
-            Action<string> removeEntry,
+            Action<AssetLocation, E, double, int> writeBack,
+            Action<AssetLocation> removeEntry,
             StringBuilder verboseLog, string skillName)
         {
             // Step 1: Convert to absolute positions
-            var absPositions = new List<(string key, E e, double value)>();
+            var absPositions = new List<(AssetLocation key, E e, double value)>();
             foreach (var (key, e, accumulator, incrementSize) in toolEntries)
             {
                 double absPos = SeraphLevelingModSystem.ToolToAbsolutePosition(accumulator, incrementSize, baseIncrement, incrementStep);
@@ -467,7 +465,7 @@ namespace SeraphLeveling.Data.Attributes
 
             // Step 3: Convert back and write
             int newTotalCredits = 0;
-            var toRemove = new List<string>();
+            var toRemove = new List<AssetLocation>();
             foreach (var (key, e, value) in absPositions)
             {
                 var (credits, accum, incSize) = SeraphLevelingModSystem.AbsolutePositionToToolState(value, baseIncrement, incrementStep);
@@ -549,7 +547,7 @@ namespace SeraphLeveling.Data.Attributes
             return 0;
         }
 
-        public void ApplyFirstTimeBonus(IServerPlayer player, string toolCode, int score)
+        public void ApplyFirstTimeBonus(IServerPlayer player, AssetLocation toolCode, int score)
         {
             // Get the player-specific max credits (accounts for Weak/Claustrophobic penalties)
             int maxCredits = Definition.GetMaxCredits(player.Entity);
@@ -596,7 +594,7 @@ namespace SeraphLeveling.Data.Attributes
             var tp = GetToolProgress(toolCode);
 
         }
-        public void DoEvent(IServerPlayer player, string toolCode, float score, E scoreType = default)
+        public void DoEvent(IServerPlayer player, AssetLocation toolCode, float score, E scoreType = default)
         {
             if (SeraphLevelingModSystem.IsAttributeModifierDisabled(Definition)) return;
             // Get the player-specific max credits (accounts for Weak/Claustrophobic penalties)

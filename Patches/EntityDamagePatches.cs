@@ -60,10 +60,10 @@ namespace SeraphLeveling.Patches
                 {
                     // First, check the projectile itself for thrown weapons (javelins, thrown spears)
                     // These weapons ARE the projectile, so we detect from SourceEntity
-                    string projectileCode = damageSource.SourceEntity?.Code?.ToString();
-                    if (!string.IsNullOrEmpty(projectileCode))
+                    var projectileCode = damageSource.SourceEntity?.Code;
+                    if (projectileCode != null && projectileCode.Valid)
                     {
-                        var (projProficiency, projWeaponCode) = SeraphLevelingModSystem.GetCOWeaponType(projectileCode);
+                        var (projProficiency, projWeaponCode) = SeraphLevelingModSystem.GetCOWeaponType(projectileCode.Path);
                         if (SeraphLevelingModSystem.DebugLoggingEnabled)
                         {
                             SeraphLevelingModSystem.ServerApi?.Logger?.Debug($"[SeraphLeveling] CO ranged projectile check: '{projectileCode}' -> proficiency='{projProficiency ?? "null"}'");
@@ -79,8 +79,8 @@ namespace SeraphLeveling.Patches
                     var heldRangedItem = shooterPlayer.Entity?.RightHandItemSlot?.Itemstack?.Collectible;
                     if (heldRangedItem != null)
                     {
-                        string rangedItemCode = heldRangedItem.Code?.ToString();
-                        var (proficiencyStat, coWeaponCode) = SeraphLevelingModSystem.GetCOWeaponType(rangedItemCode);
+                        var rangedItemCode = heldRangedItem.Code;
+                        var (proficiencyStat, coWeaponCode) = SeraphLevelingModSystem.GetCOWeaponType(rangedItemCode.Path);
                         if (proficiencyStat != null && SeraphLevelingModSystem.IsCORangedProficiency(proficiencyStat))
                         {
                             SeraphLevelingModSystem.ProcessCOProficiencyDamage(shooterPlayer, proficiencyStat, coWeaponCode, damage);
@@ -104,7 +104,7 @@ namespace SeraphLeveling.Patches
             var heldItem = attackerPlayer.Entity?.RightHandItemSlot?.Itemstack?.Collectible;
             if (heldItem == null) return;
 
-            string itemCode = heldItem.Code?.ToString();
+            var itemCode = heldItem.Code;
             if (SeraphLevelingModSystem.DebugLoggingEnabled)
             {
                 SeraphLevelingModSystem.ServerApi?.Logger?.Debug($"[SeraphLeveling] Melee hit with held item: '{itemCode}'");
@@ -126,7 +126,7 @@ namespace SeraphLeveling.Patches
             // Combat Overhaul: Also track CO melee proficiency if enabled
             if (SeraphLevelingModSystem.IsCOCompatEnabled)
             {
-                var (proficiencyStat, coWeaponCode) = SeraphLevelingModSystem.GetCOWeaponType(itemCode);
+                var (proficiencyStat, coWeaponCode) = SeraphLevelingModSystem.GetCOWeaponType(itemCode.Path);
                 if (SeraphLevelingModSystem.DebugLoggingEnabled)
                 {
                     SeraphLevelingModSystem.ServerApi?.Logger?.Debug($"[SeraphLeveling] CO weapon check: itemCode='{itemCode}' -> proficiency='{proficiencyStat ?? "null"}', weaponCode='{coWeaponCode ?? "null"}'");
@@ -180,7 +180,7 @@ namespace SeraphLeveling.Patches
             {
                 if (slot?.Itemstack?.Collectible == null) continue;
 
-                string itemCode = slot.Itemstack.Collectible.Code?.ToString();
+                var itemCode = slot.Itemstack.Collectible.Code;
                 string armorType = SeraphLevelingModSystem.GetArmorType(itemCode);
 
                 if (armorType == null) continue; // Not armor
@@ -207,10 +207,11 @@ namespace SeraphLeveling.Patches
                 }
 
                 // Determine hit probability based on armor slot type (from item code)
-                float hitProbability = 0.5f; // Default to body
-                if (itemCode.Contains("-head-") || itemCode.Contains("-helmet-"))
+                string itemPath = itemCode.Path;
+                float hitProbability;
+                if (itemPath.Contains("-head-") || itemPath.Contains("-helmet-"))
                     hitProbability = 0.2f;
-                else if (itemCode.Contains("-legs-") || itemCode.Contains("-leggings-"))
+                else if (itemPath.Contains("-legs-") || itemPath.Contains("-leggings-"))
                     hitProbability = 0.3f;
                 else // body
                     hitProbability = 0.5f;

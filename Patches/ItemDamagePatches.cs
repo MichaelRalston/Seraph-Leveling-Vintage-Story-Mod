@@ -19,7 +19,7 @@ namespace SeraphLeveling.Patches
             if (__instance.Tool == null) return;
             if (byEntity is not EntityPlayer byPlayer) return;
             if (byPlayer.Player is not IServerPlayer player) return;
-            string toolCode = __instance.Code.Path.ToLowerInvariant();
+            var toolCode = __instance.Code;
 #if SPAMMYDEBUG
             ServerApi.Logger.Debug($"[SeraphLeveling] Checking item damage points for tool code {toolCode}.");
 #endif

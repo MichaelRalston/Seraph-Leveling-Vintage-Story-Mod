@@ -128,7 +128,7 @@ namespace SeraphLeveling
         public const int VANILLA_SOLDIER_ARMOR_WALKSPEED_BONUS = 25;
 
         // Tracking currently equipped armor for each player (for time tracking and equip detection)
-        private static ConcurrentDictionary<string, Dictionary<string, string>> playerEquippedArmor = new ConcurrentDictionary<string, Dictionary<string, string>>();
+        private static readonly ConcurrentDictionary<string, Dictionary<string, AssetLocation>> playerEquippedArmor = [];
 
         // =========================================================================
         // CLOTHIER TRAIT - Tracks unique clothing worn to unlock sewing kit crafting
@@ -1467,13 +1467,13 @@ namespace SeraphLeveling
         /// <summary>
         /// Gets the pickaxe code from the player's held item, or null if not holding a pickaxe.
         /// </summary>
-        private string GetHeldPickaxeCode(IServerPlayer player) => GetHeldToolCodeInner(player, EnumTool.Pickaxe);
-        private string GetHeldAxeCode(IServerPlayer player) => GetHeldToolCodeInner(player, EnumTool.Axe);
-        private string GetHeldShovelCode(IServerPlayer player) => GetHeldToolCodeInner(player, EnumTool.Shovel);
-        private string GetHeldShearsCode(IServerPlayer player) => GetHeldToolCodeInner(player, EnumTool.Shears);
-        private string GetHeldScytheCode(IServerPlayer player) => GetHeldToolCodeInner(player, EnumTool.Scythe);
+        private AssetLocation GetHeldPickaxeCode(IServerPlayer player) => GetHeldToolCodeInner(player, EnumTool.Pickaxe);
+        private AssetLocation GetHeldAxeCode(IServerPlayer player) => GetHeldToolCodeInner(player, EnumTool.Axe);
+        private AssetLocation GetHeldShovelCode(IServerPlayer player) => GetHeldToolCodeInner(player, EnumTool.Shovel);
+        private AssetLocation GetHeldShearsCode(IServerPlayer player) => GetHeldToolCodeInner(player, EnumTool.Shears);
+        private AssetLocation GetHeldScytheCode(IServerPlayer player) => GetHeldToolCodeInner(player, EnumTool.Scythe);
 
-        private string GetHeldToolCodeInner(IServerPlayer player, EnumTool toolType)
+        private AssetLocation GetHeldToolCodeInner(IServerPlayer player, EnumTool toolType)
         {
             if (player?.Entity == null) return null;
 
@@ -1484,21 +1484,17 @@ namespace SeraphLeveling
             if (heldItem.Tool != toolType) return null;
 
             // Return the item code as the pickaxe identifier
-            return heldItem.Code?.ToString();
+            return heldItem.Code;
         }
 
-        private string GetBlockCode(int blockId)
+        private AssetLocation GetBlockCode(int blockId)
         {
             if (ServerApi == null) return "";
 
             var block = ServerApi.World.GetBlock(blockId);
-            if (block == null) return "";
-
-            string blockCode = block.Code?.ToString() ?? "";
-
-            // Remove "game:" prefix if present for consistent matching
-            return blockCode.StartsWith("game:") ? blockCode.Substring(5) : blockCode;
+            return block?.Code;
         }
+
         private int GetWoodLogPoints(int blockId)
         {
             string codeToCheck = GetBlockCode(blockId);
@@ -1845,11 +1841,11 @@ namespace SeraphLeveling
         /// Determines the armor type from an item code.
         /// Returns: "light" (leather, gambeson), "chain", "brigandine", "scale", "plate", or null if not armor.
         /// </summary>
-        public static string GetArmorType(string itemCode)
+        public static string GetArmorType(AssetLocation itemCode)
         {
-            if (string.IsNullOrEmpty(itemCode)) return null;
+            if (itemCode == null || !itemCode.Valid) return null;
 
-            string codeToCheck = itemCode.StartsWith("game:") ? itemCode.Substring(5) : itemCode;
+            string codeToCheck = itemCode.Path;
 
             // Check if it's armor (starts with "armor-")
             if (!codeToCheck.StartsWith("armor-")) return null;
@@ -1912,7 +1908,7 @@ namespace SeraphLeveling
             string playerUid = player.PlayerUID;
 
             // Get the player's currently equipped armor
-            var equippedArmor = new Dictionary<string, string>();
+            var equippedArmor = new Dictionary<string, AssetLocation>();
 
             // Check armor slots (head, body, legs) using character inventory
             var characterInventory = player.InventoryManager?.GetOwnInventory(GlobalConstants.characterInvClassName);
@@ -1923,7 +1919,7 @@ namespace SeraphLeveling
                 {
                     if (slot?.Itemstack?.Collectible != null)
                     {
-                        string itemCode = slot.Itemstack.Collectible.Code?.ToString();
+                        var itemCode = slot.Itemstack.Collectible.Code;
                         string armorType = GetArmorType(itemCode);
                         if (armorType != null)
                         {
@@ -1956,7 +1952,7 @@ namespace SeraphLeveling
                 if (!player.Entity.Alive) continue;
 
                 string playerUid = player.PlayerUID;
-                var currentArmor = new Dictionary<string, string>();
+                var currentArmor = new Dictionary<string, AssetLocation>();
 
                 // Get the player's currently equipped armor using character inventory
                 var characterInventory = player.InventoryManager?.GetOwnInventory(GlobalConstants.characterInvClassName);
@@ -1966,7 +1962,7 @@ namespace SeraphLeveling
                     {
                         if (slot?.Itemstack?.Collectible != null)
                         {
-                            string itemCode = slot.Itemstack.Collectible.Code?.ToString();
+                            var itemCode = slot.Itemstack.Collectible.Code;
                             string armorType = GetArmorType(itemCode);
                             if (armorType != null)
                             {
@@ -1978,16 +1974,16 @@ namespace SeraphLeveling
                 }
 
                 // Get previous armor state
-                var previousArmor = playerEquippedArmor.GetOrAdd(playerUid, _ => new Dictionary<string, string>());
+                var previousArmor = playerEquippedArmor.GetOrAdd(playerUid, _ => new Dictionary<string, AssetLocation>());
 
                 // Check for newly equipped armor (first-equip bonus) and track time worn
                 foreach (var kvp in currentArmor)
                 {
-                    string slotId = kvp.Key;
-                    string itemCode = kvp.Value;
+                    var slotId = kvp.Key;
+                    var itemCode = kvp.Value;
 
                     // Check if this is new armor in this slot
-                    if (!previousArmor.TryGetValue(slotId, out string prevArmor) || prevArmor != itemCode)
+                    if (!previousArmor.TryGetValue(slotId, out var prevArmor) || prevArmor != itemCode)
                     {
                         AttributeModifierDefinitions.ArmorDurability.GetForPlayer(playerUid).ApplyFirstTimeBonus(player, itemCode, GetFirstEquipBonus(GetArmorType(itemCode)));
                         AttributeModifierDefinitions.ArmorWalkSpeed.GetForPlayer(playerUid).ApplyFirstTimeBonus(player, itemCode, GetFirstEquipBonus(GetArmorType(itemCode)));
@@ -2182,11 +2178,7 @@ namespace SeraphLeveling
         private bool IsPathBlock(BlockPos pos)
         {
             Block block = ServerApi.World.BlockAccessor.GetBlock(pos);
-            if (block?.Code == null) return false;
-
-            string code = block.Code.ToString().ToLowerInvariant();
-
-            return code.Contains("path");
+            return block?.Code?.Path?.Contains("path") ?? false;
         }
 
         /// <summary>
@@ -3114,17 +3106,12 @@ namespace SeraphLeveling
         /// Returns the full item code (e.g., "game:sword-copper") to track each weapon type individually.
         /// Static version for use from Harmony patches.
         /// </summary>
-        public static string GetWeaponTypeFromCode(string itemCode)
+        public static AssetLocation GetWeaponTypeFromCode(AssetLocation itemCode)
         {
-            if (string.IsNullOrEmpty(itemCode)) return null;
+            if (itemCode == null || !itemCode.Valid) return null;
 
             // Remove namespace prefix for pattern matching
-            string codeToCheck = itemCode;
-            if (itemCode.Contains(":"))
-            {
-                codeToCheck = itemCode.Substring(itemCode.IndexOf(':') + 1);
-            }
-            string lowerCode = codeToCheck.ToLowerInvariant();
+            string lowerCode = itemCode.Path.ToLowerInvariant();
 
             // =================================================================
             // SWORDS (one-handed and two-handed)
@@ -3353,12 +3340,12 @@ namespace SeraphLeveling
         {
             if (projectile == null || shooter == null) return null;
 
-            string projectileCode = projectile.Code?.ToString() ?? "";
-            string heldItemCode = shooter.RightHandItemSlot?.Itemstack?.Collectible?.Code?.ToString() ?? "";
+            var projectileCode = projectile.Code;
+            var heldItemCode = shooter.RightHandItemSlot?.Itemstack?.Collectible?.Code;
 
             // Remove any mod prefix (e.g., "game:", "combatoverhaul:") for checking
-            string projCheck = projectileCode.Contains(":") ? projectileCode.Substring(projectileCode.IndexOf(':') + 1) : projectileCode;
-            string heldCheck = heldItemCode.Contains(":") ? heldItemCode.Substring(heldItemCode.IndexOf(':') + 1) : heldItemCode;
+            string projCheck = projectileCode?.Path ?? "";
+            string heldCheck = heldItemCode?.Path ?? "";
 
             // Check for arrow projectiles (bows)
             if (projCheck.StartsWith("arrow-") || projCheck == "arrow" || projCheck.Contains("arrow"))
@@ -3423,14 +3410,8 @@ namespace SeraphLeveling
             // Improviser etc. can recognize it as a stone.
             if (projCheck == "thrownitem" || projCheck.StartsWith("thrownitem-") || projCheck.StartsWith("thrownitem+"))
             {
-                string stackCode = "";
-                if (projectile is IProjectile proj && proj.ProjectileStack?.Collectible?.Code != null)
-                {
-                    stackCode = proj.ProjectileStack.Collectible.Code.ToString();
-                }
-                string stackCheck = !string.IsNullOrEmpty(stackCode) && stackCode.Contains(":")
-                    ? stackCode.Substring(stackCode.IndexOf(':') + 1)
-                    : stackCode;
+                var stackCode = (projectile as IProjectile)?.ProjectileStack?.Collectible?.Code;
+                string stackCheck = stackCode?.Path ?? "";
                 if (!string.IsNullOrEmpty(stackCheck))
                 {
                     return $"thrown+{stackCheck}";
@@ -3448,11 +3429,11 @@ namespace SeraphLeveling
 
             // Check for Atlatl darts (Return of the Atlatl mod)
             // Projectile entities are "atlatl:apdart-{material}", projCheck will be "apdart-{material}"
-            if (projCheck.StartsWith("apdart") || projectileCode.Contains("atlatl:apdart"))
+            if (projCheck.StartsWith("apdart") || projectileCode.ToString().Contains("atlatl:apdart"))
             {
                 string launcherCode = "unknown-atlatl";
                 if (heldCheck.StartsWith("aplauncher") || heldCheck.Contains("aplauncher") ||
-                    heldItemCode.Contains("atlatl:aplauncher"))
+                    heldItemCode.ToString().Contains("atlatl:aplauncher"))
                 {
                     launcherCode = heldCheck;
                 }
@@ -5897,7 +5878,7 @@ namespace SeraphLeveling
                 {
                     characterInventory
                         .Where(slot => slot?.Itemstack?.Collectible != null)
-                        .Select(slot => slot.Itemstack.Collectible.Code?.ToString())
+                        .Select(slot => slot.Itemstack.Collectible.Code)
                         .Foreach(itemCode => AttributeModifierDefinitions.Clothier.AddCollectedItem(player, itemCode));
                 }
             }
@@ -5907,7 +5888,7 @@ namespace SeraphLeveling
         /// Check if an item code represents clothing (not armor) and is not blacklisted.
         /// Starting class outfits are blacklisted by default to prevent easy Clothier progression.
         /// </summary>
-        public static bool IsClothingItem(string itemCode)
+        public static bool IsClothingItem(AssetLocation itemCode)
         {
             return AttributeModifierDefinitions.Clothier.IsItemValid(itemCode);
         }
@@ -5941,8 +5922,8 @@ namespace SeraphLeveling
                     slotIndex++;
                     if (slot?.Itemstack?.Collectible == null) continue;
 
-                    string itemCode = slot.Itemstack.Collectible.Code?.ToString();
-                    if (string.IsNullOrEmpty(itemCode)) continue;
+                    var itemCode = slot.Itemstack.Collectible.Code;
+                    if (itemCode == null) continue;
 
                     // Only track clothing and armor
                     if (!IsClothingItem(itemCode) && !IsArmorItem(itemCode)) continue;
@@ -5986,11 +5967,10 @@ namespace SeraphLeveling
         /// <summary>
         /// Check if an item code represents armor.
         /// </summary>
-        private static bool IsArmorItem(string itemCode)
+        private static bool IsArmorItem(AssetLocation itemCode)
         {
-            if (string.IsNullOrEmpty(itemCode)) return false;
-            string lowerCode = itemCode.ToLowerInvariant();
-            return lowerCode.Contains("armor-");
+            if (itemCode == null || !itemCode.Valid) return false;
+            return itemCode.Path.Contains("armor-");
         }
 
         // =========================================================================
@@ -6057,7 +6037,7 @@ namespace SeraphLeveling
         {
             if (entity == null) return false;
 
-            string entityCode = entity.Code?.ToString()?.ToLowerInvariant() ?? "";
+            string entityCode = entity.Code?.Path?.ToLowerInvariant() ?? "";
 
             // Check for known mechanical creatures
             // Locusts are the main mechanical enemies in Vintage Story
@@ -6101,7 +6081,7 @@ namespace SeraphLeveling
             AttributeModifierDefinitions.Mender.GetForPlayer(playerUid).DoEvent(player, 1);
         }
 
-        public static void ProcessPoulticeHeal(IServerPlayer player, string poulticeType)
+        public static void ProcessPoulticeHeal(IServerPlayer player, AssetLocation poulticeType)
         {
             if (player?.Entity == null) return;
 
@@ -6176,11 +6156,11 @@ namespace SeraphLeveling
             Block block = ServerApi.World.GetBlock(blockId);
             if (block == null) return false;
 
-            string blockCode = block.Code?.ToString()?.ToLowerInvariant();
-            if (string.IsNullOrEmpty(blockCode)) return false;
+            string blockPath = block.Code?.Path;
+            if (string.IsNullOrEmpty(blockPath)) return false;
 
             // Check if it's a crop block (like crop-turnip-4, crop-flax-7, etc.)
-            if (blockCode.Contains("crop-"))
+            if (blockPath.Contains("crop-"))
             {
                 // Skip if it's explicitly a "wild" block - those are already wild
                 // Regular crops on farmland should NOT count
@@ -6191,19 +6171,19 @@ namespace SeraphLeveling
                 {
                     BlockPos belowPos = blockPos.DownCopy();
                     Block blockBelow = ServerApi.World.BlockAccessor.GetBlock(belowPos);
-                    string belowCode = blockBelow?.Code?.ToString()?.ToLowerInvariant() ?? "";
+                    string belowPath = blockBelow?.Code?.Path ?? "";
 
                     // If on farmland, this is a cultivated crop - don't count it
-                    if (belowCode.Contains("farmland"))
+                    if (belowPath.Contains("farmland"))
                     {
                         return false;
                     }
 
                     // If on dirt, soil, grass, or other natural blocks - this is a wild crop
-                    if (belowCode.Contains("soil") || belowCode.Contains("dirt") ||
-                        belowCode.Contains("grass") || belowCode.Contains("forest") ||
-                        belowCode.Contains("peat") || belowCode.Contains("sand") ||
-                        belowCode.Contains("gravel") || belowCode.Contains("clay"))
+                    if (belowPath.Contains("soil") || belowPath.Contains("dirt") ||
+                        belowPath.Contains("grass") || belowPath.Contains("forest") ||
+                        belowPath.Contains("peat") || belowPath.Contains("sand") ||
+                        belowPath.Contains("gravel") || belowPath.Contains("clay"))
                     {
                         return true;
                     }
@@ -6211,7 +6191,7 @@ namespace SeraphLeveling
 
                 // If position is null or block below couldn't be checked,
                 // only count if explicitly marked as "wild"
-                if (blockCode.Contains("wild"))
+                if (blockPath.Contains("wild"))
                 {
                     return true;
                 }
@@ -6220,7 +6200,7 @@ namespace SeraphLeveling
             }
 
             // Mushrooms count as wild forage
-            if (blockCode.Contains("mushroom-")) return true;
+            if (blockPath.Contains("mushroom-")) return true;
 
             // NOT included:
             // - tallgrass, flowers, ferns, cattails, reeds, waterlily, seaweed (too common/farmable)
@@ -6237,11 +6217,11 @@ namespace SeraphLeveling
             Block block = ServerApi.World.GetBlock(blockId);
             if (block == null) return false;
 
-            string blockCode = block.Code?.ToString()?.ToLowerInvariant();
-            if (string.IsNullOrEmpty(blockCode)) return false;
+            string blockPath = block.Code?.Path;
+            if (string.IsNullOrEmpty(blockPath)) return false;
 
             // Check if it's a crop block (like crop-turnip-4, crop-flax-7, etc.)
-            if (blockCode.Contains("crop-"))
+            if (blockPath.Contains("crop-"))
             {
                 // Skip if it's explicitly a "wild" block - those are already wild
                 // Regular crops on farmland should NOT count
@@ -6252,10 +6232,10 @@ namespace SeraphLeveling
                 {
                     BlockPos belowPos = blockPos.DownCopy();
                     Block blockBelow = ServerApi.World.BlockAccessor.GetBlock(belowPos);
-                    string belowCode = blockBelow?.Code?.ToString()?.ToLowerInvariant() ?? "";
+                    string belowPath = blockBelow?.Code?.Path ?? "";
 
                     // If on farmland, this is a cultivated crop - don't count it
-                    if (belowCode.Contains("farmland"))
+                    if (belowPath.Contains("farmland"))
                     {
                         return true;
                     }
@@ -6277,11 +6257,11 @@ namespace SeraphLeveling
             Block block = ServerApi.World.GetBlock(blockId);
             if (block == null) return false;
 
-            string blockCode = block.Code?.ToString()?.ToLowerInvariant();
-            if (string.IsNullOrEmpty(blockCode)) return false;
+            string blockPath = block.Code?.Path;
+            if (string.IsNullOrEmpty(blockPath)) return false;
 
             // Only loot vessels (cracked vessels) count - they don't drop themselves when broken
-            if (blockCode.Contains("lootvessel")) return true;
+            if (blockPath.Contains("lootvessel-")) return true;
 
             return false;
         }
@@ -6296,14 +6276,14 @@ namespace SeraphLeveling
             Block block = ServerApi.World.GetBlock(blockId);
             if (block == null) return false;
 
-            string blockCode = block.Code?.ToString()?.ToLowerInvariant();
-            if (string.IsNullOrEmpty(blockCode)) return false;
+            string blockPath = block.Code?.Path;
+            if (string.IsNullOrEmpty(blockPath)) return false;
 
             // Only charcoal piles from charcoal pits count - extract the point value from the number of charcoal in the pile by default
             const string PREFIX = "charcoalpile-";
-            if (blockCode.StartsWith(PREFIX))
+            if (blockPath.StartsWith(PREFIX))
             {
-                if (!int.TryParse(blockCode[PREFIX.Length..], out points))
+                if (!int.TryParse(blockPath[PREFIX.Length..], out points))
                 {
                     // If for some reason parsing of the block code fails, default to one point
                     points = 1;

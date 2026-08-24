@@ -92,10 +92,10 @@ namespace SeraphLeveling.Patches
                     var blockEntity = __instance as BlockEntity;
                     if (blockEntity?.Block?.Code != null)
                     {
-                        string blockCode = blockEntity.Block.Code.ToString().ToLowerInvariant();
+                        string blockPath = blockEntity.Block.Code.Path;
 
                         // Check if it's a hay bed
-                        if (blockCode.Contains("hay"))
+                        if (blockPath.Contains("hay"))
                         {
                             isHayBed = true;
                             multiplier = SeraphLevelingModSystem.SleepBuffHayBedMultiplier;
@@ -105,7 +105,7 @@ namespace SeraphLeveling.Patches
                         if (SeraphLevelingModSystem.DebugLoggingEnabled)
                         {
                             SeraphLevelingModSystem.ServerApi?.Logger.Debug(
-                                $"[SeraphLeveling] Sleep buff: {serverPlayer.PlayerName} slept in {blockCode}, multiplier: {multiplier}x");
+                                $"[SeraphLeveling] Sleep buff: {serverPlayer.PlayerName} slept in {blockPath}, multiplier: {multiplier}x");
                         }
                     }
                 }
