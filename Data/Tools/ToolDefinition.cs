@@ -34,7 +34,7 @@ namespace SeraphLeveling.Data.Tools
             return stackToolType.HasValue && ValidTools.Any(t => t == stackToolType.Value);
         }
 
-        public bool Matches(string itemCode)
+        public bool Matches(AssetLocation itemCode)
         {
             if (string.IsNullOrEmpty(itemCode))
             {
@@ -42,7 +42,7 @@ namespace SeraphLeveling.Data.Tools
             }
             else
             {
-                return itemCode.StartsWith(MatchPrefix, StringComparison.OrdinalIgnoreCase);
+                return itemCode.Path.StartsWith(MatchPrefix, StringComparison.OrdinalIgnoreCase);
             }
         }
     }

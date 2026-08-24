@@ -18,7 +18,8 @@ namespace SeraphLeveling.Patches
             {
                 if (byPlayer is not IServerPlayer serverPlayer) return;
 
-                string outputPath = __instance?.Output?.Code?.Path;
+                var outputCode = __instance?.Output?.Code;
+                string outputPath = outputCode?.Path;
                 int quantity = __instance?.Output?.Quantity ?? 0;
 
                 if (outputPath == null || quantity <= 0) return;
@@ -67,7 +68,7 @@ namespace SeraphLeveling.Patches
                 }
 
                 // Fire event for all attributes listening for tool repairs
-                TriggerToolRepair?.Invoke(serverPlayer, outputPath, quantity);
+                TriggerToolRepair?.Invoke(serverPlayer, outputCode, quantity);
             }
         }
 
