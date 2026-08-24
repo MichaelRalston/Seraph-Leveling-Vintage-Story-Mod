@@ -1,54 +1,20 @@
+using Vintagestory.API.Common;
+
 namespace SeraphLeveling.Data.Tools
 {
     public static class ToolDefinitions
     {
-        public static readonly ToolDefinition Pickaxe = new()
-        {
-            Name = "pickaxe",
-        };
-        public static readonly ToolDefinition Axe = new()
-        {
-            Name = "axe",
-        };
-        public static readonly ToolDefinition Shovel = new()
-        {
-            Name = "shovel",
-        };
-        public static readonly ToolDefinition Weapon = new()
-        {
-            Name = "weapon",
-        };
-        public static readonly ToolDefinition Armor = new()
-        {
-            Name = "armor",
-        };
-        public static readonly ToolDefinition Poultice = new()
-        {
-            Name = "poultice",
-        };
-        public static readonly ToolDefinition Bow = new()
-        {
-            Name = "bow",
-        };
-        public static readonly ToolDefinition Hoe = new()
-        {
-            Name = "hoe",
-        };
-        public static readonly ToolDefinition Scythe = new()
-        {
-            Name = "scythe",
-        };
-        public static readonly ToolDefinition Hammer = new()
-        {
-            Name = "hammer",
-        };
-        public static readonly ToolDefinition Knife = new()
-        {
-            Name = "knife",
-        };
-        public static readonly ToolDefinition Cleaver = new()
-        {
-            Name = "cleaver",
-        };
+        public static readonly ToolDefinition Pickaxe = new("pickaxe", EnumTool.Pickaxe);
+        public static readonly ToolDefinition Axe = new("axe", EnumTool.Axe);
+        public static readonly ToolDefinition Shovel = new("shovel", EnumTool.Shovel);
+        public static readonly ToolDefinition Weapon = new("weapon", [EnumTool.Axe, EnumTool.Bow, EnumTool.Club, EnumTool.Crossbow, EnumTool.Firearm, EnumTool.Halberd, EnumTool.Hammer, EnumTool.Javelin, EnumTool.Knife, EnumTool.Mace, EnumTool.Pike, EnumTool.Polearm, EnumTool.Poleaxe, EnumTool.Scythe, EnumTool.Sickle, EnumTool.Sling, EnumTool.Spear, EnumTool.Staff, EnumTool.Sword, EnumTool.Warhammer]);
+        public static readonly ToolDefinition Armor = new("armor");
+        public static readonly ToolDefinition Poultice = new("poultice");
+        public static readonly ToolDefinition Bow = new("bow", EnumTool.Bow);
+        public static readonly ToolDefinition Hoe = new("hoe", EnumTool.Hoe);
+        public static readonly ToolDefinition Scythe = new("scythe", EnumTool.Scythe);
+        public static readonly ToolDefinition Hammer = new("hammer", EnumTool.Hammer);
+        public static readonly ToolDefinition Knife = new("knife", EnumTool.Knife);
+        public static readonly ToolDefinition Cleaver = new("cleaver", EnumTool.Knife); // Cleaver tools are defined in other mods, not the base game, so treat them like a knife here
     }
 }

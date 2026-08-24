@@ -10,6 +10,8 @@ namespace SeraphLeveling.Patches
 {
     public static class CraftingPatches
     {
+        public static event TriggerToolRepairDelegate TriggerToolRepair;
+
         public static void GridRecipeConsumeInput_Postfix(GridRecipe __instance, IPlayer byPlayer, ItemSlot[] inputSlots, int gridWidth, bool __result)
         {
             if (__result && byPlayer?.Entity?.Api?.Side == EnumAppSide.Server)

@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using SeraphLeveling.Data.Mods;
 using SeraphLeveling.Data.Tools;
+using SeraphLeveling.Patches;
 
 namespace SeraphLeveling.Data.Attributes
 {
@@ -733,6 +734,7 @@ namespace SeraphLeveling.Data.Attributes
                 }
             },
             GlobalMaxCredits = 75,
+            ToolRepairListeners = [ CraftingPatches.TriggerToolRepair ],
         };
 
         public static readonly GenericLeveledAttributeModifierDefinition CharcoalDropRate = new()
