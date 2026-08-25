@@ -1464,142 +1464,12 @@ namespace SeraphLeveling
             return TextCommandResult.Success($"Set {GetCOProficiencyDisplayName(proficiencyStat)}{toolSuffix} credits (+{bonus * 100:F0}%).");
         }
 
-        /// <summary>
-        /// Gets the pickaxe code from the player's held item, or null if not holding a pickaxe.
-        /// </summary>
-        private AssetLocation GetHeldPickaxeCode(IServerPlayer player) => GetHeldToolCodeInner(player, EnumTool.Pickaxe);
-        private AssetLocation GetHeldAxeCode(IServerPlayer player) => GetHeldToolCodeInner(player, EnumTool.Axe);
-        private AssetLocation GetHeldShovelCode(IServerPlayer player) => GetHeldToolCodeInner(player, EnumTool.Shovel);
-        private AssetLocation GetHeldShearsCode(IServerPlayer player) => GetHeldToolCodeInner(player, EnumTool.Shears);
-        private AssetLocation GetHeldScytheCode(IServerPlayer player) => GetHeldToolCodeInner(player, EnumTool.Scythe);
-
-        private AssetLocation GetHeldToolCodeInner(IServerPlayer player, EnumTool toolType)
+        public static AssetLocation GetBlockCode(int blockId)
         {
-            if (player?.Entity == null) return null;
-
-            var heldItem = player.Entity.RightHandItemSlot?.Itemstack?.Collectible;
-            if (heldItem == null) return null;
-
-            // Check if it's the right type of tool
-            if (heldItem.Tool != toolType) return null;
-
-            // Return the item code as the pickaxe identifier
-            return heldItem.Code;
-        }
-
-        private AssetLocation GetBlockCode(int blockId)
-        {
-            if (ServerApi == null) return "";
+            if (ServerApi == null) return null;
 
             var block = ServerApi.World.GetBlock(blockId);
             return block?.Code;
-        }
-
-        private int GetWoodLogPoints(int blockId)
-        {
-            string codeToCheck = GetBlockCode(blockId);
-#if SPAMMYDEBUG
-            ServerApi.Logger.Debug($"[SeraphLeveling] Checking wood log points for block code {codeToCheck}.");
-#endif
-            if (codeToCheck.StartsWith("log-grown-"))
-            {
-                return 5;
-            }
-            return 0;
-        }
-
-        private int GetDirtPoints(int blockId)
-        {
-            string codeToCheck = GetBlockCode(blockId);
-#if SPAMMYDEBUG
-            ServerApi.Logger.Debug($"[SeraphLeveling] Checking dirt points for block code {codeToCheck}.");
-#endif
-            if (codeToCheck.StartsWith("rawclay-"))
-            {
-                // Clay soil
-                return 5;
-            }
-            else if (codeToCheck.StartsWith("peat-"))
-            {
-                // Peat soil
-                return 5;
-            }
-            else if (codeToCheck.StartsWith("soil-") || codeToCheck.StartsWith("forestfloor-") || codeToCheck.StartsWith("farmland-"))
-            {
-                // Ordinary dirt
-                return 1;
-            }
-            return 0;
-        }
-
-        private int GetLeavesPoints(int blockId)
-        {
-            string codeToCheck = GetBlockCode(blockId);
-#if SPAMMYDEBUG
-            ServerApi.Logger.Debug($"[SeraphLeveling] Checking leaves points for block code {codeToCheck}.");
-#endif
-            if (codeToCheck.StartsWith("leavesbranchy-grown"))
-            {
-                return 2;
-            }
-            else if (codeToCheck.StartsWith("leaves-grown") || codeToCheck.StartsWith("leavesnarrow-grown"))
-            {
-                return 1;
-            }
-            return 0;
-        }
-
-        private int GetGrassPoints(string codeToCheck)
-        {
-#if SPAMMYDEBUG
-            ServerApi.Logger.Debug($"[SeraphLeveling] Checking grass points for block code {codeToCheck}.");
-#endif
-            if (codeToCheck.Contains("grass"))
-            {
-                return 1;
-            }
-            else if (codeToCheck.StartsWith("crop-"))
-            {
-                return 2;
-            }
-            return 0;
-        }
-
-        /// <summary>
-        /// Determines the point value for a broken block.
-        /// Returns OreMultiplier (default 5) for ore blocks, 1 for stone blocks, 0 for other blocks.
-        ///
-        /// Stone block patterns (1 point each):
-        /// - rock-{type} (e.g., rock-granite, rock-limestone)
-        /// - crackedrock-{type} (e.g., crackedrock-granite)
-        ///
-        /// Ore block patterns (OreMultiplier points):
-        /// - Contains "ore-" (e.g., ore-copper-granite, ore-lignite-chalk)
-        /// </summary>
-        private int GetStoneBlockPoints(int blockId)
-        {
-            string codeToCheck = GetBlockCode(blockId);
-            // Ore blocks: code contains "ore-" (e.g., "ore-lignite-chalk", "ore-copper-granite")
-            if (codeToCheck.Contains("ore-"))
-            {
-                return OreMultiplier;
-            }
-
-            // Meteoric iron blocks (treat same as ore - high value)
-            if (codeToCheck.StartsWith("meteorite") ||
-                codeToCheck.Contains("meteoriciron"))
-            {
-                return OreMultiplier;
-            }
-
-            // Stone/rock blocks that should count for mining XP
-            if (codeToCheck.StartsWith("rock-") ||           // Regular rock (rock-granite)
-                codeToCheck.StartsWith("crackedrock-"))      // Cracked rock (crackedrock-granite)
-            {
-                return 1;
-            }
-
-            return 0;
         }
 
         /// <summary>
@@ -2021,6 +1891,8 @@ namespace SeraphLeveling
             AttributeModifierDefinitions.ArmorDurability.GetForPlayer(playerUid).DoEvent(player, armorCode, 1, ArmorDurabilityProgressTypes.RepairProgress);
         }
 
+        public static event TriggerBlockBrokenDelegate BlockBrokenTrigger;
+
         /// <summary>
         /// Called when a player breaks a block. Updates mining progress based on new mechanics:
         /// - Only counts blocks broken with pickaxes
@@ -2054,69 +1926,10 @@ namespace SeraphLeveling
                 ProcessCharcoalBreak(byPlayer, charcoalPoints);
             }
 
-            string playerUid = byPlayer.PlayerUID;
+            var toolCode = byPlayer.Entity?.RightHandItemSlot?.Itemstack?.Collectible?.Code;
 
-            // Check if player is using a tool for progression
-            string pickaxeCode = GetHeldPickaxeCode(byPlayer);
-            string axeCode = GetHeldAxeCode(byPlayer);
-            string shovelCode = GetHeldShovelCode(byPlayer);
-            string shearsCode = GetHeldShearsCode(byPlayer);
-
-            // Handle pickaxe specific attributes
-            if (pickaxeCode != null)
-            {
-                // Check block type and get points
-                int points = GetStoneBlockPoints(oldblockId);
-                if (points > 0)
-                {
-                    AttributeModifierDefinitions.MiningSpeed.GetForPlayer(playerUid).DoEvent(byPlayer, pickaxeCode, points);
-                    AttributeModifierDefinitions.OreDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, pickaxeCode, points);
-                    AttributeModifierDefinitions.StoneDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, pickaxeCode, points);
-                }
-            }
-
-            // Handle axe specific attributes
-            if (axeCode != null)
-            {
-                // Check block type and get points
-                int woodPoints = GetWoodLogPoints(oldblockId);
-                if (woodPoints > 0)
-                {
-                    AttributeModifierDefinitions.TreeChoppingSpeed.GetForPlayer(playerUid).DoEvent(byPlayer, axeCode, woodPoints);
-                    AttributeModifierDefinitions.AxeDamage.GetForPlayer(playerUid).DoEvent(byPlayer, axeCode, woodPoints);
-                }
-            }
-
-            // Handle shovel specific attributes
-            if (shovelCode != null)
-            {
-                // Check block type and get points
-                int dirtPoints = GetDirtPoints(oldblockId);
-                if (dirtPoints > 0)
-                {
-                    AttributeModifierDefinitions.ClayDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, shovelCode, dirtPoints);
-                    AttributeModifierDefinitions.ClayformSpeed.GetForPlayer(playerUid).DoEvent(byPlayer, shovelCode, dirtPoints);
-                    AttributeModifierDefinitions.PeatDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, shovelCode, dirtPoints);
-                }
-            }
-
-            // Handle attributes satisfied by an axe or shears
-            if (shearsCode != null || axeCode != null)
-            {
-                // Check block type and get points
-                string toolCode = shearsCode ?? axeCode;
-                int leavesPoints = GetLeavesPoints(oldblockId);
-                if (leavesPoints > 0)
-                {
-                    AttributeModifierDefinitions.WoodDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, toolCode, leavesPoints);
-                    AttributeModifierDefinitions.SeedDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, toolCode, leavesPoints);
-                    AttributeModifierDefinitions.StickDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, toolCode, leavesPoints);
-                    if (axeCode != null)
-                    {
-                        AttributeModifierDefinitions.AxeDurability.GetForPlayer(playerUid).DoEvent(byPlayer, pickaxeCode, leavesPoints, RepairableToolProgress.Usage);
-                    }
-                }
-            }
+            // Fire event for attributes that care about broken blocks
+            BlockBrokenTrigger?.Invoke(byPlayer, toolCode, oldblockId, blockSel?.Position);
         }
 
         /// <summary>
@@ -3039,6 +2852,8 @@ namespace SeraphLeveling
             }
         }
 
+        public static event TriggerDamageDealtDelegate DamageDealtTrigger;
+
         /// <summary>
         /// Process melee damage dealt by a player. Called from Harmony patch.
         /// </summary>
@@ -3046,37 +2861,7 @@ namespace SeraphLeveling
         {
             if (attackerPlayer?.Entity == null || string.IsNullOrEmpty(weaponType)) return;
 
-            string playerUid = attackerPlayer.PlayerUID;
-
-            if (IsHammer(weaponType))
-            {
-                AttributeModifierDefinitions.HammerDamage.GetForPlayer(playerUid).DoEvent(attackerPlayer, weaponType, damage);
-                AttributeModifierDefinitions.TemperingPowerLoss.GetForPlayer(playerUid).DoEvent(attackerPlayer, weaponType, damage);
-                AttributeModifierDefinitions.QuenchingShatter.GetForPlayer(playerUid).DoEvent(attackerPlayer, weaponType, damage);
-            }
-
-            if (IsKnife(weaponType))
-            {
-                AttributeModifierDefinitions.KnifeDamage.GetForPlayer(playerUid).DoEvent(attackerPlayer, weaponType, damage);
-                AttributeModifierDefinitions.CleaverDamage.GetForPlayer(playerUid).DoEvent(attackerPlayer, weaponType, damage);
-            }
-
-            var damageProgress = AttributeModifierDefinitions.MeleeDamage.GetForPlayer(playerUid);
-            damageProgress.DoEvent(attackerPlayer, weaponType, damage);
-        }
-
-        private static bool IsKnife(string weaponType)
-        {
-            if (string.IsNullOrEmpty(weaponType)) return false;
-            string lower = weaponType.ToLowerInvariant();
-            return lower.Contains("knife-");
-        }
-
-        private static bool IsHammer(string weaponType)
-        {
-            if (string.IsNullOrEmpty(weaponType)) return false;
-            string lower = weaponType.ToLowerInvariant();
-            return lower.Contains("hammer-");
+            DamageDealtTrigger?.Invoke(attackerPlayer, weaponType, damage);
         }
 
         /// <summary>
@@ -3270,64 +3055,7 @@ namespace SeraphLeveling
         {
             if (attackerPlayer?.Entity == null || string.IsNullOrEmpty(weaponCombo)) return;
 
-            string playerUid = attackerPlayer.PlayerUID;
-
-            // Track unlock-trait progression FIRST, independent of the ranged credit cap.
-            // Bowyer and Improviser are separate unlocks that should still progress for players
-            // who have already maxed their ranged credits.
-            if (IsBow(weaponCombo))
-            {
-                TrackBowyerBowDamage(attackerPlayer, damage);
-                AttributeModifierDefinitions.BowDamage.GetForPlayer(playerUid).DoEvent(attackerPlayer, weaponCombo, damage, RepairableToolProgress.Usage);
-            }
-            if (IsThrownRock(weaponCombo))
-            {
-                TrackImproviserRockDamage(attackerPlayer, damage);
-            }
-
-            AttributeModifierDefinitions.RangedDamage.GetForPlayer(playerUid).DoEvent(attackerPlayer, weaponCombo, damage);
-            AttributeModifierDefinitions.RangedAccuracy.GetForPlayer(playerUid).DoEvent(attackerPlayer, weaponCombo, damage);
-            AttributeModifierDefinitions.RangedDistance.GetForPlayer(playerUid).DoEvent(attackerPlayer, weaponCombo, damage);
-        }
-
-        private static bool IsBow(string weaponCombo)
-        {
-            if (string.IsNullOrEmpty(weaponCombo)) return false;
-            string lower = weaponCombo.ToLowerInvariant();
-            return lower.Contains("bow-");
-        }
-        /// <summary>
-        /// Check if the weapon combo represents a thrown rock.
-        /// </summary>
-        private static bool IsThrownRock(string weaponCombo)
-        {
-            if (string.IsNullOrEmpty(weaponCombo)) return false;
-            string lower = weaponCombo.ToLowerInvariant();
-            return lower.Contains("stone-") || lower.Contains("sling+stone") ||
-                   lower.StartsWith("stone") || lower.Contains("thrownstone") ||
-                   (lower.Contains("stone") && !lower.Contains("whetstone"));
-        }
-
-        /// <summary>
-        /// Track bow damage for Bowyer unlock.
-        /// </summary>
-        private static void TrackBowyerBowDamage(IServerPlayer player, float damage)
-        {
-            if (player?.Entity == null || damage <= 0) return;
-
-            // Apply sleep buff multiplier if active
-            AttributeModifierDefinitions.Bowyer.AddCredits(player, ApplyXPMultiplier(player.PlayerUID, damage));
-        }
-
-        /// <summary>
-        /// Track thrown rock damage for Improviser unlock.
-        /// </summary>
-        private static void TrackImproviserRockDamage(IServerPlayer player, float damage)
-        {
-            if (player?.Entity == null || damage <= 0) return;
-
-            // Apply sleep buff multiplier if active
-            AttributeModifierDefinitions.Improviser.AddCredits(player, ApplyXPMultiplier(player.PlayerUID, damage));
+            DamageDealtTrigger?.Invoke(attackerPlayer, weaponCombo, damage);
         }
 
         /// <summary>
@@ -3644,7 +3372,8 @@ namespace SeraphLeveling
                     Stat = AttributeModifierDefinitions.RangedDamage.Stat,
                     IncrementData = AttributeModifierDefinitions.RangedDamage.IncrementData,
                     StatName = AttributeModifierDefinitions.RangedDamage.StatName,
-                    Tool = AttributeModifierDefinitions.RangedDamage.Tool
+                    Tools = AttributeModifierDefinitions.RangedDamage.Tools,
+                    Weapons = AttributeModifierDefinitions.RangedDamage.Weapons,
                 };
                 Conversion.PortData<DamageAttributeModifierDefinition, DamageAttributeModifierProgressData>(legacyRangedDamage, AttributeModifierDefinitions.RangedDamage, ServerApi);
                 Conversion.PortData<DamageAttributeModifierDefinition, DamageAttributeModifierProgressData>(legacyRangedDamage, AttributeModifierDefinitions.RangedAccuracy, ServerApi);
@@ -6306,10 +6035,7 @@ namespace SeraphLeveling
         {
             if (player?.Entity == null) return;
 
-            string playerUid = player.PlayerUID;
-            int modifiedRepairs = ApplyXPMultiplier(playerUid, 1);
-
-            AttributeModifierDefinitions.Technical.AddCredits(player, ApplyXPMultiplier(playerUid, modifiedRepairs));
+            AttributeModifierDefinitions.Technical.AddCredits(player, 1);
         }
 
         /// <summary>

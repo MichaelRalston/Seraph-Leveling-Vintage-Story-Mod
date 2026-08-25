@@ -1,10 +1,26 @@
+using System.Collections.Generic;
 using System.Text;
+using SeraphLeveling.Data.Tools;
 using Vintagestory.API.Common;
 
 namespace SeraphLeveling.Data.Attributes
 {
-    public class BowyerAttributeModifierDefinition : ScoredUnlockedAttributeModifierDefinition<BowyerAttributeModifierDefinition, BowyerAttributeModifierProgressData>, IConstructable<BowyerAttributeModifierDefinition, BowyerAttributeModifierProgressData>
+    public class BowyerAttributeModifierDefinition : ScoredUnlockedAttributeModifierDefinition<BowyerAttributeModifierDefinition, BowyerAttributeModifierProgressData>, 
+        IConstructable<BowyerAttributeModifierDefinition, BowyerAttributeModifierProgressData>,
+        IHasDamageScoredTrigger<BowyerAttributeModifierDefinition, BowyerAttributeModifierProgressData>
     {
+        public BowyerAttributeModifierDefinition()
+        {
+            SeraphLevelingModSystem.DamageDealtTrigger += ((IHasDamageScoredTrigger<BowyerAttributeModifierDefinition, BowyerAttributeModifierProgressData>)this).OnTriggerDamageDealt;
+        }
+
+        ~BowyerAttributeModifierDefinition()
+        {
+            SeraphLevelingModSystem.DamageDealtTrigger -= ((IHasDamageScoredTrigger<BowyerAttributeModifierDefinition, BowyerAttributeModifierProgressData>)this).OnTriggerDamageDealt;
+        }
+
+        public required List<ToolDefinition> Weapons { get; init; }
+
         public static BowyerAttributeModifierProgressData Create(BowyerAttributeModifierDefinition def)
         {
             return new BowyerAttributeModifierProgressData(def);

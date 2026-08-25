@@ -1,10 +1,26 @@
+using System.Collections.Generic;
 using System.Text;
+using SeraphLeveling.Data.Tools;
 using Vintagestory.API.Common;
 
 namespace SeraphLeveling.Data.Attributes
 {
-    public class ImproviserAttributeModifierDefinition : ScoredUnlockedAttributeModifierDefinition<ImproviserAttributeModifierDefinition, ImproviserAttributeModifierProgressData>, IConstructable<ImproviserAttributeModifierDefinition, ImproviserAttributeModifierProgressData>
+    public class ImproviserAttributeModifierDefinition : ScoredUnlockedAttributeModifierDefinition<ImproviserAttributeModifierDefinition, ImproviserAttributeModifierProgressData>, 
+        IConstructable<ImproviserAttributeModifierDefinition, ImproviserAttributeModifierProgressData>,
+        IHasDamageScoredTrigger<ImproviserAttributeModifierDefinition, ImproviserAttributeModifierProgressData>
     {
+        public ImproviserAttributeModifierDefinition()
+        {
+            SeraphLevelingModSystem.DamageDealtTrigger += ((IHasDamageScoredTrigger<ImproviserAttributeModifierDefinition, ImproviserAttributeModifierProgressData>)this).OnTriggerDamageDealt;
+        }
+
+        ~ImproviserAttributeModifierDefinition()
+        {
+            SeraphLevelingModSystem.DamageDealtTrigger -= ((IHasDamageScoredTrigger<ImproviserAttributeModifierDefinition, ImproviserAttributeModifierProgressData>)this).OnTriggerDamageDealt;
+        }
+
+        public required List<ToolDefinition> Weapons { get; init; }
+
         public static ImproviserAttributeModifierProgressData Create(ImproviserAttributeModifierDefinition def)
         {
             return new ImproviserAttributeModifierProgressData(def);

@@ -10,90 +10,30 @@ namespace SeraphLeveling.Patches
 {
     public static class CraftingPatches
     {
+        public static event TriggerToolRepairDelegate TriggerToolRepair;
+        public static event TriggerGridCraftingResultDelegate TriggerGridCrafted;
+
         public static void GridRecipeConsumeInput_Postfix(GridRecipe __instance, IPlayer byPlayer, ItemSlot[] inputSlots, int gridWidth, bool __result)
         {
             if (__result && byPlayer?.Entity?.Api?.Side == EnumAppSide.Server)
             {
                 if (byPlayer is not IServerPlayer serverPlayer) return;
 
-                string outputPath = __instance?.Output?.Code?.Path;
+                var outputCode = __instance?.Output?.Code;
                 int quantity = __instance?.Output?.Quantity ?? 0;
 
-                if (outputPath == null || quantity <= 0) return;
+                if (outputCode == null || quantity <= 0) return;
 
                 string playerName = byPlayer?.PlayerName;
 #if SPAMMYDEBUG
                 SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Player {playerName} crafted item code {outputCode} in grid, success={__result}, side={byPlayer?.Entity?.Api?.Side}");
 #endif
 
-                // Process boards
-                if (outputPath.StartsWith("plank-"))
-                {
-                    SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Granting {playerName} credit for crafting {quantity} boards");
-                    AttributeModifierDefinitions.Carpenter.AddCredits(serverPlayer, quantity);
-                }
+                // Fire event for all attributes listening for grid crafts
+                TriggerGridCrafted?.Invoke(serverPlayer, outputCode, quantity);
 
-                if (outputPath.StartsWith("table-") || outputPath.StartsWith("chair-"))
-                {
-                    SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Granting {playerName} credit for crafting {quantity} furniture");
-                    AttributeModifierDefinitions.InteriorDesigner.AddCredits(serverPlayer, quantity);
-                }
-
-                // Process ashlar blocks
-                if (outputPath.StartsWith("stonebrick-"))
-                {
-                    SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Granting {playerName} credit for crafting {quantity} ashlar blocks");
-                    AttributeModifierDefinitions.Mason.AddCredits(serverPlayer, quantity);
-                }
-
-                if (outputPath == "linen-normal-down") {
-                    SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Granting {playerName} credit for crafting {quantity} linen cloth");
-                    AttributeModifierDefinitions.Weaver.AddCredits(serverPlayer, quantity);
-                }
-
-                // Process large gears
-                if (outputPath.Contains("largegear3"))
-                {
-                    SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Granting {playerName} credit for crafting {quantity} large gears");
-                    AttributeModifierDefinitions.Technician.AddCredits(serverPlayer, quantity);
-                }
-
-                if (outputPath.StartsWith("bomb-"))
-                {
-                    SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Granting {playerName} credit for crafting {quantity} bombs");
-                    AttributeModifierDefinitions.Detonator.AddCredits(serverPlayer, quantity);
-                }
-
-                var toolType = __instance?.Output?.ResolvedItemStack?.Item?.Tool;
-                if (toolType != null && byPlayer != null)
-                {
-                    string playerUid = byPlayer?.PlayerUID;
-                    switch (toolType)
-                    {
-                        case EnumTool.Axe:
-                            AttributeModifierDefinitions.AxeDurability.GetForPlayer(playerUid).DoEvent(serverPlayer, outputPath, quantity, RepairableToolProgress.Repair);
-                            break;
-                        case EnumTool.Bow:
-                            AttributeModifierDefinitions.BowDurability.GetForPlayer(playerUid).DoEvent(serverPlayer, outputPath, quantity, RepairableToolProgress.Repair);
-                            AttributeModifierDefinitions.BowDamage.GetForPlayer(playerUid).DoEvent(serverPlayer, outputPath, quantity, RepairableToolProgress.Repair);
-                            break;
-                        case EnumTool.Pickaxe:
-                            AttributeModifierDefinitions.PickaxeDurability.GetForPlayer(playerUid).DoEvent(serverPlayer, outputPath, quantity, RepairableToolProgress.Repair);
-                            break;
-                        case EnumTool.Hoe:
-                            AttributeModifierDefinitions.HoeDurability.GetForPlayer(playerUid).DoEvent(serverPlayer, outputPath, quantity, RepairableToolProgress.Repair);
-                            break;
-                        case EnumTool.Scythe:
-                            AttributeModifierDefinitions.ScytheDurability.GetForPlayer(playerUid).DoEvent(serverPlayer, outputPath, quantity, RepairableToolProgress.Repair);
-                            break;
-                        case EnumTool.Hammer:
-                            AttributeModifierDefinitions.HammerDurability.GetForPlayer(playerUid).DoEvent(serverPlayer, outputPath, quantity, RepairableToolProgress.Repair);
-                            break;
-                        case EnumTool.Knife:
-                            AttributeModifierDefinitions.KnifeDurability.GetForPlayer(playerUid).DoEvent(serverPlayer, outputPath, quantity, RepairableToolProgress.Repair);
-                            break;
-                    }
-                }
+                // Fire event for all attributes listening for tool repairs
+                TriggerToolRepair?.Invoke(serverPlayer, outputCode, quantity);
             }
         }
 
@@ -227,7 +167,6 @@ namespace SeraphLeveling.Patches
                     SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Granting {playerName} credit for striking a voxel on an anvil with {toolCode}");
                     AttributeModifierDefinitions.SmithingSpeed.GetForPlayer(playerUid).DoEvent(serverPlayer, toolCode, 1, RepairableToolProgress.Usage);
                     AttributeModifierDefinitions.BitRecoveryRate.GetForPlayer(playerUid).DoEvent(serverPlayer, toolCode, 1, RepairableToolProgress.Usage);
-                    AttributeModifierDefinitions.HammerDurability.GetForPlayer(playerUid).DoEvent(serverPlayer, toolCode, 1, RepairableToolProgress.Usage);
                 }
             }
         }
