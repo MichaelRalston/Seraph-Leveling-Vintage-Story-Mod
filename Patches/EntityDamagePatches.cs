@@ -32,11 +32,9 @@ namespace SeraphLeveling.Patches
             if (SeraphLevelingModSystem.IsRangedDamage(damageSource))
             {
                 // For ranged: CauseEntity is the shooter, SourceEntity is the projectile
-                var shooterEntity = damageSource.CauseEntity as EntityPlayer;
-                if (shooterEntity == null) return;
+                if (damageSource.CauseEntity is not EntityPlayer shooterEntity) return;
 
-                var shooterPlayer = shooterEntity.Player as IServerPlayer;
-                if (shooterPlayer == null) return;
+                if (shooterEntity.Player is not IServerPlayer shooterPlayer) return;
 
                 // Don't count self-damage
                 if (__instance == shooterEntity) return;
@@ -46,56 +44,29 @@ namespace SeraphLeveling.Patches
 
                 if (weaponCombo != null)
                 {
-                    SeraphLevelingModSystem.ProcessRangedDamage(shooterPlayer, weaponCombo, damage);
-
-                    // Also track Precise damage if target is a mechanical creature
-                    if (SeraphLevelingModSystem.IsMechanicalCreature(__instance))
-                    {
-                        SeraphLevelingModSystem.ProcessPreciseDamage(shooterPlayer, weaponCombo, damage);
-                    }
+                    SeraphLevelingModSystem.ProcessDamage(shooterPlayer, __instance, true, weaponCombo, damage);
                 }
 
-                // Combat Overhaul: Also track CO ranged proficiency if enabled
-                if (SeraphLevelingModSystem.IsCOCompatEnabled)
+                // First, check the projectile itself for thrown weapons (javelins, thrown spears)
+                // These weapons ARE the projectile, so we detect from SourceEntity
+                var projectileCode = damageSource.SourceEntity?.Code;
+                if (projectileCode != null && projectileCode.Valid)
                 {
-                    // First, check the projectile itself for thrown weapons (javelins, thrown spears)
-                    // These weapons ARE the projectile, so we detect from SourceEntity
-                    var projectileCode = damageSource.SourceEntity?.Code;
-                    if (projectileCode != null && projectileCode.Valid)
-                    {
-                        var (projProficiency, projWeaponCode) = SeraphLevelingModSystem.GetCOWeaponType(projectileCode.Path);
-                        if (SeraphLevelingModSystem.DebugLoggingEnabled)
-                        {
-                            SeraphLevelingModSystem.ServerApi?.Logger?.Debug($"[SeraphLeveling] CO ranged projectile check: '{projectileCode}' -> proficiency='{projProficiency ?? "null"}'");
-                        }
-                        if (projProficiency != null)
-                        {
-                            // Javelins proficiency is NOT in IsCORangedProficiency, so process it here
-                            SeraphLevelingModSystem.ProcessCOProficiencyDamage(shooterPlayer, projProficiency, projWeaponCode, damage);
-                        }
-                    }
+                    SeraphLevelingModSystem.ProcessCODamage(shooterPlayer, null, projectileCode, damage);
+                }
 
-                    // Also check held ranged weapon for bows/crossbows/slings/firearms
-                    var heldRangedItem = shooterPlayer.Entity?.RightHandItemSlot?.Itemstack?.Collectible;
-                    if (heldRangedItem != null)
-                    {
-                        var rangedItemCode = heldRangedItem.Code;
-                        var (proficiencyStat, coWeaponCode) = SeraphLevelingModSystem.GetCOWeaponType(rangedItemCode.Path);
-                        if (proficiencyStat != null && SeraphLevelingModSystem.IsCORangedProficiency(proficiencyStat))
-                        {
-                            SeraphLevelingModSystem.ProcessCOProficiencyDamage(shooterPlayer, proficiencyStat, coWeaponCode, damage);
-                        }
-                    }
+                // Also check held ranged weapon for bows/crossbows/slings/firearms
+                var heldRangedItem = shooterPlayer.Entity?.RightHandItemSlot?.Itemstack?.Collectible;
+                if (heldRangedItem != null)
+                {
+                    SeraphLevelingModSystem.ProcessCODamage(shooterPlayer, true, heldRangedItem.Code, damage);
                 }
 
                 return; // Don't also count as melee
             }
 
             // Check if damage was dealt by a player (melee)
-            if (damageSource?.SourceEntity == null) return;
-
-            var attackerPlayer = (damageSource.SourceEntity as EntityPlayer)?.Player as IServerPlayer;
-            if (attackerPlayer == null) return;
+            if ((damageSource?.SourceEntity as EntityPlayer)?.Player is not IServerPlayer attackerPlayer) return;
 
             // Don't count self-damage
             if (__instance == damageSource.SourceEntity) return;
@@ -114,28 +85,11 @@ namespace SeraphLeveling.Patches
 
             if (weaponType != null)
             {
-                SeraphLevelingModSystem.ProcessMeleeDamage(attackerPlayer, weaponType, damage);
-
-                // Also track Precise damage if target is a mechanical creature
-                if (SeraphLevelingModSystem.IsMechanicalCreature(__instance))
-                {
-                    SeraphLevelingModSystem.ProcessPreciseDamage(attackerPlayer, weaponType, damage);
-                }
+                SeraphLevelingModSystem.ProcessDamage(attackerPlayer, __instance, false, weaponType, damage);
             }
 
             // Combat Overhaul: Also track CO melee proficiency if enabled
-            if (SeraphLevelingModSystem.IsCOCompatEnabled)
-            {
-                var (proficiencyStat, coWeaponCode) = SeraphLevelingModSystem.GetCOWeaponType(itemCode.Path);
-                if (SeraphLevelingModSystem.DebugLoggingEnabled)
-                {
-                    SeraphLevelingModSystem.ServerApi?.Logger?.Debug($"[SeraphLeveling] CO weapon check: itemCode='{itemCode}' -> proficiency='{proficiencyStat ?? "null"}', weaponCode='{coWeaponCode ?? "null"}'");
-                }
-                if (proficiencyStat != null && !SeraphLevelingModSystem.IsCORangedProficiency(proficiencyStat))
-                {
-                    SeraphLevelingModSystem.ProcessCOProficiencyDamage(attackerPlayer, proficiencyStat, coWeaponCode, damage);
-                }
-            }
+            SeraphLevelingModSystem.ProcessCODamage(attackerPlayer, false, itemCode, damage);
         }
 
         /// <summary>

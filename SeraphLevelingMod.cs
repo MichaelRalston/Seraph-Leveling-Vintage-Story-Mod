@@ -2855,13 +2855,34 @@ namespace SeraphLeveling
         public static event TriggerDamageDealtDelegate DamageDealtTrigger;
 
         /// <summary>
-        /// Process melee damage dealt by a player. Called from Harmony patch.
+        /// Process damage dealt by a player. Called from Harmony patch.
         /// </summary>
-        public static void ProcessMeleeDamage(IServerPlayer attackerPlayer, string weaponType, float damage)
+        public static void ProcessDamage(IServerPlayer attackerPlayer, Entity target, bool isRanged, string weaponType, float damage)
         {
             if (attackerPlayer?.Entity == null || string.IsNullOrEmpty(weaponType)) return;
 
             DamageDealtTrigger?.Invoke(attackerPlayer, weaponType, damage);
+            // Also track Precise damage if target is a mechanical creature
+            if (IsMechanicalCreature(target))
+            {
+                ProcessPreciseDamage(attackerPlayer, weaponType, damage);
+            }
+        }
+
+        public static void ProcessCODamage(IServerPlayer attackerPlayer, bool? isRanged, AssetLocation itemCode, float damage)
+        {
+            if (IsCOCompatEnabled)
+            {
+                var (proficiencyStat, coWeaponCode) = GetCOWeaponType(itemCode.Path);
+                if (DebugLoggingEnabled)
+                {
+                    ServerApi?.Logger?.Debug($"[SeraphLeveling] CO weapon check: ranged={isRanged}, itemCode='{itemCode}' -> proficiency='{proficiencyStat ?? "null"}', weaponCode='{coWeaponCode ?? "null"}'");
+                }
+                if (proficiencyStat != null && (!isRanged.HasValue || isRanged.Value == IsCORangedProficiency(proficiencyStat)))
+                {
+                    ProcessCOProficiencyDamage(attackerPlayer, proficiencyStat, coWeaponCode, damage);
+                }
+            }
         }
 
         /// <summary>
@@ -3046,16 +3067,6 @@ namespace SeraphLeveling
             }
 
             return null;
-        }
-
-        /// <summary>
-        /// Process ranged damage dealt by a player. Called from Harmony patch.
-        /// </summary>
-        public static void ProcessRangedDamage(IServerPlayer attackerPlayer, string weaponCombo, float damage)
-        {
-            if (attackerPlayer?.Entity == null || string.IsNullOrEmpty(weaponCombo)) return;
-
-            DamageDealtTrigger?.Invoke(attackerPlayer, weaponCombo, damage);
         }
 
         /// <summary>
