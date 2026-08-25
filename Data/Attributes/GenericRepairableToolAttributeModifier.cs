@@ -26,14 +26,14 @@ namespace SeraphLeveling.Data.Attributes
         {
             CraftingPatches.TriggerToolRepair += ((IHasToolRepairTrigger<GenericRepairableToolAttributeModifierDefinition, GenericRepairableToolAttributeModifierProgressData>)this).OnTriggerToolRepair;
             ItemDamagePatches.TriggerToolDamaged += ((IHasToolDamagedTrigger<GenericRepairableToolAttributeModifierDefinition, GenericRepairableToolAttributeModifierProgressData>)this).OnTriggerToolDamaged;
-            SeraphLevelingModSystem.DamageDealtTrigger += ((IHasDamageDealtTrigger<GenericToolAttributeModifierDefinition, GenericToolAttributeModifierProgressData, SimpleToolProgress>)this).OnTriggerDamageDealt;
+            SeraphLevelingModSystem.DamageDealtTrigger += ((IHasDamageDealtTrigger<GenericRepairableToolAttributeModifierDefinition, GenericRepairableToolAttributeModifierProgressData, RepairableToolProgress>)this).OnTriggerDamageDealt;
         }
 
         ~GenericRepairableToolAttributeModifierDefinition()
         {
             CraftingPatches.TriggerToolRepair -= ((IHasToolRepairTrigger<GenericRepairableToolAttributeModifierDefinition, GenericRepairableToolAttributeModifierProgressData>)this).OnTriggerToolRepair;
             ItemDamagePatches.TriggerToolDamaged -= ((IHasToolDamagedTrigger<GenericRepairableToolAttributeModifierDefinition, GenericRepairableToolAttributeModifierProgressData>)this).OnTriggerToolDamaged;
-            SeraphLevelingModSystem.DamageDealtTrigger -= ((IHasDamageDealtTrigger<GenericToolAttributeModifierDefinition, GenericToolAttributeModifierProgressData, SimpleToolProgress>)this).OnTriggerDamageDealt;
+            SeraphLevelingModSystem.DamageDealtTrigger -= ((IHasDamageDealtTrigger<GenericRepairableToolAttributeModifierDefinition, GenericRepairableToolAttributeModifierProgressData, RepairableToolProgress>)this).OnTriggerDamageDealt;
         }
 
         public virtual List<ToolDefinition> Weapons { get; init; } = [];
