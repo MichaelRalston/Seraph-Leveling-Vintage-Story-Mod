@@ -12,12 +12,12 @@ namespace SeraphLeveling.Data.Attributes
 
     public class GenericRepairableToolAttributeModifierProgressData(GenericRepairableToolAttributeModifierDefinition definition) : LeveledToolAttributeModifierProgressData<GenericRepairableToolAttributeModifierDefinition, GenericRepairableToolAttributeModifierProgressData, RepairableToolProgress>(definition)
     {
-        
+
     }
 
-    public class GenericRepairableToolAttributeModifierDefinition : 
-        LeveledToolAttributeModifierDefinition<GenericRepairableToolAttributeModifierDefinition, GenericRepairableToolAttributeModifierProgressData, RepairableToolProgress>, 
-        IConstructable<GenericRepairableToolAttributeModifierDefinition, GenericRepairableToolAttributeModifierProgressData>, 
+    public class GenericRepairableToolAttributeModifierDefinition :
+        LeveledToolAttributeModifierDefinition<GenericRepairableToolAttributeModifierDefinition, GenericRepairableToolAttributeModifierProgressData, RepairableToolProgress>,
+        IConstructable<GenericRepairableToolAttributeModifierDefinition, GenericRepairableToolAttributeModifierProgressData>,
         IHasToolRepairTrigger<GenericRepairableToolAttributeModifierDefinition, GenericRepairableToolAttributeModifierProgressData>,
         IHasToolDamagedTrigger<GenericRepairableToolAttributeModifierDefinition, GenericRepairableToolAttributeModifierProgressData>,
         IHasDamageDealtTrigger<GenericRepairableToolAttributeModifierDefinition, GenericRepairableToolAttributeModifierProgressData, RepairableToolProgress>
@@ -25,15 +25,27 @@ namespace SeraphLeveling.Data.Attributes
         public GenericRepairableToolAttributeModifierDefinition()
         {
             CraftingPatches.TriggerToolRepair += ((IHasToolRepairTrigger<GenericRepairableToolAttributeModifierDefinition, GenericRepairableToolAttributeModifierProgressData>)this).OnTriggerToolRepair;
-            ItemDamagePatches.TriggerToolDamaged += ((IHasToolDamagedTrigger<GenericRepairableToolAttributeModifierDefinition, GenericRepairableToolAttributeModifierProgressData>)this).OnTriggerToolDamaged;
-            SeraphLevelingModSystem.DamageDealtTrigger += ((IHasDamageDealtTrigger<GenericRepairableToolAttributeModifierDefinition, GenericRepairableToolAttributeModifierProgressData, RepairableToolProgress>)this).OnTriggerDamageDealt;
+            if (Weapons.Count > 0)
+            {
+                SeraphLevelingModSystem.DamageDealtTrigger += ((IHasDamageDealtTrigger<GenericRepairableToolAttributeModifierDefinition, GenericRepairableToolAttributeModifierProgressData, RepairableToolProgress>)this).OnTriggerDamageDealt;
+            }
+            else
+            {
+                ItemDamagePatches.TriggerToolDamaged += ((IHasToolDamagedTrigger<GenericRepairableToolAttributeModifierDefinition, GenericRepairableToolAttributeModifierProgressData>)this).OnTriggerToolDamaged;
+            }
         }
 
         ~GenericRepairableToolAttributeModifierDefinition()
         {
             CraftingPatches.TriggerToolRepair -= ((IHasToolRepairTrigger<GenericRepairableToolAttributeModifierDefinition, GenericRepairableToolAttributeModifierProgressData>)this).OnTriggerToolRepair;
-            ItemDamagePatches.TriggerToolDamaged -= ((IHasToolDamagedTrigger<GenericRepairableToolAttributeModifierDefinition, GenericRepairableToolAttributeModifierProgressData>)this).OnTriggerToolDamaged;
-            SeraphLevelingModSystem.DamageDealtTrigger -= ((IHasDamageDealtTrigger<GenericRepairableToolAttributeModifierDefinition, GenericRepairableToolAttributeModifierProgressData, RepairableToolProgress>)this).OnTriggerDamageDealt;
+            if (Weapons.Count > 0)
+            {
+                SeraphLevelingModSystem.DamageDealtTrigger -= ((IHasDamageDealtTrigger<GenericRepairableToolAttributeModifierDefinition, GenericRepairableToolAttributeModifierProgressData, RepairableToolProgress>)this).OnTriggerDamageDealt;
+            }
+            else
+            {
+                ItemDamagePatches.TriggerToolDamaged -= ((IHasToolDamagedTrigger<GenericRepairableToolAttributeModifierDefinition, GenericRepairableToolAttributeModifierProgressData>)this).OnTriggerToolDamaged;
+            }
         }
 
         public virtual List<ToolDefinition> Weapons { get; init; } = [];

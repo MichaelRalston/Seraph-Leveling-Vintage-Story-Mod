@@ -33,7 +33,12 @@ namespace SeraphLeveling.Data.Tools
         public bool Matches(ItemStack itemStack)
         {
             var stackToolType = itemStack?.Item?.Tool;
-            return stackToolType.HasValue && ValidTools.Any(t => t == stackToolType.Value);
+            return (stackToolType.HasValue && ValidTools.Any(t => t == stackToolType.Value)) || Matches(itemStack?.Item?.Code);
+        }
+
+        public bool Matches(EnumTool? toolType)
+        {
+            return toolType.HasValue && ValidTools.Any(t => t == toolType.Value);
         }
 
         public bool Matches(AssetLocation itemCode)

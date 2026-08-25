@@ -25,7 +25,7 @@ namespace SeraphLeveling.Patches
 #endif
 
             // Fire event for all attributes listening for tool usage
-            TriggerToolDamaged?.Invoke(player, toolCode, amount);
+            TriggerToolDamaged?.Invoke(player, __instance.Tool, toolCode, amount);
         }
         
     }
