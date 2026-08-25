@@ -40,11 +40,11 @@ namespace SeraphLeveling.Patches
                 if (__instance == shooterEntity) return;
 
                 // Get the weapon combination (bow+arrow, sling+stone, etc.)
-                string weaponCombo = SeraphLevelingModSystem.GetRangedWeaponCombo(damageSource.SourceEntity, shooterEntity);
+                (string weaponCombo, EnumTool? tool) = SeraphLevelingModSystem.GetRangedWeaponCombo(damageSource.SourceEntity, shooterEntity);
 
                 if (weaponCombo != null)
                 {
-                    SeraphLevelingModSystem.ProcessDamage(shooterPlayer, __instance, true, weaponCombo, damage);
+                    SeraphLevelingModSystem.ProcessDamage(shooterPlayer, __instance, true, tool, weaponCombo, damage);
                 }
 
                 // First, check the projectile itself for thrown weapons (javelins, thrown spears)
@@ -85,7 +85,7 @@ namespace SeraphLeveling.Patches
 
             if (weaponType != null)
             {
-                SeraphLevelingModSystem.ProcessDamage(attackerPlayer, __instance, false, weaponType, damage);
+                SeraphLevelingModSystem.ProcessDamage(attackerPlayer, __instance, false, heldItem.Tool, weaponType, damage);
             }
 
             // Combat Overhaul: Also track CO melee proficiency if enabled

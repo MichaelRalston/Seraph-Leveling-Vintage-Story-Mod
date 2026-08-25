@@ -7,7 +7,7 @@ using Vintagestory.API.Server;
 
 namespace SeraphLeveling.Data.Attributes
 {
-    public delegate void TriggerDamageDealtDelegate(IServerPlayer player, AssetLocation weaponCode, float damage);
+    public delegate void TriggerDamageDealtDelegate(IServerPlayer player, bool isRanged, EnumTool? toolType, AssetLocation weaponCode, float damage);
 
     public interface IHasDamageDealtTrigger<D, PD, E> : ISaveableAttribute where PD : LeveledToolAttributeModifierProgressData<D, PD, E> where D : LeveledToolAttributeModifierDefinition<D, PD, E>, IConstructable<D, PD> where E : Enum
     {
@@ -15,9 +15,9 @@ namespace SeraphLeveling.Data.Attributes
 
         public PD GetForPlayer(string playerUid);
 
-        public void OnTriggerDamageDealt(IServerPlayer player, AssetLocation weaponCode, float damage)
+        public void OnTriggerDamageDealt(IServerPlayer player, bool isRanged, EnumTool? toolType, AssetLocation weaponCode, float damage)
         {
-            if (player == null || damage <= 0 || !Weapons.Any(w => w.Matches(weaponCode)) || !SeraphLevelingModSystem.LoadedAttributes.Contains(this))
+            if (player == null || damage <= 0 || !Weapons.Any(w => w.Matches(toolType, isRanged, weaponCode)) || !SeraphLevelingModSystem.LoadedAttributes.Contains(this))
             {
                 return;
             }
@@ -34,9 +34,9 @@ namespace SeraphLeveling.Data.Attributes
 
         public void AddCredits(IServerPlayer player, float toAdd);
 
-        public void OnTriggerDamageDealt(IServerPlayer player, AssetLocation weaponCode, float damage)
+        public void OnTriggerDamageDealt(IServerPlayer player, bool isRanged, EnumTool? toolType, AssetLocation weaponCode, float damage)
         {
-            if (player == null || damage <= 0 || !Weapons.Any(w => w.Matches(weaponCode)) || !SeraphLevelingModSystem.LoadedAttributes.Contains(this))
+            if (player == null || damage <= 0 || !Weapons.Any(w => w.Matches(toolType, isRanged, weaponCode)) || !SeraphLevelingModSystem.LoadedAttributes.Contains(this))
             {
                 return;
             }

@@ -2857,11 +2857,11 @@ namespace SeraphLeveling
         /// <summary>
         /// Process damage dealt by a player. Called from Harmony patch.
         /// </summary>
-        public static void ProcessDamage(IServerPlayer attackerPlayer, Entity target, bool isRanged, string weaponType, float damage)
+        public static void ProcessDamage(IServerPlayer attackerPlayer, Entity target, bool isRanged, EnumTool? tool, string weaponType, float damage)
         {
             if (attackerPlayer?.Entity == null || string.IsNullOrEmpty(weaponType)) return;
 
-            DamageDealtTrigger?.Invoke(attackerPlayer, weaponType, damage);
+            DamageDealtTrigger?.Invoke(attackerPlayer, isRanged, tool, weaponType, damage);
             // Also track Precise damage if target is a mechanical creature
             if (IsMechanicalCreature(target))
             {
@@ -3075,12 +3075,13 @@ namespace SeraphLeveling
         /// For slings+stones, returns "sling+stone".
         /// Returns null if not a qualifying ranged weapon.
         /// </summary>
-        public static string GetRangedWeaponCombo(Entity projectile, EntityPlayer shooter)
+        public static (string, EnumTool?) GetRangedWeaponCombo(Entity projectile, EntityPlayer shooter)
         {
-            if (projectile == null || shooter == null) return null;
+            if (projectile == null || shooter == null) return (null, null);
 
             var projectileCode = projectile.Code;
             var heldItemCode = shooter.RightHandItemSlot?.Itemstack?.Collectible?.Code;
+            var tool = shooter.RightHandItemSlot?.Itemstack?.Collectible?.Tool;
 
             // Remove any mod prefix (e.g., "game:", "combatoverhaul:") for checking
             string projCheck = projectileCode?.Path ?? "";
@@ -3098,7 +3099,7 @@ namespace SeraphLeveling
                 {
                     bowCode = heldCheck;
                 }
-                return $"{bowCode}+{projCheck}";
+                return ($"{bowCode}+{projCheck}", tool);
             }
 
             // Check for crossbow bolts/quarrels
@@ -3111,7 +3112,7 @@ namespace SeraphLeveling
                 {
                     crossbowCode = heldCheck;
                 }
-                return $"{crossbowCode}+{projCheck}";
+                return ($"{crossbowCode}+{projCheck}", tool);
             }
 
             // Check for firearm projectiles (bullets, musket balls, etc.)
@@ -3127,7 +3128,7 @@ namespace SeraphLeveling
                 {
                     firearmCode = heldCheck;
                 }
-                return $"{firearmCode}+{projCheck}";
+                return ($"{firearmCode}+{projCheck}", tool);
             }
 
             // Check for sling stones (slung from sling — entity is thrownstone-{rock})
@@ -3140,8 +3141,15 @@ namespace SeraphLeveling
                 {
                     slingCode = heldCheck;
                 }
-                return $"{slingCode}+{projCheck}";
+                return ($"{slingCode}+{projCheck}", tool);
             }
+
+            EnumTool? projTool = null;
+            if (projectile is EntityProjectile projectileEntity)
+            {
+                projTool = projectileEntity.ProjectileStack?.Item?.Tool;
+            }
+
 
             // Generic thrown items (CollectibleBehaviorThrowable). VS 1.22 spawns hand-thrown
             // stones, bones, etc. as a single shared `game:thrownitem` projectile entity — the
@@ -3153,9 +3161,9 @@ namespace SeraphLeveling
                 string stackCheck = stackCode?.Path ?? "";
                 if (!string.IsNullOrEmpty(stackCheck))
                 {
-                    return $"thrown+{stackCheck}";
+                    return ($"thrown+{stackCheck}", projTool);
                 }
-                return $"thrown+{projCheck}";
+                return ($"thrown+{projCheck}", projTool);
             }
 
             // Check for spear/javelin throws (thrown spears deal ranged damage)
@@ -3163,7 +3171,7 @@ namespace SeraphLeveling
                 projCheck.StartsWith("javelin-") || projCheck.Contains("javelin") ||
                 projCheck.StartsWith("pilum-") || projCheck.Contains("throwingspear"))
             {
-                return $"thrown+{projCheck}";
+                return ($"thrown+{projCheck}", projTool);
             }
 
             // Check for Atlatl darts (Return of the Atlatl mod)
@@ -3176,10 +3184,10 @@ namespace SeraphLeveling
                 {
                     launcherCode = heldCheck;
                 }
-                return $"{launcherCode}+{projCheck}";
+                return ($"{launcherCode}+{projCheck}", tool??projTool);
             }
 
-            return null;
+            return (null, null);
         }
 
         /// <summary>

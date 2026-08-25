@@ -12,6 +12,8 @@ namespace SeraphLeveling.Data.Tools
         public HashSet<EnumTool> ValidTools { get; init; }
         public IAssetLocationMatcher MatchOverride { get; init; } = null;
 
+        public bool? IsRanged { get; init; } = null;
+
         protected string MatchPrefix { get => field ??= Name + "-"; init; }
 
         public ToolDefinition(string name)
@@ -34,6 +36,12 @@ namespace SeraphLeveling.Data.Tools
         {
             var stackToolType = itemStack?.Item?.Tool;
             return (stackToolType.HasValue && ValidTools.Any(t => t == stackToolType.Value)) || Matches(itemStack?.Item?.Code);
+        }
+
+        public bool Matches(EnumTool? toolType, bool? isRanged, AssetLocation itemCode)
+        {
+            if (IsRanged.HasValue && isRanged.HasValue && isRanged.Value != IsRanged.Value) return false;
+            return Matches(toolType) || Matches(itemCode);
         }
 
         public bool Matches(EnumTool? toolType)
