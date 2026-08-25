@@ -5953,8 +5953,6 @@ namespace SeraphLeveling
             if (blockPath.Contains("crop-"))
             {
                 // Skip if it's explicitly a "wild" block - those are already wild
-                // Regular crops on farmland should NOT count
-                // Wild crops spawn on dirt/soil naturally
 
                 // Check if the block below is farmland - if so, this is a planted crop, not wild
                 if (blockPos != null)
@@ -5963,7 +5961,7 @@ namespace SeraphLeveling
                     Block blockBelow = ServerApi.World.BlockAccessor.GetBlock(belowPos);
                     string belowPath = blockBelow?.Code?.Path ?? "";
 
-                    // If on farmland, this is a cultivated crop - don't count it
+                    // If on farmland, this is a cultivated crop - it counts.
                     if (belowPath.Contains("farmland"))
                     {
                         return true;
