@@ -1172,6 +1172,7 @@ namespace SeraphLeveling.Data.Attributes
             IncrementData = DamageIncrementData,
             GlobalMaxCredits = 100,
             StatName = "ats:hammer-?-meleeDamageMult",
+            Weapons = [ ToolDefinitions.Hammer ],
         };
 
         public static readonly GenericToolAttributeModifierDefinition TemperingPowerLoss = new()
@@ -1187,6 +1188,7 @@ namespace SeraphLeveling.Data.Attributes
             GlobalMaxCredits = 10,
             StatName = "ats:temperingpowerlossrate",
             IsInverted = true,
+            Weapons = [ ToolDefinitions.Hammer ],
         };
 
         public static readonly GenericToolAttributeModifierDefinition QuenchingShatter = new()
@@ -1202,6 +1204,7 @@ namespace SeraphLeveling.Data.Attributes
             GlobalMaxCredits = 5,
             StatName = "ats:quenchshatterrate",
             IsInverted = true,
+            Weapons = [ ToolDefinitions.Hammer ],
         };
 
         public static readonly GenericToolAttributeModifierDefinition KnifeDamage = new()
@@ -1216,6 +1219,7 @@ namespace SeraphLeveling.Data.Attributes
             IncrementData = DamageIncrementData,
             GlobalMaxCredits = 100,
             StatName = "ats:knife-?-meleeDamageMult",
+            Weapons = [ ToolDefinitions.Knife ],
         };
 
         public static readonly GenericRepairableToolAttributeModifierDefinition KnifeDurability = new()
@@ -1259,6 +1263,7 @@ namespace SeraphLeveling.Data.Attributes
             IncrementData = DamageIncrementData,
             GlobalMaxCredits = 100,
             StatName = "ats:aculinaryartillery:cleaver-?-meleeDamageMult",
+            Weapons = [ ToolDefinitions.Knife ],
         };
 
         public static readonly GenericUnlockedAttributeModifierDefinition Culinary = new()

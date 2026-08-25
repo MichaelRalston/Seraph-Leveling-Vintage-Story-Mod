@@ -2991,36 +2991,7 @@ namespace SeraphLeveling
         {
             if (attackerPlayer?.Entity == null || string.IsNullOrEmpty(weaponType)) return;
 
-            string playerUid = attackerPlayer.PlayerUID;
-
-            if (IsHammer(weaponType))
-            {
-                AttributeModifierDefinitions.HammerDamage.GetForPlayer(playerUid).DoEvent(attackerPlayer, weaponType, damage);
-                AttributeModifierDefinitions.TemperingPowerLoss.GetForPlayer(playerUid).DoEvent(attackerPlayer, weaponType, damage);
-                AttributeModifierDefinitions.QuenchingShatter.GetForPlayer(playerUid).DoEvent(attackerPlayer, weaponType, damage);
-            }
-
-            if (IsKnife(weaponType))
-            {
-                AttributeModifierDefinitions.KnifeDamage.GetForPlayer(playerUid).DoEvent(attackerPlayer, weaponType, damage);
-                AttributeModifierDefinitions.CleaverDamage.GetForPlayer(playerUid).DoEvent(attackerPlayer, weaponType, damage);
-            }
-
             DamageDealtTrigger?.Invoke(attackerPlayer, weaponType, damage);
-        }
-
-        private static bool IsKnife(string weaponType)
-        {
-            if (string.IsNullOrEmpty(weaponType)) return false;
-            string lower = weaponType.ToLowerInvariant();
-            return lower.Contains("knife-");
-        }
-
-        private static bool IsHammer(string weaponType)
-        {
-            if (string.IsNullOrEmpty(weaponType)) return false;
-            string lower = weaponType.ToLowerInvariant();
-            return lower.Contains("hammer-");
         }
 
         /// <summary>
@@ -3222,7 +3193,6 @@ namespace SeraphLeveling
             if (IsBow(weaponCombo))
             {
                 TrackBowyerBowDamage(attackerPlayer, damage);
-                AttributeModifierDefinitions.BowDamage.GetForPlayer(playerUid).DoEvent(attackerPlayer, weaponCombo, damage, RepairableToolProgress.Usage);
             }
             if (IsThrownRock(weaponCombo))
             {
