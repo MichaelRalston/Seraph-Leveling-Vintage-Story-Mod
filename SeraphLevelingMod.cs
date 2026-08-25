@@ -2060,26 +2060,6 @@ namespace SeraphLeveling
 
             // Fire event for attributes that care about broken blocks
             BlockBrokenTrigger?.Invoke(byPlayer, toolCode, oldblockId, blockSel?.Position);
-
-            string playerUid = byPlayer.PlayerUID;
-
-            // Check if player is using a tool for progression
-            string axeCode = GetHeldAxeCode(byPlayer);
-            string shearsCode = GetHeldShearsCode(byPlayer);
-
-            // Handle attributes satisfied by an axe or shears
-            if (shearsCode != null || axeCode != null)
-            {
-                // Check block type and get points
-                string mergedToolCode = shearsCode ?? axeCode;
-                int leavesPoints = GetLeavesPoints(oldblockId);
-                if (leavesPoints > 0)
-                {
-                    AttributeModifierDefinitions.WoodDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, mergedToolCode, leavesPoints);
-                    AttributeModifierDefinitions.SeedDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, mergedToolCode, leavesPoints);
-                    AttributeModifierDefinitions.StickDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, mergedToolCode, leavesPoints);
-                }
-            }
         }
 
         /// <summary>

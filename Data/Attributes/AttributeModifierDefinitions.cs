@@ -366,6 +366,12 @@ namespace SeraphLeveling.Data.Attributes
             }
         };
 
+        private static readonly ConcurrentDictionary<IAssetLocationMatcher, float> LeavesPoints = new()
+        {
+            [Simple("leavesbranchy-grown")] = 2,
+            [Or(Simple("leaves-grown"), Simple("leavesnarrow-grown"))] = 1,
+        };
+
         public static readonly GenericToolAttributeModifierDefinition WoodDropRate = new()
         {
             Id = "woodDropRate",
@@ -377,7 +383,8 @@ namespace SeraphLeveling.Data.Attributes
             Tools = [ ToolDefinitions.Shears, ToolDefinitions.Axe ],
             IncrementData = TreeIncrementData,
             GlobalMaxCredits = 100,
-            StatName = "sacredlib:woodDropRate"
+            StatName = "sacredlib:woodDropRate",
+            BrokenBlockScores = LeavesPoints,
         };
 
         public static readonly GenericToolAttributeModifierDefinition SeedDropRate = new()
@@ -391,7 +398,8 @@ namespace SeraphLeveling.Data.Attributes
             Tools = [ ToolDefinitions.Shears, ToolDefinitions.Axe ],
             IncrementData = TreeIncrementData,
             GlobalMaxCredits = 1000,
-            StatName = "sacredlib:treeseedDropRate"
+            StatName = "sacredlib:treeseedDropRate",
+            BrokenBlockScores = LeavesPoints,
         };
 
         public static readonly GenericToolAttributeModifierDefinition StickDropRate = new()
@@ -405,7 +413,8 @@ namespace SeraphLeveling.Data.Attributes
             Tools = [ ToolDefinitions.Shears, ToolDefinitions.Axe ],
             IncrementData = TreeIncrementData,
             GlobalMaxCredits = 300,
-            StatName = "sacredlib:stickDropRate"
+            StatName = "sacredlib:stickDropRate",
+            BrokenBlockScores = LeavesPoints,
         };
 
 
