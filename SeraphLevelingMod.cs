@@ -6035,10 +6035,7 @@ namespace SeraphLeveling
         {
             if (player?.Entity == null) return;
 
-            string playerUid = player.PlayerUID;
-            int modifiedRepairs = ApplyXPMultiplier(playerUid, 1);
-
-            AttributeModifierDefinitions.Technical.AddCredits(player, ApplyXPMultiplier(playerUid, modifiedRepairs));
+            AttributeModifierDefinitions.Technical.AddCredits(player, 1);
         }
 
         /// <summary>

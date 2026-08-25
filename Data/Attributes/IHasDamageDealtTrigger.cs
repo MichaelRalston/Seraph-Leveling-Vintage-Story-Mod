@@ -42,7 +42,7 @@ namespace SeraphLeveling.Data.Attributes
             }
             else
             {
-                AddCredits(player, SeraphLevelingModSystem.ApplyXPMultiplier(player.PlayerUID, damage));
+                AddCredits(player, damage);
             }
         }
     }

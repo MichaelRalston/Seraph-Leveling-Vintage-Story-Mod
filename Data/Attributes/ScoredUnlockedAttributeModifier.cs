@@ -29,7 +29,10 @@ namespace SeraphLeveling.Data.Attributes
             // Already unlocked - no more progress needed
             if (progress.IsUnlocked) return;
 
-            progress.TotalCredits += toAdd;
+            // Apply sleep buff multiplier to points
+            var modifiedPoints = SeraphLevelingModSystem.ApplyXPMultiplier(player.PlayerUID, toAdd);
+
+            progress.TotalCredits += modifiedPoints;
             PendingSave = true;
 
             if (!string.IsNullOrWhiteSpace(WatchedCreditsAttributeKey))
