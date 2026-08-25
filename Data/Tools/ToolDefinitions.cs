@@ -1,4 +1,6 @@
 using Vintagestory.API.Common;
+using SeraphLeveling.Util;
+using static SeraphLeveling.Util.IAssetLocationMatcher;
 
 namespace SeraphLeveling.Data.Tools
 {
@@ -19,5 +21,10 @@ namespace SeraphLeveling.Data.Tools
         public static readonly ToolDefinition Shears = new("shears", EnumTool.Shears);
         public static readonly ToolDefinition MeleeWeapon = new("melee weapon", [EnumTool.Axe, EnumTool.Club, EnumTool.Halberd, EnumTool.Hammer, EnumTool.Knife, EnumTool.Mace, EnumTool.Pike, EnumTool.Polearm, EnumTool.Poleaxe, EnumTool.Scythe, EnumTool.Sickle, EnumTool.Spear, EnumTool.Staff, EnumTool.Sword, EnumTool.Warhammer]);
         public static readonly ToolDefinition RangedWeapon = new("ranged weapon", [EnumTool.Bow, EnumTool.Crossbow, EnumTool.Firearm, EnumTool.Javelin, EnumTool.Sling, EnumTool.Spear]);
+        public static readonly ToolDefinition Sling = new("sling", EnumTool.Sling);
+        public static readonly ToolDefinition Stone = new("stone")
+        {
+            MatchOverride = Or(Simple("stone-", MatcherType.PathContains), Simple("stone"), Simple("thrownstone", MatcherType.PathContains), And(Simple("stone", MatcherType.PathContains), Not(Simple("whetstone", MatcherType.PathContains))))
+        };
     }
 }

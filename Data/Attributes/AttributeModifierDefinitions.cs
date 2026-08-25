@@ -429,6 +429,7 @@ namespace SeraphLeveling.Data.Attributes
             CreditDescription = "thrown rock damage",
             WatchedCreditsAttributeKey = "sitImproviserRockDamage",
             Trait = new(() => Traits.TraitDefinitions.Improviser),
+            Weapons = [ ToolDefinitions.Stone, ToolDefinitions.Sling ],
         };
 
         public static readonly GenericCollectionUnlockedAttributeModifierDefinition Clothier = new()

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using SeraphLeveling.Util;
 using Vintagestory.API.Common;
 
 namespace SeraphLeveling.Data.Tools
@@ -9,6 +10,7 @@ namespace SeraphLeveling.Data.Tools
     {
         public string Name { get; init; }
         public HashSet<EnumTool> ValidTools { get; init; }
+        public IAssetLocationMatcher MatchOverride { get; init; } = null;
 
         protected string MatchPrefix { get => field ??= Name + "-"; init; }
 
@@ -36,7 +38,24 @@ namespace SeraphLeveling.Data.Tools
 
         public bool Matches(AssetLocation itemCode)
         {
-            if (string.IsNullOrEmpty(itemCode))
+            if (itemCode.Path.Contains('+'))
+            {
+                // If the given item code is a combination of items, e.g. "sling+stone", then split it up and match if any of the parts are a match
+                return itemCode.Path.Split('+').Select(token => AssetLocation.Create(itemCode.Domain, token)).Any(MatchesInner);
+            }
+            else
+            {
+                return MatchesInner(itemCode);
+            }
+        }
+
+        protected bool MatchesInner(AssetLocation itemCode)
+        {
+            if (MatchOverride != null)
+            {
+                return MatchOverride.Matches(itemCode);
+            }
+            else if (string.IsNullOrEmpty(itemCode))
             {
                 return false;
             }
