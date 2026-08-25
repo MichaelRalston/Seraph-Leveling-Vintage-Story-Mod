@@ -81,7 +81,9 @@ namespace SeraphLeveling.Data.Attributes
         public virtual bool IsRequiredModLoaded => RequiredMod == null || SeraphLevelingModSystem.LoadedMods.Contains(RequiredMod.Value);
 
         public required string SkillKey { get; init; }
-        public virtual string SaveKey { get => field ??= $"sit{Name}Progress"; init; }
+        public virtual string FlatName { get => field ??= Name.Replace(" ", ""); init; }
+        public virtual string SaveKey { get => field ??= $"sit{FlatName}Progress"; init; }
+        public virtual string SaveKeyUnflattened { get => field ??= $"sit{Name}Progress"; init; }
         public virtual string LongDescription { get => field ??= SkillKey; init; }
         public virtual string TraitCode { get => field ??= $"sit{SkillKey}mastery"; init; }
 
@@ -205,6 +207,15 @@ namespace SeraphLeveling.Data.Attributes
             try
             {
                 byte[] data = serverApi.WorldManager.SaveGame.GetData(SaveKey);
+                if (data == null || data.Length == 0)
+                {
+                    data = serverApi.WorldManager.SaveGame.GetData(SaveKeyUnflattened); // we had a mistake at initial release, and name was mixed. Convert it.
+                    if (data != null && data.Length > 0)
+                    {
+                        serverApi.WorldManager.SaveGame.StoreData(SaveKeyUnflattened, []);                    
+                        PendingSave = true;
+                    }
+                }
                 if (data == null || data.Length == 0)
                 {
                     serverApi.Logger.Debug($"[SeraphLeveling] No {SkillKey} progress data found in world save");

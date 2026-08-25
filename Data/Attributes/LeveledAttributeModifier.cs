@@ -46,15 +46,15 @@ namespace SeraphLeveling.Data.Attributes
         public override byte PersistenceVersion { get; init; } = 2;
         public virtual string StatCode
         {
-            get => field ??= $"sit{Name}Bonus"; init;
+            get => field ??= $"sit{FlatName}Bonus"; init;
         }
         public virtual string WatchedLevel
         {
-            get => field ??= $"sit{Name}Level"; init;
+            get => field ??= $"sit{FlatName}Level"; init;
         }
         public virtual string WatchedBonus
         {
-            get => field ??= $"sit{Name}BonusPercent"; init;
+            get => field ??= $"sit{FlatName}BonusPercent"; init;
         }
         public required string StatName { get; init; }
         public override void ReadConfigData(Dictionary<string, int> dict)

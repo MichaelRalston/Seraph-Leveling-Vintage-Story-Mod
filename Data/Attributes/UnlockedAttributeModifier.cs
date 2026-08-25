@@ -26,7 +26,7 @@ namespace SeraphLeveling.Data.Attributes
 
     public abstract class UnlockedAttributeModifierDefinition<D, PD> : AttributeModifierDefinition<D, PD>, IUnlockedAttributeModifierDefinition where PD : UnlockedAttributeModifierProgressData<D, PD> where D : UnlockedAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
     {
-        public virtual string UnlockedKey { get => field ??= $"sit{Name}Unlocked"; init; }
+        public virtual string UnlockedKey { get => field ??= $"sit{FlatName}Unlocked"; init; }
         public string NotifyLangKey { get => field ??= $"seraphleveling:message-{SkillKey}-unlock"; init; } = null;
         public required Lazy<TraitDefinition> Trait { get; init; }
 

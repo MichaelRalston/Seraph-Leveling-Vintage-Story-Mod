@@ -7,7 +7,7 @@ namespace SeraphLeveling.Data.Attributes
         public required virtual string StatName { get; init; }
         public required float ModifierAmount { get; set; }
         public virtual bool ModifierIsPercentage { get; init; } = false;
-        public virtual string StatKey { get => field ??= $"sit{Name}Bonus"; init; }
+        public virtual string StatKey { get => field ??= $"sit{FlatName}Bonus"; init; }
 
         public static UnlockedStatAttributeModifierProgressData Create(UnlockedStatAttributeModifierDefinition def)
         {

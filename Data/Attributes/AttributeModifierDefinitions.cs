@@ -63,7 +63,7 @@ namespace SeraphLeveling.Data.Attributes
             Id = "interiorDesigner",
             SkillKey = "interiordesigner",
             PersistenceHeader = "IDR",
-            Name = "InteriorDesigner",
+            Name = "Interior Designer",
             GlobalMaxCredits = 20,
             CreditDescription = "furniture",
             Trait = new(() => Traits.TraitDefinitions.InteriorDesigner),
@@ -169,7 +169,7 @@ namespace SeraphLeveling.Data.Attributes
             Id = "forageLooting",
             SkillKey = "foragerlooting",
             PersistenceHeader = "FRG",
-            Name = "ForagingLoot",
+            Name = "Foraging Loot",
             LongDescription = "looting bonus",
             Stat = "% foraging loot",
             BaseIncrement = 10,
@@ -199,7 +199,7 @@ namespace SeraphLeveling.Data.Attributes
             Id = "cropRate",
             SkillKey = "croprate",
             PersistenceHeader = "FCR",
-            Name = "CropRate",
+            Name = "Crop Rate",
             LongDescription = "produce drop rate",
             Stat = "% produce drop rate",
             BaseIncrement = 15,
@@ -228,7 +228,7 @@ namespace SeraphLeveling.Data.Attributes
             Id = "animalHarvesting",
             SkillKey = "animalharvester",
             PersistenceHeader = "RSF",
-            Name = "AnimalHarvester",
+            Name = "Animal Harvester",
             Stat = "% animal harvest rate",
             BaseIncrement = 10,
             IncrementStep = 10,
@@ -240,7 +240,7 @@ namespace SeraphLeveling.Data.Attributes
         public static readonly GenericLeveledAttributeModifierDefinition GearDropRate = new()
         {
             Id = "gearDropRate",
-            Name = "GearDropRate",
+            Name = "Gear Drop Rate",
             SkillKey = "geardroprate",
             PersistenceHeader = "PLF",
             Stat = "% rusty gear rate",
@@ -254,7 +254,7 @@ namespace SeraphLeveling.Data.Attributes
         public static readonly GenericLeveledAttributeModifierDefinition VesselDropRate = new()
         {
             Id = "vesselDropRate",
-            Name = "VesselDropRate",
+            Name = "Vessel Drop Rate",
             SkillKey = "vesseldroprate",
             PersistenceHeader = "PLF",
             Stat = "% vessel loot bonus",
@@ -268,7 +268,7 @@ namespace SeraphLeveling.Data.Attributes
         public static readonly GenericLeveledAttributeModifierDefinition WholeVesselRate = new()
         {
             Id = "wholeVesselRate",
-            Name = "WholeVesselRate",
+            Name = "Whole Vessel Rate",
             SkillKey = "wholevesselrate",
             PersistenceHeader = "PLF",
             Stat = "% chance of looting entire vessel",
@@ -331,7 +331,7 @@ namespace SeraphLeveling.Data.Attributes
         {
             Id = "stoneDropRate",
             SkillKey = "stonerate",
-            Name = "StoneDropRate",
+            Name = "Stone Drop Rate",
             Stat = "% bonus stone drop rate",
             LongDescription = "stone drop rate",
             PersistenceHeader = "SDR",
@@ -346,7 +346,7 @@ namespace SeraphLeveling.Data.Attributes
         {
             Id = "oreDropRate",
             SkillKey = "orerate",
-            Name = "OreDropRate",
+            Name = "Ore Drop Rate",
             Stat = "% bonus ore drop rate",
             LongDescription = "ore drop rate",
             PersistenceHeader = "SDR",
@@ -377,7 +377,7 @@ namespace SeraphLeveling.Data.Attributes
         {
             Id = "woodDropRate",
             SkillKey = "woodrate",
-            Name = "WoodDropRate",
+            Name = "Wood Drop Rate",
             Stat = "% bonus wood drop rate",
             LongDescription = "wood drop rate",
             PersistenceHeader = "WDR",
@@ -392,7 +392,7 @@ namespace SeraphLeveling.Data.Attributes
         {
             Id = "seedDropRate",
             SkillKey = "seedrate",
-            Name = "SeedDropRate",
+            Name = "Seed Drop Rate",
             Stat = "% bonus tree seed drop rate",
             LongDescription = "tree seed drop rate",
             PersistenceHeader = "SDR",
@@ -407,7 +407,7 @@ namespace SeraphLeveling.Data.Attributes
         {
             Id = "stickDropRate",
             SkillKey = "stickrate",
-            Name = "StickDropRate",
+            Name = "Stick Drop Rate",
             Stat = "% bonus stick drop rate",
             LongDescription = "stick drop rate",
             PersistenceHeader = "WDR",
@@ -459,7 +459,7 @@ namespace SeraphLeveling.Data.Attributes
         public static readonly DamageAttributeModifierDefinition RangedDamage = new()
         {
             Id = "rangedDamage",
-            Name = "RangedDamage",
+            Name = "Ranged Damage",
             LongDescription = "ranged damage",
             Stat = "% ranged damage",
             SkillKey = "ranged",
@@ -474,7 +474,7 @@ namespace SeraphLeveling.Data.Attributes
         public static readonly DamageAttributeModifierDefinition RangedAccuracy = new()
         {
             Id = "rangedAccuracy",
-            Name = "RangedAccuracy",
+            Name = "Ranged Accuracy",
             LongDescription = "ranged accuracy",
             Stat = "% ranged accuracy",
             SkillKey = "rangedaccuracy",
@@ -489,7 +489,7 @@ namespace SeraphLeveling.Data.Attributes
         public static readonly DamageAttributeModifierDefinition RangedDistance = new()
         {
             Id = "rangedDistance",
-            Name = "RangedDistance",
+            Name = "Ranged Distance",
             LongDescription = "ranged distance",
             Stat = "% ranged distance",
             SkillKey = "rangeddistance",
@@ -536,7 +536,7 @@ namespace SeraphLeveling.Data.Attributes
             Id = "hardyhealth",
             SkillKey = "hardyhealth",
             PersistenceHeader = "HDH",
-            Name = "HardyHealth",
+            Name = "Hardy Health",
             ModifierAmount = 5,
             Trait = new(() => Traits.TraitDefinitions.Hardy),
         };
@@ -546,7 +546,7 @@ namespace SeraphLeveling.Data.Attributes
             Id = "bulwarkhealth",
             SkillKey = "bulwarkhealth",
             PersistenceHeader = "BWH",
-            Name = "BulwarkHealth",
+            Name = "Bulwark Health",
             ModifierAmount = 3,
             Trait = new(() => Traits.TraitDefinitions.Bulwark),
         };
@@ -556,7 +556,7 @@ namespace SeraphLeveling.Data.Attributes
             Id = "claustrophobicpenalty",
             SkillKey = "claustrophobic",
             PersistenceHeader = "COR",
-            Name = "ClaustrophobicOre",
+            Name = "Claustrophobic Ore",
             ModifierAmount = -0.15f,
             ModifierIsPercentage = true,
             Trait = new(() => Traits.TraitDefinitions.Claustrophobic),
@@ -567,7 +567,7 @@ namespace SeraphLeveling.Data.Attributes
             Id = "claustrophobic",
             SkillKey = "claustrophobic",
             PersistenceHeader = "COR",
-            Name = "ClaustrophobicOre",
+            Name = "Claustrophobic Ore",
             ModifierAmount = 0.15f,
             ModifierIsPercentage = true,
             Trait = new(() => Traits.TraitDefinitions.Claustrophobic),
@@ -578,7 +578,7 @@ namespace SeraphLeveling.Data.Attributes
             Id = "frailhealthpenalty",
             SkillKey = "frailhealth",
             PersistenceHeader = "FRH",
-            Name = "FrailHealth",
+            Name = "Frail Health",
             ModifierAmount = -2.5f,
             Trait = new(() => Traits.TraitDefinitions.Frail),
         };
@@ -588,7 +588,7 @@ namespace SeraphLeveling.Data.Attributes
             Id = "frailhealth",
             SkillKey = "frailhealth",
             PersistenceHeader = "FRH",
-            Name = "FrailHealth",
+            Name = "Frail Health",
             ModifierAmount = 2.5f,
             Trait = new(() => Traits.TraitDefinitions.Frail),
         };
@@ -598,7 +598,7 @@ namespace SeraphLeveling.Data.Attributes
             Id = "weakhealthpenalty",
             SkillKey = "weakhealth",
             PersistenceHeader = "WKH",
-            Name = "WeakHealth",
+            Name = "Weak Health",
             ModifierAmount = -2,
             Trait = new(() => Traits.TraitDefinitions.Weak),
         };
@@ -608,7 +608,7 @@ namespace SeraphLeveling.Data.Attributes
             Id = "weakhealth",
             SkillKey = "weakhealth",
             PersistenceHeader = "WKH",
-            Name = "WeakHealth",
+            Name = "Weak Health",
             ModifierAmount = 2,
             Trait = new(() => Traits.TraitDefinitions.Weak),
         };
@@ -631,7 +631,7 @@ namespace SeraphLeveling.Data.Attributes
         public static readonly ArmorDurabilityModifierDefinition ArmorDurability = new()
         {
             Id = "armorDurability",
-            Name = "ArmorDurability",
+            Name = "Armor Durability",
             Stat = "% durability bonus",
             SkillKey = "armordurability",
             PersistenceHeader = "ARD",
@@ -655,7 +655,7 @@ namespace SeraphLeveling.Data.Attributes
         public static readonly SimpleArmorModifierDefinition ArmorWalkSpeed = new()
         {
             Id = "armorWalkSpeed",
-            Name = "ArmorWalkSpeed",
+            Name = "Armor Walk Speed",
             Stat = "% armor walk speed penalty reduction",
             SkillKey = "armorwalkspeed",
             PersistenceHeader = "ARW",
@@ -668,7 +668,7 @@ namespace SeraphLeveling.Data.Attributes
         public static readonly SimpleArmorModifierDefinition ArmorHungerRate = new()
         {
             Id = "armorHungerRate",
-            Name = "ArmorHungerRate",
+            Name = "Armor Hunger Rate",
             Stat = "% armor hunger rate penalty reduction",
             SkillKey = "armorhungerrate",
             PersistenceHeader = "ARH",
@@ -681,7 +681,7 @@ namespace SeraphLeveling.Data.Attributes
         public static readonly SimpleArmorModifierDefinition ArmorHealing = new()
         {
             Id = "armorHealing",
-            Name = "ArmorHealing",
+            Name = "Armor Healing",
             Stat = "% armor healing effectiveness",
             SkillKey = "armorhealing",
             PersistenceHeader = "ARH",
@@ -814,7 +814,7 @@ namespace SeraphLeveling.Data.Attributes
         {
             Id = "clayDropRate",
             SkillKey = "clayrate",
-            Name = "ClayDropRate",
+            Name = "Clay Drop Rate",
             Stat = "% bonus clay drop rate",
             LongDescription = "clay drop rate",
             PersistenceHeader = "CLD",
@@ -829,7 +829,7 @@ namespace SeraphLeveling.Data.Attributes
         {
             Id = "peatDropRate",
             SkillKey = "peatrate",
-            Name = "PeatDropRate",
+            Name = "Peat Drop Rate",
             Stat = "% bonus peat drop rate",
             LongDescription = "peat drop rate",
             PersistenceHeader = "PDR",
@@ -844,7 +844,7 @@ namespace SeraphLeveling.Data.Attributes
         {
             Id = "clayformSpeed",
             SkillKey = "clayformspeed",
-            Name = "ClayformSpeed",
+            Name = "Clayform Speed",
             Stat = "% clayforming speed",
             LongDescription = "clayform speed",
             PersistenceHeader = "CFS",
@@ -897,7 +897,7 @@ namespace SeraphLeveling.Data.Attributes
         {
             Id = "healUseSpeed",
             SkillKey = "healusespeed",
-            Name = "HealUseSpeed",
+            Name = "Heal Use Speed",
             Stat = "% healing item use speed",
             LongDescription = "healing item use speed",
             PersistenceHeader = "HUS",
@@ -935,7 +935,7 @@ namespace SeraphLeveling.Data.Attributes
         {
             Id = "hoeDurability",
             SkillKey = "hoedurability",
-            Name = "HoeDurability",
+            Name = "Hoe Durability",
             Stat = "% hoe durability loss reduction",
             LongDescription = "hoe durability",
             PersistenceHeader = "HDR",
@@ -963,7 +963,7 @@ namespace SeraphLeveling.Data.Attributes
         {
             Id = "scytheDurability",
             SkillKey = "scythedurability",
-            Name = "ScytheDurability",
+            Name = "Scythe Durability",
             Stat = "% scythe durability loss reduction",
             LongDescription = "scythe durability",
             PersistenceHeader = "SDR",
@@ -991,7 +991,7 @@ namespace SeraphLeveling.Data.Attributes
         {
             Id = "hammerDurability",
             SkillKey = "hammerdurability",
-            Name = "HammerDurability",
+            Name = "Hammer Durability",
             Stat = "% hammer durability loss reduction",
             LongDescription = "hammer durability",
             PersistenceHeader = "HDR",
@@ -1019,7 +1019,7 @@ namespace SeraphLeveling.Data.Attributes
         {
             Id = "pickaxeDurability",
             SkillKey = "pickaxedurability",
-            Name = "PickaxeDurability",
+            Name = "Pickaxe Durability",
             Stat = "% pickaxe durability loss reduction",
             LongDescription = "pickaxe durability",
             PersistenceHeader = "PDR",
@@ -1047,7 +1047,7 @@ namespace SeraphLeveling.Data.Attributes
         {
             Id = "bowDurability",
             SkillKey = "bowdurability",
-            Name = "BowDurability",
+            Name = "Bow Durability",
             Stat = "% bow durability loss reduction",
             LongDescription = "bow durability",
             PersistenceHeader = "BDR",
@@ -1074,7 +1074,7 @@ namespace SeraphLeveling.Data.Attributes
         {
             Id = "bowDamage",
             SkillKey = "bowdamage",
-            Name = "BowDamage",
+            Name = "Bow Damage",
             Stat = "% bow damage increase",
             LongDescription = "bow damage",
             PersistenceHeader = "BDM",
@@ -1117,7 +1117,7 @@ namespace SeraphLeveling.Data.Attributes
             Id = "masterCraftsman",
             SkillKey = "mastercraftsman",
             PersistenceHeader = "MCR",
-            Name = "MasterCraftsman",
+            Name = "Master Craftsman",
             RequiredCollectionSize = 20,
             CollectedItemDescription = "items smithed",
             CollectedItemCountKey = "sitMasterCraftsmanCount",
