@@ -3190,10 +3190,6 @@ namespace SeraphLeveling
             // Track unlock-trait progression FIRST, independent of the ranged credit cap.
             // Bowyer and Improviser are separate unlocks that should still progress for players
             // who have already maxed their ranged credits.
-            if (IsBow(weaponCombo))
-            {
-                TrackBowyerBowDamage(attackerPlayer, damage);
-            }
             if (IsThrownRock(weaponCombo))
             {
                 TrackImproviserRockDamage(attackerPlayer, damage);
@@ -3202,12 +3198,6 @@ namespace SeraphLeveling
             DamageDealtTrigger?.Invoke(attackerPlayer, weaponCombo, damage);
         }
 
-        private static bool IsBow(string weaponCombo)
-        {
-            if (string.IsNullOrEmpty(weaponCombo)) return false;
-            string lower = weaponCombo.ToLowerInvariant();
-            return lower.Contains("bow-");
-        }
         /// <summary>
         /// Check if the weapon combo represents a thrown rock.
         /// </summary>
@@ -3218,17 +3208,6 @@ namespace SeraphLeveling
             return lower.Contains("stone-") || lower.Contains("sling+stone") ||
                    lower.StartsWith("stone") || lower.Contains("thrownstone") ||
                    (lower.Contains("stone") && !lower.Contains("whetstone"));
-        }
-
-        /// <summary>
-        /// Track bow damage for Bowyer unlock.
-        /// </summary>
-        private static void TrackBowyerBowDamage(IServerPlayer player, float damage)
-        {
-            if (player?.Entity == null || damage <= 0) return;
-
-            // Apply sleep buff multiplier if active
-            AttributeModifierDefinitions.Bowyer.AddCredits(player, ApplyXPMultiplier(player.PlayerUID, damage));
         }
 
         /// <summary>

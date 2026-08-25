@@ -81,6 +81,7 @@ namespace SeraphLeveling.Data.Attributes
             CreditDescription = "bow damage",
             WatchedCreditsAttributeKey = "sitBowyerBowDamage",
             Trait = new(() => Traits.TraitDefinitions.Bowyer),
+            Weapons = [ ToolDefinitions.Bow ],
         };
 
         public static readonly GenericUnlockedAttributeModifierDefinition Merciless = new()
@@ -1093,7 +1094,8 @@ namespace SeraphLeveling.Data.Attributes
                 }
             },
             GlobalMaxCredits = 75,
-            StatName = "ats:bow-?-rangedDamageMult"
+            StatName = "ats:bow-?-rangedDamageMult",
+            Weapons = [ ToolDefinitions.Bow ],
         };
 
         public static readonly GenericCollectionUnlockedAttributeModifierDefinition Potter = new()
