@@ -245,6 +245,7 @@ namespace SeraphLeveling.Data.CharacterClasses
                 TraitDefinitions.Soldier,
                 TraitDefinitions.Hardy,
                 TraitDefinitions.Mender,
+                TraitDefinitions.Improviser,
             ]
         };
     }
