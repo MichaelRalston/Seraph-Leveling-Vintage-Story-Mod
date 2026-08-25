@@ -466,6 +466,7 @@ namespace SeraphLeveling.Data.Attributes
             IncrementData = DamageIncrementData,
             GlobalMaxCredits = 50,
             StatName = "rangedWeaponsDamage",
+            Weapons = [ ToolDefinitions.RangedWeapon ],
         };
 
         public static readonly DamageAttributeModifierDefinition RangedAccuracy = new()
@@ -480,6 +481,7 @@ namespace SeraphLeveling.Data.Attributes
             IncrementData = DamageIncrementData,
             GlobalMaxCredits = 50,
             StatName = "rangedWeaponsAcc",
+            Weapons = [ ToolDefinitions.RangedWeapon ],
         };
 
         public static readonly DamageAttributeModifierDefinition RangedDistance = new()
@@ -494,6 +496,7 @@ namespace SeraphLeveling.Data.Attributes
             IncrementData = DamageIncrementData,
             GlobalMaxCredits = 50,
             StatName = "bowDrawingStrength",
+            Weapons = [ ToolDefinitions.RangedWeapon ],
         };
 
         public static readonly DamageAttributeModifierDefinition MeleeDamage = new()
@@ -508,6 +511,7 @@ namespace SeraphLeveling.Data.Attributes
             IncrementData = DamageIncrementData,
             GlobalMaxCredits = 50,
             StatName = "meleeWeaponsDamage",
+            Weapons = [ ToolDefinitions.MeleeWeapon ],
         };
 
         public static readonly DamageAttributeModifierDefinition Precise = new()
@@ -522,6 +526,7 @@ namespace SeraphLeveling.Data.Attributes
             IncrementData = DamageIncrementData,
             GlobalMaxCredits = 30,
             StatName = "mechanicalsDamage",
+            Weapons = [ ToolDefinitions.Weapon ],
         };
 
         public static readonly MaxHealthUnlockedAttributeModifierDefinition HardyHealth = new()

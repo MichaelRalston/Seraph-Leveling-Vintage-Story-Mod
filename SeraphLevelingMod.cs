@@ -2982,6 +2982,8 @@ namespace SeraphLeveling
             }
         }
 
+        public static event TriggerDamageDealtDelegate DamageDealtTrigger;
+
         /// <summary>
         /// Process melee damage dealt by a player. Called from Harmony patch.
         /// </summary>
@@ -3004,8 +3006,7 @@ namespace SeraphLeveling
                 AttributeModifierDefinitions.CleaverDamage.GetForPlayer(playerUid).DoEvent(attackerPlayer, weaponType, damage);
             }
 
-            var damageProgress = AttributeModifierDefinitions.MeleeDamage.GetForPlayer(playerUid);
-            damageProgress.DoEvent(attackerPlayer, weaponType, damage);
+            DamageDealtTrigger?.Invoke(attackerPlayer, weaponType, damage);
         }
 
         private static bool IsKnife(string weaponType)
@@ -3228,9 +3229,7 @@ namespace SeraphLeveling
                 TrackImproviserRockDamage(attackerPlayer, damage);
             }
 
-            AttributeModifierDefinitions.RangedDamage.GetForPlayer(playerUid).DoEvent(attackerPlayer, weaponCombo, damage);
-            AttributeModifierDefinitions.RangedAccuracy.GetForPlayer(playerUid).DoEvent(attackerPlayer, weaponCombo, damage);
-            AttributeModifierDefinitions.RangedDistance.GetForPlayer(playerUid).DoEvent(attackerPlayer, weaponCombo, damage);
+            DamageDealtTrigger?.Invoke(attackerPlayer, weaponCombo, damage);
         }
 
         private static bool IsBow(string weaponCombo)
@@ -3587,7 +3586,8 @@ namespace SeraphLeveling
                     Stat = AttributeModifierDefinitions.RangedDamage.Stat,
                     IncrementData = AttributeModifierDefinitions.RangedDamage.IncrementData,
                     StatName = AttributeModifierDefinitions.RangedDamage.StatName,
-                    Tools = AttributeModifierDefinitions.RangedDamage.Tools
+                    Tools = AttributeModifierDefinitions.RangedDamage.Tools,
+                    Weapons = AttributeModifierDefinitions.RangedDamage.Weapons,
                 };
                 Conversion.PortData<DamageAttributeModifierDefinition, DamageAttributeModifierProgressData>(legacyRangedDamage, AttributeModifierDefinitions.RangedDamage, ServerApi);
                 Conversion.PortData<DamageAttributeModifierDefinition, DamageAttributeModifierProgressData>(legacyRangedDamage, AttributeModifierDefinitions.RangedAccuracy, ServerApi);

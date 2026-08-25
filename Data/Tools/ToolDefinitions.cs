@@ -17,5 +17,7 @@ namespace SeraphLeveling.Data.Tools
         public static readonly ToolDefinition Knife = new("knife", EnumTool.Knife);
         public static readonly ToolDefinition Cleaver = new("cleaver", EnumTool.Knife); // Cleaver tools are defined in other mods, not the base game, so treat them like a knife here
         public static readonly ToolDefinition Shears = new("shears", EnumTool.Shears);
+        public static readonly ToolDefinition MeleeWeapon = new("melee weapon", [EnumTool.Axe, EnumTool.Club, EnumTool.Halberd, EnumTool.Hammer, EnumTool.Knife, EnumTool.Mace, EnumTool.Pike, EnumTool.Polearm, EnumTool.Poleaxe, EnumTool.Scythe, EnumTool.Sickle, EnumTool.Spear, EnumTool.Staff, EnumTool.Sword, EnumTool.Warhammer]);
+        public static readonly ToolDefinition RangedWeapon = new("ranged weapon", [EnumTool.Bow, EnumTool.Crossbow, EnumTool.Firearm, EnumTool.Javelin, EnumTool.Sling, EnumTool.Spear]);
     }
 }
