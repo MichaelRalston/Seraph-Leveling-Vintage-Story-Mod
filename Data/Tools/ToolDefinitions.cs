@@ -16,5 +16,6 @@ namespace SeraphLeveling.Data.Tools
         public static readonly ToolDefinition Hammer = new("hammer", EnumTool.Hammer);
         public static readonly ToolDefinition Knife = new("knife", EnumTool.Knife);
         public static readonly ToolDefinition Cleaver = new("cleaver", EnumTool.Knife); // Cleaver tools are defined in other mods, not the base game, so treat them like a knife here
+        public static readonly ToolDefinition Shears = new("shears", EnumTool.Shears);
     }
 }

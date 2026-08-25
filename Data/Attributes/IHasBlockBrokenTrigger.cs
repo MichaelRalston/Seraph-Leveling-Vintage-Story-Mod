@@ -1,10 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Concurrent;
 using SeraphLeveling.Data.Tools;
 using SeraphLeveling.Util;
 using Vintagestory.API.Common;
 using Vintagestory.API.MathTools;
 using Vintagestory.API.Server;
+using System.Linq;
 
 namespace SeraphLeveling.Data.Attributes
 {
@@ -12,7 +14,7 @@ namespace SeraphLeveling.Data.Attributes
 
     public interface IHasBlockBrokenTrigger<D, PD, E> : ISaveableAttribute where PD : LeveledToolAttributeModifierProgressData<D, PD, E> where D : LeveledToolAttributeModifierDefinition<D, PD, E>, IConstructable<D, PD> where E : Enum
     {
-        public ToolDefinition Tool { get; }
+        public List<ToolDefinition> Tools { get; }
         public ConcurrentDictionary<IAssetLocationMatcher, float> BrokenBlockScores { get; }
 
         public PD GetForPlayer(string playerUid);
@@ -36,7 +38,7 @@ namespace SeraphLeveling.Data.Attributes
 
         public void OnTriggerBlockBroken(IServerPlayer player, AssetLocation toolCode, int blockId, BlockPos blockPos)
         {
-            if (player == null || !Tool.Matches(toolCode) || !SeraphLevelingModSystem.LoadedAttributes.Contains(this))
+            if (player == null || !Tools.Any(tool => tool.Matches(toolCode)) || !SeraphLevelingModSystem.LoadedAttributes.Contains(this))
             {
                 return;
             }

@@ -319,7 +319,7 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% mining speed",
             LongDescription = "mining speed",
             PersistenceHeader = "SIT",
-            Tool = ToolDefinitions.Pickaxe,
+            Tools = [ ToolDefinitions.Pickaxe ],
             IncrementData = MiningIncrementData,
             GlobalMaxCredits = 50,
             StatName = "miningSpeedMul",
@@ -334,7 +334,7 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% bonus stone drop rate",
             LongDescription = "stone drop rate",
             PersistenceHeader = "SDR",
-            Tool = ToolDefinitions.Pickaxe,
+            Tools = [ ToolDefinitions.Pickaxe ],
             IncrementData = MiningIncrementData,
             GlobalMaxCredits = 300,
             StatName = "sacredlib:stoneDropRate",
@@ -349,7 +349,7 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% bonus ore drop rate",
             LongDescription = "ore drop rate",
             PersistenceHeader = "SDR",
-            Tool = ToolDefinitions.Pickaxe,
+            Tools = [ ToolDefinitions.Pickaxe ],
             IncrementData = MiningIncrementData,
             GlobalMaxCredits = 300,
             StatName = "sacredlib:oreDropRate",
@@ -374,7 +374,7 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% bonus wood drop rate",
             LongDescription = "wood drop rate",
             PersistenceHeader = "WDR",
-            Tool = ToolDefinitions.Axe,
+            Tools = [ ToolDefinitions.Shears, ToolDefinitions.Axe ],
             IncrementData = TreeIncrementData,
             GlobalMaxCredits = 100,
             StatName = "sacredlib:woodDropRate"
@@ -388,7 +388,7 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% bonus tree seed drop rate",
             LongDescription = "tree seed drop rate",
             PersistenceHeader = "SDR",
-            Tool = ToolDefinitions.Axe,
+            Tools = [ ToolDefinitions.Shears, ToolDefinitions.Axe ],
             IncrementData = TreeIncrementData,
             GlobalMaxCredits = 1000,
             StatName = "sacredlib:treeseedDropRate"
@@ -402,7 +402,7 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% bonus stick drop rate",
             LongDescription = "stick drop rate",
             PersistenceHeader = "WDR",
-            Tool = ToolDefinitions.Axe,
+            Tools = [ ToolDefinitions.Shears, ToolDefinitions.Axe ],
             IncrementData = TreeIncrementData,
             GlobalMaxCredits = 300,
             StatName = "sacredlib:stickDropRate"
@@ -453,7 +453,7 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% ranged damage",
             SkillKey = "ranged",
             PersistenceHeader = "SIR",
-            Tool = ToolDefinitions.Weapon,
+            Tools = [ ToolDefinitions.Weapon ],
             IncrementData = DamageIncrementData,
             GlobalMaxCredits = 50,
             StatName = "rangedWeaponsDamage",
@@ -467,7 +467,7 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% ranged accuracy",
             SkillKey = "rangedaccuracy",
             PersistenceHeader = "SIR",
-            Tool = ToolDefinitions.Weapon,
+            Tools = [ ToolDefinitions.Weapon ],
             IncrementData = DamageIncrementData,
             GlobalMaxCredits = 50,
             StatName = "rangedWeaponsAcc",
@@ -481,7 +481,7 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% ranged distance",
             SkillKey = "rangeddistance",
             PersistenceHeader = "SIR",
-            Tool = ToolDefinitions.Weapon,
+            Tools = [ ToolDefinitions.Weapon ],
             IncrementData = DamageIncrementData,
             GlobalMaxCredits = 50,
             StatName = "bowDrawingStrength",
@@ -495,7 +495,7 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% melee damage",
             SkillKey = "melee",
             PersistenceHeader = "SIM",
-            Tool = ToolDefinitions.Weapon,
+            Tools = [ ToolDefinitions.Weapon ],
             IncrementData = DamageIncrementData,
             GlobalMaxCredits = 50,
             StatName = "meleeWeaponsDamage",
@@ -509,7 +509,7 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% mechanical damage",
             SkillKey = "precise",
             PersistenceHeader = "PRC",
-            Tool = ToolDefinitions.Weapon,
+            Tools = [ ToolDefinitions.Weapon ],
             IncrementData = DamageIncrementData,
             GlobalMaxCredits = 30,
             StatName = "mechanicalsDamage",
@@ -622,7 +622,7 @@ namespace SeraphLeveling.Data.Attributes
             IsInverted = true,
             InvertedOnDisplay = false,
             StatName = "armorDurabilityLoss",
-            Tool = ToolDefinitions.Armor,
+            Tools = [ ToolDefinitions.Armor ],
             IncrementData = ArmorDurabilityIncrementData,
             GlobalMaxCredits = 50,
         };
@@ -645,7 +645,7 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "ARW",
             IsInverted = true,
             StatName = "armorWalkSpeedAffectedness",
-            Tool = ToolDefinitions.Armor,
+            Tools = [ ToolDefinitions.Armor ],
             IncrementData = ArmorWornIncrementData,
             GlobalMaxCredits = 50,
         };
@@ -658,7 +658,7 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "ARH",
             IsInverted = true,
             StatName = "hungerrate",
-            Tool = ToolDefinitions.Armor,
+            Tools = [ ToolDefinitions.Armor ],
             IncrementData = ArmorWornIncrementData,
             GlobalMaxCredits = 50,
         };
@@ -670,7 +670,7 @@ namespace SeraphLeveling.Data.Attributes
             SkillKey = "armorhealing",
             PersistenceHeader = "ARH",
             StatName = "healingeffectivness", // yes, misspelled - that's correct.
-            Tool = ToolDefinitions.Armor,
+            Tools = [ ToolDefinitions.Armor ],
             IncrementData = ArmorWornIncrementData,
             GlobalMaxCredits = 25,
         };
@@ -712,7 +712,7 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% chopping speed",
             LongDescription = "chopping speed",
             PersistenceHeader = "TRC",
-            Tool = ToolDefinitions.Axe,
+            Tools = [ ToolDefinitions.Axe ],
             IncrementData = TreeChoppingIncrementData,
             GlobalMaxCredits = 250,
             StatName = "ats:wood|axe-?-harvestSpeed",
@@ -727,7 +727,7 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% axe damage",
             SkillKey = "axedamage",
             PersistenceHeader = "XDM",
-            Tool = ToolDefinitions.Axe,
+            Tools = [ ToolDefinitions.Axe ],
             IncrementData = TreeChoppingIncrementData,
             GlobalMaxCredits = 100,
             StatName = "ats:axe-?-meleeDamageMult",
@@ -744,7 +744,7 @@ namespace SeraphLeveling.Data.Attributes
             IsInverted = true,
             InvertedOnDisplay = false,
             StatName = "ats:axe-?-reduceDurabilityLoss",
-            Tool = ToolDefinitions.Axe,
+            Tools = [ ToolDefinitions.Axe ],
             IncrementData = new()
             {
                 [RepairableToolProgress.Usage] = new()
@@ -802,7 +802,7 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% bonus clay drop rate",
             LongDescription = "clay drop rate",
             PersistenceHeader = "CLD",
-            Tool = ToolDefinitions.Shovel,
+            Tools = [ ToolDefinitions.Shovel ],
             IncrementData = DiggingIncrementData,
             GlobalMaxCredits = 50,
             StatName = "sacredlib:clayDropRate",
@@ -817,7 +817,7 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% bonus peat drop rate",
             LongDescription = "peat drop rate",
             PersistenceHeader = "PDR",
-            Tool = ToolDefinitions.Shovel,
+            Tools = [ ToolDefinitions.Shovel ],
             IncrementData = DiggingIncrementData,
             GlobalMaxCredits = 50,
             StatName = "sacredlib:peatDropRate",
@@ -832,7 +832,7 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% clayforming speed",
             LongDescription = "clayform speed",
             PersistenceHeader = "CFS",
-            Tool = ToolDefinitions.Shovel,
+            Tools = [ ToolDefinitions.Shovel ],
             IncrementData = DiggingIncrementData,
             GlobalMaxCredits = 100,
             StatName = "ats:handclayformingspeed",
@@ -885,7 +885,7 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% healing item use speed",
             LongDescription = "healing item use speed",
             PersistenceHeader = "HUS",
-            Tool = ToolDefinitions.Poultice,
+            Tools = [ ToolDefinitions.Poultice ],
             IncrementData = HealingIncrementData,
             GlobalMaxCredits = 75,
             StatName = "ats:healitemusetime"
@@ -923,7 +923,7 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% hoe durability loss reduction",
             LongDescription = "hoe durability",
             PersistenceHeader = "HDR",
-            Tool = ToolDefinitions.Hoe,
+            Tools = [ ToolDefinitions.Hoe ],
             IncrementData = new()
             {
                 [RepairableToolProgress.Usage] = new()
@@ -951,7 +951,7 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% scythe durability loss reduction",
             LongDescription = "scythe durability",
             PersistenceHeader = "SDR",
-            Tool = ToolDefinitions.Scythe,
+            Tools = [ ToolDefinitions.Scythe ],
             IncrementData = new()
             {
                 [RepairableToolProgress.Usage] = new()
@@ -979,7 +979,7 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% hammer durability loss reduction",
             LongDescription = "hammer durability",
             PersistenceHeader = "HDR",
-            Tool = ToolDefinitions.Hammer,
+            Tools = [ ToolDefinitions.Hammer ],
             IncrementData = new()
             {
                 [RepairableToolProgress.Usage] = new()
@@ -1007,7 +1007,7 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% pickaxe durability loss reduction",
             LongDescription = "pickaxe durability",
             PersistenceHeader = "PDR",
-            Tool = ToolDefinitions.Pickaxe,
+            Tools = [ ToolDefinitions.Pickaxe ],
             IncrementData = new()
             {
                 [RepairableToolProgress.Usage] = new()
@@ -1035,7 +1035,7 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% bow durability loss reduction",
             LongDescription = "bow durability",
             PersistenceHeader = "BDR",
-            Tool = ToolDefinitions.Bow,
+            Tools = [ ToolDefinitions.Bow ],
             IncrementData = new()
             {
                 [RepairableToolProgress.Usage] = new()
@@ -1062,7 +1062,7 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% bow damage increase",
             LongDescription = "bow damage",
             PersistenceHeader = "BDM",
-            Tool = ToolDefinitions.Bow,
+            Tools = [ ToolDefinitions.Bow ],
             IncrementData = new()
             {
                 [RepairableToolProgress.Usage] = new()
@@ -1126,7 +1126,7 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% smithing speed",
             LongDescription = "smithing speed",
             PersistenceHeader = "SMS",
-            Tool = ToolDefinitions.Hammer,
+            Tools = [ ToolDefinitions.Hammer ],
             IncrementData = SmithingIncrementData,
             GlobalMaxCredits = 100,
             StatName = "ats:handsmithingspeed"
@@ -1140,7 +1140,7 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% bit recovery rate",
             LongDescription = "bit recovery rate",
             PersistenceHeader = "BRR",
-            Tool = ToolDefinitions.Hammer,
+            Tools = [ ToolDefinitions.Hammer ],
             IncrementData = SmithingIncrementData,
             GlobalMaxCredits = 100,
             StatName = "ats:bitrecoveryrate"
@@ -1154,7 +1154,7 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% hammer damage",
             SkillKey = "hammerdamage",
             PersistenceHeader = "HDM",
-            Tool = ToolDefinitions.Hammer,
+            Tools = [ ToolDefinitions.Hammer ],
             IncrementData = DamageIncrementData,
             GlobalMaxCredits = 100,
             StatName = "ats:hammer-?-meleeDamageMult",
@@ -1168,7 +1168,7 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% tempering power loss",
             SkillKey = "temperpowerloss",
             PersistenceHeader = "TPL",
-            Tool = ToolDefinitions.Hammer,
+            Tools = [ ToolDefinitions.Hammer ],
             IncrementData = DamageIncrementData,
             GlobalMaxCredits = 10,
             StatName = "ats:temperingpowerlossrate",
@@ -1183,7 +1183,7 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% quenching shatter chance reduction",
             SkillKey = "quenchshatter",
             PersistenceHeader = "QNS",
-            Tool = ToolDefinitions.Hammer,
+            Tools = [ ToolDefinitions.Hammer ],
             IncrementData = DamageIncrementData,
             GlobalMaxCredits = 5,
             StatName = "ats:quenchshatterrate",
@@ -1198,7 +1198,7 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% knife damage",
             SkillKey = "knifedamage",
             PersistenceHeader = "KDM",
-            Tool = ToolDefinitions.Knife,
+            Tools = [ ToolDefinitions.Knife ],
             IncrementData = DamageIncrementData,
             GlobalMaxCredits = 100,
             StatName = "ats:knife-?-meleeDamageMult",
@@ -1212,7 +1212,7 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% knife durability loss reduction",
             LongDescription = "knife durability",
             PersistenceHeader = "KDR",
-            Tool = ToolDefinitions.Knife,
+            Tools = [ ToolDefinitions.Knife ],
             IncrementData = new()
             {
                 [RepairableToolProgress.Usage] = new()
@@ -1241,7 +1241,7 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% cleaver damage",
             SkillKey = "cleaverdamage",
             PersistenceHeader = "CDM",
-            Tool = ToolDefinitions.Knife,
+            Tools = [ ToolDefinitions.Knife ],
             IncrementData = DamageIncrementData,
             GlobalMaxCredits = 100,
             StatName = "ats:aculinaryartillery:cleaver-?-meleeDamageMult",

@@ -56,7 +56,20 @@ namespace SeraphLeveling.Data.Attributes
                 ["step"] = IncrementStep,
             };
         }
-        public required ToolDefinition Tool { get; init; }
+        public required List<ToolDefinition> Tools { get; init; }
+        public virtual string ToolsDescription
+        {
+            get
+            {
+                return Tools.Count switch
+                {
+                    1 => Tools[0]?.Name ?? "",
+                    2 => (Tools[0]?.Name ?? "") + " or " + (Tools[1]?.Name ?? ""),
+                    > 2 => string.Join(", ", Tools.SkipLast(1).Select(tool => tool?.Name ?? "")) + ", or " + (Tools.Last()?.Name ?? ""),
+                    _ => "",
+                };
+            }
+        }
         public override void ResetProgress(IServerPlayer player)
         {
             var progress = GetDict(player);
@@ -131,7 +144,7 @@ namespace SeraphLeveling.Data.Attributes
                 BaseIncrement = newValue.Value;
                 SeraphLevelingModSystem.pendingConfigSave = true;
 
-                return TextCommandResult.Success($"Base {IncrementUnits} per increment set to {BaseIncrement}. New {Tool.Name} will require this many {IncrementUnits} for the first 1%.");
+                return TextCommandResult.Success($"Base {IncrementUnits} per increment set to {BaseIncrement}. New {ToolsDescription} will require this many {IncrementUnits} for the first 1%.");
             }
             else
             {
@@ -360,7 +373,7 @@ namespace SeraphLeveling.Data.Attributes
         {
             if (ToolProgress.Count > 0)
             {
-                sb.AppendLine($"\nPer-{Definition.Tool.Name} progress:");
+                sb.AppendLine($"\nPer-{Definition.ToolsDescription} progress:");
                 foreach (var kvp in ToolProgress.OrderBy(p => p.Value.PartialCredit.Sum(t => p.Value.GetLevel(t.Key))))
                 {
                     // Simplify the display name (remove "game:" prefix if present)
@@ -374,7 +387,7 @@ namespace SeraphLeveling.Data.Attributes
             }
             else
             {
-                sb.AppendLine($"\nNo {Definition.Tool.Name} progress yet.");
+                sb.AppendLine($"\nNo {Definition.ToolsDescription} progress yet.");
             }
         }
 

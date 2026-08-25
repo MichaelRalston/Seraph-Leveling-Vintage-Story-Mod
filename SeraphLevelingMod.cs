@@ -3607,7 +3607,7 @@ namespace SeraphLeveling
                     Stat = AttributeModifierDefinitions.RangedDamage.Stat,
                     IncrementData = AttributeModifierDefinitions.RangedDamage.IncrementData,
                     StatName = AttributeModifierDefinitions.RangedDamage.StatName,
-                    Tool = AttributeModifierDefinitions.RangedDamage.Tool
+                    Tools = AttributeModifierDefinitions.RangedDamage.Tools
                 };
                 Conversion.PortData<DamageAttributeModifierDefinition, DamageAttributeModifierProgressData>(legacyRangedDamage, AttributeModifierDefinitions.RangedDamage, ServerApi);
                 Conversion.PortData<DamageAttributeModifierDefinition, DamageAttributeModifierProgressData>(legacyRangedDamage, AttributeModifierDefinitions.RangedAccuracy, ServerApi);
