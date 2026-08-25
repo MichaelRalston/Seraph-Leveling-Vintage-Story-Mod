@@ -304,6 +304,13 @@ namespace SeraphLeveling.Data.Attributes
             }
         };
 
+        private static readonly ConcurrentDictionary<IAssetLocationMatcher, float> StoneBlockPoints = new()
+        {
+            [Simple("ore-", MatcherType.PathContains)] = SeraphLevelingModSystem.OreMultiplier,
+            [Or(Simple("meteorite"), Simple("meteoriciron", MatcherType.PathContains))] = SeraphLevelingModSystem.OreMultiplier,
+            [Or(Simple("rock-"), Simple("crackedrock-"))] = 1,
+        };
+
         public static readonly MiningAttributeModifierDefinition MiningSpeed = new()
         {
             Id = "miningSpeed",
@@ -315,7 +322,8 @@ namespace SeraphLeveling.Data.Attributes
             Tool = ToolDefinitions.Pickaxe,
             IncrementData = MiningIncrementData,
             GlobalMaxCredits = 50,
-            StatName = "miningSpeedMul"
+            StatName = "miningSpeedMul",
+            BrokenBlockScores = StoneBlockPoints,
         };
 
         public static readonly MiningAttributeModifierDefinition StoneDropRate = new()
@@ -329,7 +337,8 @@ namespace SeraphLeveling.Data.Attributes
             Tool = ToolDefinitions.Pickaxe,
             IncrementData = MiningIncrementData,
             GlobalMaxCredits = 300,
-            StatName = "sacredlib:stoneDropRate"
+            StatName = "sacredlib:stoneDropRate",
+            BrokenBlockScores = StoneBlockPoints,
         };
 
         public static readonly MiningAttributeModifierDefinition OreDropRate = new()
@@ -343,7 +352,8 @@ namespace SeraphLeveling.Data.Attributes
             Tool = ToolDefinitions.Pickaxe,
             IncrementData = MiningIncrementData,
             GlobalMaxCredits = 300,
-            StatName = "sacredlib:oreDropRate"
+            StatName = "sacredlib:oreDropRate",
+            BrokenBlockScores = StoneBlockPoints,
         };
 
         public static readonly ConcurrentDictionary<SimpleToolProgress, IncrementData> TreeIncrementData = new()
@@ -689,6 +699,11 @@ namespace SeraphLeveling.Data.Attributes
             }
         };
 
+        private static readonly ConcurrentDictionary<IAssetLocationMatcher, float> WoodLogPoints = new()
+        {
+            [Simple("log-grown-")] = 5,
+        };
+
         public static readonly GenericToolAttributeModifierDefinition TreeChoppingSpeed = new()
         {
             Id = "treeChoppingSpeed",
@@ -700,7 +715,8 @@ namespace SeraphLeveling.Data.Attributes
             Tool = ToolDefinitions.Axe,
             IncrementData = TreeChoppingIncrementData,
             GlobalMaxCredits = 250,
-            StatName = "ats:wood|axe-?-harvestSpeed"
+            StatName = "ats:wood|axe-?-harvestSpeed",
+            BrokenBlockScores = WoodLogPoints,
         };
 
         public static readonly GenericToolAttributeModifierDefinition AxeDamage = new()
@@ -715,6 +731,7 @@ namespace SeraphLeveling.Data.Attributes
             IncrementData = TreeChoppingIncrementData,
             GlobalMaxCredits = 100,
             StatName = "ats:axe-?-meleeDamageMult",
+            BrokenBlockScores = WoodLogPoints,
         };
 
         public static readonly GenericRepairableToolAttributeModifierDefinition AxeDurability = new()
@@ -770,6 +787,13 @@ namespace SeraphLeveling.Data.Attributes
             }
         };
 
+        private static readonly ConcurrentDictionary<IAssetLocationMatcher, float> DirtPoints = new()
+        {
+            [Simple("rawclay-")] = 5,
+            [Simple("peat-")] = 5,
+            [Or(Simple("soil-"), Simple("forestfloor-"), Simple("farmland-"))] = 1,
+        };
+
         public static readonly GenericToolAttributeModifierDefinition ClayDropRate = new()
         {
             Id = "clayDropRate",
@@ -781,7 +805,8 @@ namespace SeraphLeveling.Data.Attributes
             Tool = ToolDefinitions.Shovel,
             IncrementData = DiggingIncrementData,
             GlobalMaxCredits = 50,
-            StatName = "sacredlib:clayDropRate"
+            StatName = "sacredlib:clayDropRate",
+            BrokenBlockScores = DirtPoints,
         };
 
         public static readonly GenericToolAttributeModifierDefinition PeatDropRate = new()
@@ -795,7 +820,8 @@ namespace SeraphLeveling.Data.Attributes
             Tool = ToolDefinitions.Shovel,
             IncrementData = DiggingIncrementData,
             GlobalMaxCredits = 50,
-            StatName = "sacredlib:peatDropRate"
+            StatName = "sacredlib:peatDropRate",
+            BrokenBlockScores = DirtPoints,
         };
 
         public static readonly GenericToolAttributeModifierDefinition ClayformSpeed = new()
@@ -809,7 +835,8 @@ namespace SeraphLeveling.Data.Attributes
             Tool = ToolDefinitions.Shovel,
             IncrementData = DiggingIncrementData,
             GlobalMaxCredits = 100,
-            StatName = "ats:handclayformingspeed"
+            StatName = "ats:handclayformingspeed",
+            BrokenBlockScores = DirtPoints,
         };
 
         public static readonly GenericGridCraftUnlockedAttributeModifierDefinition Mason = new()

@@ -1487,9 +1487,9 @@ namespace SeraphLeveling
             return heldItem.Code;
         }
 
-        private AssetLocation GetBlockCode(int blockId)
+        public static AssetLocation GetBlockCode(int blockId)
         {
-            if (ServerApi == null) return "";
+            if (ServerApi == null) return null;
 
             var block = ServerApi.World.GetBlock(blockId);
             return block?.Code;
@@ -2021,6 +2021,8 @@ namespace SeraphLeveling
             AttributeModifierDefinitions.ArmorDurability.GetForPlayer(playerUid).DoEvent(player, armorCode, 1, ArmorDurabilityProgressTypes.RepairProgress);
         }
 
+        public static event TriggerBlockBrokenDelegate BlockBrokenTrigger;
+
         /// <summary>
         /// Called when a player breaks a block. Updates mining progress based on new mechanics:
         /// - Only counts blocks broken with pickaxes
@@ -2054,67 +2056,28 @@ namespace SeraphLeveling
                 ProcessCharcoalBreak(byPlayer, charcoalPoints);
             }
 
+            var toolCode = byPlayer.Entity?.RightHandItemSlot?.Itemstack?.Collectible?.Code;
+
+            // Fire event for attributes that care about broken blocks
+            BlockBrokenTrigger?.Invoke(byPlayer, toolCode, oldblockId, blockSel?.Position);
+
             string playerUid = byPlayer.PlayerUID;
 
             // Check if player is using a tool for progression
-            string pickaxeCode = GetHeldPickaxeCode(byPlayer);
             string axeCode = GetHeldAxeCode(byPlayer);
-            string shovelCode = GetHeldShovelCode(byPlayer);
             string shearsCode = GetHeldShearsCode(byPlayer);
-
-            // Handle pickaxe specific attributes
-            if (pickaxeCode != null)
-            {
-                // Check block type and get points
-                int points = GetStoneBlockPoints(oldblockId);
-                if (points > 0)
-                {
-                    AttributeModifierDefinitions.MiningSpeed.GetForPlayer(playerUid).DoEvent(byPlayer, pickaxeCode, points);
-                    AttributeModifierDefinitions.OreDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, pickaxeCode, points);
-                    AttributeModifierDefinitions.StoneDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, pickaxeCode, points);
-                }
-            }
-
-            // Handle axe specific attributes
-            if (axeCode != null)
-            {
-                // Check block type and get points
-                int woodPoints = GetWoodLogPoints(oldblockId);
-                if (woodPoints > 0)
-                {
-                    AttributeModifierDefinitions.TreeChoppingSpeed.GetForPlayer(playerUid).DoEvent(byPlayer, axeCode, woodPoints);
-                    AttributeModifierDefinitions.AxeDamage.GetForPlayer(playerUid).DoEvent(byPlayer, axeCode, woodPoints);
-                }
-            }
-
-            // Handle shovel specific attributes
-            if (shovelCode != null)
-            {
-                // Check block type and get points
-                int dirtPoints = GetDirtPoints(oldblockId);
-                if (dirtPoints > 0)
-                {
-                    AttributeModifierDefinitions.ClayDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, shovelCode, dirtPoints);
-                    AttributeModifierDefinitions.ClayformSpeed.GetForPlayer(playerUid).DoEvent(byPlayer, shovelCode, dirtPoints);
-                    AttributeModifierDefinitions.PeatDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, shovelCode, dirtPoints);
-                }
-            }
 
             // Handle attributes satisfied by an axe or shears
             if (shearsCode != null || axeCode != null)
             {
                 // Check block type and get points
-                string toolCode = shearsCode ?? axeCode;
+                string mergedToolCode = shearsCode ?? axeCode;
                 int leavesPoints = GetLeavesPoints(oldblockId);
                 if (leavesPoints > 0)
                 {
-                    AttributeModifierDefinitions.WoodDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, toolCode, leavesPoints);
-                    AttributeModifierDefinitions.SeedDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, toolCode, leavesPoints);
-                    AttributeModifierDefinitions.StickDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, toolCode, leavesPoints);
-                    if (axeCode != null)
-                    {
-                        AttributeModifierDefinitions.AxeDurability.GetForPlayer(playerUid).DoEvent(byPlayer, pickaxeCode, leavesPoints, RepairableToolProgress.Usage);
-                    }
+                    AttributeModifierDefinitions.WoodDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, mergedToolCode, leavesPoints);
+                    AttributeModifierDefinitions.SeedDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, mergedToolCode, leavesPoints);
+                    AttributeModifierDefinitions.StickDropRate.GetForPlayer(playerUid).DoEvent(byPlayer, mergedToolCode, leavesPoints);
                 }
             }
         }

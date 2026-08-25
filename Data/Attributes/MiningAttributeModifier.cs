@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.Concurrent;
 using Vintagestory.API.Common;
 using Vintagestory.API.Server;
+using SeraphLeveling.Util;
 
 namespace SeraphLeveling.Data.Attributes
 {
@@ -103,9 +104,24 @@ namespace SeraphLeveling.Data.Attributes
             }
         }
     }
-    public class MiningAttributeModifierDefinition : LeveledToolAttributeModifierDefinition<MiningAttributeModifierDefinition, MiningAttributeModifierProgressData, SimpleToolProgress>, IConstructable<MiningAttributeModifierDefinition, MiningAttributeModifierProgressData>
+    public class MiningAttributeModifierDefinition : LeveledToolAttributeModifierDefinition<MiningAttributeModifierDefinition, MiningAttributeModifierProgressData, SimpleToolProgress>, 
+        IConstructable<MiningAttributeModifierDefinition, MiningAttributeModifierProgressData>,
+        IHasBlockBrokenTrigger<MiningAttributeModifierDefinition, MiningAttributeModifierProgressData, SimpleToolProgress>
     {
+        public MiningAttributeModifierDefinition()
+        {
+            SeraphLevelingModSystem.BlockBrokenTrigger += ((IHasBlockBrokenTrigger<MiningAttributeModifierDefinition, MiningAttributeModifierProgressData, SimpleToolProgress>)this).OnTriggerBlockBroken;
+        }
+
+        ~MiningAttributeModifierDefinition()
+        {
+            SeraphLevelingModSystem.BlockBrokenTrigger -= ((IHasBlockBrokenTrigger<MiningAttributeModifierDefinition, MiningAttributeModifierProgressData, SimpleToolProgress>)this).OnTriggerBlockBroken;
+        }
+
         public override byte PersistenceVersion { get; init; } = 5;
+
+        public required ConcurrentDictionary<IAssetLocationMatcher, float> BrokenBlockScores { get; init; }
+
         public static MiningAttributeModifierProgressData Create(MiningAttributeModifierDefinition definition) { return new MiningAttributeModifierProgressData(definition); }
     }
 }
