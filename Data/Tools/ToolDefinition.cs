@@ -41,7 +41,7 @@ namespace SeraphLeveling.Data.Tools
             if (itemCode.Path.Contains('+'))
             {
                 // If the given item code is a combination of items, e.g. "sling+stone", then split it up and match if any of the parts are a match
-                return itemCode.Path.Split('+').Select(token => AssetLocation.Create(itemCode.Domain, token)).Any(MatchesInner);
+                return itemCode.Path.Split('+').Select(token => AssetLocation.Create(token, itemCode.Domain)).Any(MatchesInner);
             }
             else
             {
