@@ -316,14 +316,17 @@ namespace SeraphLeveling
                     group => group.Key,
                     group => group.Select(x => x.TraitTuple).ToImmutableList()
                 );
-            ServerApi.Logger.Notification("[SeraphLeveling] loaded attributes, verifying list...");
-            foreach (var attribute in LoadedAttributes)
+            if (ServerApi != null)
             {
-                ServerApi.Logger.Notification($"[SeraphLeveling] attribute {attribute.Id} loaded.");
-            }
-            foreach (var (attrKey, traitList) in TraitsForAttributes)
-            {
-                ServerApi.Logger.Notification($"[SeraphLeveling] attribute {attrKey} linked to {traitList.Count} traits.");
+                ServerApi.Logger.Notification("[SeraphLeveling] loaded attributes, verifying list...");
+                foreach (var attribute in LoadedAttributes)
+                {
+                    ServerApi.Logger.Notification($"[SeraphLeveling] attribute {attribute.Id} loaded.");
+                }
+                foreach (var (attrKey, traitList) in TraitsForAttributes)
+                {
+                    ServerApi.Logger.Notification($"[SeraphLeveling] attribute {attrKey} linked to {traitList.Count} traits.");
+                }
             }
             foreach (var definition in LoadedAttributes)
             {
@@ -357,6 +360,7 @@ namespace SeraphLeveling
         private static void DetectButchering(IModLoader modLoader)
         {
             IsButcheringLoaded = DetectAnyButchering(modLoader);
+            if (ServerApi == null) return;
             if (IsButcheringLoaded)
             {
                 if (ButcheringEnableCompat)
@@ -397,6 +401,7 @@ namespace SeraphLeveling
         private static void DetectSacredLib(IModLoader modLoader)
         {
             IsSacredLibLoaded = DetectAnySacredLib(modLoader);
+            if (ServerApi == null) return;
             if (IsSacredLibLoaded)
             {
                 if (SacredLibEnableCompat)
@@ -3184,7 +3189,7 @@ namespace SeraphLeveling
                 {
                     launcherCode = heldCheck;
                 }
-                return ($"{launcherCode}+{projCheck}", tool??projTool);
+                return ($"{launcherCode}+{projCheck}", tool ?? projTool);
             }
 
             return (null, null);
@@ -4755,7 +4760,7 @@ namespace SeraphLeveling
             // application, and the /trait co* commands.
             IsCombatOverhaulLoaded = DetectAnyCombatOverhaul(modLoader);
             IsCombatOverhaulForkLoaded = modLoader.IsModEnabled("combatoverhaulfork");
-
+            if (ServerApi == null) return;
             if (IsCombatOverhaulLoaded)
             {
                 string which = IsCombatOverhaulForkLoaded
