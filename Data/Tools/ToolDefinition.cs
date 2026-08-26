@@ -51,6 +51,7 @@ namespace SeraphLeveling.Data.Tools
 
         public bool Matches(AssetLocation itemCode)
         {
+            if (itemCode == null) return false;
             if (itemCode.Path.Contains('+'))
             {
                 // If the given item code is a combination of items, e.g. "sling+stone", then split it up and match if any of the parts are a match

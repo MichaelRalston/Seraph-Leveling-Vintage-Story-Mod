@@ -1932,6 +1932,7 @@ namespace SeraphLeveling
             }
 
             var toolCode = byPlayer.Entity?.RightHandItemSlot?.Itemstack?.Collectible?.Code;
+            if (toolCode == null) return;
 
             // Fire event for attributes that care about broken blocks
             BlockBrokenTrigger?.Invoke(byPlayer, toolCode, oldblockId, blockSel?.Position);
@@ -7466,6 +7467,7 @@ namespace SeraphLeveling
                 if (ex.InnerException != null)
                 {
                     clientApi?.Logger?.Debug($"   [SeraphLeveling] Error getting trait text inner exception: {ex.InnerException.Message}");
+                    clientApi?.Logger?.Debug($"   [SeraphLeveling] Error getting trait text inner exception: {ex.InnerException.StackTrace}");
                 }
                 return "";
             }

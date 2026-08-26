@@ -37,8 +37,10 @@ namespace SeraphLeveling.Patches
             EntityPlayer eplr = ClientApi.World?.Player?.Entity;
             if (eplr == null) return;
 
+            if (__result == null) __result = "";
+
             // Log the raw result string to see exact format (escape special chars for visibility)
-            string escapedResult = __result?.Replace("\n", "\\n").Replace("\r", "\\r") ?? "NULL";
+            string escapedResult = __result.Replace("\n", "\\n").Replace("\r", "\\r");
             ClientApi.Logger.Debug($"[SeraphLeveling] RAW getClassTraitText result: {escapedResult}");
 
             ClientApi.Logger.Debug($"[SeraphLeveling] Original result: '{__result}', noTraitsMsg: '{Lang.Get(NO_TRAITS_KEY)}'");
