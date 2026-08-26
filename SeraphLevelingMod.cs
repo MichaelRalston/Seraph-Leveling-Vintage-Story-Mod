@@ -275,15 +275,15 @@ namespace SeraphLeveling
         public static void DetectLoadedMods(IModLoader modLoader)
         {
             HashSet<ModDefinition> activeMods = [ModDefinitions.Vanilla];
-            Instance.DetectCombatOverhaul(modLoader);
-            Instance.DetectSacredLib(modLoader);
+            DetectCombatOverhaul(modLoader);
+            DetectSacredLib(modLoader);
             if (IsSacredLibCompatEnabled)
             {
                 // Sacred Classes replaces the vanilla set of classes
                 activeMods.Remove(ModDefinitions.Vanilla);
                 activeMods.Add(ModDefinitions.SacredClasses);
             }
-            Instance.DetectButchering(modLoader);
+            DetectButchering(modLoader);
             if (IsButcheringCompatEnabled)
             {
                 activeMods.Add(ModDefinitions.Butchering);
@@ -354,7 +354,7 @@ namespace SeraphLeveling
         /// <summary>
         /// Detect if Sacred Classes mod is loaded and log the result.
         /// </summary>
-        private void DetectButchering(IModLoader modLoader)
+        private static void DetectButchering(IModLoader modLoader)
         {
             IsButcheringLoaded = DetectAnyButchering(modLoader);
             if (IsButcheringLoaded)
@@ -394,7 +394,7 @@ namespace SeraphLeveling
         /// <summary>
         /// Detect if Sacred Classes mod is loaded and log the result.
         /// </summary>
-        private void DetectSacredLib(IModLoader modLoader)
+        private static void DetectSacredLib(IModLoader modLoader)
         {
             IsSacredLibLoaded = DetectAnySacredLib(modLoader);
             if (IsSacredLibLoaded)
@@ -4747,7 +4747,7 @@ namespace SeraphLeveling
         /// <summary>
         /// Detect if Combat Overhaul mod is loaded and log the result.
         /// </summary>
-        private void DetectCombatOverhaul(IModLoader modLoader)
+        private static void DetectCombatOverhaul(IModLoader modLoader)
         {
             // Accept the original Combat Overhaul AND the 1.22 fork
             // ("combatoverhaulfork"). The fork keeps CO's stat/trait names, so
