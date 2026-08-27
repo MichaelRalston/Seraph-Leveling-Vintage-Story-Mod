@@ -12,7 +12,7 @@ namespace SeraphLeveling.Patches
     /// <summary>
     /// Harmony patch methods for CharacterSystem.
     /// </summary>
-    public static class CharacterSystemPatches
+    public static partial class CharacterSystemPatches
     {
         // Reference to the client API, set during patch application
         public static ICoreClientAPI ClientApi { get; set; }
@@ -205,7 +205,7 @@ namespace SeraphLeveling.Patches
             // Remove any lines that are empty or whitespace-only
             // Also filter out CO's native negative trait displays when we're handling them
             var lines = __result.Split('\n');
-            var nonEmptyLines = new System.Collections.Generic.List<string>();
+            var nonEmptyLines = new List<string>();
             foreach (var line in lines)
             {
                 if (string.IsNullOrWhiteSpace(line)) continue;
@@ -324,9 +324,7 @@ namespace SeraphLeveling.Patches
         }
 
         private static readonly System.Text.RegularExpressions.Regex DuplicateBulletPair =
-            new(
-                @"•(?<between>(?:[ \t]|<font[^>]*>|</font>)*)•",
-                System.Text.RegularExpressions.RegexOptions.Compiled);
+            DuplicateBulletPairRegex();
 
 
         // Cache for locale-aware vanilla trait line regexes. Built lazily per trait code from
@@ -385,19 +383,6 @@ namespace SeraphLeveling.Patches
             return regex.Replace(text, "");
         }
 
-        // Pattern for finding the first integer (or decimal) in a localized charattribute string.
-        // Used to swap the percentage when combining vanilla + progression bonuses, since most
-        // languages place the value as the first numeric token in the string.
-        private static readonly System.Text.RegularExpressions.Regex FirstNumberRegex =
-            new System.Text.RegularExpressions.Regex(@"\d+(?:\.\d+)?", System.Text.RegularExpressions.RegexOptions.Compiled);
-
-        private static string SubstituteFirstNumber(string text, int newValue)
-        {
-            var match = FirstNumberRegex.Match(text);
-            if (!match.Success) return text;
-            return text.Substring(0, match.Index) + newValue.ToString() + text.Substring(match.Index + match.Length);
-        }
-
         /// <summary>
         /// Collapses adjacent bullet markers ("•") separated only by whitespace
         /// and/or font open/close tags into a single bullet. Same-line only; bullets
@@ -441,5 +426,8 @@ namespace SeraphLeveling.Patches
             
             return hasNoTraits;
         }
+
+        [System.Text.RegularExpressions.GeneratedRegex(@"•(?<between>(?:[ \t]|<font[^>]*>|</font>)*)•", System.Text.RegularExpressions.RegexOptions.Compiled)]
+        private static partial System.Text.RegularExpressions.Regex DuplicateBulletPairRegex();
     }
 }
