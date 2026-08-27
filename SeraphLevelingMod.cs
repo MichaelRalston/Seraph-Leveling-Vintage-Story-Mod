@@ -2896,7 +2896,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void UpdateExtraTraitStatic(EntityPlayer entity, string traitCode, bool shouldHave)
         {
-            string[] currentTraits = entity.WatchedAttributes.GetStringArray("extraTraits", null) ?? Array.Empty<string>();
+            string[] currentTraits = entity.WatchedAttributes.GetStringArray("extraTraits", null) ?? [];
             bool hasTrait = currentTraits.Contains(traitCode);
 
             if (shouldHave && !hasTrait)
