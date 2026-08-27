@@ -240,7 +240,6 @@ namespace SeraphLeveling.Data.Attributes
                         }
 
                         byte version = reader.ReadByte();
-                        var progressData = CreateProgressData();
 
                         int playerCount = reader.ReadInt32();
                         for (int i = 0; i < playerCount; i++)
@@ -251,6 +250,7 @@ namespace SeraphLeveling.Data.Attributes
 #if SPAMMYDEBUG
                                     serverApi.Logger.Debug($"[SeraphLeveling] {SkillKey} progress contains progress for {playerUid}");
 #endif
+                                var progressData = CreateProgressData();
                                 progressData.ReadVersion(version, reader);
                                 progress[playerUid] = progressData;
                             }

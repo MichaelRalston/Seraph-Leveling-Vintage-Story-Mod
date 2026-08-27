@@ -12,7 +12,7 @@ namespace SeraphLeveling.Patches
     /// <summary>
     /// Harmony patch methods for CharacterSystem.
     /// </summary>
-    public static class CharacterSystemPatches
+    public static partial class CharacterSystemPatches
     {
         // Reference to the client API, set during patch application
         public static ICoreClientAPI ClientApi { get; set; }
@@ -205,7 +205,7 @@ namespace SeraphLeveling.Patches
             // Remove any lines that are empty or whitespace-only
             // Also filter out CO's native negative trait displays when we're handling them
             var lines = __result.Split('\n');
-            var nonEmptyLines = new System.Collections.Generic.List<string>();
+            var nonEmptyLines = new List<string>();
             foreach (var line in lines)
             {
                 if (string.IsNullOrWhiteSpace(line)) continue;
@@ -324,57 +324,8 @@ namespace SeraphLeveling.Patches
         }
 
         private static readonly System.Text.RegularExpressions.Regex DuplicateBulletPair =
-            new System.Text.RegularExpressions.Regex(
-                @"•(?<between>(?:[ \t]|<font[^>]*>|</font>)*)•",
-                System.Text.RegularExpressions.RegexOptions.Compiled);
+            DuplicateBulletPairRegex();
 
-        // Cache compiled "orphan-only" regexes per plain trait name (e.g. "<font color="#84ff84">• Hardy </font>").
-        // These match the plain name ONLY when it's a standalone line entry (followed by newline or
-        // end-of-string), not when it's the leading name of a vanilla trait line that has its own
-        // " <font opacity..."  description tag immediately after. That distinction is critical:
-        // unrestricted Contains/Replace on the plain name corrupts vanilla lines (strips the name
-        // or inserts our dynamic before the vanilla description, leaving both descriptions stacked).
-        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, System.Text.RegularExpressions.Regex> OrphanTraitPatternCache =
-            new System.Collections.Concurrent.ConcurrentDictionary<string, System.Text.RegularExpressions.Regex>();
-
-        private static System.Text.RegularExpressions.Regex GetOrphanTraitPattern(string plainName)
-        {
-            return OrphanTraitPatternCache.GetOrAdd(plainName, key =>
-                new System.Text.RegularExpressions.Regex(
-                    @"\n?" + System.Text.RegularExpressions.Regex.Escape(key) + @"(?=\n|$)",
-                    System.Text.RegularExpressions.RegexOptions.Compiled));
-        }
-
-        /// <summary>
-        /// Returns true if plainName appears as a standalone entry in text
-        /// (followed by a newline or end-of-string), not as a substring of a longer vanilla line.
-        /// </summary>
-        public static bool ContainsOrphanTraitName(string text, string plainName)
-        {
-            if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(plainName)) return false;
-            return GetOrphanTraitPattern(plainName).IsMatch(text);
-        }
-
-        /// <summary>
-        /// Replaces standalone occurrences of plainName with the given replacement.
-        /// Preserves the leading newline if matched. Vanilla lines are left untouched.
-        /// </summary>
-        public static string ReplaceOrphanTraitName(string text, string plainName, string replacement)
-        {
-            if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(plainName)) return text;
-            return GetOrphanTraitPattern(plainName).Replace(text, m =>
-                m.Value.StartsWith("\n") ? "\n" + replacement : replacement);
-        }
-
-        /// <summary>
-        /// Removes standalone occurrences of plainName (and the preceding newline if present).
-        /// Vanilla lines are left untouched.
-        /// </summary>
-        public static string RemoveOrphanTraitName(string text, string plainName)
-        {
-            if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(plainName)) return text;
-            return GetOrphanTraitPattern(plainName).Replace(text, "");
-        }
 
         // Cache for locale-aware vanilla trait line regexes. Built lazily per trait code from
         // Lang.Get("trait-{code}"), so the regex works against whatever language the client is
@@ -382,7 +333,7 @@ namespace SeraphLeveling.Patches
         // would fail to match a French/German/etc. client and the vanilla line would render with
         // its full original penalty wording even after the mod has functionally cancelled it.
         private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, System.Text.RegularExpressions.Regex> VanillaTraitLineRegexCache =
-            new System.Collections.Concurrent.ConcurrentDictionary<string, System.Text.RegularExpressions.Regex>();
+            new();
 
         /// <summary>
         /// Builds (or returns a cached) regex matching a full vanilla trait line in any locale.
@@ -433,74 +384,6 @@ namespace SeraphLeveling.Patches
         }
 
         /// <summary>
-        /// Replaces a single inline vanilla charattribute string (e.g., "+10% mining speed") with
-        /// a new value while keeping the same locale. Looks up the localized base string via
-        /// Lang.Get("charattribute-{statKey}-{baseValue}"), then substitutes the first integer in
-        /// that string with newPercent. Used when a class already has a vanilla positive trait
-        /// (e.g., Blackguard's Hardy +10% mining speed) and we want to combine it with our
-        /// progression bonus inline rather than replacing the whole line.
-        /// </summary>
-        public static string ReplaceVanillaCharAttribute(string text, string statKey, double baseValue, int newPercent)
-        {
-            string baseLangKey = "charattribute-" + statKey + "-" +
-                baseValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            string baseLocalized = Lang.Get(baseLangKey);
-            if (string.IsNullOrEmpty(baseLocalized) || baseLocalized == baseLangKey || !text.Contains(baseLocalized))
-            {
-                return text;
-            }
-            string substituted = SubstituteFirstNumber(baseLocalized, newPercent);
-            if (substituted == baseLocalized) return text;
-            return text.Replace(baseLocalized, substituted);
-        }
-
-        /// <summary>
-        /// Returns the localized vanilla charattribute string with its first integer replaced by
-        /// the given value. Used for building partial penalty descriptions in the player's locale
-        /// (e.g., for Heavyhanded's three-stat partial display). Returns the empty string if the
-        /// lang key isn't found.
-        /// </summary>
-        private static string LocalizedCharAttributeWithValue(string statKey, double baseValue, int newPercent)
-        {
-            string baseLangKey = "charattribute-" + statKey + "-" +
-                baseValue.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            string baseLocalized = Lang.Get(baseLangKey);
-            if (string.IsNullOrEmpty(baseLocalized) || baseLocalized == baseLangKey)
-            {
-                return "";
-            }
-            return SubstituteFirstNumber(baseLocalized, newPercent);
-        }
-
-        /// <summary>
-        /// Builds a fully localized trait line `{traitName} <font opacity="0.6">({desc})</font>`
-        /// using vanilla's `traitwithattributes` template, with the trait name pulled from the
-        /// vanilla `trait-{code}` lang key (so it shows up in the player's locale: "Hardy" in EN,
-        /// "Robuste" in FR, etc.) and the description from one of our `seraphleveling:` lang
-        /// values. The seraphleveling lang values store only the inner description text — the
-        /// trait label and font wrapper come from this helper.
-        /// </summary>
-        private static string BuildLocalizedTraitLine(string vanillaTraitCode, string seraphDescLangKey, params object[] descArgs)
-        {
-            string traitName = Lang.Get("trait-" + vanillaTraitCode);
-            string desc = Lang.Get(seraphDescLangKey, descArgs);
-            return Lang.Get("traitwithattributes", traitName, desc);
-        }
-
-        // Pattern for finding the first integer (or decimal) in a localized charattribute string.
-        // Used to swap the percentage when combining vanilla + progression bonuses, since most
-        // languages place the value as the first numeric token in the string.
-        private static readonly System.Text.RegularExpressions.Regex FirstNumberRegex =
-            new System.Text.RegularExpressions.Regex(@"\d+(?:\.\d+)?", System.Text.RegularExpressions.RegexOptions.Compiled);
-
-        private static string SubstituteFirstNumber(string text, int newValue)
-        {
-            var match = FirstNumberRegex.Match(text);
-            if (!match.Success) return text;
-            return text.Substring(0, match.Index) + newValue.ToString() + text.Substring(match.Index + match.Length);
-        }
-
-        /// <summary>
         /// Collapses adjacent bullet markers ("•") separated only by whitespace
         /// and/or font open/close tags into a single bullet. Same-line only; bullets
         /// separated by a newline (i.e. different trait entries) are left alone.
@@ -543,5 +426,8 @@ namespace SeraphLeveling.Patches
             
             return hasNoTraits;
         }
+
+        [System.Text.RegularExpressions.GeneratedRegex(@"•(?<between>(?:[ \t]|<font[^>]*>|</font>)*)•", System.Text.RegularExpressions.RegexOptions.Compiled)]
+        private static partial System.Text.RegularExpressions.Regex DuplicateBulletPairRegex();
     }
 }

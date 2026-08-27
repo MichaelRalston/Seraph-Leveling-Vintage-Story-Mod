@@ -381,7 +381,7 @@ namespace SeraphLeveling.Data.Attributes
 
                     foreach (var pcKvp in kvp.Value.PartialCredit)
                     {
-                        sb.AppendLine($"  {toolName}: {pcKvp.Value.Amount}/{pcKvp.Value.IncrementSize} {Definition.IncrementData[pcKvp.Key].IncrementUnits}");
+                        sb.AppendLine($"  {toolName}: {pcKvp.Value.Amount:F2}/{pcKvp.Value.IncrementSize} {Definition.IncrementData[pcKvp.Key].IncrementUnits}");
                     }
                 }
             }
