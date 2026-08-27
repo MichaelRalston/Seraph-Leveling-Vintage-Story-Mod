@@ -7,7 +7,7 @@ namespace SeraphLeveling.Data.Mods
     {
         public static readonly ModDefinition Vanilla = new()
         {
-            ModId = "vanilla",
+            ModId = "game",
             CharacterClasses = [
                 CharacterClassDefinitions.Commoner,
                 CharacterClassDefinitions.Hunter,
