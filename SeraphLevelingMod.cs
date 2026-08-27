@@ -137,7 +137,7 @@ namespace SeraphLeveling
         // Clothier progression configuration
         public static void InitializeClothierBlacklistedItems(ICoreAPI api)
         {
-            bool hasSacredLib = DetectAnySacredLib(api.ModLoader);
+            bool hasSacredLib = ModDefinitions.SacredClasses.IsActive;
             api.Logger.Notification($"[SeraphLeveling] Initializing Clothier Blacklisted Items. Sacred Classes compatibility enabled: {hasSacredLib}");
             AttributeModifierDefinitions.Clothier.TokenBanList = hasSacredLib ?
             [
@@ -274,23 +274,17 @@ namespace SeraphLeveling
         public static HashSet<ModDefinition> LoadedMods { get; internal set; } = [ModDefinitions.Vanilla];
         public static void DetectLoadedMods(IModLoader modLoader)
         {
-            HashSet<ModDefinition> activeMods = [ModDefinitions.Vanilla];
-            DetectCombatOverhaul(modLoader);
-            DetectSacredLib(modLoader);
-            if (IsSacredLibCompatEnabled)
+            ModDefinitions.All.ForEach(mod => mod.Detect(modLoader));
+            DetectCombatOverhaul(modLoader);    // TODO Move this into a mod definition
+            if (ModDefinitions.SacredClasses.IsActive)
             {
                 // Sacred Classes replaces the vanilla set of classes
-                activeMods.Remove(ModDefinitions.Vanilla);
-                activeMods.Add(ModDefinitions.SacredClasses);
+                // TODO Handle this automatically during detection
+                ModDefinitions.Vanilla.IsEnabled = false;
             }
-            DetectButchering(modLoader);
-            if (IsButcheringCompatEnabled)
-            {
-                activeMods.Add(ModDefinitions.Butchering);
-            }
-            LoadedMods = activeMods;
+            LoadedMods = ModDefinitions.All.Where(mod => mod.IsActive).ToHashSet();
 
-            var traits = activeMods
+            var traits = LoadedMods
                     .SelectMany(mod => mod.CharacterClasses)
                     .SelectMany(charClass => charClass.Traits)
                     .DistinctBy(trait => trait.Id);
@@ -334,88 +328,6 @@ namespace SeraphLeveling
                 {
                     definition.ReadConfigData(dataDict);
                 }
-            }
-        }
-
-        // =========================================================================
-        // BUTCHERING COMPATIBILITY
-        // =========================================================================
-
-        /// <summary>Whether Butchering mod is loaded.</summary>
-        public static bool IsButcheringLoaded { get; internal set; } = false;
-
-        public static bool IsButcheringCompatEnabled => IsButcheringLoaded && ButcheringEnableCompat;
-
-        public static bool ButcheringEnableCompat = true;
-
-        public static bool DetectAnyButchering(IModLoader modLoader)
-        {
-            if (modLoader == null) return false;
-            return modLoader.IsModEnabled("butchering");
-        }
-
-        /// <summary>
-        /// Detect if Sacred Classes mod is loaded and log the result.
-        /// </summary>
-        private static void DetectButchering(IModLoader modLoader)
-        {
-            IsButcheringLoaded = DetectAnyButchering(modLoader);
-            if (ServerApi == null) return;
-            if (IsButcheringLoaded)
-            {
-                if (ButcheringEnableCompat)
-                {
-                    ServerApi.Logger.Notification($"[SeraphLeveling] Butchering mod detected. Compatibility enabled.");
-                }
-                else
-                {
-                    ServerApi.Logger.Notification($"[SeraphLeveling] Butchering mod detected, but compatibility is disabled in config.");
-                }
-            }
-            else
-            {
-                ServerApi.Logger.Notification($"[SeraphLeveling] Butchering mod not detected. Compatibility disabled.");
-            }
-        }
-
-        // =========================================================================
-        // SACRED CLASSES COMPATIBILITY
-        // =========================================================================
-
-        /// <summary>Whether Sacred Classes mod is loaded.</summary>
-        public static bool IsSacredLibLoaded { get; internal set; } = false;
-
-        public static bool IsSacredLibCompatEnabled => IsSacredLibLoaded && SacredLibEnableCompat;
-
-        public static bool SacredLibEnableCompat = true;
-
-        public static bool DetectAnySacredLib(IModLoader modLoader)
-        {
-            if (modLoader == null) return false;
-            return modLoader.IsModEnabled("sacredlib");
-        }
-
-        /// <summary>
-        /// Detect if Sacred Classes mod is loaded and log the result.
-        /// </summary>
-        private static void DetectSacredLib(IModLoader modLoader)
-        {
-            IsSacredLibLoaded = DetectAnySacredLib(modLoader);
-            if (ServerApi == null) return;
-            if (IsSacredLibLoaded)
-            {
-                if (SacredLibEnableCompat)
-                {
-                    ServerApi.Logger.Notification($"[SeraphLeveling] Sacred Classes mod detected. Compatibility enabled.");
-                }
-                else
-                {
-                    ServerApi.Logger.Notification($"[SeraphLeveling] Sacred Classes mod detected, but compatibility is disabled in config.");
-                }
-            }
-            else
-            {
-                ServerApi.Logger.Notification($"[SeraphLeveling]Sacred Classes mod not detected. Compatibility disabled.");
             }
         }
 
@@ -2631,7 +2543,7 @@ namespace SeraphLeveling
                 api.Logger.Warning($"[SeraphLeveling] Failed to patch EntityBehaviorHarvestable: {ex.Message}");
             }
 
-            if (IsButcheringCompatEnabled)
+            if (ModDefinitions.Butchering.IsActive)
             {
                 try
                 {
