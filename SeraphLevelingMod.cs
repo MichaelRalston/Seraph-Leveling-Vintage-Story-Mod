@@ -275,7 +275,6 @@ namespace SeraphLeveling
         public static void DetectLoadedMods(IModLoader modLoader)
         {
             ModDefinitions.All.ForEach(mod => mod.Detect(modLoader));
-            DetectCombatOverhaul(modLoader);    // TODO Move this into a mod definition
             if (ModDefinitions.SacredClasses.IsActive)
             {
                 // Sacred Classes replaces the vanilla set of classes
@@ -335,18 +334,6 @@ namespace SeraphLeveling
         // COMBAT OVERHAUL COMPATIBILITY
         // =========================================================================
 
-        /// <summary>Whether Combat Overhaul mod is loaded.</summary>
-        public static bool IsCombatOverhaulLoaded { get; internal set; } = false;
-
-        /// <summary>Whether specifically the 1.22 Combat Overhaul FORK is loaded.
-        /// The fork adds a separate poleaxeProficiency stat the original mod lacks,
-        /// so poleaxe weapons route to that stat only when this is true (original
-        /// CO keeps lumping them with halberds).</summary>
-        public static bool IsCombatOverhaulForkLoaded { get; internal set; } = false;
-
-        /// <summary>Whether CO compatibility is enabled (mod loaded AND config enabled).</summary>
-        public static bool IsCOCompatEnabled => IsCombatOverhaulLoaded && COEnableCompat;
-
         /// <summary>
         /// Mod IDs recognized as "Combat Overhaul". The original mod is
         /// "combatoverhaul"; the 1.22 community continuation is the fork
@@ -356,19 +343,14 @@ namespace SeraphLeveling
         /// suffixes (blade-, bow-, spear-, ...), and our weapon matching strips
         /// the domain prefix, so all proficiency tracking and stat application
         /// works for either one once it is detected here.
+        /// 
+        /// The fork adds a separate poleaxeProficiency stat the original mod lacks,
+        /// so poleaxe weapons route to that stat only when this is true (original
+        /// CO keeps lumping them with halberds).
         /// </summary>
-        public static readonly string[] CombatOverhaulModIds = { "combatoverhaul", "combatoverhaulfork" };
+        public const string COMBAT_OVERHAUL_BASE_ID = "combatoverhaul";
+        public const string COMBAT_OVERHAUL_FORK_ID = "combatoverhaulfork";
 
-        /// <summary>Returns true if Combat Overhaul or its 1.22 fork is enabled.</summary>
-        public static bool DetectAnyCombatOverhaul(IModLoader modLoader)
-        {
-            if (modLoader == null) return false;
-            foreach (string id in CombatOverhaulModIds)
-            {
-                if (modLoader.IsModEnabled(id)) return true;
-            }
-            return false;
-        }
         // CO configuration values (loaded from config)
         public static bool COEnableCompat = true;
         public static int COBaseDamagePerIncrement = 100;
@@ -691,7 +673,7 @@ namespace SeraphLeveling
                     .RequiresPlayer()
                     .HandleWith(OnTraitTestSuite1Command)
                 .EndSubCommand();
-            if (IsCombatOverhaulLoaded)
+            if (ModDefinitions.CombatOverhaul.IsActive)
             {
                 // Combat Overhaul proficiency commands
                 command.BeginSubCommand("coproficiency")
@@ -2052,18 +2034,18 @@ namespace SeraphLeveling
                 // Apply* functions write penalty values into watched attrs that the postfix then
                 // renders as ghost debuffs (the "Trembling Aim -30%" symptom on Blackguard with
                 // CO uninstalled).
-                HasCOTremblingAim = IsCombatOverhaulLoaded && (traitSet.Contains("tremblingaim") || traitSet.Contains("trembling aim") || characterClass == "blackguard"),
-                HasCOClumsyHands = IsCombatOverhaulLoaded && (traitSet.Contains("clumsyhands") || traitSet.Contains("clumsy hands")),
-                HasCOFearOfMelee = IsCombatOverhaulLoaded && (traitSet.Contains("fearofmelee") || traitSet.Contains("fear of melee") || traitSet.Contains("frightenedofmelee") || traitSet.Contains("frightened of melee") || characterClass == "clockmaker"),
-                HasCOWeakHand = IsCombatOverhaulLoaded && (traitSet.Contains("weakhand") || traitSet.Contains("weak hand")),
-                HasCONervous = IsCombatOverhaulLoaded && (traitSet.Contains("nervous") || characterClass == "malefactor" || characterClass == "clockmaker"),
+                HasCOTremblingAim = ModDefinitions.CombatOverhaul.IsActive && (traitSet.Contains("tremblingaim") || traitSet.Contains("trembling aim") || characterClass == "blackguard"),
+                HasCOClumsyHands = ModDefinitions.CombatOverhaul.IsActive && (traitSet.Contains("clumsyhands") || traitSet.Contains("clumsy hands")),
+                HasCOFearOfMelee = ModDefinitions.CombatOverhaul.IsActive && (traitSet.Contains("fearofmelee") || traitSet.Contains("fear of melee") || traitSet.Contains("frightenedofmelee") || traitSet.Contains("frightened of melee") || characterClass == "clockmaker"),
+                HasCOWeakHand = ModDefinitions.CombatOverhaul.IsActive && (traitSet.Contains("weakhand") || traitSet.Contains("weak hand")),
+                HasCONervous = ModDefinitions.CombatOverhaul.IsActive && (traitSet.Contains("nervous") || characterClass == "malefactor" || characterClass == "clockmaker"),
 
                 // Combat Overhaul mixed/positive traits (Big Head, Thick Skull, Leg Day, Melee Expert, Self Defence)
-                HasCOBigHead = IsCombatOverhaulLoaded && (traitSet.Contains("bighead") || traitSet.Contains("big head") || characterClass == "clockmaker"),
-                HasCOThickSkull = IsCombatOverhaulLoaded && (traitSet.Contains("thickskull") || traitSet.Contains("thick skull") || characterClass == "malefactor"),
-                HasCOLegDay = IsCombatOverhaulLoaded && (traitSet.Contains("legday") || traitSet.Contains("leg day") || characterClass == "blackguard"),
-                HasCOMeleeExpert = IsCombatOverhaulLoaded && (traitSet.Contains("meleeexpert") || traitSet.Contains("melee expert") || traitSet.Contains("expert in melee") || characterClass == "blackguard"),
-                HasCOSelfDefence = IsCombatOverhaulLoaded && (traitSet.Contains("selfdefence") || traitSet.Contains("self defence") || characterClass == "tailor")
+                HasCOBigHead = ModDefinitions.CombatOverhaul.IsActive && (traitSet.Contains("bighead") || traitSet.Contains("big head") || characterClass == "clockmaker"),
+                HasCOThickSkull = ModDefinitions.CombatOverhaul.IsActive && (traitSet.Contains("thickskull") || traitSet.Contains("thick skull") || characterClass == "malefactor"),
+                HasCOLegDay = ModDefinitions.CombatOverhaul.IsActive && (traitSet.Contains("legday") || traitSet.Contains("leg day") || characterClass == "blackguard"),
+                HasCOMeleeExpert = ModDefinitions.CombatOverhaul.IsActive && (traitSet.Contains("meleeexpert") || traitSet.Contains("melee expert") || traitSet.Contains("expert in melee") || characterClass == "blackguard"),
+                HasCOSelfDefence = ModDefinitions.CombatOverhaul.IsActive && (traitSet.Contains("selfdefence") || traitSet.Contains("self defence") || characterClass == "tailor")
             };
 
             VanillaTraitsCache[playerUid] = cache;
@@ -2105,7 +2087,7 @@ namespace SeraphLeveling
             }
 
             // Apply Combat Overhaul proficiency bonuses (if CO is loaded)
-            if (IsCOCompatEnabled)
+            if (ModDefinitions.CombatOverhaul.IsActive)
             {
                 ApplyAllCOBonuses(byPlayer);
                 if (COProgress.TryGetValue(playerUid, out var coProgress))
@@ -2789,7 +2771,7 @@ namespace SeraphLeveling
 
         public static void ProcessCODamage(IServerPlayer attackerPlayer, bool? isRanged, AssetLocation itemCode, float damage)
         {
-            if (IsCOCompatEnabled)
+            if (ModDefinitions.CombatOverhaul.IsActive)
             {
                 var (proficiencyStat, coWeaponCode) = GetCOWeaponType(itemCode.Path);
                 if (DebugLoggingEnabled)
@@ -4008,7 +3990,7 @@ namespace SeraphLeveling
             }
 
             // CO Proficiency (per-proficiency absolute-position drain + SteadyAim direct)
-            if (!DecayExemptSkills.Contains("coproficiency") && !DisabledSkills.Contains("coproficiency") && IsCOCompatEnabled)
+            if (!DecayExemptSkills.Contains("coproficiency") && !DisabledSkills.Contains("coproficiency") && ModDefinitions.CombatOverhaul.IsActive)
             {
                 if (COProgress.TryGetValue(playerUid, out var coProg))
                 {
@@ -4098,7 +4080,7 @@ namespace SeraphLeveling
             {
                 definition.ApplyBonusIfExists(player);
             }
-            if (IsCOCompatEnabled && COProgress.TryGetValue(playerUid, out var coProg))
+            if (ModDefinitions.CombatOverhaul.IsActive && COProgress.TryGetValue(playerUid, out var coProg))
                 ApplyAllCOBonuses(player);
         }
 
@@ -4402,7 +4384,7 @@ namespace SeraphLeveling
             // --- Single accumulator skills ---
 
             // --- CO Proficiency (per-proficiency subcredit drain) ---
-            if (!DeathPenaltyExemptSkills.Contains("coproficiency") && !DisabledSkills.Contains("coproficiency") && IsCOCompatEnabled)
+            if (!DeathPenaltyExemptSkills.Contains("coproficiency") && !DisabledSkills.Contains("coproficiency") && ModDefinitions.CombatOverhaul.IsActive)
             {
                 if (COProgress.TryGetValue(playerUid, out var coProg))
                 {
@@ -4598,7 +4580,7 @@ namespace SeraphLeveling
                 () => AttributeModifierDefinitions.WildCropDropRate.ProgressDictionary.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
 
             // CO Proficiency
-            if (IsCOCompatEnabled)
+            if (ModDefinitions.CombatOverhaul.IsActive)
             {
                 sb.AppendLine("--- Combat Overhaul ---");
                 AppendDecayStatus(sb, "CO Proficiency", "coproficiency", playerUid, currentDay,
@@ -4659,33 +4641,6 @@ namespace SeraphLeveling
             else
             {
                 sb.AppendLine($"{credits} credits - Active{paramInfo}");
-            }
-        }
-
-        /// <summary>
-        /// Detect if Combat Overhaul mod is loaded and log the result.
-        /// </summary>
-        private static void DetectCombatOverhaul(IModLoader modLoader)
-        {
-            // Accept the original Combat Overhaul AND the 1.22 fork
-            // ("combatoverhaulfork"). The fork keeps CO's stat/trait names, so
-            // detecting it re-enables proficiency progression, the bonus stat
-            // application, and the /trait co* commands.
-            IsCombatOverhaulLoaded = DetectAnyCombatOverhaul(modLoader);
-            IsCombatOverhaulForkLoaded = modLoader.IsModEnabled("combatoverhaulfork");
-            if (ServerApi == null) return;
-            if (IsCombatOverhaulLoaded)
-            {
-                string which = IsCombatOverhaulForkLoaded
-                    ? "Combat Overhaul (1.22 fork)" : "Combat Overhaul";
-                if (COEnableCompat)
-                {
-                    ServerApi.Logger.Notification($"[SeraphLeveling] {which} detected - proficiency progression enabled");
-                }
-                else
-                {
-                    ServerApi.Logger.Notification($"[SeraphLeveling] {which} detected but compatibility disabled in config");
-                }
             }
         }
 
@@ -4856,7 +4811,7 @@ namespace SeraphLeveling
             // stat. The original CO has no such stat, so there we fall back to
             // halberds, preserving the previous behavior.
             if (lowerCode.StartsWith("poleaxe-"))
-                return (IsCombatOverhaulForkLoaded ? CO_POLEAXE_PROFICIENCY : CO_HALBERDS_PROFICIENCY, itemCode);
+                return (ModDefinitions.CombatOverhaul.IsVariantActive(COMBAT_OVERHAUL_FORK_ID) ? CO_POLEAXE_PROFICIENCY : CO_HALBERDS_PROFICIENCY, itemCode);
 
             // Halberds (polearms with axe heads)
             // Ancient Armory: aa-spear-voulge is a halberd-type weapon
@@ -4952,7 +4907,7 @@ namespace SeraphLeveling
             if (attackerPlayer?.Entity == null || string.IsNullOrEmpty(proficiencyStat) || string.IsNullOrEmpty(weaponCode)) return;
 
             // Skip if CO compat is disabled
-            if (!IsCOCompatEnabled) return;
+            if (!ModDefinitions.CombatOverhaul.IsActive) return;
 
             string playerUid = attackerPlayer.PlayerUID;
 
@@ -5213,7 +5168,7 @@ namespace SeraphLeveling
         /// </summary>
         private static void UpdateCONegativeTraitRemaining(IServerPlayer player)
         {
-            if (!IsCOCompatEnabled || player?.Entity == null) return;
+            if (!ModDefinitions.CombatOverhaul.IsActive || player?.Entity == null) return;
 
             string playerUid = player.PlayerUID;
             var cache = GetCachedTraits(playerUid);
@@ -5354,7 +5309,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void ApplyAllCOBonuses(IServerPlayer player)
         {
-            if (!IsCOCompatEnabled || player?.Entity == null) return;
+            if (!ModDefinitions.CombatOverhaul.IsActive || player?.Entity == null) return;
 
             string playerUid = player.PlayerUID;
 
@@ -5984,7 +5939,7 @@ namespace SeraphLeveling
 
             ResetProgressForPlayer(player);
 
-            string coNote = IsCombatOverhaulLoaded ? " (including Combat Overhaul proficiencies)" : "";
+            string coNote = ModDefinitions.CombatOverhaul.IsActive ? " (including Combat Overhaul proficiencies)" : "";
             return TextCommandResult.Success($"All trait progression has been reset to 0{coNote}.");
         }
 
@@ -6276,7 +6231,7 @@ namespace SeraphLeveling
 
             // Combat Overhaul proficiencies (only if CO is loaded)
             string coNote = "";
-            if (IsCombatOverhaulLoaded)
+            if (ModDefinitions.CombatOverhaul.IsActive)
             {
                 var coProgress = COProgress.GetOrAdd(playerUid, _ => new COPlayerProgressData());
                 foreach (var proficiencyStat in AllCOProficiencies)
@@ -6359,7 +6314,7 @@ namespace SeraphLeveling
                 shown += AppendStatBreakdown(sb, player.Entity, category) ? 1 : 0;
             }
 
-            if (IsCombatOverhaulLoaded)
+            if (ModDefinitions.CombatOverhaul.IsActive)
             {
                 sb.AppendLine("Combat Overhaul stats:");
                 foreach (string category in VerifyCOStats)
@@ -6454,12 +6409,12 @@ namespace SeraphLeveling
             IServerPlayer player = args.Caller.Player as IServerPlayer;
             if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
 
-            if (!IsCombatOverhaulLoaded)
+            if (!ModDefinitions.CombatOverhaul.IsLoaded)
             {
                 return TextCommandResult.Error("Combat Overhaul mod is not installed.");
             }
 
-            if (!COEnableCompat)
+            if (!ModDefinitions.CombatOverhaul.IsEnabled)
             {
                 return TextCommandResult.Error("Combat Overhaul compatibility is disabled in config.");
             }
@@ -6556,9 +6511,9 @@ namespace SeraphLeveling
             IServerPlayer player = args.Caller.Player as IServerPlayer;
             if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
 
-            if (!IsCombatOverhaulLoaded)
+            if (!ModDefinitions.CombatOverhaul.IsActive)
             {
-                return TextCommandResult.Error("Combat Overhaul mod is not installed.");
+                return TextCommandResult.Error("Combat Overhaul mod is not active.");
             }
 
             string proficiencyArg = (string)args[0];
@@ -6604,10 +6559,9 @@ namespace SeraphLeveling
             IServerPlayer player = args.Caller.Player as IServerPlayer;
             if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
 
-            bool coLoaded = IsCombatOverhaulLoaded;
             ResetCOProgressForPlayer(player);
 
-            return TextCommandResult.Success(coLoaded
+            return TextCommandResult.Success(ModDefinitions.CombatOverhaul.IsActive
                 ? "All Combat Overhaul proficiency progression has been reset to 0."
                 : "Combat Overhaul is not currently installed; cleared any lingering proficiency data saved on the player.");
         }
@@ -6654,9 +6608,9 @@ namespace SeraphLeveling
             IServerPlayer player = args.Caller.Player as IServerPlayer;
             if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
 
-            if (!IsCombatOverhaulLoaded)
+            if (!ModDefinitions.CombatOverhaul.IsActive)
             {
-                return TextCommandResult.Error("Combat Overhaul mod is not installed.");
+                return TextCommandResult.Error("Combat Overhaul mod is not active.");
             }
 
             string playerUid = player.PlayerUID;
@@ -6735,9 +6689,9 @@ namespace SeraphLeveling
             IServerPlayer player = args.Caller.Player as IServerPlayer;
             if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
 
-            if (!IsCombatOverhaulLoaded)
+            if (!ModDefinitions.CombatOverhaul.IsActive)
             {
-                return TextCommandResult.Error("Combat Overhaul mod is not installed.");
+                return TextCommandResult.Error("Combat Overhaul mod is not active.");
             }
 
             string action = args[0] as string;

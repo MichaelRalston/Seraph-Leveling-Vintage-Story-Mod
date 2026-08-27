@@ -59,6 +59,14 @@ namespace SeraphLeveling.Data.Mods
             CharacterClasses = [],
         });
 
+        public static readonly ModDefinition CombatOverhaul = Register(new()
+        {
+            ModId = SeraphLevelingModSystem.COMBAT_OVERHAUL_BASE_ID,
+            ModVariants = [ SeraphLevelingModSystem.COMBAT_OVERHAUL_FORK_ID ],
+            DisplayName = "Combat Overhaul",
+            CharacterClasses = [],
+        });
+
         private static ModDefinition Register(ModDefinition def)
         {
             All.Add(def);
