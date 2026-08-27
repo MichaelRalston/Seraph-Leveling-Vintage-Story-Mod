@@ -288,6 +288,11 @@ namespace SeraphLeveling
             {
                 activeMods.Add(ModDefinitions.Butchering);
             }
+            DetectRustboundMagic(modLoader);
+            if (IsRustboundMagicCompatEnabled)
+            {
+                activeMods.Add(ModDefinitions.RustboundMagic);
+            }
             LoadedMods = activeMods;
 
             var traits = activeMods
@@ -375,6 +380,47 @@ namespace SeraphLeveling
             else
             {
                 ServerApi.Logger.Notification($"[SeraphLeveling] Butchering mod not detected. Compatibility disabled.");
+            }
+        }
+
+        // =========================================================================
+        // RUSTBOUNT MAGIC COMPATIBILITY
+        // =========================================================================
+
+        /// <summary>Whether Rustbound Magic mod is loaded.</summary>
+        public static bool IsRustboundMagicLoaded { get; internal set; } = false;
+
+        public static bool IsRustboundMagicCompatEnabled => IsRustboundMagicCompatEnabled && RustboundMagicEnableCompat;
+
+        public static bool RustboundMagicEnableCompat = true;
+
+        public static bool DetectAnyRustboundMagic(IModLoader modLoader)
+        {
+            if (modLoader == null) return false;
+            return modLoader.IsModEnabled("rustboundmagic");
+        }
+
+        /// <summary>
+        /// Detect if Rustbound Magic mod is loaded and log the result.
+        /// </summary>
+        private static void DetectRustboundMagic(IModLoader modLoader)
+        {
+            IsRustboundMagicLoaded = DetectAnyRustboundMagic(modLoader);
+            if (ServerApi == null) return;
+            if (IsRustboundMagicLoaded)
+            {
+                if (RustboundMagicEnableCompat)
+                {
+                    ServerApi.Logger.Notification($"[SeraphLeveling] Rustbound Magic mod detected. Compatibility enabled.");
+                }
+                else
+                {
+                    ServerApi.Logger.Notification($"[SeraphLeveling] Rustbound Magic mod detected, but compatibility is disabled in config.");
+                }
+            }
+            else
+            {
+                ServerApi.Logger.Notification($"[SeraphLeveling] Rustbound Magic mod not detected. Compatibility disabled.");
             }
         }
 

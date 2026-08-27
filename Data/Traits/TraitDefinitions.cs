@@ -654,5 +654,62 @@ namespace SeraphLeveling.Data.Traits
                 BasicPenalty(ArmorDurability, 400),
             ]
         };
+
+        public static readonly TraitDefinition Enlightenment = new()
+        {
+            Id = "enlightenment",
+            Attributes = []
+        };
+
+
+        public static readonly TraitDefinition Gearcalling = new()
+        {
+            Id = "gearcalling",
+            Attributes = [
+                Bonus(GearDropRate, 20),
+            ]
+        };
+
+
+        public static readonly TraitDefinition BetweenWorlds = new()
+        {
+            Id = "betweenworlds",
+            Attributes = [
+                Bonus(WalkingSpeed, 10),
+            ]
+        };
+
+
+        public static readonly TraitDefinition EssenceFed = new()
+        {
+            Id = "essencefed",
+            Attributes = [
+                Bonus(HungerRate, 20),
+            ]
+        };
+
+
+        public static readonly TraitDefinition Fractured = new()
+        {
+            Id = "fractured",
+            Attributes = [
+                PenaltyOffset(FracturedHealthOffset, 1, FracturedHealthPenalty, [
+                    new LeveledAttributeMinimumRequirement { Attribute = MeleeDamage, ThresholdPercentage = 0 },
+                ]),
+                BasicPenalty(MeleeDamage, 15),
+            ]
+        };
+
+        public static readonly TraitDefinition RustTouch = new()
+        {
+            Id = "rusttouch",
+            Attributes = [
+                BasicPenalty(ForageLootingBonus, 20),
+                BasicPenalty(WildCropDropRate, 20),
+                BasicPenalty(AnimalHarvestRate, 25),
+            ]
+        };
+
+
     }
 }

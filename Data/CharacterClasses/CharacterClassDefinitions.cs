@@ -248,5 +248,12 @@ namespace SeraphLeveling.Data.CharacterClasses
                 TraitDefinitions.Improviser,
             ]
         };
+
+        public static readonly CharacterClassDefinition RustMage = new()
+        {
+            Id = "rustmage",
+            Traits = [
+            ]
+        };
     }
 }

@@ -51,5 +51,11 @@ namespace SeraphLeveling.Data.Mods
             ModId = "exoticmilk",
             CharacterClasses = [],
         };
+
+        public static readonly ModDefinition RustboundMagic = new()
+        {
+            ModId = "rustboundmagic",
+            CharacterClasses = [CharacterClassDefinitions.RustMage],
+        };
     }
 }
