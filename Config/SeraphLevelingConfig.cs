@@ -72,11 +72,6 @@ namespace SeraphLeveling.Config
         // =========================================================================
 
         /// <summary>
-        /// Enable Combat Overhaul compatibility features when CO is installed.
-        /// </summary>
-        public bool EnableCombatOverhaulCompat { get; set; } = true;
-
-        /// <summary>
         /// Base damage needed for the first proficiency credit.
         /// </summary>
         public int COProficiencyBaseDamagePerIncrement { get; set; } = 100;

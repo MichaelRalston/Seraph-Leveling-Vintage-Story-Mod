@@ -3785,6 +3785,13 @@ namespace SeraphLeveling
 
                 api.Logger.Notification("[SeraphLeveling] Config loaded from ModConfig/" + CONFIG_FILE_NAME);
 
+                if (LoadedConfigVersion < CURRENT_CONFIG_VERSION)
+                {
+                    // If the configuration file loaded was of a legacy version, re-persist it on exit in the current version
+                    api.Logger.Notification($"[SeraphLeveling] Updating config file to version {CURRENT_CONFIG_VERSION} on exit: ModConfig/" + CONFIG_FILE_NAME);
+                    pendingConfigSave = true;
+                }
+
                 return config;
             }
             catch (Exception ex)
@@ -3902,6 +3909,7 @@ namespace SeraphLeveling
                 config.EnableDebugLogging = DebugLoggingEnabled;
                 config.VerboseDecayLogging = VerboseDecayLogging;
 
+                ServerApi.Logger.Debug($"[SeraphLeveling] Saving config data to {CONFIG_FILE_NAME}");
                 ServerApi.StoreModConfig(config, CONFIG_FILE_NAME);
             }
             catch (Exception ex)
