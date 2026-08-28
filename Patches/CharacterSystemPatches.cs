@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using SeraphLeveling.Data.Attributes;
+using SeraphLeveling.Data.Mods;
 using SeraphLeveling.Data.Traits;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
@@ -73,7 +74,7 @@ namespace SeraphLeveling.Patches
             // unloaded (via the IsCombatOverhaulLoaded gate in PopulateVanillaTraitsCache),
             // but skipping the entire section also avoids any future code path leaking a
             // phantom CO debuff through.
-            if (SeraphLevelingModSystem.IsCombatOverhaulLoaded)
+            if (ModDefinitions.CombatOverhaul.IsActive)
             {
 
             // Check if CO is enabled by looking for any CO credits

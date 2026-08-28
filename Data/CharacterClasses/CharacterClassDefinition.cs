@@ -6,7 +6,7 @@ namespace SeraphLeveling.Data.CharacterClasses
 {
     public record class CharacterClassDefinition
     {
-        public string Id { get; init; }
-        public List<TraitDefinition> Traits { get; init; }
+        public required string Id { get; init; }
+        public required List<TraitDefinition> Traits { get; init; }
     }
 }

@@ -137,7 +137,7 @@ namespace SeraphLeveling
         // Clothier progression configuration
         public static void InitializeClothierBlacklistedItems(ICoreAPI api)
         {
-            bool hasSacredLib = DetectAnySacredLib(api.ModLoader);
+            bool hasSacredLib = ModDefinitions.SacredClasses.IsActive;
             api.Logger.Notification($"[SeraphLeveling] Initializing Clothier Blacklisted Items. Sacred Classes compatibility enabled: {hasSacredLib}");
             AttributeModifierDefinitions.Clothier.TokenBanList = hasSacredLib ?
             [
@@ -245,7 +245,7 @@ namespace SeraphLeveling
         private const string CONFIG_FILE_NAME = "SeraphLeveling.json";
 
         /// <summary>Version stamped into the config file. 1 means the world-save blob has been folded in.</summary>
-        private const int CURRENT_CONFIG_VERSION = 2;
+        private const int CURRENT_CONFIG_VERSION = 3;
 
         /// <summary>ConfigVersion read from the file this run. Zero for files written before 1.19.0.</summary>
         private static int LoadedConfigVersion = 0;
@@ -272,33 +272,13 @@ namespace SeraphLeveling
         public static HashSet<ISaveableAttribute> LoadedAttributes { get; internal set; } = [];
 
         public static HashSet<ModDefinition> LoadedMods { get; internal set; } = [ModDefinitions.Vanilla];
-        public static void DetectLoadedMods(IModLoader modLoader)
+        public static void DetectLoadedMods(IModLoader modLoader, SeraphLevelingConfig config)
         {
             ServerApi?.Logger.Notification("[SeraphLeveling] Detecting loaded mods...");
-            HashSet<ModDefinition> activeMods = [ModDefinitions.Vanilla];
-            DetectCombatOverhaul(modLoader);
-            DetectSacredLib(modLoader);
-            if (IsSacredLibCompatEnabled)
-            {
-                // Sacred Classes replaces the vanilla set of classes
-                activeMods.Remove(ModDefinitions.Vanilla);
-                activeMods.Add(ModDefinitions.SacredClasses);
-            }
-            DetectButchering(modLoader);
-            if (IsButcheringCompatEnabled)
-            {
-                activeMods.Add(ModDefinitions.Butchering);
-            }
-            DetectRustboundMagic(modLoader);
-            if (IsRustboundMagicCompatEnabled)
-            {
-                activeMods.Add(ModDefinitions.RustboundMagic);
-            }
-            LoadedMods = activeMods;
+            LoadedMods = ModDefinitions.DetectActive(modLoader, config);
 
             ServerApi?.Logger.Notification("[SeraphLeveling] Finished detecting loaded mods, preparing to load traits...");
-
-            var traits = activeMods
+            var traits = LoadedMods
                     .SelectMany(mod => mod.CharacterClasses)
                     .SelectMany(charClass => charClass.Traits)
                     .DistinctBy(trait => trait.Id);
@@ -345,143 +325,8 @@ namespace SeraphLeveling
         }
 
         // =========================================================================
-        // BUTCHERING COMPATIBILITY
-        // =========================================================================
-
-        /// <summary>Whether Butchering mod is loaded.</summary>
-        public static bool IsButcheringLoaded { get; internal set; } = false;
-
-        public static bool IsButcheringCompatEnabled => IsButcheringLoaded && ButcheringEnableCompat;
-
-        public static bool ButcheringEnableCompat = true;
-
-        public static bool DetectAnyButchering(IModLoader modLoader)
-        {
-            if (modLoader == null) return false;
-            return modLoader.IsModEnabled("butchering");
-        }
-
-        /// <summary>
-        /// Detect if Sacred Classes mod is loaded and log the result.
-        /// </summary>
-        private static void DetectButchering(IModLoader modLoader)
-        {
-            IsButcheringLoaded = DetectAnyButchering(modLoader);
-            if (ServerApi == null) return;
-            if (IsButcheringLoaded)
-            {
-                if (ButcheringEnableCompat)
-                {
-                    ServerApi.Logger.Notification($"[SeraphLeveling] Butchering mod detected. Compatibility enabled.");
-                }
-                else
-                {
-                    ServerApi.Logger.Notification($"[SeraphLeveling] Butchering mod detected, but compatibility is disabled in config.");
-                }
-            }
-            else
-            {
-                ServerApi.Logger.Notification($"[SeraphLeveling] Butchering mod not detected. Compatibility disabled.");
-            }
-        }
-
-        // =========================================================================
-        // RUSTBOUNT MAGIC COMPATIBILITY
-        // =========================================================================
-
-        /// <summary>Whether Rustbound Magic mod is loaded.</summary>
-        public static bool IsRustboundMagicLoaded { get; internal set; } = false;
-
-        public static bool IsRustboundMagicCompatEnabled => IsRustboundMagicLoaded && RustboundMagicEnableCompat;
-
-        public static bool RustboundMagicEnableCompat = true;
-
-        public static bool DetectAnyRustboundMagic(IModLoader modLoader)
-        {
-            if (modLoader == null) return false;
-            return modLoader.IsModEnabled("rustboundmagic");
-        }
-
-        /// <summary>
-        /// Detect if Rustbound Magic mod is loaded and log the result.
-        /// </summary>
-        private static void DetectRustboundMagic(IModLoader modLoader)
-        {
-            IsRustboundMagicLoaded = DetectAnyRustboundMagic(modLoader);
-            if (ServerApi == null) return;
-            if (IsRustboundMagicLoaded)
-            {
-                if (RustboundMagicEnableCompat)
-                {
-                    ServerApi.Logger.Notification($"[SeraphLeveling] Rustbound Magic mod detected. Compatibility enabled.");
-                }
-                else
-                {
-                    ServerApi.Logger.Notification($"[SeraphLeveling] Rustbound Magic mod detected, but compatibility is disabled in config.");
-                }
-            }
-            else
-            {
-                ServerApi.Logger.Notification($"[SeraphLeveling] Rustbound Magic mod not detected. Compatibility disabled.");
-            }
-        }
-
-        // =========================================================================
-        // SACRED CLASSES COMPATIBILITY
-        // =========================================================================
-
-        /// <summary>Whether Sacred Classes mod is loaded.</summary>
-        public static bool IsSacredLibLoaded { get; internal set; } = false;
-
-        public static bool IsSacredLibCompatEnabled => IsSacredLibLoaded && SacredLibEnableCompat;
-
-        public static bool SacredLibEnableCompat = true;
-
-        public static bool DetectAnySacredLib(IModLoader modLoader)
-        {
-            if (modLoader == null) return false;
-            return modLoader.IsModEnabled("sacredlib");
-        }
-
-        /// <summary>
-        /// Detect if Sacred Classes mod is loaded and log the result.
-        /// </summary>
-        private static void DetectSacredLib(IModLoader modLoader)
-        {
-            IsSacredLibLoaded = DetectAnySacredLib(modLoader);
-            if (ServerApi == null) return;
-            if (IsSacredLibLoaded)
-            {
-                if (SacredLibEnableCompat)
-                {
-                    ServerApi.Logger.Notification($"[SeraphLeveling] Sacred Classes mod detected. Compatibility enabled.");
-                }
-                else
-                {
-                    ServerApi.Logger.Notification($"[SeraphLeveling] Sacred Classes mod detected, but compatibility is disabled in config.");
-                }
-            }
-            else
-            {
-                ServerApi.Logger.Notification($"[SeraphLeveling]Sacred Classes mod not detected. Compatibility disabled.");
-            }
-        }
-
-        // =========================================================================
         // COMBAT OVERHAUL COMPATIBILITY
         // =========================================================================
-
-        /// <summary>Whether Combat Overhaul mod is loaded.</summary>
-        public static bool IsCombatOverhaulLoaded { get; internal set; } = false;
-
-        /// <summary>Whether specifically the 1.22 Combat Overhaul FORK is loaded.
-        /// The fork adds a separate poleaxeProficiency stat the original mod lacks,
-        /// so poleaxe weapons route to that stat only when this is true (original
-        /// CO keeps lumping them with halberds).</summary>
-        public static bool IsCombatOverhaulForkLoaded { get; internal set; } = false;
-
-        /// <summary>Whether CO compatibility is enabled (mod loaded AND config enabled).</summary>
-        public static bool IsCOCompatEnabled => IsCombatOverhaulLoaded && COEnableCompat;
 
         /// <summary>
         /// Mod IDs recognized as "Combat Overhaul". The original mod is
@@ -492,19 +337,14 @@ namespace SeraphLeveling
         /// suffixes (blade-, bow-, spear-, ...), and our weapon matching strips
         /// the domain prefix, so all proficiency tracking and stat application
         /// works for either one once it is detected here.
+        /// 
+        /// The fork adds a separate poleaxeProficiency stat the original mod lacks,
+        /// so poleaxe weapons route to that stat only when this is true (original
+        /// CO keeps lumping them with halberds).
         /// </summary>
-        public static readonly string[] CombatOverhaulModIds = { "combatoverhaul", "combatoverhaulfork" };
+        public const string COMBAT_OVERHAUL_BASE_ID = "combatoverhaul";
+        public const string COMBAT_OVERHAUL_FORK_ID = "combatoverhaulfork";
 
-        /// <summary>Returns true if Combat Overhaul or its 1.22 fork is enabled.</summary>
-        public static bool DetectAnyCombatOverhaul(IModLoader modLoader)
-        {
-            if (modLoader == null) return false;
-            foreach (string id in CombatOverhaulModIds)
-            {
-                if (modLoader.IsModEnabled(id)) return true;
-            }
-            return false;
-        }
         // CO configuration values (loaded from config)
         public static bool COEnableCompat = true;
         public static int COBaseDamagePerIncrement = 100;
@@ -716,10 +556,10 @@ namespace SeraphLeveling
                 .RegisterMessageType<LevelUpSoundMessage>();
 
             // Load config file (sets defaults for new worlds)
-            LoadConfigFile(api);
+            var config = LoadConfigFile(api);
 
             // Detect loaded mods.
-            DetectLoadedMods(api.ModLoader);
+            DetectLoadedMods(api.ModLoader, config);
 
             // Register /trait command with subcommands
             IChatCommand command = null;
@@ -827,7 +667,7 @@ namespace SeraphLeveling
                     .RequiresPlayer()
                     .HandleWith(OnTraitTestSuite1Command)
                 .EndSubCommand();
-            if (IsCombatOverhaulLoaded)
+            if (ModDefinitions.CombatOverhaul.IsActive)
             {
                 // Combat Overhaul proficiency commands
                 command.BeginSubCommand("coproficiency")
@@ -2188,18 +2028,18 @@ namespace SeraphLeveling
                 // Apply* functions write penalty values into watched attrs that the postfix then
                 // renders as ghost debuffs (the "Trembling Aim -30%" symptom on Blackguard with
                 // CO uninstalled).
-                HasCOTremblingAim = IsCombatOverhaulLoaded && (traitSet.Contains("tremblingaim") || traitSet.Contains("trembling aim") || characterClass == "blackguard"),
-                HasCOClumsyHands = IsCombatOverhaulLoaded && (traitSet.Contains("clumsyhands") || traitSet.Contains("clumsy hands")),
-                HasCOFearOfMelee = IsCombatOverhaulLoaded && (traitSet.Contains("fearofmelee") || traitSet.Contains("fear of melee") || traitSet.Contains("frightenedofmelee") || traitSet.Contains("frightened of melee") || characterClass == "clockmaker"),
-                HasCOWeakHand = IsCombatOverhaulLoaded && (traitSet.Contains("weakhand") || traitSet.Contains("weak hand")),
-                HasCONervous = IsCombatOverhaulLoaded && (traitSet.Contains("nervous") || characterClass == "malefactor" || characterClass == "clockmaker"),
+                HasCOTremblingAim = ModDefinitions.CombatOverhaul.IsActive && (traitSet.Contains("tremblingaim") || traitSet.Contains("trembling aim") || characterClass == "blackguard"),
+                HasCOClumsyHands = ModDefinitions.CombatOverhaul.IsActive && (traitSet.Contains("clumsyhands") || traitSet.Contains("clumsy hands")),
+                HasCOFearOfMelee = ModDefinitions.CombatOverhaul.IsActive && (traitSet.Contains("fearofmelee") || traitSet.Contains("fear of melee") || traitSet.Contains("frightenedofmelee") || traitSet.Contains("frightened of melee") || characterClass == "clockmaker"),
+                HasCOWeakHand = ModDefinitions.CombatOverhaul.IsActive && (traitSet.Contains("weakhand") || traitSet.Contains("weak hand")),
+                HasCONervous = ModDefinitions.CombatOverhaul.IsActive && (traitSet.Contains("nervous") || characterClass == "malefactor" || characterClass == "clockmaker"),
 
                 // Combat Overhaul mixed/positive traits (Big Head, Thick Skull, Leg Day, Melee Expert, Self Defence)
-                HasCOBigHead = IsCombatOverhaulLoaded && (traitSet.Contains("bighead") || traitSet.Contains("big head") || characterClass == "clockmaker"),
-                HasCOThickSkull = IsCombatOverhaulLoaded && (traitSet.Contains("thickskull") || traitSet.Contains("thick skull") || characterClass == "malefactor"),
-                HasCOLegDay = IsCombatOverhaulLoaded && (traitSet.Contains("legday") || traitSet.Contains("leg day") || characterClass == "blackguard"),
-                HasCOMeleeExpert = IsCombatOverhaulLoaded && (traitSet.Contains("meleeexpert") || traitSet.Contains("melee expert") || traitSet.Contains("expert in melee") || characterClass == "blackguard"),
-                HasCOSelfDefence = IsCombatOverhaulLoaded && (traitSet.Contains("selfdefence") || traitSet.Contains("self defence") || characterClass == "tailor")
+                HasCOBigHead = ModDefinitions.CombatOverhaul.IsActive && (traitSet.Contains("bighead") || traitSet.Contains("big head") || characterClass == "clockmaker"),
+                HasCOThickSkull = ModDefinitions.CombatOverhaul.IsActive && (traitSet.Contains("thickskull") || traitSet.Contains("thick skull") || characterClass == "malefactor"),
+                HasCOLegDay = ModDefinitions.CombatOverhaul.IsActive && (traitSet.Contains("legday") || traitSet.Contains("leg day") || characterClass == "blackguard"),
+                HasCOMeleeExpert = ModDefinitions.CombatOverhaul.IsActive && (traitSet.Contains("meleeexpert") || traitSet.Contains("melee expert") || traitSet.Contains("expert in melee") || characterClass == "blackguard"),
+                HasCOSelfDefence = ModDefinitions.CombatOverhaul.IsActive && (traitSet.Contains("selfdefence") || traitSet.Contains("self defence") || characterClass == "tailor")
             };
 
             VanillaTraitsCache[playerUid] = cache;
@@ -2241,7 +2081,7 @@ namespace SeraphLeveling
             }
 
             // Apply Combat Overhaul proficiency bonuses (if CO is loaded)
-            if (IsCOCompatEnabled)
+            if (ModDefinitions.CombatOverhaul.IsActive)
             {
                 ApplyAllCOBonuses(byPlayer);
                 if (COProgress.TryGetValue(playerUid, out var coProgress))
@@ -2682,7 +2522,7 @@ namespace SeraphLeveling
                 api.Logger.Warning($"[SeraphLeveling] Failed to patch EntityBehaviorHarvestable: {ex.Message}");
             }
 
-            if (IsButcheringCompatEnabled)
+            if (ModDefinitions.Butchering.IsActive)
             {
                 try
                 {
@@ -2716,7 +2556,7 @@ namespace SeraphLeveling
         private void PatchMeditation(ICoreServerAPI api)
         {
             api.Logger.Notification("[SeraphLeveling] patching the Rustbound Magic network message module");
-            if (IsRustboundMagicCompatEnabled)
+            if (ModDefinitions.RustboundMagic.IsActive)
             {
                 try
                 {
@@ -2958,7 +2798,7 @@ namespace SeraphLeveling
 
         public static void ProcessCODamage(IServerPlayer attackerPlayer, bool? isRanged, AssetLocation itemCode, float damage)
         {
-            if (IsCOCompatEnabled)
+            if (ModDefinitions.CombatOverhaul.IsActive)
             {
                 var (proficiencyStat, coWeaponCode) = GetCOWeaponType(itemCode.Path);
                 if (DebugLoggingEnabled)
@@ -3798,7 +3638,7 @@ namespace SeraphLeveling
         /// These values are used as defaults for new worlds.
         /// </summary>
         private static Dictionary<string, Dictionary<string, int>> AttributeConfiguration = [];
-        private void LoadConfigFile(ICoreServerAPI api)
+        internal static SeraphLevelingConfig LoadConfigFile(ICoreAPI api)
         {
             try
             {
@@ -3820,6 +3660,8 @@ namespace SeraphLeveling
 
                 LoadedConfigVersion = config.ConfigVersion;
 
+                // Do not load mod-enabled status here, that gets done during mod detection later.
+                // Instead, skip straight to attribute configuration.
                 foreach (var definition in LoadedAttributes)
                 {
                     if (config.AttributeConfiguration.TryGetValue(definition.Id, out var dataDict))
@@ -3876,7 +3718,6 @@ namespace SeraphLeveling
                 }
 
                 // Combat Overhaul compatibility configuration
-                COEnableCompat = config.EnableCombatOverhaulCompat;
                 COBaseDamagePerIncrement = config.COProficiencyBaseDamagePerIncrement;
                 COIncrementStep = config.COProficiencyIncrementStep;
                 COProficiencyBaseOverrides = config.COProficiencyBaseOverrides ?? new Dictionary<string, int>();
@@ -3970,10 +3811,24 @@ namespace SeraphLeveling
                 }
 
                 api.Logger.Notification("[SeraphLeveling] Config loaded from ModConfig/" + CONFIG_FILE_NAME);
+
+                if (LoadedConfigVersion < CURRENT_CONFIG_VERSION)
+                {
+                    // If the configuration file loaded was of a legacy version, re-persist it on exit in the current version
+                    api.Logger.Notification($"[SeraphLeveling] Updating config file to version {CURRENT_CONFIG_VERSION} on exit: ModConfig/" + CONFIG_FILE_NAME);
+                    pendingConfigSave = true;
+                }
+
+                return config;
             }
             catch (Exception ex)
             {
                 api.Logger.Error($"[SeraphLeveling] Failed to load config file: {ex.Message}. Using default values.");
+                return new SeraphLevelingConfig
+                {
+                    ConfigVersion = CURRENT_CONFIG_VERSION,
+                    ClothierBlacklistedItems = [.. AttributeModifierDefinitions.Clothier.TokenBanList]
+                };
             }
         }
 
@@ -3989,7 +3844,7 @@ namespace SeraphLeveling
         /// the admin's value instead of quietly snapping back to its default.
         /// This is the exact inverse of LoadConfigFile; the two must stay in step.
         /// </summary>
-        private void SaveConfigFile()
+        private static void SaveConfigFile()
         {
             if (ServerApi == null) return;
 
@@ -4000,6 +3855,11 @@ namespace SeraphLeveling
 
                 config.ConfigVersion = CURRENT_CONFIG_VERSION;
                 LoadedConfigVersion = CURRENT_CONFIG_VERSION;
+
+                foreach (var modDef in ModDefinitions.All)
+                {
+                    config.ModCompatibility[modDef.ModId] = modDef.IsEnabled;
+                }
 
                 foreach (var attribute in LoadedAttributes)
                 {
@@ -4030,7 +3890,6 @@ namespace SeraphLeveling
 
                 config.DisabledSkills = DisabledSkills.ToArray();
 
-                config.EnableCombatOverhaulCompat = COEnableCompat;
                 config.COProficiencyBaseDamagePerIncrement = COBaseDamagePerIncrement;
                 config.COProficiencyIncrementStep = COIncrementStep;
                 config.COProficiencyBaseOverrides = new Dictionary<string, int>(COProficiencyBaseOverrides);
@@ -4077,6 +3936,7 @@ namespace SeraphLeveling
                 config.EnableDebugLogging = DebugLoggingEnabled;
                 config.VerboseDecayLogging = VerboseDecayLogging;
 
+                ServerApi.Logger.Debug($"[SeraphLeveling] Saving config data to {CONFIG_FILE_NAME}");
                 ServerApi.StoreModConfig(config, CONFIG_FILE_NAME);
             }
             catch (Exception ex)
@@ -4177,7 +4037,7 @@ namespace SeraphLeveling
             }
 
             // CO Proficiency (per-proficiency absolute-position drain + SteadyAim direct)
-            if (!DecayExemptSkills.Contains("coproficiency") && !DisabledSkills.Contains("coproficiency") && IsCOCompatEnabled)
+            if (!DecayExemptSkills.Contains("coproficiency") && !DisabledSkills.Contains("coproficiency") && ModDefinitions.CombatOverhaul.IsActive)
             {
                 if (COProgress.TryGetValue(playerUid, out var coProg))
                 {
@@ -4267,7 +4127,7 @@ namespace SeraphLeveling
             {
                 definition.ApplyBonusIfExists(player);
             }
-            if (IsCOCompatEnabled && COProgress.TryGetValue(playerUid, out var coProg))
+            if (ModDefinitions.CombatOverhaul.IsActive && COProgress.TryGetValue(playerUid, out var coProg))
                 ApplyAllCOBonuses(player);
         }
 
@@ -4571,7 +4431,7 @@ namespace SeraphLeveling
             // --- Single accumulator skills ---
 
             // --- CO Proficiency (per-proficiency subcredit drain) ---
-            if (!DeathPenaltyExemptSkills.Contains("coproficiency") && !DisabledSkills.Contains("coproficiency") && IsCOCompatEnabled)
+            if (!DeathPenaltyExemptSkills.Contains("coproficiency") && !DisabledSkills.Contains("coproficiency") && ModDefinitions.CombatOverhaul.IsActive)
             {
                 if (COProgress.TryGetValue(playerUid, out var coProg))
                 {
@@ -4767,7 +4627,7 @@ namespace SeraphLeveling
                 () => AttributeModifierDefinitions.WildCropDropRate.ProgressDictionary.TryGetValue(playerUid, out var p) ? (p.LastActivityDay, p.TotalCredits) : (0, 0));
 
             // CO Proficiency
-            if (IsCOCompatEnabled)
+            if (ModDefinitions.CombatOverhaul.IsActive)
             {
                 sb.AppendLine("--- Combat Overhaul ---");
                 AppendDecayStatus(sb, "CO Proficiency", "coproficiency", playerUid, currentDay,
@@ -4828,33 +4688,6 @@ namespace SeraphLeveling
             else
             {
                 sb.AppendLine($"{credits} credits - Active{paramInfo}");
-            }
-        }
-
-        /// <summary>
-        /// Detect if Combat Overhaul mod is loaded and log the result.
-        /// </summary>
-        private static void DetectCombatOverhaul(IModLoader modLoader)
-        {
-            // Accept the original Combat Overhaul AND the 1.22 fork
-            // ("combatoverhaulfork"). The fork keeps CO's stat/trait names, so
-            // detecting it re-enables proficiency progression, the bonus stat
-            // application, and the /trait co* commands.
-            IsCombatOverhaulLoaded = DetectAnyCombatOverhaul(modLoader);
-            IsCombatOverhaulForkLoaded = modLoader.IsModEnabled("combatoverhaulfork");
-            if (ServerApi == null) return;
-            if (IsCombatOverhaulLoaded)
-            {
-                string which = IsCombatOverhaulForkLoaded
-                    ? "Combat Overhaul (1.22 fork)" : "Combat Overhaul";
-                if (COEnableCompat)
-                {
-                    ServerApi.Logger.Notification($"[SeraphLeveling] {which} detected - proficiency progression enabled");
-                }
-                else
-                {
-                    ServerApi.Logger.Notification($"[SeraphLeveling] {which} detected but compatibility disabled in config");
-                }
             }
         }
 
@@ -5025,7 +4858,7 @@ namespace SeraphLeveling
             // stat. The original CO has no such stat, so there we fall back to
             // halberds, preserving the previous behavior.
             if (lowerCode.StartsWith("poleaxe-"))
-                return (IsCombatOverhaulForkLoaded ? CO_POLEAXE_PROFICIENCY : CO_HALBERDS_PROFICIENCY, itemCode);
+                return (ModDefinitions.CombatOverhaul.IsVariantActive(COMBAT_OVERHAUL_FORK_ID) ? CO_POLEAXE_PROFICIENCY : CO_HALBERDS_PROFICIENCY, itemCode);
 
             // Halberds (polearms with axe heads)
             // Ancient Armory: aa-spear-voulge is a halberd-type weapon
@@ -5121,7 +4954,7 @@ namespace SeraphLeveling
             if (attackerPlayer?.Entity == null || string.IsNullOrEmpty(proficiencyStat) || string.IsNullOrEmpty(weaponCode)) return;
 
             // Skip if CO compat is disabled
-            if (!IsCOCompatEnabled) return;
+            if (!ModDefinitions.CombatOverhaul.IsActive) return;
 
             string playerUid = attackerPlayer.PlayerUID;
 
@@ -5382,7 +5215,7 @@ namespace SeraphLeveling
         /// </summary>
         private static void UpdateCONegativeTraitRemaining(IServerPlayer player)
         {
-            if (!IsCOCompatEnabled || player?.Entity == null) return;
+            if (!ModDefinitions.CombatOverhaul.IsActive || player?.Entity == null) return;
 
             string playerUid = player.PlayerUID;
             var cache = GetCachedTraits(playerUid);
@@ -5523,7 +5356,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void ApplyAllCOBonuses(IServerPlayer player)
         {
-            if (!IsCOCompatEnabled || player?.Entity == null) return;
+            if (!ModDefinitions.CombatOverhaul.IsActive || player?.Entity == null) return;
 
             string playerUid = player.PlayerUID;
 
@@ -6153,7 +5986,7 @@ namespace SeraphLeveling
 
             ResetProgressForPlayer(player);
 
-            string coNote = IsCombatOverhaulLoaded ? " (including Combat Overhaul proficiencies)" : "";
+            string coNote = ModDefinitions.CombatOverhaul.IsActive ? " (including Combat Overhaul proficiencies)" : "";
             return TextCommandResult.Success($"All trait progression has been reset to 0{coNote}.");
         }
 
@@ -6445,7 +6278,7 @@ namespace SeraphLeveling
 
             // Combat Overhaul proficiencies (only if CO is loaded)
             string coNote = "";
-            if (IsCombatOverhaulLoaded)
+            if (ModDefinitions.CombatOverhaul.IsActive)
             {
                 var coProgress = COProgress.GetOrAdd(playerUid, _ => new COPlayerProgressData());
                 foreach (var proficiencyStat in AllCOProficiencies)
@@ -6528,7 +6361,7 @@ namespace SeraphLeveling
                 shown += AppendStatBreakdown(sb, player.Entity, category) ? 1 : 0;
             }
 
-            if (IsCombatOverhaulLoaded)
+            if (ModDefinitions.CombatOverhaul.IsActive)
             {
                 sb.AppendLine("Combat Overhaul stats:");
                 foreach (string category in VerifyCOStats)
@@ -6589,7 +6422,7 @@ namespace SeraphLeveling
         {
             if (ServerApi == null) return TextCommandResult.Error("Server API not available.");
 
-            LoadConfigFile(ServerApi);
+            var config = LoadConfigFile(ServerApi);
 
             int reapplied = 0;
             foreach (var onlinePlayer in ServerApi.World.AllOnlinePlayers)
@@ -6623,12 +6456,12 @@ namespace SeraphLeveling
             IServerPlayer player = args.Caller.Player as IServerPlayer;
             if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
 
-            if (!IsCombatOverhaulLoaded)
+            if (!ModDefinitions.CombatOverhaul.IsLoaded)
             {
                 return TextCommandResult.Error("Combat Overhaul mod is not installed.");
             }
 
-            if (!COEnableCompat)
+            if (!ModDefinitions.CombatOverhaul.IsEnabled)
             {
                 return TextCommandResult.Error("Combat Overhaul compatibility is disabled in config.");
             }
@@ -6725,9 +6558,9 @@ namespace SeraphLeveling
             IServerPlayer player = args.Caller.Player as IServerPlayer;
             if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
 
-            if (!IsCombatOverhaulLoaded)
+            if (!ModDefinitions.CombatOverhaul.IsActive)
             {
-                return TextCommandResult.Error("Combat Overhaul mod is not installed.");
+                return TextCommandResult.Error("Combat Overhaul mod is not active.");
             }
 
             string proficiencyArg = (string)args[0];
@@ -6773,10 +6606,9 @@ namespace SeraphLeveling
             IServerPlayer player = args.Caller.Player as IServerPlayer;
             if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
 
-            bool coLoaded = IsCombatOverhaulLoaded;
             ResetCOProgressForPlayer(player);
 
-            return TextCommandResult.Success(coLoaded
+            return TextCommandResult.Success(ModDefinitions.CombatOverhaul.IsActive
                 ? "All Combat Overhaul proficiency progression has been reset to 0."
                 : "Combat Overhaul is not currently installed; cleared any lingering proficiency data saved on the player.");
         }
@@ -6823,9 +6655,9 @@ namespace SeraphLeveling
             IServerPlayer player = args.Caller.Player as IServerPlayer;
             if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
 
-            if (!IsCombatOverhaulLoaded)
+            if (!ModDefinitions.CombatOverhaul.IsActive)
             {
-                return TextCommandResult.Error("Combat Overhaul mod is not installed.");
+                return TextCommandResult.Error("Combat Overhaul mod is not active.");
             }
 
             string playerUid = player.PlayerUID;
@@ -6904,9 +6736,9 @@ namespace SeraphLeveling
             IServerPlayer player = args.Caller.Player as IServerPlayer;
             if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
 
-            if (!IsCombatOverhaulLoaded)
+            if (!ModDefinitions.CombatOverhaul.IsActive)
             {
-                return TextCommandResult.Error("Combat Overhaul mod is not installed.");
+                return TextCommandResult.Error("Combat Overhaul mod is not active.");
             }
 
             string action = args[0] as string;
@@ -7297,8 +7129,10 @@ namespace SeraphLeveling
         {
             base.StartClientSide(api);
             clientApi = api;
+
             // Mirror the server's mod detection on the client.
-            SeraphLevelingModSystem.DetectLoadedMods(api.ModLoader);
+            var config = SeraphLevelingModSystem.LoadConfigFile(api);
+            SeraphLevelingModSystem.DetectLoadedMods(api.ModLoader, config);
 
             // Register network channel for receiving level-up sounds from server
             api.Network.RegisterChannel("seraphleveling")

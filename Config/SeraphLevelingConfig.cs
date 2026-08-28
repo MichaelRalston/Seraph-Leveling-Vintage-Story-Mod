@@ -16,6 +16,8 @@ namespace SeraphLeveling.Config
         /// </summary>
         public int ConfigVersion { get; set; } = 0;
 
+        public Dictionary<string, bool> ModCompatibility { get; set; } = [];
+        
         public Dictionary<string, Dictionary<string, int>> AttributeConfiguration { get; set; } = [];
 
         public int MiningOreMultiplier { get; set; } = 5;
@@ -68,11 +70,6 @@ namespace SeraphLeveling.Config
         // COMBAT OVERHAUL COMPATIBILITY SETTINGS
         // These only apply when Combat Overhaul mod is installed
         // =========================================================================
-
-        /// <summary>
-        /// Enable Combat Overhaul compatibility features when CO is installed.
-        /// </summary>
-        public bool EnableCombatOverhaulCompat { get; set; } = true;
 
         /// <summary>
         /// Base damage needed for the first proficiency credit.
