@@ -613,6 +613,26 @@ namespace SeraphLeveling.Data.Attributes
             Trait = new(() => Traits.TraitDefinitions.Weak),
         };
 
+        public static readonly MaxHealthUnlockedAttributeModifierDefinition FracturedHealthPenalty = new()
+        {
+            Id = "fracturedhealthpenalty",
+            SkillKey = "fracturedhealth",
+            PersistenceHeader = "FRH",
+            Name = "Fractured Health",
+            ModifierAmount = -3.5f,
+            Trait = new(() => Traits.TraitDefinitions.Fractured),
+        };
+
+        public static readonly MaxHealthUnlockedAttributeModifierDefinition FracturedHealthOffset = new()
+        {
+            Id = "fracturedhealth",
+            SkillKey = "fracturedhealth",
+            PersistenceHeader = "FRH",
+            Name = "Fractured Health",
+            ModifierAmount = 3.5f,
+            Trait = new(() => Traits.TraitDefinitions.Fractured),
+        };
+
         public static readonly ConcurrentDictionary<ArmorDurabilityProgressTypes, IncrementData> ArmorDurabilityIncrementData = new()
         {
             [ArmorDurabilityProgressTypes.DamageBlocked] = new IncrementData
@@ -1311,6 +1331,22 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "LEN",
             Name = "Lactose Enthusiast",
             Trait = new(() => Traits.TraitDefinitions.Culinary)
+        };
+
+        public static readonly GenericLeveledAttributeModifierDefinition Enlightenment = new()
+        {
+            Id = "enlightenment",
+            SkillKey = "enlightenment",
+            PersistenceHeader = "ENM",
+            Name = "Enlightenment",
+            IsInverted = true,
+            IncrementUnits = "mana gained",
+            LongDescription = "temporal stability lost to meditation",
+            Stat = "% temporal stability lost to meditation",
+            BaseIncrement = 20,
+            IncrementStep = 10,
+            GlobalMaxCredits = 50,
+            StatName = "seraphleveling:enlightenment",
         };
     }
 }

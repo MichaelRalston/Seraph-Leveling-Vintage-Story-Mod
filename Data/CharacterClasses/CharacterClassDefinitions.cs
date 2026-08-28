@@ -248,5 +248,18 @@ namespace SeraphLeveling.Data.CharacterClasses
                 TraitDefinitions.Improviser,
             ]
         };
+
+        public static readonly CharacterClassDefinition RustMage = new()
+        {
+            Id = "rustmage",
+            Traits = [
+                TraitDefinitions.Enlightenment,
+                TraitDefinitions.Gearcalling,
+                TraitDefinitions.BetweenWorlds,
+                TraitDefinitions.EssenceFed,
+                TraitDefinitions.Fractured,
+                TraitDefinitions.RustTouch,
+            ]
+        };
     }
 }

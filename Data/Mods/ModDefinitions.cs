@@ -64,6 +64,15 @@ namespace SeraphLeveling.Data.Mods
             CharacterClasses = [],
         });
 
+        public static readonly ModDefinition RustboundMagic = Register(new()
+        {
+            ModId = "rustboundmagic",
+            DisplayName = "Rustbound Magic",
+            CharacterClasses = [
+                CharacterClassDefinitions.RustMage
+            ],
+        });
+
         public static readonly ModDefinition CombatOverhaul = Register(new()
         {
             ModId = SeraphLevelingModSystem.COMBAT_OVERHAUL_BASE_ID,

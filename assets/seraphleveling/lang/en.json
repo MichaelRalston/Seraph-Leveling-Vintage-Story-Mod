@@ -98,6 +98,12 @@
   "trait-kind-speed-only-dynamic": "-{0}% harvesting speed",
   "trait-kind-removed": "<font color=\"#84ff84\">• Kind Overcome </font> <font opacity=\"0.6\">(penalties removed)</font>",
 
+  "trait-fractured-dynamic": "-{0} health points, -{1}% melee damage",
+  "trait-fractured-hp-only-dynamic": "<font color=\"#ff8484\">• Fractured </font> <font opacity=\"0.6\">(-{0} health points)</font>",
+  "trait-fractured-mining-only-dynamic": "<font color=\"#ff8484\">• Fractured </font> <font opacity=\"0.6\">(-{0}% melee damage)</font>",
+  "trait-fractured-removed": "<font color=\"#84ff84\">• Fractured Overcome </font> <font opacity=\"0.6\">(penalties removed)</font>",
+
+
   "trait-heavyhanded-dynamic": "<font color=\"#ff8484\">• Heavyhanded </font> <font opacity=\"0.6\">(-{0}% cracked vessel loot, -{1}% loot from foraging, -{2}% wild crop drop rate)</font>",
   "trait-heavyhanded-partial-dynamic": "{0}",
   "trait-heavyhanded-removed": "<font color=\"#84ff84\">• Heavyhanded Overcome </font> <font opacity=\"0.6\">(penalties removed)</font>",
@@ -133,6 +139,7 @@
   "attribute-vesseldroprate-contents": "{0}% cracked vessel drops",
   "attribute-walkingspeed-contents": "{0}% walk speed",
   "attribute-weakhealth-contents": "{0} health points",
+  "attribute-fracturedhealth-contents": "{0} health points",
   "attribute-wholevesselrate-contents": "{0}% vessel collection",
 
   "attribute-axedamage-contents": "{0}% axe damage",
@@ -165,6 +172,7 @@
   "attribute-knifedurability-contents": "{0}% knife durability",
   "attribute-cleaverdamage-contents": "{0}% cleaver damage",
   "attribute-temporalstabilitydamage-contents": "{0}% temporal instability damage",
+  "attribute-enlightenment-contents": "{0}% temporal stability loss from meditation",
 
   "attribute-bowyer-contents": "Exclusive craftable <a href=\"handbooksearch://crude bow or crude arrow or recurve bow\">bows and arrows</a>",
   "attribute-clothier-contents": "Exclusive craftable <a href=\"handbooksearch://sewing kit or chateau or pastoral or reindeer or moon or minstrel or fortune or nomad or spice or cobalt or azure or thigh-high or fine trousers or high leather\">sewing kit and clothes</a>",
@@ -237,6 +245,7 @@
   "message-stonerate-level-up": "Stone drop rate level up! You are now level {0} with +{1}% stone drop rate.",
   "message-temperpowerloss-level-up": "Tempering level up! You are now level {0} with -{1}% tempering power loss.",
   "message-temporalstabilitydamage-level-up": "Insanity level up! You are now level {0} with -{1}% temporal instability damage taken.",
+  "message-enlightenment-level-up": "Enlightenment level up! You are now level {0} with -{1}% temporal stability loss from meditation.",
   "message-townie-level-up": "Townie level up! You are now level {0} with +{1}% walk speed on paths.",
   "message-treechopping-level-up": "Tree chopping level up! You are now level {0} with +{1}% tree chopping speed.",
   "message-woodrate-level-up": "Wood drop rate level up! You are now level {0} with +{1}% wood drop rate.",
@@ -258,6 +267,7 @@
   "message-technical-unlock": "Technical unlocked! You can now repair translocators more efficiently.",
   "message-tinkerer-unlock": "Tinkerer unlocked! You can now craft tuning spears.",
   "message-weakhealth-unlock": "Weak overcome! You've grown stronger.",
+  "message-fracturedhealth-unlock": "Fractured overcome! You've grown stronger.",
   
   "message-alchemist-unlock": "Alchemist unlocked! You are now more proficient with medicinal compounds.",
   "message-bulwarkhealth-unlock": "Bulwark Health unlocked! You've grown stronger.",
