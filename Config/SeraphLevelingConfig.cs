@@ -16,6 +16,8 @@ namespace SeraphLeveling.Config
         /// </summary>
         public int ConfigVersion { get; set; } = 0;
 
+        public Dictionary<string, bool> ModCompatibility { get; set; } = [];
+        
         public Dictionary<string, Dictionary<string, int>> AttributeConfiguration { get; set; } = [];
 
         public int MiningOreMultiplier { get; set; } = 5;

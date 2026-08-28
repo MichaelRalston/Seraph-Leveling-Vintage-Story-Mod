@@ -245,7 +245,7 @@ namespace SeraphLeveling
         private const string CONFIG_FILE_NAME = "SeraphLeveling.json";
 
         /// <summary>Version stamped into the config file. 1 means the world-save blob has been folded in.</summary>
-        private const int CURRENT_CONFIG_VERSION = 2;
+        private const int CURRENT_CONFIG_VERSION = 3;
 
         /// <summary>ConfigVersion read from the file this run. Zero for files written before 1.19.0.</summary>
         private static int LoadedConfigVersion = 0;
@@ -272,9 +272,9 @@ namespace SeraphLeveling
         public static HashSet<ISaveableAttribute> LoadedAttributes { get; internal set; } = [];
 
         public static HashSet<ModDefinition> LoadedMods { get; internal set; } = [ModDefinitions.Vanilla];
-        public static void DetectLoadedMods(IModLoader modLoader)
+        public static void DetectLoadedMods(IModLoader modLoader, SeraphLevelingConfig config)
         {
-            ModDefinitions.All.ForEach(mod => mod.Detect(modLoader));
+            ModDefinitions.All.ForEach(mod => mod.Detect(modLoader, config));
             if (ModDefinitions.SacredClasses.IsActive)
             {
                 // Sacred Classes replaces the vanilla set of classes
@@ -562,10 +562,10 @@ namespace SeraphLeveling
                 .RegisterMessageType<LevelUpSoundMessage>();
 
             // Load config file (sets defaults for new worlds)
-            LoadConfigFile(api);
+            var config = LoadConfigFile(api);
 
             // Detect loaded mods.
-            DetectLoadedMods(api.ModLoader);
+            DetectLoadedMods(api.ModLoader, config);
 
             // Register /trait command with subcommands
             IChatCommand command = null;
@@ -3611,7 +3611,7 @@ namespace SeraphLeveling
         /// These values are used as defaults for new worlds.
         /// </summary>
         private static Dictionary<string, Dictionary<string, int>> AttributeConfiguration = [];
-        private void LoadConfigFile(ICoreServerAPI api)
+        internal static SeraphLevelingConfig LoadConfigFile(ICoreAPI api)
         {
             try
             {
@@ -3633,6 +3633,8 @@ namespace SeraphLeveling
 
                 LoadedConfigVersion = config.ConfigVersion;
 
+                // Do not load mod-enabled status here, that gets done during mod detection later.
+                // Instead, skip straight to attribute configuration.
                 foreach (var definition in LoadedAttributes)
                 {
                     if (config.AttributeConfiguration.TryGetValue(definition.Id, out var dataDict))
@@ -3689,7 +3691,6 @@ namespace SeraphLeveling
                 }
 
                 // Combat Overhaul compatibility configuration
-                COEnableCompat = config.EnableCombatOverhaulCompat;
                 COBaseDamagePerIncrement = config.COProficiencyBaseDamagePerIncrement;
                 COIncrementStep = config.COProficiencyIncrementStep;
                 COProficiencyBaseOverrides = config.COProficiencyBaseOverrides ?? new Dictionary<string, int>();
@@ -3783,10 +3784,17 @@ namespace SeraphLeveling
                 }
 
                 api.Logger.Notification("[SeraphLeveling] Config loaded from ModConfig/" + CONFIG_FILE_NAME);
+
+                return config;
             }
             catch (Exception ex)
             {
                 api.Logger.Error($"[SeraphLeveling] Failed to load config file: {ex.Message}. Using default values.");
+                return new SeraphLevelingConfig
+                {
+                    ConfigVersion = CURRENT_CONFIG_VERSION,
+                    ClothierBlacklistedItems = [.. AttributeModifierDefinitions.Clothier.TokenBanList]
+                };
             }
         }
 
@@ -3802,7 +3810,7 @@ namespace SeraphLeveling
         /// the admin's value instead of quietly snapping back to its default.
         /// This is the exact inverse of LoadConfigFile; the two must stay in step.
         /// </summary>
-        private void SaveConfigFile()
+        private static void SaveConfigFile()
         {
             if (ServerApi == null) return;
 
@@ -3813,6 +3821,11 @@ namespace SeraphLeveling
 
                 config.ConfigVersion = CURRENT_CONFIG_VERSION;
                 LoadedConfigVersion = CURRENT_CONFIG_VERSION;
+
+                foreach (var modDef in ModDefinitions.All)
+                {
+                    config.ModCompatibility[modDef.ModId] = modDef.IsEnabled;
+                }
 
                 foreach (var attribute in LoadedAttributes)
                 {
@@ -3843,7 +3856,6 @@ namespace SeraphLeveling
 
                 config.DisabledSkills = DisabledSkills.ToArray();
 
-                config.EnableCombatOverhaulCompat = COEnableCompat;
                 config.COProficiencyBaseDamagePerIncrement = COBaseDamagePerIncrement;
                 config.COProficiencyIncrementStep = COIncrementStep;
                 config.COProficiencyBaseOverrides = new Dictionary<string, int>(COProficiencyBaseOverrides);
@@ -6375,7 +6387,7 @@ namespace SeraphLeveling
         {
             if (ServerApi == null) return TextCommandResult.Error("Server API not available.");
 
-            LoadConfigFile(ServerApi);
+            var config = LoadConfigFile(ServerApi);
 
             int reapplied = 0;
             foreach (var onlinePlayer in ServerApi.World.AllOnlinePlayers)
@@ -7082,8 +7094,10 @@ namespace SeraphLeveling
         {
             base.StartClientSide(api);
             clientApi = api;
+
             // Mirror the server's mod detection on the client.
-            SeraphLevelingModSystem.DetectLoadedMods(api.ModLoader);
+            var config = SeraphLevelingModSystem.LoadConfigFile(api);
+            SeraphLevelingModSystem.DetectLoadedMods(api.ModLoader, config);
 
             // Register network channel for receiving level-up sounds from server
             api.Network.RegisterChannel("seraphleveling")

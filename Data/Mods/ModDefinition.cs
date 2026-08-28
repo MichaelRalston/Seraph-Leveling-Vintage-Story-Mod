@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using SeraphLeveling.Config;
 using SeraphLeveling.Data.CharacterClasses;
 using Vintagestory.API.Common;
 
@@ -24,9 +25,12 @@ namespace SeraphLeveling.Data.Mods
 
         private readonly Dictionary<string, bool> LoadStatus = [];
 
-        public void Detect(IModLoader modLoader)
+        public void Detect(IModLoader modLoader, SeraphLevelingConfig config)
         {
             IsLoaded = DetectInner(modLoader);
+
+            // If there's no config data to say otherwise, consider the mod enabled
+            IsEnabled = !config.ModCompatibility.TryGetValue(ModId, out bool enabled) || enabled;
 
             if (SeraphLevelingModSystem.ServerApi != null)
             {
@@ -53,8 +57,11 @@ namespace SeraphLeveling.Data.Mods
             LoadStatus.Clear();
             foreach (string id in FullIdList)
             {
+                // Remember the load status of each possible mod variant for later
                 LoadStatus[id] = modLoader?.IsModEnabled(id) ?? false;
             }
+
+            // If any variant of the mod is loaded, then the mod is loaded
             return LoadStatus.Values.Any(x => x);
         }
 
