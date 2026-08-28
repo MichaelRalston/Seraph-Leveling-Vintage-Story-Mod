@@ -1332,5 +1332,21 @@ namespace SeraphLeveling.Data.Attributes
             Name = "Lactose Enthusiast",
             Trait = new(() => Traits.TraitDefinitions.Culinary)
         };
+
+        public static readonly GenericLeveledAttributeModifierDefinition Enlightenment = new()
+        {
+            Id = "enlightenment",
+            SkillKey = "enlightenment",
+            PersistenceHeader = "ENM",
+            Name = "Enlightenment",
+            IsInverted = true,
+            IncrementUnits = "mana gained",
+            LongDescription = "temporal stability lost to meditation",
+            Stat = "% temporal stability lost to meditation",
+            BaseIncrement = 20,
+            IncrementStep = 10,
+            GlobalMaxCredits = 50,
+            StatName = "seraphleveling:enlightenment",
+        };
     }
 }

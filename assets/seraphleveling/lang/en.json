@@ -172,6 +172,7 @@
   "attribute-knifedurability-contents": "{0}% knife durability",
   "attribute-cleaverdamage-contents": "{0}% cleaver damage",
   "attribute-temporalstabilitydamage-contents": "{0}% temporal instability damage",
+  "attribute-enlightenment-contents": "{0}% temporal stability loss from meditation",
 
   "attribute-bowyer-contents": "Exclusive craftable <a href=\"handbooksearch://crude bow or crude arrow or recurve bow\">bows and arrows</a>",
   "attribute-clothier-contents": "Exclusive craftable <a href=\"handbooksearch://sewing kit or chateau or pastoral or reindeer or moon or minstrel or fortune or nomad or spice or cobalt or azure or thigh-high or fine trousers or high leather\">sewing kit and clothes</a>",
@@ -244,6 +245,7 @@
   "message-stonerate-level-up": "Stone drop rate level up! You are now level {0} with +{1}% stone drop rate.",
   "message-temperpowerloss-level-up": "Tempering level up! You are now level {0} with -{1}% tempering power loss.",
   "message-temporalstabilitydamage-level-up": "Insanity level up! You are now level {0} with -{1}% temporal instability damage taken.",
+  "message-enlightenment-level-up": "Enlightenment level up! You are now level {0} with -{1}% temporal stability loss from meditation.",
   "message-townie-level-up": "Townie level up! You are now level {0} with +{1}% walk speed on paths.",
   "message-treechopping-level-up": "Tree chopping level up! You are now level {0} with +{1}% tree chopping speed.",
   "message-woodrate-level-up": "Wood drop rate level up! You are now level {0} with +{1}% wood drop rate.",

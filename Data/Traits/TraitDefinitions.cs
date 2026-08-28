@@ -658,7 +658,9 @@ namespace SeraphLeveling.Data.Traits
         public static readonly TraitDefinition Enlightenment = new()
         {
             Id = "enlightenment",
-            Attributes = []
+            Attributes = [
+                Bonus(AttributeModifierDefinitions.Enlightenment, 40),
+            ]
         };
 
 

@@ -274,6 +274,7 @@ namespace SeraphLeveling
         public static HashSet<ModDefinition> LoadedMods { get; internal set; } = [ModDefinitions.Vanilla];
         public static void DetectLoadedMods(IModLoader modLoader)
         {
+            ServerApi?.Logger.Notification("[SeraphLeveling] Detecting loaded mods...");
             HashSet<ModDefinition> activeMods = [ModDefinitions.Vanilla];
             DetectCombatOverhaul(modLoader);
             DetectSacredLib(modLoader);
@@ -295,11 +296,15 @@ namespace SeraphLeveling
             }
             LoadedMods = activeMods;
 
+            ServerApi?.Logger.Notification("[SeraphLeveling] Finished detecting loaded mods, preparing to load traits...");
+
             var traits = activeMods
                     .SelectMany(mod => mod.CharacterClasses)
                     .SelectMany(charClass => charClass.Traits)
                     .DistinctBy(trait => trait.Id);
-            LoadedTraits = traits.ToList();
+            LoadedTraits = [.. traits];
+
+            ServerApi?.Logger.Notification("[SeraphLeveling] Loaded traits, preparing to map attributes...");
 
             var flatAttributeMappings = traits
                     .SelectMany(trait => trait.Attributes, (trait, attrKvp) => new
@@ -321,17 +326,14 @@ namespace SeraphLeveling
                     group => group.Key,
                     group => group.Select(x => x.TraitTuple).ToImmutableList()
                 );
-            if (ServerApi != null)
+            ServerApi?.Logger.Notification("[SeraphLeveling] loaded attributes, verifying list...");
+            foreach (var attribute in LoadedAttributes)
             {
-                ServerApi.Logger.Notification("[SeraphLeveling] loaded attributes, verifying list...");
-                foreach (var attribute in LoadedAttributes)
-                {
-                    ServerApi.Logger.Notification($"[SeraphLeveling] attribute {attribute.Id} loaded.");
-                }
-                foreach (var (attrKey, traitList) in TraitsForAttributes)
-                {
-                    ServerApi.Logger.Notification($"[SeraphLeveling] attribute {attrKey} linked to {traitList.Count} traits.");
-                }
+                ServerApi?.Logger.Notification($"[SeraphLeveling] attribute {attribute.Id} loaded.");
+            }
+            foreach (var (attrKey, traitList) in TraitsForAttributes)
+            {
+                ServerApi?.Logger.Notification($"[SeraphLeveling] attribute {attrKey} linked to {traitList.Count} traits.");
             }
             foreach (var definition in LoadedAttributes)
             {
@@ -390,7 +392,7 @@ namespace SeraphLeveling
         /// <summary>Whether Rustbound Magic mod is loaded.</summary>
         public static bool IsRustboundMagicLoaded { get; internal set; } = false;
 
-        public static bool IsRustboundMagicCompatEnabled => IsRustboundMagicCompatEnabled && RustboundMagicEnableCompat;
+        public static bool IsRustboundMagicCompatEnabled => IsRustboundMagicLoaded && RustboundMagicEnableCompat;
 
         public static bool RustboundMagicEnableCompat = true;
 
@@ -2360,6 +2362,9 @@ namespace SeraphLeveling
 
                     // Patch ItemPoultice.OnHeldInteractStop for Medic trait (poultice/bandage healing)
                     PatchPoulticeHealing(api);
+
+                    // Patch meditation for Rustbound Magic compatibility, iff RM is loaded.
+                    PatchMeditation(api);
                 }
             }
             catch (Exception ex)
@@ -2704,6 +2709,36 @@ namespace SeraphLeveling
                 catch (Exception ex)
                 {
                     api.Logger.Warning($"[SeraphLeveling] Failed to patch BlockEntityButcherTable: {ex.Message}");
+                }
+            }
+        }
+
+        private void PatchMeditation(ICoreServerAPI api)
+        {
+            api.Logger.Notification("[SeraphLeveling] patching the Rustbound Magic network message module");
+            if (IsRustboundMagicCompatEnabled)
+            {
+                try
+                {
+                    var networkMessageType = AccessTools.TypeByName("rustboundmagic.src.system.NetworkMessageRM");
+                    if (networkMessageType == null)
+                    {
+                        api.Logger.Warning("[SeraphLeveling] Could not find the Rustbound Magic network message module");
+                        return;
+                    }
+                    var packetMethod = AccessTools.Method(networkMessageType, "ServerPacketPlayerTemporalStabilityDrain");
+                    if (packetMethod == null)
+                    {
+                        api.Logger.Warning("[SeraphLeveling] Could not find the ServerPacketPlayerTemporalStabilityDrain method in the Rustbound Magic network mesasge module");
+                        return;
+                    }
+                    var prefixMethod = AccessTools.Method(typeof(MeditationPatches), nameof(MeditationPatches.ServerPacketPlayerTemporalStabilityDrain_Prefix));
+                    serverHarmony.Patch(packetMethod, prefix: new HarmonyMethod(prefixMethod));
+                    api.Logger.Notification("[SeraphLeveling] Successfully patched Rustbound Magic network message module for Enlightened trait.");
+                }
+                catch (Exception ex)
+                {
+                    api.Logger.Warning($"[SeraphLeveling] Failed to patch Rustbound Magic meditation: {ex.Message}");
                 }
             }
         }

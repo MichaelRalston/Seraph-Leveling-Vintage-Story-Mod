@@ -55,7 +55,9 @@ namespace SeraphLeveling.Data.Mods
         public static readonly ModDefinition RustboundMagic = new()
         {
             ModId = "rustboundmagic",
-            CharacterClasses = [CharacterClassDefinitions.RustMage],
+            CharacterClasses = [
+                CharacterClassDefinitions.RustMage
+            ],
         };
     }
 }
