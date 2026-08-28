@@ -274,14 +274,7 @@ namespace SeraphLeveling
         public static HashSet<ModDefinition> LoadedMods { get; internal set; } = [ModDefinitions.Vanilla];
         public static void DetectLoadedMods(IModLoader modLoader, SeraphLevelingConfig config)
         {
-            ModDefinitions.All.ForEach(mod => mod.Detect(modLoader, config));
-            if (ModDefinitions.SacredClasses.IsActive)
-            {
-                // Sacred Classes replaces the vanilla set of classes
-                // TODO Handle this automatically during detection
-                ModDefinitions.Vanilla.IsEnabled = false;
-            }
-            LoadedMods = ModDefinitions.All.Where(mod => mod.IsActive).ToHashSet();
+            LoadedMods = ModDefinitions.DetectActive(modLoader, config);
 
             var traits = LoadedMods
                     .SelectMany(mod => mod.CharacterClasses)

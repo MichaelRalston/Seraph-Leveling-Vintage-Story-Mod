@@ -1,6 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using SeraphLeveling.Config;
 using SeraphLeveling.Data.CharacterClasses;
+using Vintagestory.API.Common;
+using Vintagestory.API.Util;
 
 namespace SeraphLeveling.Data.Mods
 {
@@ -12,6 +16,7 @@ namespace SeraphLeveling.Data.Mods
         {
             ModId = "game",
             DisplayName = "Vintage Story",
+            IncompatibleWith = [ new(() => SacredClasses) ],    // Sacred Classes replaces the vanilla set of classes
             CharacterClasses = [
                 CharacterClassDefinitions.Commoner,
                 CharacterClassDefinitions.Hunter,
@@ -71,6 +76,46 @@ namespace SeraphLeveling.Data.Mods
         {
             All.Add(def);
             return def;
+        }
+
+        public static HashSet<ModDefinition> DetectActive(IModLoader modLoader, SeraphLevelingConfig config)
+        {
+            // Detect whether each defined mod is loaded and/or enabled in configuration
+            All.ForEach(mod => mod.Detect(modLoader, config));
+
+            // Disable any mods that are incompatible with another active mod
+            bool changed;
+            int retries = 0;
+            const int MAX_RETRIES = 500;
+            do
+            {
+                changed = false;
+                foreach (var mod in All)
+                {
+                    bool oldHasConflict = mod.HasConflict;
+                    mod.HasConflict = mod.IncompatibleWith.Any(conflicting => conflicting.Value.IsActive);
+                    if (mod.HasConflict != oldHasConflict)
+                    {
+                        changed = true;
+                    }
+                }
+            } while (changed && ++retries <= MAX_RETRIES);
+            if (retries > MAX_RETRIES)
+            {
+                SeraphLevelingModSystem.ServerApi?.Logger?.Error($"[SeraphLeveling] Failed to resolve mod conflicts after {MAX_RETRIES} retries, disabling all mod support");
+                All.ForEach(mod => mod.HasConflict = true);
+            }
+            else
+            {
+                All.Where(mod => mod.HasConflict).Foreach(mod =>
+                {
+                    string incompatibleStr = string.Join(", ", mod.IncompatibleWith.Where(m => m.Value.IsActive).Select(m => m.Value.DisplayName));
+                    SeraphLevelingModSystem.ServerApi?.Logger?.Notification($"[SeraphLeveling] Mod {mod.DisplayName} is incompatible with mod(s) {incompatibleStr}. Compatibility disabled for {mod.DisplayName}.");
+                });
+            }
+            
+            // Return the final set of mods to use for this run
+            return [.. All.Where(mod => mod.IsActive)];
         }
     }
 }

@@ -14,14 +14,16 @@ namespace SeraphLeveling.Data.Mods
         private List<string> FullIdList => [ModId, .. ModVariants];
         public required string DisplayName { get; init; }
         public required List<CharacterClassDefinition> CharacterClasses { get; init; }
+        public virtual List<Lazy<ModDefinition>> IncompatibleWith { get; init; } = [];
         
         internal bool IsLoaded { get; private set; } = false;
-        internal bool IsEnabled { get; set; } = true;
+        internal bool IsEnabled { get; private set; } = true;
+        internal bool HasConflict { get; set; } = false;
 
         /// <summary>
         /// Used to determine if this mod is both loaded and config-enabled, i.e. is ready for use.
         /// </summary>
-        public bool IsActive => IsLoaded && IsEnabled;
+        public bool IsActive => IsLoaded && IsEnabled && !HasConflict;
 
         private readonly Dictionary<string, bool> LoadStatus = [];
 
@@ -69,6 +71,6 @@ namespace SeraphLeveling.Data.Mods
         /// Used to detect whether a particular variant of this mod is active. For example, if you specifically need to know that
         /// the "Combat Overhaul 1.22 Fork" mod is installed instead of any Combat Overhaul mod.
         /// </summary>
-        public bool IsVariantActive(string variantId) => IsEnabled && LoadStatus.TryGetValue(variantId, out bool variantLoaded) && variantLoaded;
+        public bool IsVariantActive(string variantId) => IsEnabled && !HasConflict && LoadStatus.TryGetValue(variantId, out bool variantLoaded) && variantLoaded;
     }
 }
