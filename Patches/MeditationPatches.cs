@@ -4,6 +4,7 @@ using Vintagestory.API.Server;
 using System.Reflection;
 using HarmonyLib;
 using SeraphLeveling.Data.Attributes;
+using SeraphLeveling.Data.Mods;
 
 namespace SeraphLeveling.Patches
 {
@@ -12,9 +13,12 @@ namespace SeraphLeveling.Patches
         private static FieldInfo drainFieldInfo = null;
         public static void ServerPacketPlayerTemporalStabilityDrain_Prefix(IPlayer fromPlayer, object networkMessage)
         {
-            IServerPlayer serverPlayer = fromPlayer as IServerPlayer;
-            if (networkMessage == null || serverPlayer == null) return;
+            if (networkMessage == null || fromPlayer is not IServerPlayer serverPlayer) return;
             if (serverPlayer.Entity == null) return;
+
+            // If the Rustbound Magic mod is not active, abort
+            if (!ModDefinitions.RustboundMagic.IsActive) return;
+            
             try
             {
                 if (drainFieldInfo == null)

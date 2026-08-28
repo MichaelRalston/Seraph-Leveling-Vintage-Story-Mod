@@ -2522,7 +2522,7 @@ namespace SeraphLeveling
                 api.Logger.Warning($"[SeraphLeveling] Failed to patch EntityBehaviorHarvestable: {ex.Message}");
             }
 
-            if (ModDefinitions.Butchering.IsActive)
+            if (ModDefinitions.Butchering.IsLoaded)
             {
                 try
                 {
@@ -2556,7 +2556,7 @@ namespace SeraphLeveling
         private void PatchMeditation(ICoreServerAPI api)
         {
             api.Logger.Notification("[SeraphLeveling] patching the Rustbound Magic network message module");
-            if (ModDefinitions.RustboundMagic.IsActive)
+            if (ModDefinitions.RustboundMagic.IsLoaded)
             {
                 try
                 {

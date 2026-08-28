@@ -1,4 +1,5 @@
 using System;
+using SeraphLeveling.Data.Mods;
 using Vintagestory.API.Common;
 using Vintagestory.API.Server;
 
@@ -42,8 +43,10 @@ namespace SeraphLeveling.Patches
                 // Only process on server
                 if (byPlayer == null) return;
 
-                var serverPlayer = byPlayer as IServerPlayer;
-                if (serverPlayer == null) return;
+                if (byPlayer is not IServerPlayer serverPlayer) return;
+
+                // If the Butchering mod is not active, abort
+                if (!ModDefinitions.Butchering.IsActive) return;
 
                 // Call the Resourceful progression handler
                 SeraphLevelingModSystem.ProcessAnimalHarvested(serverPlayer);
