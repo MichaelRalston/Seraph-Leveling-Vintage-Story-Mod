@@ -430,5 +430,42 @@ namespace SeraphLeveling.Patches
 
         [System.Text.RegularExpressions.GeneratedRegex(@"•(?<between>(?:[ \t]|<font[^>]*>|</font>)*)•", System.Text.RegularExpressions.RegexOptions.Compiled)]
         private static partial System.Text.RegularExpressions.Regex DuplicateBulletPairRegex();
+
+        // Cache compiled "orphan-only" regexes per plain trait name (e.g. "<font color="#84ff84">• Hardy </font>").
+        // These match the plain name ONLY when it's a standalone line entry (followed by newline or
+        // end-of-string), not when it's the leading name of a vanilla trait line that has its own
+        // " <font opacity..."  description tag immediately after. That distinction is critical:
+        // unrestricted Contains/Replace on the plain name corrupts vanilla lines (strips the name
+        // or inserts our dynamic before the vanilla description, leaving both descriptions stacked).
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, System.Text.RegularExpressions.Regex> OrphanTraitPatternCache =
+            new();
+
+        private static System.Text.RegularExpressions.Regex GetOrphanTraitPattern(string plainName)
+        {
+            return OrphanTraitPatternCache.GetOrAdd(plainName, key =>
+                new System.Text.RegularExpressions.Regex(
+                    @"\n?" + System.Text.RegularExpressions.Regex.Escape(key) + @"(?=\n|$)",
+                    System.Text.RegularExpressions.RegexOptions.Compiled));
+        }
+
+        /// <summary>
+        /// Returns true if plainName appears as a standalone entry in text
+        /// (followed by a newline or end-of-string), not as a substring of a longer vanilla line.
+        /// </summary>
+        public static bool ContainsOrphanTraitName(string text, string plainName)
+        {
+            if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(plainName)) return false;
+            return GetOrphanTraitPattern(plainName).IsMatch(text);
+        }
+
+        /// <summary>
+        /// Removes standalone occurrences of plainName (and the preceding newline if present).
+        /// Vanilla lines are left untouched.
+        /// </summary>
+        public static string RemoveOrphanTraitName(string text, string plainName)
+        {
+            if (string.IsNullOrEmpty(text) || string.IsNullOrEmpty(plainName)) return text;
+            return GetOrphanTraitPattern(plainName).Replace(text, "");
+        }
     }
 }

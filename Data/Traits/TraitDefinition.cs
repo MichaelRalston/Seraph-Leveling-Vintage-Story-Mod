@@ -180,6 +180,16 @@ namespace SeraphLeveling.Data.Traits
                     {
                         result = result + "\n" + fullMessage;
                     }
+
+                    // Remove any orphaned trait codes that are ahnging around
+                    var orphans = Attributes.Select(mod => "trait-" + mod.Attribute.TraitCode);
+                    foreach (var orphan in orphans)
+                    {
+                        if (CharacterSystemPatches.ContainsOrphanTraitName(result, orphan))
+                        {
+                            result = CharacterSystemPatches.RemoveOrphanTraitName(result, orphan);
+                        }
+                    }
                 }
             }
             else if (hasVanillaTrait && hasEarnedProgress)
