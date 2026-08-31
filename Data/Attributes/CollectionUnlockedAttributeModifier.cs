@@ -103,9 +103,14 @@ namespace SeraphLeveling.Data.Attributes
 
         public override void CollectStatus(IPlayer player, StringBuilder sb)
         {
-            // FIXME Should this method and GetTraitAllCommandLine be combined across attribute classes?
             var progress = GetDict(player);
             sb.AppendLine($"{Name} trait: {progress.CollectedItems.Count} / {RequiredCollectionSize} unique {CollectedItemDescription} ({(progress.IsUnlocked ? "UNLOCKED" : "Locked")})");
+
+            if (!progress.IsUnlocked && progress.CollectedItems.Count > 0)
+            {
+                sb.AppendLine($"Collected:");
+                progress.CollectedItems.Foreach(item => sb.AppendLine($"  * {item}"));
+            }
         }
 
         public override TextCommandResult HandleLevelCommand(TextCommandCallingArgs args, int indexOffset)
