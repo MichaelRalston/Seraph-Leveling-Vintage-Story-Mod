@@ -272,11 +272,20 @@ namespace SeraphLeveling.Data.Attributes
                 return TextCommandResult.Success($"{Definition.Name} credits set to {level} (+{bonusPercent}{Definition.Stat}). Per-tool progress reset.");
             }
         }
+        
         public override TextCommandResult SetLevelFromCommand(IServerPlayer player, int level, TextCommandCallingArgs args, int indexOffset)
         {
-            string toolName = AssetLocation.Create((string)args[1 + indexOffset]);
-            return SetLevel(player, level, toolName);
+            if (args.ArgCount > 1 + indexOffset && args[1 + indexOffset] is string toolName)
+            {
+                var toolCode = AssetLocation.Create(toolName);
+                return SetLevel(player, level, toolCode);
+            }
+            else
+            {
+                return TextCommandResult.Error($"No tool provided for set level command!");
+            }
         }
+
         public override void ReadVersion(byte version, BinaryReader reader)
         {
             int toolCount;

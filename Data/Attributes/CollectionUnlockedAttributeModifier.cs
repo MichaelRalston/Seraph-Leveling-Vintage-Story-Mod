@@ -68,16 +68,15 @@ namespace SeraphLeveling.Data.Attributes
 
                 if (progress.CollectedItems.Count >= RequiredCollectionSize && !progress.IsUnlocked)
                 {
-                    bool oldUnlock = progress.IsUnlocked;
-                    progress.IsUnlocked = true;
-                    if (oldUnlock != progress.IsUnlocked)
-                    {
-                        FireUnlockChangedEvent(player, oldUnlock, progress.IsUnlocked);
-                    }
-                    ApplyUnlock(player, progress);
-                    SeraphLevelingModSystem.NotifyLevelUp(player, Lang.Get(NotifyLangKey));
+                    FireUnlockChangedEvent(player, false, true);
                 }
             }
+        }
+
+        public override bool IsUnlockableForPlayer(IPlayer player)
+        {
+            var progress = GetDict(player);
+            return progress.IsUnlocked || progress.CollectedItems.Count >= RequiredCollectionSize;
         }
 
         public override void ApplyUnlock(IServerPlayer player, PD progress)
