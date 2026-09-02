@@ -106,7 +106,7 @@ namespace SeraphLeveling.Data.Traits
                 sb.AppendLine($"Requirements:");
                 Attributes.ForEach(mod => mod.CollectRequirementStatus(player, sb));
             }
-            
+
             return TextCommandResult.Success(sb.ToString().TrimEnd());
         }
 
@@ -135,7 +135,8 @@ namespace SeraphLeveling.Data.Traits
             {
                 var combinedAttrBonuses = GetCombinedAttributeBonuses(player);
                 string headerText = Lang.Get(DynamicTraitHeaderKey);
-                string contentText = string.Join(", ", Attributes.Where(mod => !processedModifiers.Contains(mod.Attribute) && mod.ShouldDisplay(player.Player, hasVanillaTrait)).Select(mod => {
+                string contentText = string.Join(", ", Attributes.Where(mod => !processedModifiers.Contains(mod.Attribute) && mod.ShouldDisplay(player.Player, hasVanillaTrait)).Select(mod =>
+                {
                     CharacterSystemPatches.ClientApi.Logger.Debug($"[Verdus] Adding attribute {mod.Attribute.Id} to de-duplication set during processing of trait {Id}");
                     processedModifiers.Add(mod.Attribute);
                     string modKey = mod.DynamicAttributeContentsKey.ToLowerInvariant();
@@ -180,15 +181,14 @@ namespace SeraphLeveling.Data.Traits
                     {
                         result = result + "\n" + fullMessage;
                     }
-
-                    // Remove any orphaned trait codes that are ahnging around
-                    var orphans = Attributes.Select(mod => "trait-" + mod.Attribute.TraitCode);
-                    foreach (var orphan in orphans)
+                }
+                // Remove any orphaned trait codes that are ahnging around
+                var orphans = Attributes.Select(mod => "trait-" + mod.Attribute.TraitCode);
+                foreach (var orphan in orphans)
+                {
+                    if (CharacterSystemPatches.ContainsOrphanTraitName(result, orphan))
                     {
-                        if (CharacterSystemPatches.ContainsOrphanTraitName(result, orphan))
-                        {
-                            result = CharacterSystemPatches.RemoveOrphanTraitName(result, orphan);
-                        }
+                        result = CharacterSystemPatches.RemoveOrphanTraitName(result, orphan);
                     }
                 }
             }
