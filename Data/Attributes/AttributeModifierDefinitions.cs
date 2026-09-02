@@ -516,7 +516,7 @@ namespace SeraphLeveling.Data.Attributes
             Weapons = [ ToolDefinitions.MeleeWeapon ],
         };
 
-        public static readonly DamageAttributeModifierDefinition Precise = new()
+        public static readonly PreciseAttributeModifierDefinition Precise = new()
         {
             Id = "precise",
             Name = "Precise",
