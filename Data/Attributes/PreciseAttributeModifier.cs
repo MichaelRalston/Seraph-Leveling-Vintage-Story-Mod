@@ -13,7 +13,7 @@ namespace SeraphLeveling.Data.Attributes
     }
 
     public class PreciseAttributeModifierDefinition : LeveledToolAttributeModifierDefinition<PreciseAttributeModifierDefinition, PreciseAttributeModifierProgressData, SimpleToolProgress>, 
-        IConstructable<PreciseAttributeModifierDefinition, PreciseAttributeModifierProgressData>,
+        IConstructable<PreciseAttributeModifierDefinition, PreciseAttributeModifierProgressData>
     {
         public required List<ToolDefinition> Weapons { get; init; }
 

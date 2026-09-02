@@ -5705,21 +5705,7 @@ namespace SeraphLeveling
         {
             if (entity == null) return false;
 
-            string entityCode = entity.Code?.Path?.ToLowerInvariant() ?? "";
-
-            // Check for known mechanical creatures
-            // Locusts are the main mechanical enemies in Vintage Story
-            if (entityCode.Contains("locust")) return true;
-            if (entityCode.Contains("bell")) return true;
-            if (entityCode.Contains("mechanical")) return true;
-            if (entityCode.Contains("automaton")) return true;
-            if (entityCode.Contains("construct")) return true;
-
-            // Also check the entity class
-            string entityClass = entity.GetType().Name.ToLowerInvariant();
-            if (entityClass.Contains("locust")) return true;
-
-            return false;
+            return entity.Properties?.Attributes?["isMechanical"].AsBool()??false;
         }
 
         /// <summary>
