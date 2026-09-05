@@ -1814,9 +1814,9 @@ namespace SeraphLeveling
             }
 
             // Check for Pitmaster progression (ready-to-harvest pit charcoal)
-            if (IsCharcoalPile(oldblockId, out int charcoalPoints))
+            if (IsCharcoalPile(oldblockId))
             {
-                ProcessCharcoalBreak(byPlayer, charcoalPoints);
+                ProcessCharcoalBreak(byPlayer);
             }
 
             var toolCode = byPlayer.Entity?.RightHandItemSlot?.Itemstack?.Collectible?.Code;
@@ -5758,13 +5758,13 @@ namespace SeraphLeveling
             AttributeModifierDefinitions.WholeVesselRate.GetForPlayer(playerUid).DoEvent(player, PILFERER_VESSEL_POINTS);
         }
 
-        private static void ProcessCharcoalBreak(IServerPlayer player, int pointValue)
+        private static void ProcessCharcoalBreak(IServerPlayer player)
         {
             if (player?.Entity == null) return;
 
             string playerUid = player.PlayerUID;
 
-            AttributeModifierDefinitions.CharcoalDropRate.GetForPlayer(playerUid).DoEvent(player, pointValue);
+            AttributeModifierDefinitions.CharcoalDropRate.GetForPlayer(playerUid).DoEvent(player, 1);
         }
 
         /// <summary>
@@ -5918,11 +5918,8 @@ namespace SeraphLeveling
             return false;
         }
 
-        private static bool IsCharcoalPile(int blockId, out int points)
+        private static bool IsCharcoalPile(int blockId)
         {
-            // Set a default points output value for failure cases
-            points = 0;
-
             if (ServerApi == null) return false;
 
             Block block = ServerApi.World.GetBlock(blockId);
@@ -5931,19 +5928,9 @@ namespace SeraphLeveling
             string blockPath = block.Code?.Path;
             if (string.IsNullOrEmpty(blockPath)) return false;
 
-            // Only charcoal piles from charcoal pits count - extract the point value from the number of charcoal in the pile by default
+            // Only charcoal piles from charcoal pits count
             const string PREFIX = "charcoalpile-";
-            if (blockPath.StartsWith(PREFIX))
-            {
-                if (!int.TryParse(blockPath[PREFIX.Length..], out points))
-                {
-                    // If for some reason parsing of the block code fails, default to one point
-                    points = 1;
-                }
-                return true;
-            }
-
-            return false;
+            return blockPath.StartsWith(PREFIX);
         }
 
         // =========================================================================
