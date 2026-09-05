@@ -22,6 +22,7 @@ using SeraphLeveling.Data;
 using SeraphLeveling.Data.Traits;
 using SeraphLeveling.Data.Mods;
 using SeraphLeveling.Data.Attributes;
+using SeraphLeveling.Data.CharacterClasses;
 using SeraphLeveling.Data.Legacy;
 using Vintagestory.API.Util;
 using Microsoft.CSharp.RuntimeBinder;
@@ -268,10 +269,12 @@ namespace SeraphLeveling
         // =========================================================================
 
         public static ImmutableDictionary<string, ImmutableList<(TraitDefinition Trait, int Value)>> TraitsForAttributes { get; private set; } = ImmutableDictionary<string, ImmutableList<(TraitDefinition, int)>>.Empty;
+        public static ImmutableDictionary<string, ImmutableList<ModDefinition>> ModsForTraits { get; private set; } = [];
+
         public static List<TraitDefinition> LoadedTraits { get; internal set; } = [];   // Preserve ordering for consistent trait text formatting
         public static HashSet<ISaveableAttribute> LoadedAttributes { get; internal set; } = [];
-
         public static HashSet<ModDefinition> LoadedMods { get; internal set; } = [ModDefinitions.Vanilla];
+
         public static void DetectLoadedMods(IModLoader modLoader, SeraphLevelingConfig config)
         {
             ServerApi?.Logger.Notification("[SeraphLeveling] Detecting loaded mods...");
@@ -279,14 +282,20 @@ namespace SeraphLeveling
 
             ServerApi?.Logger.Notification("[SeraphLeveling] Finished detecting loaded mods, preparing to load traits...");
             var traits = LoadedMods
-                    .SelectMany(mod => mod.CharacterClasses)
-                    .SelectMany(charClass => charClass.Traits)
-                    .DistinctBy(trait => trait.Id);
-            LoadedTraits = [.. traits];
+                    .SelectMany(mod => mod.CharacterClasses, (mod, characterClass) => (Mod: mod, CharClass: characterClass))
+                    .SelectMany(charClassTuple => charClassTuple.CharClass.Traits, (charClassTuple, trait) => (Mod: charClassTuple.Mod, Trait: trait));
+            LoadedTraits = [.. traits.Select(tuple => tuple.Trait).DistinctBy(trait => trait.Id)];
+
+            ModsForTraits = traits
+                .GroupBy(x => x.Trait)
+                .ToImmutableDictionary(
+                    group => group.Key.Id,
+                    group => group.Select(x => x.Mod).DistinctBy(m => m.ModId).ToImmutableList()
+                );
 
             ServerApi?.Logger.Notification("[SeraphLeveling] Loaded traits, preparing to map attributes...");
 
-            var flatAttributeMappings = traits
+            var flatAttributeMappings = LoadedTraits
                     .SelectMany(trait => trait.Attributes, (trait, attrKvp) => new
                     {
                         attrKvp.Attribute,
@@ -541,7 +550,10 @@ namespace SeraphLeveling
         /// </summary>
         public static bool IsAttributeModifierDisabled(ISaveableAttribute attribute)
         {
-            return DisabledSkills.Contains(attribute.SkillKey) || !attribute.IsRequiredModLoaded;
+            return DisabledSkills.Contains(attribute.SkillKey) ||
+                !attribute.IsRequiredModLoaded ||
+                !TraitsForAttributes.TryGetValue(attribute.Id, out var traitList) ||
+                !traitList.Where(tuple => ModsForTraits.ContainsKey(tuple.Trait.Id)).SelectMany(tuple => ModsForTraits[tuple.Trait.Id]).DistinctBy(m => m.ModId).Any(m => m.IsActive);
         }
 
         public override void StartServerSide(ICoreServerAPI api)
