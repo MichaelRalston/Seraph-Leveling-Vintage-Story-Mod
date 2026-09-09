@@ -606,9 +606,8 @@ namespace SeraphLeveling.Data.Attributes
 
                 // Notify player of level up with the level as the bonus (the raw mining speed improvement, etc)
                 // This shows the true progress even when negative traits are still being cancelled
-                ;
                 SeraphLevelingModSystem.NotifyLevelUp(player,
-                    Lang.Get($"seraphleveling:message-{Definition.SkillKey}-firstequip", TotalCredits, TotalCredits));
+                    Lang.Get($"seraphleveling:message-{Definition.SkillKey}-level-up", TotalCredits, TotalCredits));
 
                 // Check for trait unlocks that depend on trait level
                 Definition.OnCreditsChanged(player, oldCredits, (PD)this);
