@@ -444,7 +444,7 @@ namespace SeraphLeveling.Patches
         {
             return OrphanTraitPatternCache.GetOrAdd(plainName, key =>
                 new System.Text.RegularExpressions.Regex(
-                    @"\n?" + System.Text.RegularExpressions.Regex.Escape(key) + @"(?=\n|$)",
+                    @"\r?\n?" + System.Text.RegularExpressions.Regex.Escape(key) + @"(?=\r?\n|$)",
                     System.Text.RegularExpressions.RegexOptions.Compiled));
         }
 
