@@ -13,6 +13,11 @@ namespace SeraphLeveling.Patches
         public static event TriggerToolRepairDelegate TriggerToolRepair;
         public static event TriggerGridCraftingResultDelegate TriggerGridCrafted;
 
+        public static void TriggerGridCraftingResult(IServerPlayer player, AssetLocation outputCode, int quantity)
+        {
+            TriggerGridCrafted?.Invoke(player, outputCode, quantity);
+        }
+
         public static void GridRecipeConsumeInput_Postfix(GridRecipe __instance, IPlayer byPlayer, ItemSlot[] inputSlots, int gridWidth, bool __result)
         {
             if (__result && byPlayer?.Entity?.Api?.Side == EnumAppSide.Server)

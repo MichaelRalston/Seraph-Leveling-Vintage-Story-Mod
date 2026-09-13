@@ -2217,6 +2217,9 @@ namespace SeraphLeveling
 
                     // Patch meditation for Rustbound Magic compatibility, iff RM is loaded.
                     PatchMeditation(api);
+
+                    // Patch Immersive Fibercraft for Weaver trait detection on loom weaving, iff IF is loaded.
+                    PatchImmersiveFibercraft(api);
                 }
             }
             catch (Exception ex)
@@ -2581,7 +2584,7 @@ namespace SeraphLeveling
                     var packetMethod = AccessTools.Method(networkMessageType, "ServerPacketPlayerTemporalStabilityDrain");
                     if (packetMethod == null)
                     {
-                        api.Logger.Warning("[SeraphLeveling] Could not find the ServerPacketPlayerTemporalStabilityDrain method in the Rustbound Magic network mesasge module");
+                        api.Logger.Warning("[SeraphLeveling] Could not find the ServerPacketPlayerTemporalStabilityDrain method in the Rustbound Magic network message module");
                         return;
                     }
                     var prefixMethod = AccessTools.Method(typeof(MeditationPatches), nameof(MeditationPatches.ServerPacketPlayerTemporalStabilityDrain_Prefix));
@@ -2591,6 +2594,45 @@ namespace SeraphLeveling
                 catch (Exception ex)
                 {
                     api.Logger.Warning($"[SeraphLeveling] Failed to patch Rustbound Magic meditation: {ex.Message}");
+                }
+            }
+        }
+
+        private void PatchImmersiveFibercraft(ICoreServerAPI api)
+        {
+            api.Logger.Notification("[SeraphLeveling] patching the Immersive Fibercraft Shuttle Loom for Weaver");
+            if (ModDefinitions.ImmersiveFibercraft.IsLoaded)
+            {
+                try
+                {
+                    var spinningWheelType = AccessTools.TypeByName("SpinningWheel.BlockEntities.BlockEntityFlyShuttleLoom");
+                    if (spinningWheelType == null)
+                    {
+                        api.Logger.Warning("[SeraphLeveling] Could not find the Immersive Fibercraft BlockEntitySpinningWheel type");
+                        return;
+                    }
+                    var WeaveInputNormalMethod = AccessTools.Method(spinningWheelType, "WeaveInputNormal");
+                    if (WeaveInputNormalMethod == null)
+                    {
+                        api.Logger.Warning("[SeraphLeveling] Could not find the WeaveInputNormal method in BlockEntitySpinningWheel");
+                        return;
+                    }
+                    var normalPrefixMethod = AccessTools.Method(typeof(ImmersiveFibercraftPatches), nameof(ImmersiveFibercraftPatches.WeaveInputNormal_Prefix));
+                    serverHarmony.Patch(WeaveInputNormalMethod, prefix: new HarmonyMethod(normalPrefixMethod));
+                    api.Logger.Notification("[SeraphLeveling] Successfully patched Immersive Fibercraft BlockEntitySpinningWheel.WeaveInputNormal for crafting hooks.");
+                    var WeaveInputPatternMethod = AccessTools.Method(spinningWheelType, "WeaveInputPattern");
+                    if (WeaveInputPatternMethod == null)
+                    {
+                        api.Logger.Warning("[SeraphLeveling] Could not find the WeaveInputPattern method in BlockEntitySpinningWheel");
+                        return;
+                    }
+                    var patternPrefixMethod = AccessTools.Method(typeof(ImmersiveFibercraftPatches), nameof(ImmersiveFibercraftPatches.WeaveInputPattern_Prefix));
+                    serverHarmony.Patch(WeaveInputPatternMethod, prefix: new HarmonyMethod(patternPrefixMethod));
+                    api.Logger.Notification("[SeraphLeveling] Successfully patched Immersive Fibercraft BlockEntitySpinningWheel.WeaveInputPattern for crafting hooks.");
+                }
+                catch (Exception ex)
+                {
+                    api.Logger.Warning($"[SeraphLeveling] Failed to patch Immersive Fibercraft BlockEntitySpinningWheel: {ex.Message}");
                 }
             }
         }

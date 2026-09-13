@@ -73,6 +73,13 @@ namespace SeraphLeveling.Data.Mods
             ],
         });
 
+        public static readonly ModDefinition ImmersiveFibercraft = Register(new()
+        {
+            ModId = "spinningwheel",
+            DisplayName = "Immersive Fibercraft",
+            CharacterClasses = [],
+        });
+
         public static readonly ModDefinition CombatOverhaul = Register(new()
         {
             ModId = SeraphLevelingModSystem.COMBAT_OVERHAUL_BASE_ID,
