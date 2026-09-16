@@ -357,11 +357,11 @@ namespace SeraphLeveling.Data.Attributes
             BrokenBlockScores = StoneBlockPoints,
         };
 
-        public static readonly ConcurrentDictionary<SimpleToolProgress, IncrementData> TreeIncrementData = new()
+        public static readonly ConcurrentDictionary<SimpleToolProgress, IncrementData> LeavesIncrementData = new()
         {
             [default] = new IncrementData
             {
-                IncrementUnits = "trees",
+                IncrementUnits = "leaves",
                 BaseIncrement = 20,
                 IncrementStep = 20,
             }
@@ -369,8 +369,8 @@ namespace SeraphLeveling.Data.Attributes
 
         private static readonly ConcurrentDictionary<IAssetLocationMatcher, float> LeavesPoints = new()
         {
-            [Simple("leavesbranchy-grown")] = 2,
-            [Or(Simple("leaves-grown"), Simple("leavesnarrow-grown"))] = 1,
+            [Simple("leavesbranchy-grown")] = 5,
+            [Or(Simple("leaves-grown"), Simple("leavesnarrow-grown"))] = 2,
         };
 
         public static readonly GenericToolAttributeModifierDefinition WoodDropRate = new()
@@ -382,7 +382,7 @@ namespace SeraphLeveling.Data.Attributes
             LongDescription = "wood drop rate",
             PersistenceHeader = "WDR",
             Tools = [ ToolDefinitions.Shears, ToolDefinitions.Axe ],
-            IncrementData = TreeIncrementData,
+            IncrementData = LeavesIncrementData,
             GlobalMaxCredits = 100,
             StatName = "sacredlib:woodDropRate",
             BrokenBlockScores = LeavesPoints,
@@ -397,7 +397,7 @@ namespace SeraphLeveling.Data.Attributes
             LongDescription = "tree seed drop rate",
             PersistenceHeader = "SDR",
             Tools = [ ToolDefinitions.Shears, ToolDefinitions.Axe ],
-            IncrementData = TreeIncrementData,
+            IncrementData = LeavesIncrementData,
             GlobalMaxCredits = 1000,
             StatName = "sacredlib:treeseedDropRate",
             BrokenBlockScores = LeavesPoints,
@@ -412,7 +412,7 @@ namespace SeraphLeveling.Data.Attributes
             LongDescription = "stick drop rate",
             PersistenceHeader = "WDR",
             Tools = [ ToolDefinitions.Shears, ToolDefinitions.Axe ],
-            IncrementData = TreeIncrementData,
+            IncrementData = LeavesIncrementData,
             GlobalMaxCredits = 300,
             StatName = "sacredlib:stickDropRate",
             BrokenBlockScores = LeavesPoints,
