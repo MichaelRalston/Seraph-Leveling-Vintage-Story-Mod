@@ -30,6 +30,7 @@ using System.Text.Json;
 using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json;
 using Vintagestory.API.Datastructures;
+using SeraphLeveling.Data.Tools;
 
 namespace SeraphLeveling
 {
@@ -1834,8 +1835,29 @@ namespace SeraphLeveling
             var toolCode = byPlayer.Entity?.RightHandItemSlot?.Itemstack?.Collectible?.Code;
             if (toolCode == null) return;
 
+            // Breaking blocks with shears is instead handled by OnMultiBlockBreaking, which cannot differentiate
+            // between the central block and its surrounding blocks. Skip here to avoid double counting that
+            // central block.
+            if (ToolDefinitions.Shears.Matches(byPlayer.Entity?.RightHandItemSlot?.Itemstack?.Collectible?.Tool)) return;
+
             // Fire event for attributes that care about broken blocks
             BlockBrokenTrigger?.Invoke(byPlayer, toolCode, oldblockId, blockSel?.Position);
+        }
+
+        /// <summary>
+        /// Called by Harmony patch right before a block is broken by a player using shears.
+        /// </summary>
+        public static void OnMultiBlockBreaking(IPlayer player, BlockPos position)
+        {
+            if (player is not IServerPlayer serverPlayer) return;
+
+            var toolCode = serverPlayer.Entity?.RightHandItemSlot?.Itemstack?.Collectible?.Code;
+            if (toolCode == null) return;
+
+            int blockId = ServerApi.World.BlockAccessor.GetBlock(position).Id;
+
+            // Fire event for attributes that care about broken blocks
+            BlockBrokenTrigger?.Invoke(serverPlayer, toolCode, blockId, position);
         }
 
         /// <summary>
@@ -2215,6 +2237,9 @@ namespace SeraphLeveling
                     // Patch ItemPoultice.OnHeldInteractStop for Medic trait (poultice/bandage healing)
                     PatchPoulticeHealing(api);
 
+                    // Patch ItemShears.breakMultiBlock for Tree Whisperer trait (leaves breaking with shears)
+                    PatchShearsBreakMultiBlock(api);
+
                     // Patch meditation for Rustbound Magic compatibility, iff RM is loaded.
                     PatchMeditation(api);
 
@@ -2565,6 +2590,38 @@ namespace SeraphLeveling
                 {
                     api.Logger.Warning($"[SeraphLeveling] Failed to patch BlockEntityButcherTable: {ex.Message}");
                 }
+            }
+        }
+
+        private void PatchShearsBreakMultiBlock(ICoreServerAPI api)
+        {
+            try
+            {
+                // Find the ItemShears type in VSSurvivalMod
+                var shearsType = AccessTools.TypeByName("Vintagestory.GameContent.ItemShears");
+                if (shearsType == null)
+                {
+                    api.Logger.Warning("[SeraphLeveling] Could not find ItemShears type");
+                    return;
+                }
+
+                // Find the breakMultiBlock method
+                var breakMultiBlockMethod = AccessTools.Method(shearsType, "breakMultiBlock");
+                if (breakMultiBlockMethod == null)
+                {
+                    api.Logger.Warning("[SeraphLeveling] Could not find breakMultiBlock method in ItemShears");
+                    return;
+                }
+
+                // Get our prefix method
+                var prefixMethod = AccessTools.Method(typeof(ShearsPatches), nameof(ShearsPatches.ItemShears_breakMultiBlock_Prefix));
+
+                serverHarmony.Patch(breakMultiBlockMethod, prefix: new HarmonyMethod(prefixMethod));
+                api.Logger.Notification("[SeraphLeveling] Successfully patched ItemShears.breakMultiBlock for detecting multi-block breaking with shears");
+            }
+            catch (Exception ex)
+            {
+                api.Logger.Warning($"[SeraphLeveling] Failed to patch ItemShears: {ex.Message}");
             }
         }
 
