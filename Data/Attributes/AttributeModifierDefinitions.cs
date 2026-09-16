@@ -927,7 +927,7 @@ namespace SeraphLeveling.Data.Attributes
             StatName = "ats:healitemusetime"
         };
 
-        public static readonly AlchemistAttributeModifierDefinition Alchemist = new()
+        public static readonly GenericGridCraftUnlockedAttributeModifierDefinition Alchemist = new()
         {
             Id = "alchemist",
             SkillKey = "alchemist",
@@ -937,6 +937,8 @@ namespace SeraphLeveling.Data.Attributes
             CreditDescription = "poultices",
             WatchedCreditsAttributeKey = "sitAlchemistPoultices",
             Trait = new(() => Traits.TraitDefinitions.Alchemist),
+            CraftedItemName = "Poultices",
+            ResultAllowList = Simple("poultice"),
         };
 
         public static readonly PropagatorAttributeModifierDefinition Propagator = new()
