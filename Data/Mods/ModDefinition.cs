@@ -72,5 +72,7 @@ namespace SeraphLeveling.Data.Mods
         /// the "Combat Overhaul 1.22 Fork" mod is installed instead of any Combat Overhaul mod.
         /// </summary>
         public bool IsVariantActive(string variantId) => IsEnabled && !HasConflict && LoadStatus.TryGetValue(variantId, out bool variantLoaded) && variantLoaded;
+
+        public bool Matches(AssetLocation code) => IsActive && FullIdList.Any(id => id.Equals(code.Domain, StringComparison.OrdinalIgnoreCase));
     }
 }

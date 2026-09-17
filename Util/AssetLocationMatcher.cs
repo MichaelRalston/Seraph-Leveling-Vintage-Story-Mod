@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using SeraphLeveling.Data.Mods;
 using Vintagestory.API.Common;
 
 namespace SeraphLeveling.Util
@@ -45,6 +46,11 @@ namespace SeraphLeveling.Util
         public static IAssetLocationMatcher Not(IAssetLocationMatcher inner)
         {
             return new NotInstance(inner);
+        }
+
+        public static IAssetLocationMatcher Mod(ModDefinition mod, IAssetLocationMatcher inner)
+        {
+            return new ModInstance(mod, inner);
         }
 
         private record class SimpleInstance(string Pattern, MatcherType MatchType) : IAssetLocationMatcher
@@ -93,6 +99,14 @@ namespace SeraphLeveling.Util
             public bool Matches(AssetLocation code)
             {
                 return !Inner.Matches(code);
+            }
+        }
+
+        private record class ModInstance(ModDefinition Mod, IAssetLocationMatcher Inner) : IAssetLocationMatcher
+        {
+            public bool Matches(AssetLocation code)
+            {
+                return Mod.Matches(code) && Inner.Matches(code);
             }
         }
     }
