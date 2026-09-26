@@ -564,9 +564,22 @@ namespace SeraphLeveling
             Instance = this;
             isDisposed = false;
 
+            // Keep the handbook progress page current: every 15 s, re-sync any
+            // player whose report changed (unlocks, /trait setplayer, resets).
+            api.Event.RegisterGameTickListener(dt =>
+            {
+                foreach (var p in api.World.AllOnlinePlayers)
+                    if (p is IServerPlayer sp && sp.Entity != null) PushProgressReport(sp);
+            }, 15000);
+            api.Event.RegisterGameTickListener(_ => FlushProgressReports(), 100);
+
             // Register network channel for level-up sound
             serverSoundChannel = api.Network.RegisterChannel("seraphleveling")
-                .RegisterMessageType<LevelUpSoundMessage>();
+                .RegisterMessageType<LevelUpSoundMessage>()
+                .RegisterMessageType<ProgressReportMessage>()
+                .RegisterMessageType<ProgressReportRequestMessage>()
+                .SetMessageHandler<ProgressReportRequestMessage>((player, msg) => PushProgressReport(player, force: msg?.Force ?? false));
+            ;
 
             // Load config file (sets defaults for new worlds)
             var config = LoadConfigFile(api);
@@ -1052,28 +1065,14 @@ namespace SeraphLeveling
         /// </summary>
         private TextCommandResult OnTraitAllCommand(TextCommandCallingArgs args)
         {
-            var player = args.Caller.Player;
+            var byPlayer = args.Caller.Player;
+            if (byPlayer is not IServerPlayer player) return TextCommandResult.Error("Could not find player entity");
             if (player?.Entity == null)
             {
                 return TextCommandResult.Error("Could not find player entity");
             }
 
-            string playerUid = player.PlayerUID;
-            var sb = new StringBuilder();
-            sb.AppendLine("=== All Trait Progression ===");
-            foreach (var definition in LoadedAttributes)
-            {
-                definition.GetTraitAllCommandLine(player, sb);
-            }
-
-            // Unlock traits
-            sb.AppendLine("\n--- Unlock Traits ---");
-            foreach (var definition in LoadedAttributes)
-            {
-                definition.GetTraitUnlockableCommandLine(player, sb);
-            }
-
-            return TextCommandResult.Success(sb.ToString().TrimEnd());
+            return TextCommandResult.Success(BuildAllCommandResult(player));
         }
 
         private TextCommandResult OnTraitListCommand(TextCommandCallingArgs args)
@@ -1982,6 +1981,11 @@ namespace SeraphLeveling
             VanillaTraitsCache.TryRemove(playerUid, out _);
             LastDecayCheckDay.TryRemove(playerUid, out _);
             SleepMountHours.TryRemove(playerUid, out _);
+            LastSleepBuffApplyTick.TryRemove(playerUid, out _);
+            LastSentProgressReport.TryRemove(playerUid, out _);
+            ProgressReportDirty.TryRemove(playerUid, out _);
+            foreach (var key in TrackedItemDurabilities.Keys.Where(k => k.StartsWith(playerUid + "_", StringComparison.Ordinal)).ToList())
+                TrackedItemDurabilities.TryRemove(key, out _);
 
             // Save all pending progress data to prevent data loss on disconnect
             SaveAllPendingProgress();
@@ -2097,6 +2101,8 @@ namespace SeraphLeveling
         {
             if (byPlayer?.Entity == null) return;
 
+            ServerApi?.Event.RegisterCallback(_ => PushProgressReport(byPlayer, force: true), 4000);
+
             string playerUid = byPlayer.PlayerUID;
 
             // Populate vanilla traits cache first (before applying any bonuses)
@@ -2136,6 +2142,89 @@ namespace SeraphLeveling
             InitializePlayerArmorTracking(byPlayer);
         }
 
+
+        public const string WATCHED_PROGRESS_REPORT = "seraphleveling:progressReport";
+
+        public static string BuildProgressReportForPlayer(IServerPlayer player)
+        {
+            string playerUid = player.PlayerUID;
+            var sb = new StringBuilder();
+            foreach (var definition in LoadedAttributes)
+            {
+                definition.CollectStatus(player, sb);
+                sb.AppendLine("\n");
+            }
+            return sb.ToString().TrimEnd();
+        }
+        public static string BuildAllCommandResult(IServerPlayer player)
+        {
+            string playerUid = player.PlayerUID;
+            var sb = new StringBuilder();
+            sb.AppendLine("=== All Trait Progression ===");
+            foreach (var definition in LoadedAttributes)
+            {
+                definition.GetTraitAllCommandLine(player, sb);
+            }
+
+            // Unlock traits
+            sb.AppendLine("\n--- Unlock Traits ---");
+            foreach (var definition in LoadedAttributes)
+            {
+                definition.GetTraitUnlockableCommandLine(player, sb);
+            }
+
+            return sb.ToString().TrimEnd();
+        }
+
+        // Last report sent to each online player this session, so the 15 s
+        // refresh only sends when something changed. In memory on purpose: a
+        // saved attribute survived restarts and made the push think the client
+        // already had the report when the client had nothing.
+        private static readonly ConcurrentDictionary<string, string> LastSentProgressReport = new();
+
+        // Players whose progress changed since the last push. A 100 ms server tick
+        // flushes them, so a mined block is on the handbook page before the player
+        // can open it (the single-player pause stops the server, so waiting for the
+        // page to ask would be too late), and one hit that trains several skills
+        // sends one packet instead of three.
+        private static readonly ConcurrentDictionary<string, IServerPlayer> ProgressReportDirty = new();
+
+        /// <summary>Progress changed for this player: push the report on the next flush.</summary>
+        public static void MarkProgressChanged(IServerPlayer player)
+        {
+            if (player?.PlayerUID != null) ProgressReportDirty[player.PlayerUID] = player;
+        }
+
+        private static void FlushProgressReports()
+        {
+            if (ProgressReportDirty.IsEmpty) return;
+            foreach (var key in ProgressReportDirty.Keys.ToList())
+            {
+                if (ProgressReportDirty.TryRemove(key, out var player) && player?.Entity != null) PushProgressReport(player);
+            }
+        }
+
+        /// <summary>
+        /// Sync the progression report to the player's client (watched attributes
+        /// replicate automatically). Only writes when the text changed, so the
+        /// 15 second refresh costs nothing when nothing happened.
+        /// </summary>
+        public static void PushProgressReport(IServerPlayer player, bool force = false)
+        {
+            try
+            {
+                if (player?.Entity == null) return;
+                string report = BuildProgressReportForPlayer(player);
+                if (!force && LastSentProgressReport.TryGetValue(player.PlayerUID, out string last) && last == report) return;
+                serverSoundChannel.SendPacket(new ProgressReportMessage { Report = report }, player);
+                LastSentProgressReport[player.PlayerUID] = report;
+            }
+            catch (Exception ex)
+            {
+                ServerApi?.Logger?.Warning($"[SeraphLeveling] Could not sync the progress report for {player?.PlayerName}: {ex.Message}");
+            }
+        }
+
         /// <summary>
         /// Apply the mining speed bonus to a player based on their level.
         /// Sends a level-up notification to the player (chat message and/or sound),
@@ -2143,6 +2232,8 @@ namespace SeraphLeveling
         /// </summary>
         public static void NotifyLevelUp(IServerPlayer player, string message)
         {
+            PushProgressReport(player);
+
             if (EnableLevelUpMessages)
             {
                 player.SendMessage(GlobalConstants.GeneralChatGroup, message, EnumChatType.Notification);
@@ -5871,7 +5962,7 @@ namespace SeraphLeveling
         {
             if (entity == null) return false;
 
-            return entity.Properties?.Attributes?["isMechanical"].AsBool()??false;
+            return entity.Properties?.Attributes?["isMechanical"].AsBool() ?? false;
         }
 
         /// <summary>
@@ -7258,6 +7349,7 @@ namespace SeraphLeveling
         private GuiElementRichtext richtextElem;
         private bool hasHookedDialog = false;
         private object characterSystemInstance;
+        private long progressPollListenerId;
 
         public override bool ShouldLoad(EnumAppSide forSide)
         {
@@ -7274,9 +7366,19 @@ namespace SeraphLeveling
             SeraphLevelingModSystem.DetectLoadedMods(api.ModLoader, config);
 
             // Register network channel for receiving level-up sounds from server
-            api.Network.RegisterChannel("seraphleveling")
+            var channel = api.Network.RegisterChannel("seraphleveling")
                 .RegisterMessageType<LevelUpSoundMessage>()
-                .SetMessageHandler<LevelUpSoundMessage>(OnLevelUpSoundReceived);
+                .RegisterMessageType<ProgressReportMessage>()
+                .RegisterMessageType<ProgressReportRequestMessage>()
+                .SetMessageHandler<LevelUpSoundMessage>(OnLevelUpSoundReceived)
+                .SetMessageHandler<ProgressReportMessage>(msg =>
+                {
+                    api.Logger.Debug("[SeraphLeveling] progress report received ({0} chars)", msg?.Report?.Length ?? 0);
+                    Gui.SeraphProgressPage.OnReportReceived(msg?.Report);
+                });
+            Gui.SeraphProgressPage.Channel = channel;
+            progressPollListenerId = api.Event.RegisterGameTickListener(_ => Gui.SeraphProgressPage.PollIfShowing(), 1000);
+
 
             // Apply Harmony patches manually for better control
             const string HARMONY_ID = "seraphleveling";
@@ -7297,6 +7399,9 @@ namespace SeraphLeveling
 
             // Register event to hook into character dialog when it's loaded
             api.Event.PlayerJoin += OnPlayerJoin;
+
+            var handbook = api.ModLoader.GetModSystem<ModSystemSurvivalHandbook>();
+            handbook?.OnInitCustomPages += pages => pages.Add(new Gui.SeraphProgressPage(api));
         }
 
         /// <summary>
@@ -7575,6 +7680,7 @@ namespace SeraphLeveling
         public override void Dispose()
         {
             harmony?.UnpatchAll("seraphleveling");
+            Gui.SeraphProgressPage.LatestReport = null;
 
             // Unhook from character dialog: put the vanilla handler back in the same
             // slot. Removing our entry instead would shift every later handler and
@@ -7599,7 +7705,14 @@ namespace SeraphLeveling
             if (clientApi != null)
             {
                 clientApi.Event.PlayerJoin -= OnPlayerJoin;
+                if (progressPollListenerId != 0)
+                {
+                    try { clientApi.Event.UnregisterGameTickListener(progressPollListenerId); } catch { }
+                    progressPollListenerId = 0;
+                }
             }
+            Gui.SeraphProgressPage.Channel = null;
+            Gui.SeraphProgressPage.Instance = null;
 
             base.Dispose();
         }

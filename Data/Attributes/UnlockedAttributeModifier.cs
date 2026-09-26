@@ -158,7 +158,7 @@ namespace SeraphLeveling.Data.Attributes
         public override void CollectStatus(IPlayer player, StringBuilder sb)
         {
             var progress = GetDict(player);
-            sb.AppendLine($"{Name} trait: {(progress.IsUnlocked ? "UNLOCKED" : "Locked")}");
+            sb.AppendLine($"<strong>{Name}</strong> trait: {(progress.IsUnlocked ? "UNLOCKED" : "Locked")}");
         }
 
         public override bool ShouldDisplay(EntityPlayer player, bool hasVanillaTrait)

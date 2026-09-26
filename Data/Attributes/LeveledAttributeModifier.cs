@@ -231,7 +231,7 @@ namespace SeraphLeveling.Data.Attributes
             string displayPercent = CalculateDisplayBonus(player.Entity, progress);
             int maxCredits = GetMaxCredits(player.Entity);
 
-            sb.AppendLine($"{Name} progression: {progress.DisplayCredits}% / {maxCredits}%");
+            sb.AppendLine($"<strong>{Name}</strong> progression: {progress.DisplayCredits}% / {maxCredits}%");
             sb.AppendLine($"Current bonus: {displayPercent}{Stat}");
             progress.WriteIncrementLine(sb);
 

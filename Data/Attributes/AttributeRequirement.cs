@@ -68,7 +68,7 @@ namespace SeraphLeveling.Data.Attributes
             if (player?.Entity != null)
             {
                 var percent = GetCombinedModifierPercent(player.Entity);
-                sb.AppendLine($"  {Attribute.Name} level: {percent}% / {ThresholdPercentage}% ({(percent >= ThresholdPercentage ? "✓" : "✗")})");
+                sb.AppendLine($"  <strong>{Attribute.Name}</strong> level: {percent}% / {ThresholdPercentage}% ({(percent >= ThresholdPercentage ? "✓" : "✗")})");
             }
         }
 
@@ -134,7 +134,7 @@ namespace SeraphLeveling.Data.Attributes
 
         public void CollectStatus(IPlayer player, StringBuilder sb)
         {
-            sb.AppendLine($"  {Attribute.Name}: {(Attribute.IsUnlockedForPlayer(player) ? "UNLOCKED ✓" : "Locked ✗")}");
+            sb.AppendLine($"  <strong>{Attribute.Name}</strong>: {(Attribute.IsUnlockedForPlayer(player) ? "UNLOCKED ✓" : "Locked ✗")}");
         }
     }
 }

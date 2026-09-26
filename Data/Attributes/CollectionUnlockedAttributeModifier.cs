@@ -103,7 +103,7 @@ namespace SeraphLeveling.Data.Attributes
         public override void CollectStatus(IPlayer player, StringBuilder sb)
         {
             var progress = GetDict(player);
-            sb.AppendLine($"{Name} trait: {progress.CollectedItems.Count} / {RequiredCollectionSize} unique {CollectedItemDescription} ({(progress.IsUnlocked ? "UNLOCKED" : "Locked")})");
+            sb.AppendLine($"<strong>{Name}</strong> trait: {progress.CollectedItems.Count} / {RequiredCollectionSize} unique {CollectedItemDescription} ({(progress.IsUnlocked ? "UNLOCKED" : "Locked")})");
 
             if (!progress.IsUnlocked && progress.CollectedItems.Count > 0)
             {
