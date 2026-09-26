@@ -591,7 +591,7 @@ namespace SeraphLeveling.Data.Traits
             Id = "culinary",
             Attributes = [
                 Unlock(AttributeModifierDefinitions.Culinary, [
-                    new LeveledAttributeMinimumRequirement { Attribute = KnifeDamage, ThresholdPercentage = 10 },
+                    new LeveledAttributeMinimumRequirement { Attribute = KnifeDurability, ThresholdPercentage = 20 },
                     new LeveledAttributeMinimumRequirement{ Attribute = AnimalHarvestRate , ThresholdPercentage = 10 }
                 ])
             ],
