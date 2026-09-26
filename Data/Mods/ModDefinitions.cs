@@ -73,6 +73,13 @@ namespace SeraphLeveling.Data.Mods
             ],
         });
 
+        public static readonly ModDefinition ImmersiveWoodworking = Register(new()
+        {
+            ModId = "immersivewoodworking",
+            DisplayName = "Immersive Woodworking",
+            CharacterClasses = [],
+        });
+
         public static readonly ModDefinition ImmersiveFibercraft = Register(new()
         {
             ModId = "spinningwheel",

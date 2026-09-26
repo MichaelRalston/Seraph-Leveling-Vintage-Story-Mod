@@ -2245,6 +2245,9 @@ namespace SeraphLeveling
 
                     // Patch Immersive Fibercraft for Weaver trait detection on loom weaving, iff IF is loaded.
                     PatchImmersiveFibercraft(api);
+
+                    // Patch Immersive Woodworking for Carpenter trait detection on woodworking, iff IW is loaded.
+                    PatchImmersiveWoodworking(api);
                 }
             }
             catch (Exception ex)
@@ -2622,6 +2625,58 @@ namespace SeraphLeveling
             catch (Exception ex)
             {
                 api.Logger.Warning($"[SeraphLeveling] Failed to patch ItemShears: {ex.Message}");
+            }
+        }
+
+        private void PatchImmersiveWoodworking(ICoreServerAPI api)
+        {
+            api.Logger.Notification("[SeraphLeveling] patching Immersive Woodworking for Carpenter");
+            if (ModDefinitions.ImmersiveWoodworking.IsLoaded)
+            {
+                try
+                {
+                    var workbenchType = AccessTools.TypeByName("ImmersiveWoodworking.BlockEntitySawhorse");
+                    if (workbenchType == null)
+                    {
+                        api.Logger.Warning("[SeraphLeveling] Could not find the Immersive Woodworking BlockEntitySawhorse type");
+                        return;
+                    }
+                    var craftMethod = AccessTools.Method(workbenchType, "SpawnEjectedItem");
+                    if (craftMethod == null)
+                    {
+                        api.Logger.Warning("[SeraphLeveling] Could not find the SpawnEjectedItem method in BlockEntitySawhorse");
+                        return;
+                    }
+                    var prefixMethod = AccessTools.Method(typeof(ImmersiveWoodworkingPatches), nameof(ImmersiveWoodworkingPatches.SpawnEjectedItem_Prefix));
+                    serverHarmony.Patch(craftMethod, prefix: new HarmonyMethod(prefixMethod));
+                    api.Logger.Notification("[SeraphLeveling] Successfully patched Immersive Woodworking BlockEntitySawhorse.SpawnEjectedItem for crafting hooks.");
+                }
+                catch (Exception ex)
+                {
+                    api.Logger.Warning($"[SeraphLeveling] Failed to patch Immersive Woodworking BlockEntitySawhorse: {ex.Message}");
+                }
+                try
+                {
+                    var workbenchType = AccessTools.TypeByName("ImmersiveWoodworking.BlockEntityChoppingBlock");
+                    if (workbenchType == null)
+                    {
+                        api.Logger.Warning("[SeraphLeveling] Could not find the Immersive Woodworking BlockEntityChoppingBlock type");
+                        return;
+                    }
+                    var craftMethod = AccessTools.Method(workbenchType, "SpawnDistributed");
+                    if (craftMethod == null)
+                    {
+                        api.Logger.Warning("[SeraphLeveling] Could not find the SpawnDistributed method in BlockEntityChoppingBlock");
+                        return;
+                    }
+                    var prefixMethod = AccessTools.Method(typeof(ImmersiveWoodworkingPatches), nameof(ImmersiveWoodworkingPatches.SpawnDistributed_Prefix));
+                    serverHarmony.Patch(craftMethod, prefix: new HarmonyMethod(prefixMethod));
+                    api.Logger.Notification("[SeraphLeveling] Successfully patched Immersive Woodworking BlockEntityChoppingBlock.SpawnDistributed for crafting hooks.");
+                }
+                catch (Exception ex)
+                {
+                    api.Logger.Warning($"[SeraphLeveling] Failed to patch Immersive Woodworking BlockEntityChoppingBlock: {ex.Message}");
+                }
             }
         }
 
