@@ -1154,7 +1154,14 @@ namespace SeraphLeveling.Data.Attributes
                 IncrementUnits = "smithing strikes",
                 BaseIncrement = 100,
                 IncrementStep = 100,
-            }
+            },
+            [RepairableToolProgress.Repair] = new()
+                {
+                    IncrementUnits = "repairs",
+                    BaseIncrement = 1,
+                    IncrementStep = 1,
+                }
+
         };
 
         public static readonly GenericRepairableToolAttributeModifierDefinition SmithingSpeed = new()
