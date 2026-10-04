@@ -98,7 +98,7 @@ namespace SeraphLeveling.Data.Attributes
             Id = "caveExplorer",
             SkillKey = "caveexplorer",
             PersistenceHeader = "CEX",
-            Name = "CaveExplorer",
+            Name = "Cave Explorer",
             Trait = new(() => Traits.TraitDefinitions.CaveExplorer),
         };
 
@@ -773,7 +773,7 @@ namespace SeraphLeveling.Data.Attributes
         public static readonly GenericRepairableToolAttributeModifierDefinition AxeDurability = new()
         {
             Id = "axeDurability",
-            Name = "AxeDurability",
+            Name = "Axe Durability",
             Stat = "% axe durability bonus",
             SkillKey = "axedurability",
             PersistenceHeader = "XDU",
@@ -802,7 +802,7 @@ namespace SeraphLeveling.Data.Attributes
         public static readonly GenericLeveledAttributeModifierDefinition CharcoalDropRate = new()
         {
             Id = "charcoalDropRate",
-            Name = "CharcoalDropRate",
+            Name = "Charcoal Drop Rate",
             SkillKey = "charcoalrate",
             PersistenceHeader = "CDR",
             Stat = "% bonus charcoal drop rate",
