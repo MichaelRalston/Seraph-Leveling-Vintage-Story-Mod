@@ -15,6 +15,7 @@ namespace SeraphLeveling.Data.Attributes
     public interface IAttribute
     {
         public string Id { get; }
+        public string Name { get; }
 
         public Lazy<ModDefinition> RequiredMod { get; }
 

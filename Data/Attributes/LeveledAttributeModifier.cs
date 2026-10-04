@@ -9,7 +9,6 @@ namespace SeraphLeveling.Data.Attributes
 {
     public interface ILeveledAttributeModifierDefinition : ISaveableAttribute
     {
-        public string Name { get; }
         public string StatName { get; }
         public int GetCreditsForPlayer(IPlayer player);
         public bool IsLeveledForPlayer(IPlayer player, int requiredCredits) => GetCreditsForPlayer(player) >= requiredCredits;

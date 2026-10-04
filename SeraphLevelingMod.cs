@@ -2149,13 +2149,14 @@ namespace SeraphLeveling
         {
             string playerUid = player.PlayerUID;
             var sb = new StringBuilder();
-            foreach (var definition in LoadedAttributes)
+            foreach (var definition in LoadedAttributes.OrderBy(a => a.Name))
             {
                 definition.CollectStatus(player, sb);
                 sb.AppendLine("\n");
             }
             return sb.ToString().TrimEnd();
         }
+
         public static string BuildAllCommandResult(IServerPlayer player)
         {
             string playerUid = player.PlayerUID;
