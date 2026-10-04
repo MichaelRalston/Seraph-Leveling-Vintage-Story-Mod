@@ -95,6 +95,13 @@ namespace SeraphLeveling.Data.Mods
             CharacterClasses = [],
         });
 
+        public static readonly ModDefinition Prosequor = Register(new()
+        {
+            ModId = "prosequor",
+            DisplayName = "Prosequor",
+            CharacterClasses = [],
+        });
+
         private static ModDefinition Register(ModDefinition def)
         {
             All.Add(def);
