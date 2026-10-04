@@ -31,7 +31,6 @@ namespace SeraphLeveling.Data.Attributes
             base.CollectStatus(player, sb);
 
             var progress = GetDict(player);
-            sb.AppendLine($"{CraftedItemName} crafted: {progress.TotalCredits:F0} / {GlobalMaxCredits:F0}");
             if (!progress.IsUnlocked)
             {
                 int remaining = (int)(GlobalMaxCredits - progress.TotalCredits);

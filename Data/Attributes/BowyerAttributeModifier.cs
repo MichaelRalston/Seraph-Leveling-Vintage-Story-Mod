@@ -36,7 +36,11 @@ namespace SeraphLeveling.Data.Attributes
             base.CollectStatus(player, sb);
 
             var progress = GetDict(player);
-            sb.AppendLine($"Bow damage: {progress.TotalCredits:F0} / {GlobalMaxCredits:F0} ({(progress.TotalCredits >= GlobalMaxCredits ? "UNLOCKED" : "locked")})");
+            if (!progress.IsUnlocked)
+            {
+                float remaining = GlobalMaxCredits - progress.TotalCredits;
+                sb.AppendLine($"Inflict {remaining} more bow damage to unlock!");
+            }
         }
     }
 
