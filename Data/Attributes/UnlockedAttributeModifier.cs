@@ -1,10 +1,12 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using SeraphLeveling.Data.Traits;
 using Vintagestory.API.Common;
 using Vintagestory.API.Config;
 using Vintagestory.API.Server;
+using Vintagestory.API.Util;
 
 namespace SeraphLeveling.Data.Attributes
 {
@@ -158,6 +160,26 @@ namespace SeraphLeveling.Data.Attributes
         {
             var progress = GetDict(player);
             sb.AppendLine($"<strong>{Name}</strong> trait: {(progress.IsUnlocked ? "UNLOCKED" : "Locked")}");
+        }
+
+        public override void CollectInstructions(IPlayer player, StringBuilder sb)
+        {
+            // Get the attribute modifier requirements for this attribute definition from its owning trait
+            var progress = GetDict(player);
+            if (!progress.IsUnlocked)
+            {
+                var attrs = Trait.Value.Attributes.Where(mod => mod.Attribute == this);
+                if (attrs.Any())
+                {
+                    var innerSb = new StringBuilder();
+                    attrs.Foreach(mod => mod.CollectRequirementStatus(player, innerSb, this));
+                    if (innerSb.Length > 0)
+                    {
+                        sb.AppendLine("Other unlock requirements:");
+                        sb.Append(innerSb);
+                    }
+                }
+            }
         }
 
         public override bool ShouldDisplay(EntityPlayer player, bool hasVanillaTrait)

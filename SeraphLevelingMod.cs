@@ -2151,9 +2151,11 @@ namespace SeraphLeveling
             var sb = new StringBuilder();
             foreach (var definition in LoadedAttributes.OrderBy(a => a.Name))
             {
+                sb.AppendLine("\n=========\n");
                 definition.CollectStatus(player, sb);
-                sb.AppendLine("\n");
+                definition.CollectInstructions(player, sb);
             }
+            sb.AppendLine("\n=========\n");
             return sb.ToString().TrimEnd();
         }
 

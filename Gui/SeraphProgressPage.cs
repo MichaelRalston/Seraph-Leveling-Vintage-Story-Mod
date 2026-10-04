@@ -97,7 +97,7 @@ namespace SeraphLeveling.Gui
         {
             string report = LatestReport;
             var sb = new StringBuilder();
-            sb.Append("<strong>").Append(Lang.Get("sl-progress-title")).Append("</strong><br><br>");
+            sb.Append("<strong>").Append(Lang.Get("sl-progress-title")).Append("</strong><br>");
             if (string.IsNullOrEmpty(report))
             {
                 sb.Append(Lang.Get("sl-progress-waiting"));
@@ -110,10 +110,7 @@ namespace SeraphLeveling.Gui
                     if (line.Length == 0) { sb.Append("<br>"); continue; }
                     string safe = line.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;");
                     string descaped = safe.Replace("&lt;strong&gt;", "<strong>").Replace("&lt;/strong&gt;", "</strong>");
-                    if (line.StartsWith("===") || line.StartsWith("---"))
-                        sb.Append("<strong>").Append(descaped.Trim('=', '-', ' ')).Append("</strong><br>");
-                    else
-                        sb.Append(descaped).Append("<br>");
+                    sb.Append(descaped).Append("<br>");
                 }
             }
             sb.Append("<br>").Append(Lang.Get("sl-progress-footer"));

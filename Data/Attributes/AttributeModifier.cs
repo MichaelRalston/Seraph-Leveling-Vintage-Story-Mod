@@ -9,6 +9,7 @@ using System.Linq;
 using SeraphLeveling.Patches;
 using SeraphLeveling.Data.Traits;
 using SeraphLeveling.Data.Mods;
+using Vintagestory.API.Util;
 
 namespace SeraphLeveling.Data.Attributes
 {
@@ -30,6 +31,11 @@ namespace SeraphLeveling.Data.Attributes
         /// Get a status string for the attribute to return for the attribute when the player uses the /trait command
         /// </summary>
         public abstract void CollectStatus(IPlayer player, StringBuilder sb);
+
+        /// <summary>
+        /// Get an instructions string for the attribute to return when the player looks at their progress page
+        /// </summary>
+        public abstract void CollectInstructions(IPlayer player, StringBuilder sb);
 
         /// <summary>
         /// Determine whether this attribute should be shown in trait text on the character screen
@@ -107,6 +113,7 @@ namespace SeraphLeveling.Data.Attributes
         public required string PersistenceHeader { get; init; }
         public virtual byte PersistenceVersion { get; init; } = 1;
         public abstract void CollectStatus(IPlayer player, StringBuilder sb);
+        public abstract void CollectInstructions(IPlayer player, StringBuilder sb);
         public abstract bool ShouldDisplay(EntityPlayer player, bool hasVanillaTrait);
         public abstract object GetLocalizedTraitTextParam(EntityPlayer player);
 
@@ -413,7 +420,7 @@ namespace SeraphLeveling.Data.Attributes
         /// <summary>
         /// Get a status string for the attribute modifier's requirements when the player uses the /trait command
         /// </summary>
-        public void CollectRequirementStatus(IPlayer player, StringBuilder sb);
+        public void CollectRequirementStatus(IPlayer player, StringBuilder sb, ISaveableAttribute exclude = null);
 
         public static IAttributeModifier Bonus(ISaveableAttribute attribute, int absModifierValue, List<IAttributeRequirement> unlockWith = null)
         {
@@ -474,7 +481,7 @@ namespace SeraphLeveling.Data.Attributes
 
             public event ActiveStatusUpdatedDelegate ActiveStatusUpdated;
 
-            public abstract void CollectRequirementStatus(IPlayer player, StringBuilder sb);
+            public abstract void CollectRequirementStatus(IPlayer player, StringBuilder sb, ISaveableAttribute exclude = null);
             public abstract bool ShouldDisplay(IPlayer player, bool hasVanillaTrait = false);
             public abstract bool ShouldUnlock(IPlayer player, bool hasVanillaTrait = false);
             public abstract bool IsInRangeForDisplay(int combinedBonusPercentage);
@@ -507,10 +514,10 @@ namespace SeraphLeveling.Data.Attributes
                 UnlockWith.ForEach(req => req.SatisfactionChanged += OnRequirementSatisfactionChanged);
             }
 
-            public override void CollectRequirementStatus(IPlayer player, StringBuilder sb)
+            public override void CollectRequirementStatus(IPlayer player, StringBuilder sb, ISaveableAttribute exclude = null)
             {
                 // Requirement output is specifically for unlocking bonus traits, not removing penalties
-                UnlockWith.ForEach(req => req.CollectStatus(player, sb));
+                UnlockWith.Where(req => req.AttributeId != exclude?.Id).Foreach(req => req.CollectStatus(player, sb));
             }
 
             public override bool ShouldDisplay(IPlayer player, bool hasVanillaTrait = false) => IsActive(player, hasVanillaTrait);
@@ -552,7 +559,7 @@ namespace SeraphLeveling.Data.Attributes
                 RemoveWith.ForEach(req => req.SatisfactionChanged += OnRequirementSatisfactionChanged);
             }
 
-            public override void CollectRequirementStatus(IPlayer player, StringBuilder sb)
+            public override void CollectRequirementStatus(IPlayer player, StringBuilder sb, ISaveableAttribute exclude = null)
             {
                 // Do nothing; penalties don't have requirement status to be displayed
             }
@@ -599,10 +606,10 @@ namespace SeraphLeveling.Data.Attributes
                 PenaltyAttribute = penaltyAttribute;
             }
 
-            public override void CollectRequirementStatus(IPlayer player, StringBuilder sb)
+            public override void CollectRequirementStatus(IPlayer player, StringBuilder sb, ISaveableAttribute exclude = null)
             {
                 // Requirement output is specifically for unlocking bonus traits, not removing penalties
-                ApplyWith.ForEach(req => req.CollectStatus(player, sb));
+                ApplyWith.Where(req => req.AttributeId != exclude?.Id).Foreach(req => req.CollectStatus(player, sb));
             }
 
             public override bool IsInRangeForDisplay(int combinedBonusPercentage) => combinedBonusPercentage < 0;

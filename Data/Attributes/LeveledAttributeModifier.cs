@@ -240,6 +240,11 @@ namespace SeraphLeveling.Data.Attributes
             }
         }
 
+        public override void CollectInstructions(IPlayer player, StringBuilder sb)
+        {
+            // TODO Stub
+        }
+
         public override IChatCommand RegisterCommands(ICoreServerAPI api, IChatCommand c)
         {
             return c.BeginSubCommand($"{SkillKey}")
