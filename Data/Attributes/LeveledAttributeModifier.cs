@@ -4,12 +4,14 @@ using Vintagestory.API.Common;
 using Vintagestory.API.Server;
 using System.Collections.Generic;
 using System.Linq;
+using Vintagestory.API.Config;
 
 namespace SeraphLeveling.Data.Attributes
 {
     public interface ILeveledAttributeModifierDefinition : ISaveableAttribute
     {
         public string StatName { get; }
+        public string InstructionsKey { get; }
         public int GetCreditsForPlayer(IPlayer player);
         public bool IsLeveledForPlayer(IPlayer player, int requiredCredits) => GetCreditsForPlayer(player) >= requiredCredits;
         public int GetBonusPercent(EntityPlayer player);
@@ -56,6 +58,7 @@ namespace SeraphLeveling.Data.Attributes
             get => field ??= $"sit{FlatName}BonusPercent"; init;
         }
         public required string StatName { get; init; }
+        public required string InstructionsKey { get; init; }
         public override void ReadConfigData(Dictionary<string, int> dict)
         {
             if (dict.TryGetValue("maxCredits", out var max)) ConfiguredMaxCredits = max;
@@ -242,7 +245,7 @@ namespace SeraphLeveling.Data.Attributes
 
         public override void CollectInstructions(IPlayer player, StringBuilder sb)
         {
-            // TODO Stub
+            sb.AppendLine().AppendLine(Lang.Get(InstructionsKey));
         }
 
         public override IChatCommand RegisterCommands(ICoreServerAPI api, IChatCommand c)

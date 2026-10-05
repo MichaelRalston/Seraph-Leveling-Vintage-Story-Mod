@@ -3580,6 +3580,7 @@ namespace SeraphLeveling
                     StatName = AttributeModifierDefinitions.RangedDamage.StatName,
                     Tools = AttributeModifierDefinitions.RangedDamage.Tools,
                     Weapons = AttributeModifierDefinitions.RangedDamage.Weapons,
+                    InstructionsKey = "",
                 };
                 Conversion.PortData<DamageAttributeModifierDefinition, DamageAttributeModifierProgressData>(legacyRangedDamage, AttributeModifierDefinitions.RangedDamage, ServerApi);
                 Conversion.PortData<DamageAttributeModifierDefinition, DamageAttributeModifierProgressData>(legacyRangedDamage, AttributeModifierDefinitions.RangedAccuracy, ServerApi);
@@ -3597,6 +3598,7 @@ namespace SeraphLeveling
                     BaseIncrement = AttributeModifierDefinitions.ForageLootingBonus.BaseIncrement,
                     IncrementStep = AttributeModifierDefinitions.ForageLootingBonus.IncrementStep,
                     IncrementUnits = AttributeModifierDefinitions.ForageLootingBonus.IncrementUnits,
+                    InstructionsKey = "",
                 };
                 Conversion.PortData<LeveledPartialAttributeModifierDefinition, LeveledPartialAttributeModifierProgressData>(legacyForager, AttributeModifierDefinitions.ForageLootingBonus, ServerApi);
                 Conversion.PortData<LeveledPartialAttributeModifierDefinition, LeveledPartialAttributeModifierProgressData>(legacyForager, AttributeModifierDefinitions.WildCropDropRate, ServerApi);
@@ -3613,6 +3615,7 @@ namespace SeraphLeveling
                     BaseIncrement = AttributeModifierDefinitions.AnimalDropRate.BaseIncrement,
                     IncrementStep = AttributeModifierDefinitions.AnimalDropRate.IncrementStep,
                     IncrementUnits = AttributeModifierDefinitions.AnimalDropRate.IncrementUnits,
+                    InstructionsKey = "",
                 };
                 Conversion.PortData<LeveledPartialAttributeModifierDefinition, LeveledPartialAttributeModifierProgressData>(legacyResourceful, AttributeModifierDefinitions.AnimalHarvestRate, ServerApi);
                 LoadProgress<PilfererProgressData>();
