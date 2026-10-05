@@ -909,7 +909,7 @@ namespace SeraphLeveling
             // Hook into block breaking for mining progression
             api.Event.DidBreakBlock += OnBlockBroken;
 
-            // Apply Harmony patches for melee damage tracking
+            // Apply Harmony patches.
             ApplyServerHarmonyPatches(api);
 
             // Hook into player join to apply saved bonuses
@@ -957,6 +957,8 @@ namespace SeraphLeveling
 
             // Hook into player disconnect to clean up position tracking and save data
             api.Event.PlayerDisconnect += OnPlayerDisconnect;
+
+            api.RegisterBlockEntityBehaviorClass("InteractionTrackingBehavior", typeof(Behaviors.InteractionTrackingBehavior));
 
             api.Logger.Notification("[SeraphLeveling] Mod loaded");
         }
@@ -2342,11 +2344,118 @@ namespace SeraphLeveling
 
                     // Patch Immersive Woodworking for Carpenter trait detection on woodworking, iff IW is loaded.
                     PatchImmersiveWoodworking(api);
+
+                    PatchCooking(api);
+
+                    serverHarmony.PatchAll(Assembly.GetExecutingAssembly());
                 }
             }
             catch (Exception ex)
             {
                 api.Logger.Error($"[SeraphLeveling] Failed to apply server Harmony patches: {ex.Message}");
+            }
+        }
+
+        private void PatchItems(ICoreServerAPI api)
+        {
+            try
+            {
+                var targetMethod = AccessTools.Method(typeof(IBakeableCallback), "OnBaked");
+                var postfixMethod = AccessTools.Method(typeof(CookingPatches.Patch_CollectibleObject_OnBaked), nameof(CookingPatches.Patch_CollectibleObject_OnBaked.Postfix));
+
+                if (targetMethod != null && postfixMethod != null)
+                {
+                    serverHarmony.Patch(targetMethod, postfix: new HarmonyMethod(postfixMethod));
+                }
+                else
+                {
+                    api.Logger.Warning("[SeraphLeveling] Could not find target or postfix method for CollectibleObject.OnBaked patch");
+                }
+            }
+            catch (Exception ex)
+            {
+                api.Logger.Warning($"[SeraphLeveling] Failed to patch cooking blocks: {ex.Message}");
+            }
+
+
+        }
+        public override void AssetsFinalize(ICoreAPI api)
+        {
+            base.AssetsFinalize(api);
+
+            if (api.Side != EnumAppSide.Server) return;
+
+            // Add InteractionTrackingBehavior to all cooking blocks.
+            // Also add the OnBaked hook to all cookable blocks (vanilla and modded) that implement IBakeableCallback.
+            foreach (var block in api.World.Blocks)
+            {
+                if (block?.EntityClass == null) continue;
+
+                Type beType = api.ClassRegistry.GetBlockEntity(block.EntityClass);
+                if (beType == null) continue;
+
+                // Catches vanilla Firepits, Ovens, and direct extensions
+                bool isStandardSmelter = typeof(BlockEntityFirepit).IsAssignableFrom(beType) ||
+                                         typeof(BlockEntityOven).IsAssignableFrom(beType);
+
+                // Catches Stone Bake Oven components and similar Display-based cooking units
+                bool isDisplaySmelter = typeof(BlockEntityDisplay).IsAssignableFrom(beType) &&
+                                        (block.EntityClass.Contains("Oven") || block.Code.Path.Contains("oven"));
+
+                if (isStandardSmelter || isDisplaySmelter)
+                {
+                    block.BlockEntityBehaviors = block.BlockEntityBehaviors.Append(
+                        new BlockEntityBehaviorType() { Name = "InteractionTrackingBehavior" }
+                    );
+                }
+            }
+        }
+
+        private void PatchCooking(ICoreServerAPI api)
+        {
+            var bakingPostfix = new HarmonyMethod(AccessTools.Method(typeof(CookingPatches.Patch_CollectibleObject_OnBaked), nameof(CookingPatches.Patch_CollectibleObject_OnBaked.Postfix)));
+            var types = AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(s => s.GetTypes())
+                .Where(p => typeof(IBakeableCallback).IsAssignableFrom(p) && !p.IsInterface && !p.IsAbstract);
+            foreach (var type in types)
+            {
+                // Get the specific implementation of the interface method
+                // Interface methods are sometimes explicitly implemented, so we check both public and private names
+                var targetMethod = type.GetMethod("OnBaked", BindingFlags.Public | BindingFlags.Instance)
+                    ?? type.GetMethod("Vintagestory.API.Common.IBakeableCallback.OnBaked", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                if (targetMethod != null)
+                {
+                    // Apply the patch to the concrete class method
+                    serverHarmony.Patch(targetMethod, postfix: bakingPostfix);
+                }
+            }
+            Type[] smeltingParams = [
+                typeof(IWorldAccessor),
+                typeof(ISlotProvider),
+                typeof(ItemSlot),
+                typeof(ItemSlot)
+            ];
+            var smeltingPostfix = new HarmonyMethod(AccessTools.Method(typeof(CookingPatches.CookingSmeltPatch), nameof(CookingPatches.CookingSmeltPatch.Postfix)));
+            // serverHarmony.Patch(AccessTools.Method(typeof(CollectibleObject), "DoSmelt", smeltingParams), postfix: smeltingPostfix);
+            var collectibleTypes = AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(s => s.GetTypes())
+                .Where(t => typeof(CollectibleObject).IsAssignableFrom(t) && !t.IsInterface);
+
+            foreach (var type in collectibleTypes)
+            {
+                // Find overrides explicitly declared in the concrete class
+                var declaredMethod = type.GetMethod("DoSmelt",
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly,
+                    null,
+                    smeltingParams,
+                    null);
+
+                if (declaredMethod != null)
+                {
+                    // Safely patch the specialized override
+                    serverHarmony.Patch(declaredMethod, postfix: smeltingPostfix);
+                }
             }
         }
 
