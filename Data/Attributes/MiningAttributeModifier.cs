@@ -99,6 +99,9 @@ namespace SeraphLeveling.Data.Attributes
                 case 5:
                     base.ReadVersion(3, reader);
                     break;
+                case 6:
+                    base.ReadVersion(4, reader);
+                    break;
                 default:
                     throw new NotSupportedException($"Version {version} is not supported");
             }
@@ -118,7 +121,7 @@ namespace SeraphLeveling.Data.Attributes
             SeraphLevelingModSystem.BlockBrokenTrigger -= ((IHasBlockBrokenTrigger<MiningAttributeModifierDefinition, MiningAttributeModifierProgressData, SimpleToolProgress>)this).OnTriggerBlockBroken;
         }
 
-        public override byte PersistenceVersion { get; init; } = 5;
+        public override byte PersistenceVersion { get; init; } = 6;
 
         public required ConcurrentDictionary<IAssetLocationMatcher, float> BrokenBlockScores { get; init; }
 

@@ -27,7 +27,7 @@ namespace SeraphLeveling.Data.Attributes
 
     public abstract class LeveledToolAttributeModifierDefinition<D, PD, E> : LeveledAttributeModifierDefinition<D, PD> where PD : LeveledToolAttributeModifierProgressData<D, PD, E> where D : LeveledToolAttributeModifierDefinition<D, PD, E>, IConstructable<D, PD> where E : Enum
     {
-        public override byte PersistenceVersion { get; init; } = 3;
+        public override byte PersistenceVersion { get; init; } = 4;
         public required ConcurrentDictionary<E, IncrementData> IncrementData { get; init; }
         public int BaseIncrement
         {
@@ -195,6 +195,7 @@ namespace SeraphLeveling.Data.Attributes
     public abstract class LeveledToolAttributeModifierProgressData<D, PD, E>(D def) : LeveledAttributeModifierProgressData<D, PD>(def) where PD : LeveledToolAttributeModifierProgressData<D, PD, E> where D : LeveledToolAttributeModifierDefinition<D, PD, E>, IConstructable<D, PD> where E : Enum
     {
         public ConcurrentDictionary<AssetLocation, LevelableTool<D, PD, E>> ToolProgress { get; init; } = [];
+        public string LastToolUsed { get; set; } = null;
         public LevelableTool<D, PD, E> GetToolProgress(AssetLocation toolCode)
         {
             if (!ToolProgress.TryGetValue(toolCode, out var progress))
@@ -360,6 +361,34 @@ namespace SeraphLeveling.Data.Attributes
                         ToolProgress[toolCode] = toolProgressRecord;
                     }
                     break;
+                case 4:
+                    TotalCredits = reader.ReadInt32();
+                    LastActivityDay = reader.ReadDouble();
+
+                    LastToolUsed = reader.ReadString();
+                    toolCount = reader.ReadInt32();
+                    for (int i = 0; i < toolCount; i++)
+                    {
+                        var toolCode = AssetLocation.Create(reader.ReadString());
+                        var hasBeenUsed = reader.ReadBoolean();
+                        var length = reader.ReadInt32();
+                        var toolProgressRecord = new LevelableTool<D, PD, E>
+                        {
+                            Definition = Definition,
+                            PartialCredit = [],
+                            HasBeenUsed = hasBeenUsed,
+                        };
+                        for (int j = 0; j < length; j++)
+                        {
+                            E key = (E)Enum.ToObject(typeof(E), reader.ReadInt32());
+
+                            var partialCredit = reader.ReadSingle();
+                            var incrementSize = reader.ReadInt32();
+                            toolProgressRecord.PartialCredit[key] = new CreditData { Amount = partialCredit, IncrementSize = incrementSize };
+                        }
+                        ToolProgress[toolCode] = toolProgressRecord;
+                    }
+                    break;
                 default:
                     throw new NotSupportedException($"Version {version} is not supported");
             }
@@ -368,6 +397,7 @@ namespace SeraphLeveling.Data.Attributes
         {
             writer.Write(TotalCredits);
             writer.Write(LastActivityDay);
+            writer.Write(LastToolUsed ?? "");
 
             // Snapshot inner dictionary to avoid concurrent modification
             var toolSnapshot = ToolProgress.ToArray();
@@ -626,6 +656,7 @@ namespace SeraphLeveling.Data.Attributes
 
             // Get or create progress for this specific tool type
             var toolProgress = GetToolProgress(toolCode);
+            LastToolUsed = toolCode.ToString();
 
             int oldCredits = TotalCredits;
 
