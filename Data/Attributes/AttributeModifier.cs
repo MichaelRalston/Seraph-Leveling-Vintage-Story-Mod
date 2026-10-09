@@ -32,6 +32,8 @@ namespace SeraphLeveling.Data.Attributes
         /// </summary>
         public abstract void CollectStatus(IPlayer player, StringBuilder sb);
 
+        public abstract Messages.ProgressReportContent CollectReportContent(IPlayer player);
+
         /// <summary>
         /// Get an instructions string for the attribute to return when the player looks at their progress page
         /// </summary>
@@ -113,6 +115,7 @@ namespace SeraphLeveling.Data.Attributes
         public required string PersistenceHeader { get; init; }
         public virtual byte PersistenceVersion { get; init; } = 1;
         public abstract void CollectStatus(IPlayer player, StringBuilder sb);
+        public abstract Messages.ProgressReportContent CollectReportContent(IPlayer player);
         public abstract void CollectInstructions(IPlayer player, StringBuilder sb);
         public abstract bool ShouldDisplay(EntityPlayer player, bool hasVanillaTrait);
         public abstract object GetLocalizedTraitTextParam(EntityPlayer player);

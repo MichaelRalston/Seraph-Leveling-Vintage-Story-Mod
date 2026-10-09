@@ -2145,11 +2145,18 @@ namespace SeraphLeveling
         }
 
 
-        public const string WATCHED_PROGRESS_REPORT = "seraphleveling:progressReport";
+        public static ProgressReportContent[] BuildProgressReportContentForPlayer(IServerPlayer player)
+        {
+            var contentList = new List<ProgressReportContent>();
+            foreach (var definition in LoadedAttributes.OrderBy(a => a.Name))
+            {
+                contentList.Add(definition.CollectReportContent(player));
+            }
+            return [.. contentList];
+        }
 
         public static string BuildProgressReportForPlayer(IServerPlayer player)
         {
-            string playerUid = player.PlayerUID;
             var sb = new StringBuilder();
             foreach (var definition in LoadedAttributes.OrderBy(a => a.Name))
             {
@@ -2163,7 +2170,6 @@ namespace SeraphLeveling
 
         public static string BuildAllCommandResult(IServerPlayer player)
         {
-            string playerUid = player.PlayerUID;
             var sb = new StringBuilder();
             sb.AppendLine("=== All Trait Progression ===");
             foreach (var definition in LoadedAttributes)
@@ -2221,7 +2227,8 @@ namespace SeraphLeveling
                 if (player?.Entity == null) return;
                 string report = BuildProgressReportForPlayer(player);
                 if (!force && LastSentProgressReport.TryGetValue(player.PlayerUID, out string last) && last == report) return;
-                serverSoundChannel.SendPacket(new ProgressReportMessage { Report = report }, player);
+                ProgressReportContent[] progressReportContent = BuildProgressReportContentForPlayer(player);
+                serverSoundChannel.SendPacket(new ProgressReportMessage { Report = report, Content = progressReportContent }, player);
                 LastSentProgressReport[player.PlayerUID] = report;
             }
             catch (Exception ex)
@@ -7466,6 +7473,8 @@ namespace SeraphLeveling
         private object characterSystemInstance;
         private long progressPollListenerId;
 
+        private Gui.SeraphCharacterTabComponent tabComponent;
+
         public override bool ShouldLoad(EnumAppSide forSide)
         {
             return forSide == EnumAppSide.Client;
@@ -7490,6 +7499,7 @@ namespace SeraphLeveling
                 {
                     api.Logger.Debug("[SeraphLeveling] progress report received ({0} chars)", msg?.Report?.Length ?? 0);
                     Gui.SeraphProgressPage.OnReportReceived(msg?.Report);
+                    tabComponent.OnProgressReportReceived(msg?.Content);
                 });
             Gui.SeraphProgressPage.Channel = channel;
             progressPollListenerId = api.Event.RegisterGameTickListener(_ => Gui.SeraphProgressPage.PollIfShowing(), 1000);
@@ -7517,6 +7527,50 @@ namespace SeraphLeveling
 
             var handbook = api.ModLoader.GetModSystem<ModSystemSurvivalHandbook>();
             handbook?.OnInitCustomPages += pages => pages.Add(new Gui.SeraphProgressPage(api));
+
+            tabComponent = new Gui.SeraphCharacterTabComponent(api);
+            api.Event.BlockTexturesLoaded += RegisterCustomCharacterTab;
+        }
+
+        private void RegisterCustomCharacterTab()
+        {
+            // OfType filters the object sequence down to just GuiDialogCharacterBase entries, 
+            // and FirstOrDefault cleanly selects the first matching instance safely without assembly blocks.
+            GuiDialogCharacterBase characterDialog = clientApi.LoadedGuis
+                .OfType<GuiDialogCharacterBase>()
+                .FirstOrDefault();
+
+            if (characterDialog != null)
+            {
+                string tabLangKey = "seraphleveling-tab-title";
+                string tabName = Lang.Get(tabLangKey);
+
+                bool alreadyRegistered = false;
+                foreach (var tab in characterDialog.Tabs)
+                {
+                    if (tab.Name == tabName)
+                    {
+                        alreadyRegistered = true;
+                        break;
+                    }
+                }
+
+                if (!alreadyRegistered)
+                {
+                    int assignedIndex = characterDialog.Tabs.Count;
+                    characterDialog.Tabs.Add(new GuiTab()
+                    {
+                        Name = tabName,
+                        DataInt = assignedIndex
+                    });
+
+                    characterDialog.RenderTabHandlers.Add((composer) =>
+                    {
+                        Gui.SeraphProgressPage.RequestReport(force: false);
+                        tabComponent.RenderTabContent(composer, characterDialog);
+                    });
+                }
+            }
         }
 
         /// <summary>

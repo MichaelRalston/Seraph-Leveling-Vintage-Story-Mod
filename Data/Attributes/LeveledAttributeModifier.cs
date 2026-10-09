@@ -243,6 +243,24 @@ namespace SeraphLeveling.Data.Attributes
             }
         }
 
+        public override Messages.ProgressReportContent CollectReportContent(IPlayer player)
+        {
+            var progress = GetDict(player);
+            int currentCredits = progress.TotalCredits;
+            string displayPercent = CalculateDisplayBonus(player.Entity, progress);
+            int maxCredits = GetMaxCredits(player.Entity);
+
+            return new Messages.ProgressReportContent
+            {
+                Name = Name,
+                Percentage = currentCredits/(float)maxCredits,
+                Tooltip = $"<strong>{Name}</strong> progression: {progress.DisplayCredits}% / {maxCredits}%",
+                PartialCredits = progress.CollectPartialCreditsForReport(),
+                Instructions = Lang.Get(InstructionsKey),
+                ExtraInfo = $"Current bonus: {displayPercent}{Stat}"
+            };
+        }
+
         public override void CollectInstructions(IPlayer player, StringBuilder sb)
         {
             sb.AppendLine().AppendLine(Lang.Get(InstructionsKey));
@@ -457,6 +475,13 @@ namespace SeraphLeveling.Data.Attributes
         {
             // Empty.
         }
+
+        public virtual Messages.PartialCredits[] CollectPartialCreditsForReport()
+        {
+            return [];
+        }
+
+
 
         public abstract int ApplyStatPenalty(double rawPenalty, StringBuilder sb, StringBuilder verboseSb);
     }

@@ -30,18 +30,6 @@ namespace SeraphLeveling.Data.Attributes
             var progress = GetDict(player);
             sb.AppendLine($"{Name}: {progress.TotalCredits:F0}/{GlobalMaxCredits:F0} {CreditDescription} ({(progress.IsUnlocked ? "UNLOCKED" : "locked")})");
         }
-
-        public override void CollectStatus(IPlayer player, StringBuilder sb)
-        {
-            base.CollectStatus(player, sb);
-
-            var progress = GetDict(player);
-            if (!progress.IsUnlocked)
-            {
-                float remaining = GlobalMaxCredits - progress.TotalCredits;
-                sb.AppendLine($"Inflict {remaining} more bow damage to unlock!");
-            }
-        }
     }
 
     public class BowyerAttributeModifierProgressData(BowyerAttributeModifierDefinition definition) : ScoredUnlockedAttributeModifierProgressData<BowyerAttributeModifierDefinition, BowyerAttributeModifierProgressData>(definition)

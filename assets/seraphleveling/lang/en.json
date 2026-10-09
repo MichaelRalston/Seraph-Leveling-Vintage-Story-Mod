@@ -1,4 +1,5 @@
 {
+  "seraphleveling-tab-title": "Leveling",
   "game:sl-progress-title": "Seraph Leveling ReClassed: My Progress",
   "game:sl-progress-waiting": "Fetching your progress from the server...",
   "game:sl-progress-footer": "Numbers are credits earned out of the cap for each skill. This page updates live while it is open. See the <a href=\"handbook://sl-guide\">Seraph Leveling ReClassed guide</a> for more information.",

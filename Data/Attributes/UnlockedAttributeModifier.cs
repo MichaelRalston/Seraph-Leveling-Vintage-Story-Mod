@@ -162,6 +162,21 @@ namespace SeraphLeveling.Data.Attributes
             sb.AppendLine($"<strong>{Name}</strong> trait: {(progress.IsUnlocked ? "UNLOCKED" : "Locked")}");
         }
 
+        public override Messages.ProgressReportContent CollectReportContent(IPlayer player)
+        {
+            var progress = GetDict(player);
+            var instructionsSb = new StringBuilder();
+            CollectInstructions(player, instructionsSb);
+            return new Messages.ProgressReportContent()
+            {
+                Name = Name,
+                Percentage = progress.IsUnlocked ? 1 : 0,
+                Tooltip = $"{(progress.IsUnlocked ? "UNLOCKED" : "Locked")})",
+                PartialCredits = [],
+                Instructions = instructionsSb.ToString(),
+            };
+        }
+
         public override void CollectInstructions(IPlayer player, StringBuilder sb)
         {
             // Get the attribute modifier requirements for this attribute definition from its owning trait

@@ -13,5 +13,7 @@ namespace SeraphLeveling.Messages
     {
         [ProtoMember(1)]
         public string Report { get; set; }
+        [ProtoMember(2)]
+        public ProgressReportContent[] Content { get; set; }
     }
 }

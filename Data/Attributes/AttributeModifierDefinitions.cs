@@ -29,6 +29,7 @@ namespace SeraphLeveling.Data.Attributes
             GlobalMaxCredits = 5,
             CreditDescription = "translocators",
             PersistenceVersion = 2,
+            Verb = "Repair",
             Trait = new(() => Traits.TraitDefinitions.Technical),
         };
 
@@ -42,6 +43,7 @@ namespace SeraphLeveling.Data.Attributes
             CreditDescription = "bombs",
             Trait = new(() => Traits.TraitDefinitions.Detonator),
             CraftedItemName = "Bombs",
+            Verb = "Craft",
             ResultAllowList = Simple("bomb-"),
         };
 
@@ -55,6 +57,7 @@ namespace SeraphLeveling.Data.Attributes
             CreditDescription = "linen",
             Trait = new(() => Traits.TraitDefinitions.Weaver),
             CraftedItemName = "Linen cloth",
+            Verb = "Craft",
             ResultAllowList = Simple("linen-normal-down", MatcherType.PathExact),
         };
 
@@ -68,6 +71,7 @@ namespace SeraphLeveling.Data.Attributes
             CreditDescription = "furniture",
             Trait = new(() => Traits.TraitDefinitions.InteriorDesigner),
             CraftedItemName = "Furniture",
+            Verb = "Craft",
             ResultAllowList = Or(Simple("table-"), Simple("chair-")),
         };
 
@@ -79,6 +83,7 @@ namespace SeraphLeveling.Data.Attributes
             Name = "Bowyer",
             GlobalMaxCredits = 300,
             CreditDescription = "bow damage",
+            Verb = "Inflict",
             WatchedCreditsAttributeKey = "sitBowyerBowDamage",
             Trait = new(() => Traits.TraitDefinitions.Bowyer),
             Weapons = [ ToolDefinitions.Bow ],
@@ -446,6 +451,7 @@ namespace SeraphLeveling.Data.Attributes
             GlobalMaxCredits = 300,
             CreditDescription = "thrown rock damage",
             WatchedCreditsAttributeKey = "sitImproviserRockDamage",
+            Verb = "Inflict",
             Trait = new(() => Traits.TraitDefinitions.Improviser),
             Weapons = [ ToolDefinitions.Stone, ToolDefinitions.Sling ],
         };
@@ -752,6 +758,7 @@ namespace SeraphLeveling.Data.Attributes
             WatchedCreditsAttributeKey = "sitCarpenterBoards",
             Trait = new(() => Traits.TraitDefinitions.Carpenter),
             CraftedItemName = "Boards",
+            Verb = "Craft",
             ResultAllowList = Simple("plank-"),
         };
 
@@ -923,6 +930,7 @@ namespace SeraphLeveling.Data.Attributes
             WatchedCreditsAttributeKey = "sitMasonStoneBricks",
             Trait = new(() => Traits.TraitDefinitions.Mason),
             CraftedItemName = "Ashlar blocks",
+            Verb = "Craft",
             ResultAllowList = Simple("stonebrick-"),
         };
 
@@ -938,6 +946,7 @@ namespace SeraphLeveling.Data.Attributes
             Trait = new(() => Traits.TraitDefinitions.Technician),
             CraftedItemName = "Large gears",
             ResultAllowList = Simple("largegear3", MatcherType.PathExact),
+            Verb = "Craft",
         };
 
         public static readonly ConcurrentDictionary<SimpleToolProgress, IncrementData> HealingIncrementData = new()
@@ -977,6 +986,7 @@ namespace SeraphLeveling.Data.Attributes
             Trait = new(() => Traits.TraitDefinitions.Alchemist),
             CraftedItemName = "Poultices",
             ResultAllowList = Simple("poultice"),
+            Verb = "Craft",
         };
 
         public static readonly PropagatorAttributeModifierDefinition Propagator = new()
@@ -988,6 +998,7 @@ namespace SeraphLeveling.Data.Attributes
             GlobalMaxCredits = 80,
             CreditDescription = "compost",
             WatchedCreditsAttributeKey = "sitPropagatorCompost",
+            Verb = "Craft",
             Trait = new(() => Traits.TraitDefinitions.Propagator),
         };
 

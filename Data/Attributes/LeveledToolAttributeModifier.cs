@@ -429,6 +429,48 @@ namespace SeraphLeveling.Data.Attributes
                 sb.AppendLine($"\nNo {Definition.ToolsDescription} progress yet.");
             }
         }
+        
+        public override Messages.PartialCredits[] CollectPartialCreditsForReport()
+        {
+            List<Messages.PartialCredits> partialCreditsList = [];
+            if (LastToolUsed != null && ToolProgress.TryGetValue(LastToolUsed, out var lastToolProgress))
+            {
+                foreach (var pcKvp in lastToolProgress.PartialCredit)
+                {
+                    var e = pcKvp.Key;
+                    var creditData = pcKvp.Value;
+
+                    partialCreditsList.Add(new Messages.PartialCredits
+                    {
+                        Name = $"{((AssetLocation)LastToolUsed).ToShortString()}",
+                        Percentage = pcKvp.Value.Amount/pcKvp.Value.IncrementSize,
+                        Tooltip = $"{pcKvp.Value.Amount:F2}/{pcKvp.Value.IncrementSize} {Definition.IncrementData[pcKvp.Key].IncrementUnits}"
+                    });
+                }
+            }
+            foreach (var kvp in ToolProgress)
+            {
+                var toolCode = kvp.Key;
+                var toolProgress = kvp.Value;
+                if (toolCode == LastToolUsed)
+                {
+                    // Skip the last tool used to avoid double-reporting
+                    continue;
+                }
+
+                foreach (var pcKvp in toolProgress.PartialCredit)
+                {
+                    partialCreditsList.Add(new Messages.PartialCredits
+                    {
+                        Name = $"{toolCode.ToShortString()}",
+                        Percentage = pcKvp.Value.Amount/pcKvp.Value.IncrementSize,
+                        Tooltip = $"{pcKvp.Value.Amount:F2}/{pcKvp.Value.IncrementSize} {Definition.IncrementData[pcKvp.Key].IncrementUnits}"
+                    });
+                }
+            }
+
+            return [.. partialCreditsList];
+        }
 
         public static double DrainAccumulatorsLeveling(List<(AssetLocation key, E e, double value)> accumulators, double penalty)
         {
