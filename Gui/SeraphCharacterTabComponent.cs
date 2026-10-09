@@ -42,10 +42,10 @@ namespace SeraphLeveling.Gui
         public void RenderTabContent(GuiComposer composer, GuiDialogCharacterBase parentDialog)
         {
             if (composer == null || parentDialog == null) return;
-            capi.World.Logger.Debug($"[SeraphLeveling] Rendering Seraph Leveling tab content");
 
             int insetWidth = 365;
             int insetHeight = 340;
+            int insetDepth = 3;
 
             // Define viewport and scroll dimensions exactly matching the wiki guidelines
             ElementBounds insetBounds = ElementBounds.Fixed(10, 45, insetWidth, insetHeight);
@@ -62,23 +62,27 @@ namespace SeraphLeveling.Gui
                 return;
             }
 
-            capi.World.Logger.Debug($"[SeraphLeveling] About to build structural clipping framework for Seraph Leveling tab content");
             // 1. Build the official wiki-verified structural clipping framework tree
             composer.BeginChildElements()
+                .AddInset(insetBounds, insetDepth)
                 .BeginClip(clipBounds)
                 .AddContainer(containerBounds, "seraphScrollList")
                 .EndClip()
                 .AddVerticalScrollbar((value) =>
                 {
-                    capi.World.Logger.Debug($"[SeraphLeveling] Scrollbar value changed to {value}");
-                    if (parentDialog.SingleComposer == null) return;
-                    ElementBounds bounds = parentDialog.SingleComposer.GetContainer("scroll-content").Bounds;
+                    // Save the offset so it persists across redraws
                     currentScrollOffset = value;
-                    bounds.fixedY = 0 - value;
-                    bounds.CalcWorldBounds();
+
+                    // Target the correct container name ("seraphScrollList")
+                    var scrollContainer = composer.GetContainer("seraphScrollList");
+                    if (scrollContainer != null)
+                    {
+                        // Shift the inner container upward by the scroll value
+                        scrollContainer.Bounds.fixedY = 0 - value;
+                        scrollContainer.Bounds.CalcWorldBounds();
+                    }
                 }, scrollbarBounds, "seraphScrollbar")
                 .EndChildElements();
-            capi.World.Logger.Debug($"[SeraphLeveling] Built structural clipping framework for Seraph Leveling tab content");
 
             // Set up standardized fonts
             CairoFont titleFont = CairoFont.WhiteSmallText();
@@ -193,7 +197,6 @@ namespace SeraphLeveling.Gui
                 containerBounds.fixedY = 0 - currentScrollOffset;
                 containerBounds.CalcWorldBounds();
             }
-            capi.World.Logger.Debug($"[SeraphLeveling] At the end of the function.");
-        }        
+        }
     }
 }
