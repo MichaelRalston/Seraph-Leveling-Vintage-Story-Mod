@@ -75,7 +75,7 @@ namespace SeraphLeveling.Gui
                     {
                         bool isExpanded = expandedTraits.Contains(data.Name);
 
-                        return new SeraphTraitCell(capi, cellBounds, data, isExpanded, currentScrollOffset, composer, () =>
+                        return new SeraphTraitCell(capi, cellBounds, data, isExpanded, currentScrollOffset, () =>
                         {
                             // This is the OnStateChanged callback from the button
                             if (isExpanded) expandedTraits.Remove(data.Name);

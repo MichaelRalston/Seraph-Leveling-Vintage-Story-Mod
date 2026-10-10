@@ -16,25 +16,24 @@ namespace SeraphLeveling.Gui
         private readonly float scrollOffset;
         private float currentYOffset = 26;
 
-        // Structural elements
+        // Statbars are lightweight rendering primitives that can handle their own boundaries perfectly
         private GuiElementStatbar progressStatBar;
         private GuiElementHoverText tooltipHover;
-        private readonly List<(GuiElementStatbar Bar, GuiElementHoverText Hover)> subToolElements =
+        private readonly List<(GuiElementStatbar Bar, GuiElementHoverText Hover)> subToolElements = 
             new List<(GuiElementStatbar, GuiElementHoverText)>();
-        private GuiElementRichtext titleRichText;
-        private GuiElementRichtext buttonRichText;
-        private GuiElementRichtext extraRichText;
-        private GuiElementRichtext instructionsRichText;
-        private readonly GuiComposer parentComposer;
-        private readonly List<GuiElementRichtext> subToolRichTexts = new List<GuiElementRichtext>();
 
-        // Coordinates bounding frame for manual button mapping
+        // Pre-compiled engine textures
+        private LoadedTexture titleTexture;
+        private LoadedTexture buttonTexture;
+        private LoadedTexture extraTexture;
+        private LoadedTexture instructionsTexture;
+        private readonly List<LoadedTexture> subToolTextures = new List<LoadedTexture>();
+
         private ElementBounds buttonClickBounds;
 
-        // Fulfill the mandatory interface boundary property
         new public ElementBounds Bounds => base.Bounds;
 
-        public SeraphTraitCell(ICoreClientAPI capi, ElementBounds bounds, ProgressReportContent traitData, bool isExpanded, float scrollOffset, GuiComposer parentComposer, Action onStateChanged)
+        public SeraphTraitCell(ICoreClientAPI capi, ElementBounds bounds, ProgressReportContent traitData, bool isExpanded, float scrollOffset, Action onStateChanged)
             : base(capi, bounds)
         {
             this.capi = capi;
@@ -42,9 +41,13 @@ namespace SeraphLeveling.Gui
             this.isExpanded = isExpanded;
             this.OnStateChanged = onStateChanged;
             this.scrollOffset = scrollOffset;
-            this.parentComposer = parentComposer;
 
-            // 1. Calculate dynamic heights exactly before defining elements
+            UpdateCellHeight();
+            InitializeTexturesAndBars();
+        }
+
+        public void UpdateCellHeight()
+        {
             int currentHeight = 24;
             if (isExpanded && traitData.PartialCredits != null)
             {
@@ -54,189 +57,140 @@ namespace SeraphLeveling.Gui
             if (!string.IsNullOrEmpty(traitData.Instructions)) currentHeight += 40;
 
             Bounds.fixedHeight = currentHeight;
-
-            // 2. Initialize and construct layouts
-            InitializeSubElements();
         }
 
-        private void InitializeSubElements()
+        private void InitializeTexturesAndBars()
         {
-            RenderSubText();
-            RenderMainProgressBar();
-            RenderPartialCredits();
-            RenderExtraInfo();
-            RenderInstructions();
-        }
+            CairoFont baseFont = CairoFont.WhiteSmallText();
+            baseFont.UnscaledFontsize = 16;
+            
+            TextTextureUtil textureUtil = new TextTextureUtil(capi);
 
-        private void RenderSubText()
-        {
-            CairoFont titleFont = CairoFont.WhiteSmallText();
-            titleFont.UnscaledFontsize = 16;
+            // 1. Bake strings into standalone textures cleanly using engine utilities
+            titleTexture = textureUtil.GenTextTexture(traitData.Name, baseFont);
 
-            ElementBounds textBounds = ElementBounds.Fixed(0, 4, 120, 22).WithParent(Bounds);
+            if (traitData.PartialCredits != null && traitData.PartialCredits.Length > 0)
+            {
+                buttonClickBounds = ElementBounds.Fixed(335, 0, 24, 22).WithParent(Bounds);
+                string btnText = isExpanded ? "−" : "+";
+                CairoFont btnFont = isExpanded ? baseFont.Clone().WithColor([1, 0.66, 0, 1]) : baseFont.Clone().WithColor(new double[] { 0, 1, 0.66, 1 });
+                
+                buttonTexture = textureUtil.GenTextTexture(btnText, btnFont);
 
-            // Build VTML nodes and bind them to the RichText layout
-            RichTextComponentBase[] nodes = VtmlUtil.Richtextify(capi, traitData.Name, titleFont);
-            titleRichText = new GuiElementRichtext(capi, nodes, textBounds);
-            parentComposer.AddInteractiveElement(titleRichText);
-            titleRichText.RecomposeText();
-        }
+                CairoFont smallToolFont = CairoFont.WhiteSmallText().WithColor([0.6, 0.6, 0.6, 1.0]);
+                for (int i = 0; i < traitData.PartialCredits.Length; i++)
+                {
+                    var partial = traitData.PartialCredits[i];
+                    subToolTextures.Add(textureUtil.GenTextTexture(partial.Name, smallToolFont));
 
-        private void RenderMainProgressBar()
-        {
+                    ElementBounds toolBarBounds = ElementBounds.Fixed(125, currentYOffset, 200, 16).WithParent(Bounds);
+                    var subBar = new GuiElementStatbar(capi, toolBarBounds, GuiStyle.FoodBarColor, false, false);
+                    subBar.SetValues(partial.Percentage, 0f, 1f);
+
+                    GuiElementHoverText subHover = null;
+                    if (!string.IsNullOrEmpty(partial.Tooltip))
+                    {
+                        subHover = new GuiElementHoverText(capi, partial.Tooltip, CairoFont.WhiteSmallText(), 220, toolBarBounds);
+                    }
+                    subToolElements.Add((subBar, subHover));
+
+                    currentYOffset += 22;
+                    if (!isExpanded) break;
+                }
+            }
+
+            // 2. Setup Primary Statbars
             ElementBounds barBounds = ElementBounds.Fixed(125, 0, 200, 22).WithParent(Bounds);
             progressStatBar = new GuiElementStatbar(capi, barBounds, GuiStyle.XPBarColor, false, false);
-
-            float clampedPct = (float)Math.Max(0.0, Math.Min(1.0, traitData.Percentage));
-            progressStatBar.SetValues(clampedPct, 0f, 1f);
+            progressStatBar.SetValues((float)Math.Max(0.0, Math.Min(1.0, traitData.Percentage)), 0f, 1f);
 
             if (!string.IsNullOrEmpty(traitData.Tooltip))
             {
                 tooltipHover = new GuiElementHoverText(capi, traitData.Tooltip, CairoFont.WhiteSmallText(), 220, barBounds);
             }
-        }
 
-        private void RenderPartialCredits()
-        {
-            if (traitData.PartialCredits == null || traitData.PartialCredits.Length == 0) return;
-            CairoFont btnFont = CairoFont.WhiteSmallText();
-            btnFont.UnscaledFontsize = 16;
-
-            buttonClickBounds = ElementBounds.Fixed(335, 0, 24, 22).WithParent(Bounds);
-
-            string btnVtml = isExpanded
-                ? "<font color=\"#ffaa00\"><b>−</b></font>"
-                : "<font color=\"#00ffaa\"><b>+</b></font>";
-
-            RichTextComponentBase[] btnNodes = VtmlUtil.Richtextify(capi, btnVtml, btnFont);
-            buttonRichText = new GuiElementRichtext(capi, btnNodes, buttonClickBounds);
-            parentComposer.AddInteractiveElement(buttonRichText);
-            buttonRichText.RecomposeText();
-
-            CairoFont smallToolFont = CairoFont.WhiteSmallText().WithColor([0.6, 0.6, 0.6, 1.0]);
-
-            for (int i = 0; i < traitData.PartialCredits.Length; i++)
+            CairoFont blockFont = CairoFont.WhiteSmallText().WithColor(new double[] { 0.6, 0.6, 0.6, 1.0 });
+            if (!string.IsNullOrEmpty(traitData.ExtraInfo))
             {
-                var partial = traitData.PartialCredits[i];
-
-                // 1. Tool Text Label Bounds & VTML Node Compilation
-                ElementBounds toolLabelBounds = ElementBounds.Fixed(15, currentYOffset + 2, 105, 18).WithParent(Bounds);
-                RichTextComponentBase[] toolNodes = VtmlUtil.Richtextify(capi, partial.Name, smallToolFont);
-                var subRichLabel = new GuiElementRichtext(capi, toolNodes, toolLabelBounds);
-                subToolRichTexts.Add(subRichLabel);
-                parentComposer.AddInteractiveElement(subRichLabel);
-                subRichLabel.RecomposeText();
-
-                // 2. Tool Progress Bar Alignment
-                ElementBounds toolBarBounds = ElementBounds.Fixed(125, currentYOffset, 200, 16).WithParent(Bounds);
-                var subBar = new GuiElementStatbar(capi, toolBarBounds, GuiStyle.FoodBarColor, false, false);
-                subBar.SetValues(partial.Percentage, 0f, 1f);
-
-                // 3. Tool Hover Tooltip Setup
-                GuiElementHoverText subHover = null;
-                if (!string.IsNullOrEmpty(partial.Tooltip))
-                {
-                    subHover = new GuiElementHoverText(capi, partial.Tooltip, CairoFont.WhiteSmallText(), 220, toolBarBounds);
-                }
-
-                // Add structural pairs to tracker array
-                subToolElements.Add((subBar, subHover));
-
-                // Shift down for the next stacked sub-row
-                currentYOffset += 22;
-                if (!isExpanded) return;
+                extraTexture = textureUtil.GenTextTexture(traitData.ExtraInfo, blockFont);
+                currentYOffset += 20;
+            }
+            if (!string.IsNullOrEmpty(traitData.Instructions))
+            {
+                instructionsTexture = textureUtil.GenTextTexture(traitData.Instructions, blockFont);
+                currentYOffset += 20;
             }
         }
 
-        private void RenderExtraInfo()
+        // =====================================================================
+        // INTENDED ENGINE SURFACE DRAWING LIFECYCLE
+        // =====================================================================
+
+        public void DrawToSurface(GuiElementCellList<ProgressReportContent> list, double x, double y)
         {
-            if (string.IsNullOrEmpty(traitData.ExtraInfo)) return;
-
-            CairoFont smallFont = CairoFont.WhiteSmallText().WithColor([0.6, 0.6, 0.6, 1.0]);
-            ElementBounds extraBounds = ElementBounds.Fixed(10, currentYOffset, 345, 18).WithParent(Bounds);
-
-            // Richtextify extra notes support string primitives or embedded tags
-            RichTextComponentBase[] nodes = VtmlUtil.Richtextify(capi, traitData.ExtraInfo, smallFont);
-            extraRichText = new GuiElementRichtext(capi, nodes, extraBounds);
-            parentComposer.AddInteractiveElement(extraRichText);
-            extraRichText.RecomposeText();
-
-            // Accumulate tail heights
-            currentYOffset += 20;
-        }
-
-        private void RenderInstructions()
-        {
-            if (string.IsNullOrEmpty(traitData.Instructions)) return;
-
-            CairoFont smallFont = CairoFont.WhiteSmallText().WithColor([0.6, 0.6, 0.6, 1.0]);
-            ElementBounds extraBounds = ElementBounds.Fixed(10, currentYOffset, 345, 36).WithParent(Bounds);
-
-            // Richtextify extra notes support string primitives or embedded tags
-            RichTextComponentBase[] nodes = VtmlUtil.Richtextify(capi, traitData.Instructions, smallFont);
-            instructionsRichText = new GuiElementRichtext(capi, nodes, extraBounds);
-            parentComposer.AddInteractiveElement(instructionsRichText);
-            instructionsRichText.RecomposeText();
-
-            // Accumulate tail heights
-            currentYOffset += 20;
-        }
-
-        // =======================================================
-        // MANDATORY INTERFACE METHODS FOR DRAWING AND SCROLLING
-        // =======================================================
-
-        public void UpdateCellItems()
-        {
-            // Text textures are pre-allocated on initialization, so leave blank
-        }
-
-        public void UpdateCellHeight()
-        {
-            // Enforces size tracking updates inside the list scrollbox engine context
-            Bounds.CalcWorldBounds();
+            // Handled during layout interactive rendering phases
         }
 
         public void OnRenderInteractiveElements(ICoreClientAPI api, float deltaTime)
         {
-            titleRichText?.RenderInteractiveElements(deltaTime);
-            buttonRichText?.RenderInteractiveElements(deltaTime);
-            progressStatBar?.RenderInteractiveElements(deltaTime);
+            // Synchronize boundaries matrix updates for nested components per frame
+            progressStatBar?.Bounds.CalcWorldBounds();
+            tooltipHover?.Bounds.CalcWorldBounds();
+            foreach (var (Bar, Hover) in subToolElements)
+            {
+                Bar?.Bounds.CalcWorldBounds();
+                Hover?.Bounds.CalcWorldBounds();
+            }
 
-            // Render sub-tool components arrays loop
+            // Render primitive elements
+            progressStatBar?.RenderInteractiveElements(deltaTime);
+            foreach (var (Bar, Hover) in subToolElements)
+            {
+                Bar?.RenderInteractiveElements(deltaTime);
+                Hover?.RenderInteractiveElements(deltaTime);
+            }
+            tooltipHover?.RenderInteractiveElements(deltaTime);
+
+            // Draw pre-baked text textures cleanly onto screen-space absolute coordinates
+            double renderX = Bounds.renderX;
+            double renderY = Bounds.renderY;
+
+            if (titleTexture != null)
+                api.Render.Render2DTexturePremultipliedAlpha(titleTexture.TextureId, renderX, renderY + 4, titleTexture.Width, titleTexture.Height);
+
+            if (buttonTexture != null)
+                api.Render.Render2DTexturePremultipliedAlpha(buttonTexture.TextureId, renderX + 335, renderY, buttonTexture.Width, buttonTexture.Height);
+
+            int textYOffset = 26;
             if (isExpanded)
             {
-                for (int i = 0; i < subToolElements.Count; i++)
+                for (int i = 0; i < subToolTextures.Count; i++)
                 {
-                    if (i < subToolRichTexts.Count) subToolRichTexts[i]?.RenderInteractiveElements(deltaTime);
-                    subToolElements[i].Bar?.RenderInteractiveElements(deltaTime);
-                    subToolElements[i].Hover?.RenderInteractiveElements(deltaTime);
+                    var tex = subToolTextures[i];
+                    api.Render.Render2DTexturePremultipliedAlpha(tex.TextureId, renderX + 15, renderY + textYOffset + 2, tex.Width, tex.Height);
+                    textYOffset += 22;
                 }
             }
 
-            // Render remaining data strings safely onto the layout canvas frame
-            extraRichText?.RenderInteractiveElements(deltaTime);
-            instructionsRichText?.RenderInteractiveElements(deltaTime);
+            if (extraTexture != null)
+            {
+                api.Render.Render2DTexturePremultipliedAlpha(extraTexture.TextureId, renderX + 10, renderY + textYOffset, extraTexture.Width, extraTexture.Height);
+                textYOffset += 20;
+            }
 
-            // Draw your primary tooltip on top
-            tooltipHover?.RenderInteractiveElements(deltaTime);
+            if (instructionsTexture != null)
+            {
+                api.Render.Render2DTexturePremultipliedAlpha(instructionsTexture.TextureId, renderX + 10, renderY + textYOffset, instructionsTexture.Width, instructionsTexture.Height);
+            }
         }
-
-        // =======================================================
-        // MANDATORY MOUSE INTERACTION ROUTERS
-        // =======================================================
 
         public void OnMouseDownOnElement(MouseEvent args, int elementIndex)
         {
             if (buttonClickBounds == null) return;
 
-            // Determine the baseline location of the button relative to the row block
             double absoluteBtnX = Bounds.renderX + buttonClickBounds.fixedX;
-
-            // ADJUSTMENT: Factor in the active scroll translation depth!
             double absoluteBtnY = Bounds.renderY + buttonClickBounds.fixedY - scrollOffset;
 
-            // Check bounds intersections against the corrected matrix paths
             bool clickedButton = args.X >= absoluteBtnX &&
                                  args.X <= (absoluteBtnX + buttonClickBounds.fixedWidth) &&
                                  args.Y >= absoluteBtnY &&
@@ -248,14 +202,10 @@ namespace SeraphLeveling.Gui
                 args.Handled = true;
             }
         }
-        public void OnMouseMoveOnElement(MouseEvent args, int elementIndex)
-        {
-            // Route inputs natively to fulfill hover descriptions checks
-        }
-        public void OnMouseUpOnElement(MouseEvent args, int elementIndex)
-        {
-            // Route structural mouse releases safely
-        }
+
+        public void OnMouseMoveOnElement(MouseEvent args, int elementIndex) { }
+        public void OnMouseUpOnElement(MouseEvent args, int elementIndex) { }
+
         public override void Dispose()
         {
             base.Dispose();
@@ -266,14 +216,13 @@ namespace SeraphLeveling.Gui
                 Bar?.Dispose();
                 Hover?.Dispose();
             }
-            titleRichText?.Dispose();
-            buttonRichText?.Dispose();
-            extraRichText?.Dispose();
-            instructionsRichText?.Dispose();
-            foreach (var richText in subToolRichTexts)
-            {
-                richText?.Dispose();
-            }
+
+            // Dispose texture asset bindings from VRAM cleanly to prevent memory leaks
+            titleTexture?.Dispose();
+            buttonTexture?.Dispose();
+            extraTexture?.Dispose();
+            instructionsTexture?.Dispose();
+            foreach (var tex in subToolTextures) tex?.Dispose();
         }
     }
 }
