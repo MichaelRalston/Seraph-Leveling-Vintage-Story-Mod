@@ -64,16 +64,16 @@ namespace SeraphLeveling.Gui
             CairoFont baseFont = CairoFont.WhiteSmallText();
             baseFont.UnscaledFontsize = 16;
             
-            TextTextureUtil textureUtil = new TextTextureUtil(capi);
+            TextTextureUtil textureUtil = new(capi);
 
             // 1. Bake strings into standalone textures cleanly using engine utilities
             titleTexture = textureUtil.GenTextTexture(traitData.Name, baseFont);
 
             if (traitData.PartialCredits != null && traitData.PartialCredits.Length > 0)
             {
-                buttonClickBounds = ElementBounds.Fixed(335, 0, 24, 22).WithParent(Bounds);
+                buttonClickBounds = ElementBounds.Fixed(420, currentYOffset+4, 24, 22).WithParent(Bounds);
                 string btnText = isExpanded ? "−" : "+";
-                CairoFont btnFont = isExpanded ? baseFont.Clone().WithColor([1, 0.66, 0, 1]) : baseFont.Clone().WithColor(new double[] { 0, 1, 0.66, 1 });
+                CairoFont btnFont = isExpanded ? baseFont.Clone().WithColor([1, 0.66, 0, 1]) : baseFont.Clone().WithColor([0, 1, 0.66, 1]);
                 
                 buttonTexture = textureUtil.GenTextTexture(btnText, btnFont);
 
@@ -109,7 +109,7 @@ namespace SeraphLeveling.Gui
                 tooltipHover = new GuiElementHoverText(capi, traitData.Tooltip, CairoFont.WhiteSmallText(), 220, barBounds);
             }
 
-            CairoFont blockFont = CairoFont.WhiteSmallText().WithColor(new double[] { 0.6, 0.6, 0.6, 1.0 });
+            CairoFont blockFont = CairoFont.WhiteSmallText().WithColor([0.6, 0.6, 0.6, 1.0]);
             if (!string.IsNullOrEmpty(traitData.ExtraInfo))
             {
                 extraTexture = textureUtil.GenTextTexture(traitData.ExtraInfo, blockFont);
@@ -159,7 +159,7 @@ namespace SeraphLeveling.Gui
                 api.Render.Render2DTexturePremultipliedAlpha(titleTexture.TextureId, renderX, renderY + 4, titleTexture.Width, titleTexture.Height);
 
             if (buttonTexture != null)
-                api.Render.Render2DTexturePremultipliedAlpha(buttonTexture.TextureId, renderX + 335, renderY, buttonTexture.Width, buttonTexture.Height);
+                api.Render.Render2DTexturePremultipliedAlpha(buttonTexture.TextureId, renderX+buttonClickBounds.fixedX, renderY+buttonClickBounds.fixedY, buttonTexture.Width, buttonTexture.Height);
 
             int textYOffset = 26;
             if (isExpanded)
