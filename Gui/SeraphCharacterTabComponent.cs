@@ -13,7 +13,7 @@ namespace SeraphLeveling.Gui
         private readonly HashSet<string> expandedTraits = [];
         // This persists the scroll coordinates across individual tab window redraw frames safely
         private float currentScrollOffset = 0f;
-        public ProgressReportContent[] LatestData { get; set; } = Array.Empty<ProgressReportContent>();
+        public ProgressReportContent[] LatestData { get; set; } = [];
 
         public void OnProgressReportReceived(ProgressReportContent[] content)
         {
@@ -32,9 +32,13 @@ namespace SeraphLeveling.Gui
         {
             if (characterDialog != null && characterDialog.IsOpened())
             {
-                characterDialog.SingleComposer?.ReCompose();
+                capi.Event.EnqueueMainThreadTask(() =>
+                {
+                    characterDialog.SingleComposer?.ReCompose();
+                }, "liveupdateserraphtab");
             }
         }
+
 
         /// <summary>
         /// Automatically called by Vintage Story's character screen layout loop when your tab header is clicked.
@@ -62,11 +66,28 @@ namespace SeraphLeveling.Gui
                 return;
             }
 
-            // 1. Build the official wiki-verified structural clipping framework tree
             composer.BeginChildElements()
                 .AddInset(insetBounds, insetDepth)
                 .BeginClip(clipBounds)
-                .AddContainer(containerBounds, "seraphScrollList")
+                .AddCellList(
+                    containerBounds.WithFixedOffset(0, 0).WithFixedWidth(insetWidth - 20),
+                    (data, cellBounds) =>
+                    {
+                        bool isExpanded = expandedTraits.Contains(data.Name);
+
+                        return new SeraphTraitCell(capi, cellBounds, data, isExpanded, currentScrollOffset, composer, () =>
+                        {
+                            // This is the OnStateChanged callback from the button
+                            if (isExpanded) expandedTraits.Remove(data.Name);
+                            else expandedTraits.Add(data.Name);
+
+                            // Safely trigger a layout redraw of the main character window
+                            parentDialog.SingleComposer?.ReCompose();
+                        });
+                    },
+                    LatestData,
+                    "seraphScrollList"
+                )
                 .EndClip()
                 .AddVerticalScrollbar((value) =>
                 {
@@ -74,129 +95,33 @@ namespace SeraphLeveling.Gui
                     currentScrollOffset = value;
 
                     // Target the correct container name ("seraphScrollList")
-                    var scrollContainer = composer.GetContainer("seraphScrollList");
-                    if (scrollContainer != null)
+                    var cellList = composer.GetCellList<ProgressReportContent>("seraphScrollList");
+                    if (cellList != null)
                     {
-                        // Shift the inner container upward by the scroll value
-                        scrollContainer.Bounds.fixedY = 0 - value;
-                        scrollContainer.Bounds.CalcWorldBounds();
+                        cellList.Bounds.fixedY = 0 - value;
+                        cellList.Bounds.CalcWorldBounds();
                     }
                 }, scrollbarBounds, "seraphScrollbar")
                 .EndChildElements();
 
-            // Set up standardized fonts
-            CairoFont titleFont = CairoFont.WhiteSmallText();
-            titleFont.UnscaledFontsize = 16;
-            CairoFont descFont = CairoFont.WhiteSmallText().WithLineHeightMultiplier(1.15f);
-            CairoFont smallToolFont = CairoFont.WhiteSmallText().WithColor(new double[] { 0.6, 0.6, 0.6, 1.0 });
-
-            GuiElementContainer scrollArea = composer.GetContainer("seraphScrollList");
-
-            // 3. Use standard factory methods safely—they now bind natively into our scrolling canvas context
-            ElementBounds rowBounds = ElementBounds.Fixed(0, 0, insetWidth - 20, 0);
-            bool isFirst = true;
-
-            foreach (var trait in LatestData)
-            {
-                if (!isFirst) rowBounds = rowBounds.BelowCopy(0, 15);
-                isFirst = false;
-
-                // Primary Trait Label
-                ElementBounds labelBounds = ElementBounds.Fixed(0, 2, 120, 22);
-                labelBounds.fixedY = rowBounds.fixedY + 2;
-                scrollArea.Add(new GuiElementStaticText(capi, trait.Name, EnumTextOrientation.Left, labelBounds, titleFont));
-
-                // Core Visual Progress Bar (XPBarColor texture graphic)
-                ElementBounds barBounds = ElementBounds.Fixed(125, 0, 200, 22);
-                barBounds.fixedY = rowBounds.fixedY;
-                var subBar = new GuiElementStatbar(capi, barBounds, GuiStyle.XPBarColor, false, false);
-
-                float clampedPct = (float)Math.Max(0.0, Math.Min(1.0, trait.Percentage));
-                subBar.SetValues(clampedPct, 0f, 1f);
-                scrollArea.Add(subBar);
-
-                if (!string.IsNullOrEmpty(trait.Tooltip))
-                {
-                    scrollArea.Add(new GuiElementHoverText(capi, trait.Tooltip, CairoFont.WhiteSmallText(), 220, barBounds));
-                }
-
-                int currentYOffset = 26;
-
-                // Multi-Tool Expansion Row Blocks (PartialCredits)
-                if (trait.PartialCredits != null && trait.PartialCredits.Length > 0)
-                {
-                    bool isExpanded = expandedTraits.Contains(trait.Name);
-                    string btnText = isExpanded ? "−" : "+";
-
-                    ElementBounds btnBounds = ElementBounds.Fixed(335, 0, 24, 22);
-                    btnBounds.fixedY = rowBounds.fixedY;
-
-                    scrollArea.Add(new GuiElementTextButton(capi, btnText, descFont, descFont, () =>
-                    {
-                        if (isExpanded) expandedTraits.Remove(trait.Name);
-                        else expandedTraits.Add(trait.Name);
-
-                        parentDialog.SingleComposer?.ReCompose();
-                        return true;
-                    }, btnBounds));
-
-                    int renderLimit = isExpanded ? trait.PartialCredits.Length : 1;
-
-                    for (int i = 0; i < renderLimit; i++)
-                    {
-                        var partial = trait.PartialCredits[i];
-
-                        ElementBounds toolLabelBounds = ElementBounds.Fixed(15, currentYOffset + 2, 105, 18);
-                        toolLabelBounds.fixedY = rowBounds.fixedY + currentYOffset + 2;
-                        scrollArea.Add(new GuiElementStaticText(capi, partial.Name, EnumTextOrientation.Left, toolLabelBounds, smallToolFont));
-
-                        ElementBounds toolBarBounds = ElementBounds.Fixed(125, currentYOffset, 200, 16);
-                        toolBarBounds.fixedY = rowBounds.fixedY + currentYOffset;
-                        string subBarKey = $"subbar-{trait.Name}-{i}";
-
-                        subBar = new GuiElementStatbar(capi, toolBarBounds, GuiStyle.FoodBarColor, false, false);
-                        scrollArea.Add(subBar);
-                        subBar.SetValues(partial.Percentage, 0f, 1f);
-
-                        if (!string.IsNullOrEmpty(partial.Tooltip))
-                        {
-                            scrollArea.Add(new GuiElementHoverText(capi, partial.Tooltip, CairoFont.WhiteSmallText(), 220, toolBarBounds));
-                        }
-
-                        currentYOffset += 22;
-                    }
-                }
-
-                if (!string.IsNullOrEmpty(trait.ExtraInfo))
-                {
-                    ElementBounds extraBounds = ElementBounds.Fixed(10, currentYOffset, insetWidth - 20, 18);
-                    extraBounds.fixedY = rowBounds.fixedY + currentYOffset;
-                    scrollArea.Add(new GuiElementStaticText(capi, trait.ExtraInfo, EnumTextOrientation.Left, extraBounds, smallToolFont));
-                    currentYOffset += 20;
-                }
-
-                if (!string.IsNullOrEmpty(trait.Instructions))
-                {
-                    ElementBounds instBounds = ElementBounds.Fixed(10, currentYOffset, insetWidth - 20, 36);
-                    instBounds.fixedY = rowBounds.fixedY + currentYOffset;
-                    scrollArea.Add(new GuiElementStaticText(capi, trait.Instructions, EnumTextOrientation.Left, instBounds, descFont));
-                    currentYOffset += 40;
-                }
-
-                rowBounds.fixedHeight = currentYOffset;
-            }
             composer.Compose();
 
-            // 5. Set heights natively post-composition so the scroll slider calculates limits
+            // 5. Connect heights cleanly so scroll slider limitations map rows perfectly
             GuiElementScrollbar scrollbar = composer.GetScrollbar("seraphScrollbar");
-            if (scrollbar != null)
-            {
-                scrollbar.SetHeights((float)clipBounds.fixedHeight, (float)(rowBounds.fixedY + rowBounds.fixedHeight));
+            var finalCellList = composer.GetCellList<ProgressReportContent>("seraphScrollList");
 
-                // Directly translate the underlying container boundary parameters to match the offset location
-                containerBounds.fixedY = 0 - currentScrollOffset;
-                containerBounds.CalcWorldBounds();
+            if (scrollbar != null && finalCellList != null)
+            {
+                // Let the cell list determine how long it actually is based on all cell rows combined
+                float totalListHeight = (float)finalCellList.Bounds.fixedHeight;
+
+                scrollbar.SetHeights((float)clipBounds.fixedHeight, totalListHeight);
+                scrollbar.CurrentYPosition = currentScrollOffset;
+
+                finalCellList.Bounds.fixedY = 0 - currentScrollOffset;
+                finalCellList.Bounds.CalcWorldBounds();
             }
         }
+
     }
 }
