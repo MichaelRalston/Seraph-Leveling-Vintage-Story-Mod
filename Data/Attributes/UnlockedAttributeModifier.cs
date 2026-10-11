@@ -7,6 +7,7 @@ using Vintagestory.API.Common;
 using Vintagestory.API.Config;
 using Vintagestory.API.Server;
 using Vintagestory.API.Util;
+using Vintagestory.GameContent;
 
 namespace SeraphLeveling.Data.Attributes
 {
@@ -29,6 +30,7 @@ namespace SeraphLeveling.Data.Attributes
     {
         public virtual string UnlockedKey { get => field ??= $"sit{FlatName}Unlocked"; init; }
         public string NotifyLangKey { get => field ??= $"seraphleveling:message-{SkillKey}-unlock"; init; } = null;
+        public string InstructionsKey { get; init; }
         public required Lazy<TraitDefinition> Trait { get; init; }
 
         public event UnlockChangedDelegate UnlockChanged;
@@ -173,7 +175,7 @@ namespace SeraphLeveling.Data.Attributes
             {
                 Name = Name,
                 Percentage = progress.IsUnlocked ? 1 : 0,
-                Tooltip = $"{(progress.IsUnlocked ? "UNLOCKED" : "Locked")})",
+                Tooltip = $"{(progress.IsUnlocked ? "UNLOCKED" : "Locked")}",
                 PartialCredits = [],
                 Instructions = instructionsSb.ToString(),
             };
@@ -195,6 +197,11 @@ namespace SeraphLeveling.Data.Attributes
                         sb.AppendLine("Other unlock requirements:");
                         sb.Append(innerSb);
                     }
+                    if (!string.IsNullOrEmpty(InstructionsKey)) sb.AppendLine();
+                }
+                if (!string.IsNullOrEmpty(InstructionsKey))
+                {
+                    sb.AppendLine(Lang.Get(InstructionsKey));
                 }
             }
         }

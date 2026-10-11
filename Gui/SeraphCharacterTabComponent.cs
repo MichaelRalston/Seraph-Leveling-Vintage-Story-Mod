@@ -6,6 +6,7 @@ using Vintagestory.API.Client;
 using Vintagestory.API.Config;
 using Vintagestory.API.Common;
 using System.Reflection;
+using Vintagestory.API.Datastructures;
 
 namespace SeraphLeveling.Gui
 {
@@ -158,10 +159,11 @@ namespace SeraphLeveling.Gui
                 if (!string.IsNullOrEmpty(data.Tooltip))
                 {
                     GuiElementHoverText hoverText = new(capi, data.Tooltip, CairoFont.WhiteSmallText(), 220, ElementBounds.Fixed(125, accumulatedY, 200, 22).WithParent(containerBounds));
+                    hoverText.SetAutoWidth(true);
                     scrollArea.Add(hoverText);
                 }
 
-                if (data.PartialCredits != null && data.PartialCredits.Length > 1)
+                if ((data.PartialCredits != null && data.PartialCredits.Length > 1) || data.CollapseExtraInfo)
                 {
                     ElementBounds btnBounds = ElementBounds.Fixed(350, accumulatedY, 12, 22).WithParent(containerBounds);
                     string btnText = isExpanded ? "-" : "+";
@@ -202,6 +204,7 @@ namespace SeraphLeveling.Gui
                         if (!string.IsNullOrEmpty(partial.Tooltip))
                         {
                             GuiElementHoverText subHover = new(capi, partial.Tooltip, CairoFont.WhiteSmallText(), 220, subBarBounds);
+                            subHover.SetAutoWidth(true);
                             scrollArea.Add(subHover);
                         }
 
@@ -210,7 +213,7 @@ namespace SeraphLeveling.Gui
                     }
                 }
 
-                if (!string.IsNullOrEmpty(data.ExtraInfo))
+                if (!string.IsNullOrEmpty(data.ExtraInfo) && (!data.CollapseExtraInfo || isExpanded))
                 {
                     ElementBounds extraBounds = ElementBounds.Fixed(10, accumulatedY, 345, 18).WithParent(containerBounds);
                     GuiElementRichtext extraText = new(capi, VtmlUtil.Richtextify(capi, data.ExtraInfo, smallToolFont), extraBounds);

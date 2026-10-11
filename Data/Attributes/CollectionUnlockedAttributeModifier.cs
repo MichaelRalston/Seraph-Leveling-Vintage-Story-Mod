@@ -109,13 +109,36 @@ namespace SeraphLeveling.Data.Attributes
         {
             var progress = GetDict(player);
             sb.AppendLine($"<strong>{Name}</strong> trait: {progress.CollectedItems.Count} / {RequiredCollectionSize} unique {CollectedItemDescription} ({(progress.IsUnlocked ? "UNLOCKED" : "Locked")})");
+        }
 
+        public virtual void CollectExtraInfo(IPlayer player, StringBuilder sb)
+        {
+            var progress = GetDict(player);
             if (!progress.IsUnlocked && progress.CollectedItems.Count > 0)
             {
                 sb.AppendLine($"Collected:");
-                progress.CollectedItems.Foreach(item => sb.AppendLine($"  * {item}"));
+                progress.CollectedItems.Foreach(item => sb.AppendLine($"  * {SeraphLevelingModSystem.GetToolDisplayName(item)}"));
             }
         }
+        public override Messages.ProgressReportContent CollectReportContent(IPlayer player)
+        {
+            var progress = GetDict(player);
+            var instructionsSb = new StringBuilder();
+            CollectInstructions(player, instructionsSb);
+            var extraInfoSb = new StringBuilder();
+            CollectExtraInfo(player, extraInfoSb);
+            return new Messages.ProgressReportContent()
+            {
+                Name = Name,
+                Percentage = progress.IsUnlocked ? 1 : Math.Min(1.0f, progress.CollectedItems.Count / (float)RequiredCollectionSize),
+                Tooltip = $"{(progress.IsUnlocked ? "UNLOCKED" : $"{progress.CollectedItems.Count} / {RequiredCollectionSize} unique {CollectedItemDescription}")}",
+                PartialCredits = [],
+                ExtraInfo = extraInfoSb.ToString(),
+                CollapseExtraInfo = true,
+                Instructions = instructionsSb.ToString(),
+            };
+        }
+
 
         public override TextCommandResult HandleLevelCommand(TextCommandCallingArgs args, int indexOffset)
         {

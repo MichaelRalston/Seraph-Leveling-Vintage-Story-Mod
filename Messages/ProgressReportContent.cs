@@ -28,5 +28,7 @@ namespace SeraphLeveling.Messages {
         public string ExtraInfo { get; set; }
         [ProtoMember(6)]
         public string Instructions { get; set; }
+        [ProtoMember(7)]
+        public bool CollapseExtraInfo { get; set; }
     }
 }

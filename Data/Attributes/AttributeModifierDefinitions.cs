@@ -467,6 +467,7 @@ namespace SeraphLeveling.Data.Attributes
             CollectedItemCountKey = "sitClothierCount",
             TokenAllowList = ["clothes-", "shirt-", "trousers-", "dress-", "hat-", "cape-", "cloak-", "jacket-", "vest-", "skirt-", "gloves-", "boots-", "shoes-", "headband-", "mask-", "scarf-"],
             Trait = new(() => Traits.TraitDefinitions.Clothier),
+            InstructionsKey = "seraphleveling:gui-clothier-instructions",
         };
 
         public static readonly ConcurrentDictionary<SimpleToolProgress, IncrementData> DamageIncrementData = new()

@@ -103,7 +103,7 @@ namespace SeraphLeveling.Data.Attributes
             {
                 Name = Name,
                 Percentage = progress.TotalCredits / GlobalMaxCredits,
-                Tooltip = $"{progress.TotalCredits}/{GlobalMaxCredits} {CreditDescription} ({(progress.IsUnlocked ? "UNLOCKED" : "locked")})",
+                Tooltip = $"{progress.TotalCredits}/{GlobalMaxCredits} {CreditDescription}",
                 PartialCredits = [],
                 Instructions = instructionsSb.ToString(),
                 ExtraInfo = progress.IsUnlocked ? "UNLOCKED" : $"{Verb} {GlobalMaxCredits - progress.TotalCredits:F0} more {CreditDescription} to unlock!"

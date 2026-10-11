@@ -254,7 +254,7 @@ namespace SeraphLeveling.Data.Attributes
             {
                 Name = Name,
                 Percentage = currentCredits/(float)maxCredits,
-                Tooltip = $"<strong>{Name}</strong> progression: {progress.DisplayCredits}% / {maxCredits}%",
+                Tooltip = $"{progress.DisplayCredits}% / {maxCredits}%",
                 PartialCredits = progress.CollectPartialCreditsForReport(),
                 Instructions = Lang.Get(InstructionsKey),
                 ExtraInfo = $"Current bonus: {displayPercent}{Stat}"
