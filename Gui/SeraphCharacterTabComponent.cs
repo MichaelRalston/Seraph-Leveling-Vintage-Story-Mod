@@ -5,6 +5,7 @@ using System.Linq;
 using Vintagestory.API.Client;
 using Vintagestory.API.Config;
 using Vintagestory.API.Common;
+using System.Reflection;
 
 namespace SeraphLeveling.Gui
 {
@@ -29,11 +30,38 @@ namespace SeraphLeveling.Gui
             }
         }
 
+        MethodInfo recomposeMethod;
+        bool recomposeMethodResolved;
+        // Recomposition borrowed from Prosequor by Hyomoto. Before I can publish this to main, license complications must be resolved... though there's really no other way to do this that I can find.
+        static MethodInfo FindRecomposeMethod(Type type)
+        {
+            for (Type t = type; t != null; t = t.BaseType)
+            {
+                MethodInfo found = t.GetMethod(
+                    "ComposeGuis",
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly,
+                    null,
+                    Type.EmptyTypes,
+                    null);
+                if (found != null)
+                {
+                    return found;
+                }
+            }
+
+            return null;
+        }
+
         public void RunRecompose(GuiDialogCharacterBase parentDialog)
         {
             capi.Event.EnqueueMainThreadTask(() =>
             {
-                composer?.ReCompose();
+                if (!recomposeMethodResolved)
+                {
+                    recomposeMethod = FindRecomposeMethod(parentDialog.GetType());
+                    recomposeMethodResolved = true;
+                }
+                recomposeMethod?.Invoke(parentDialog, null);
             }, "liveupdateserraphtab");
         }
 
@@ -178,22 +206,23 @@ namespace SeraphLeveling.Gui
 
                 accumulatedY += 4;
             }
-
+            bool isInitializing = true;
             composer.EndClip()
                 .AddVerticalScrollbar((value) =>
                 {
-                    currentScrollOffset = value;
-
-                    // AUTOMATIC LIVE SCROLLING: Simply update the container target bounds offset
-                    var container = composer.GetContainer("scroll-content");
-                    if (container != null)
+                    if (!isInitializing)
                     {
-                        container.Bounds.fixedY = 0 - value;
-                        container.Bounds.CalcWorldBounds();
+                        currentScrollOffset = value;
+
+                        var container = composer.GetContainer("scroll-content");
+                        if (container != null)
+                        {
+                            container.Bounds.fixedY = 0 - value;
+                            container.Bounds.CalcWorldBounds();
+                        }
                     }
                 }, scrollbarBounds, "seraphScrollbar")
                 .EndChildElements();
-
 
             // Update container size constraints natively matching content length totals
             containerBounds.fixedHeight = accumulatedY;
@@ -202,11 +231,18 @@ namespace SeraphLeveling.Gui
             if (scrollbar != null)
             {
                 scrollbar.SetHeights((float)clipBounds.fixedHeight, (float)accumulatedY);
+                float maxScroll = (float)Math.Max(0f, totalContentHeight - clipBounds.fixedHeight);
+                if (currentScrollOffset > maxScroll)
+                {
+                    currentScrollOffset = maxScroll;
+                }
                 scrollbar.CurrentYPosition = currentScrollOffset;
 
                 // Keep the offset applied across redraw compositions safely
                 scrollArea.Bounds.fixedY = 0 - currentScrollOffset;
+                scrollArea.Bounds.CalcWorldBounds();
             }
+            isInitializing = false;
         }
     }
 }
