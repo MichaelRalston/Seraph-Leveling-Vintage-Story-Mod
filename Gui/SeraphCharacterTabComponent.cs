@@ -7,6 +7,7 @@ using Vintagestory.API.Config;
 using Vintagestory.API.Common;
 using System.Reflection;
 using Vintagestory.API.Datastructures;
+using HarmonyLib;
 
 namespace SeraphLeveling.Gui
 {
@@ -36,26 +37,6 @@ namespace SeraphLeveling.Gui
         }
 
         MethodInfo recomposeMethod;
-        bool recomposeMethodResolved;
-        // Recomposition borrowed from Prosequor by Hyomoto. Before I can publish this to main, license complications must be resolved... though there's really no other way to do this that I can find.
-        static MethodInfo FindRecomposeMethod(Type type)
-        {
-            for (Type t = type; t != null; t = t.BaseType)
-            {
-                MethodInfo found = t.GetMethod(
-                    "ComposeGuis",
-                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly,
-                    null,
-                    Type.EmptyTypes,
-                    null);
-                if (found != null)
-                {
-                    return found;
-                }
-            }
-
-            return null;
-        }
 
         public void HandleListeningState(bool newState)
         {
@@ -80,10 +61,9 @@ namespace SeraphLeveling.Gui
         {
             capi.Event.EnqueueMainThreadTask(() =>
             {
-                if (!recomposeMethodResolved)
+                if (recomposeMethod == null)
                 {
-                    recomposeMethod = FindRecomposeMethod(parentDialog.GetType());
-                    recomposeMethodResolved = true;
+                    recomposeMethod = AccessTools.Method(parentDialog.GetType(), "ComposeGuis");
                 }
                 recomposeMethod?.Invoke(parentDialog, null);
             }, "liveupdateserraphtab");
