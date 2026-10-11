@@ -80,108 +80,114 @@ namespace SeraphLeveling.Gui
             }
         }
 
-        public void RenderData(ProgressReportContent data, bool isExpanded, ElementBounds containerBounds, GuiElementContainer scrollArea, GuiDialogCharacterBase parentDialog)
+        public double RenderData(ProgressReportContent data, bool isExpanded, ElementBounds containerBounds, GuiElementContainer scrollArea, GuiDialogCharacterBase parentDialog)
         {
-                ElementBounds titleBounds = ElementBounds.Fixed(3, accumulatedY + 4, 120, 22).WithParent(containerBounds);
-                ElementBounds titleMeasureBounds = ElementBounds.Fixed(3, accumulatedY + 4, 112, 22).WithParent(containerBounds);
-                titleMeasureBounds.CalcWorldBounds();
-                CairoFont rowTitleFont = baseFont.Clone();
-                rowTitleFont.UnscaledFontsize = 16;
-                string plainTitleText = StripTags().Replace(data.Name, "");
-                rowTitleFont.AutoFontSize(plainTitleText, titleMeasureBounds);
-                GuiElementRichtext titleText = new(capi, VtmlUtil.Richtextify(capi, data.Name, rowTitleFont), titleBounds);
-                scrollArea.Add(titleText);
+            double offset = 0;
+            scrollArea.Elements.Clear();
+            ElementBounds titleBounds = ElementBounds.Fixed(3, offset + 4, 120, 22).WithParent(containerBounds);
+            ElementBounds titleMeasureBounds = ElementBounds.Fixed(3, offset + 4, 112, 22).WithParent(containerBounds);
+            titleMeasureBounds.CalcWorldBounds();
+            CairoFont rowTitleFont = baseFont.Clone();
+            rowTitleFont.UnscaledFontsize = 16;
+            string plainTitleText = StripTags().Replace(data.Name, "");
+            rowTitleFont.AutoFontSize(plainTitleText, titleMeasureBounds);
+            GuiElementRichtext titleText = new(capi, VtmlUtil.Richtextify(capi, data.Name, rowTitleFont), titleBounds);
+            scrollArea.Add(titleText);
 
-                GuiElementStatbar statBar = new(capi, ElementBounds.Fixed(125, accumulatedY, 225, 22).WithParent(containerBounds), GuiStyle.XPBarColor, false, false);
-                statBar.SetValues((float)Math.Max(0.0, Math.Min(1.0, data.Percentage)), 0f, 1f);
-                statBar.ShowValueOnHover = false;
-                scrollArea.Add(statBar);
+            GuiElementStatbar statBar = new(capi, ElementBounds.Fixed(125, 0, 225, 22).WithParent(containerBounds), GuiStyle.XPBarColor, false, false);
+            statBar.SetValues((float)Math.Max(0.0, Math.Min(1.0, data.Percentage)), 0f, 1f);
+            statBar.ShowValueOnHover = false;
+            scrollArea.Add(statBar);
 
-                if (!string.IsNullOrEmpty(data.Tooltip))
+            if (!string.IsNullOrEmpty(data.Tooltip))
+            {
+                GuiElementHoverText hoverText = new(capi, data.Tooltip, CairoFont.WhiteSmallText(), 220, ElementBounds.Fixed(125, offset, 200, 22).WithParent(containerBounds));
+                hoverText.SetAutoWidth(true);
+                scrollArea.Add(hoverText);
+            }
+
+            if ((data.PartialCredits != null && data.PartialCredits.Length > 1) || data.CollapseExtraInfo)
+            {
+                ElementBounds btnBounds = ElementBounds.Fixed(350, offset, 12, 22).WithParent(containerBounds);
+                string btnText = isExpanded ? "-" : "+";
+
+                composer.AddButton(btnText, () =>
                 {
-                    GuiElementHoverText hoverText = new(capi, data.Tooltip, CairoFont.WhiteSmallText(), 220, ElementBounds.Fixed(125, accumulatedY, 200, 22).WithParent(containerBounds));
-                    hoverText.SetAutoWidth(true);
-                    scrollArea.Add(hoverText);
-                }
+                    if (isExpanded) expandedTraits.Remove(data.Name);
+                    else expandedTraits.Add(data.Name);
 
-                if ((data.PartialCredits != null && data.PartialCredits.Length > 1) || data.CollapseExtraInfo)
+                    RunRecompose(parentDialog);
+                    return true;
+                }, btnBounds, buttonFont, EnumButtonStyle.Normal);
+            }
+
+            offset += 26;
+
+            if (data.PartialCredits != null)
+            {
+                foreach (var partial in data.PartialCredits)
                 {
-                    ElementBounds btnBounds = ElementBounds.Fixed(350, accumulatedY, 12, 22).WithParent(containerBounds);
-                    string btnText = isExpanded ? "-" : "+";
+                    ElementBounds subLabelBounds = ElementBounds.Fixed(15, offset + 1, 105, 15).WithParent(containerBounds);
+                    ElementBounds subLabelMeasureBounds = ElementBounds.Fixed(15, offset + 1, 100, 22).WithParent(containerBounds);
+                    subLabelMeasureBounds.CalcWorldBounds();
+                    CairoFont subLabelFont = smallToolFont.Clone();
+                    subLabelFont.UnscaledFontsize = 14;
+                    subLabelFont.AutoFontSize(partial.Name, subLabelMeasureBounds);
 
-                    composer.AddButton(btnText, () =>
+                    GuiElementRichtext subLabel = new(capi, VtmlUtil.Richtextify(capi, partial.Name, subLabelFont), subLabelBounds);
+                    scrollArea.Add(subLabel);
+
+                    ElementBounds subBarBounds = ElementBounds.Fixed(135, offset, 205, 16).WithParent(containerBounds);
+                    GuiElementStatbar subBar = new(capi, subBarBounds, GuiStyle.FoodBarColor, false, false);
+                    subBar.SetValues(partial.Percentage, 0f, 1f);
+                    subBar.ShowValueOnHover = false;
+                    scrollArea.Add(subBar);
+
+                    if (!string.IsNullOrEmpty(partial.Tooltip))
                     {
-                        if (isExpanded) expandedTraits.Remove(data.Name);
-                        else expandedTraits.Add(data.Name);
-
-                        RunRecompose(parentDialog);
-                        return true;
-                    }, btnBounds, buttonFont, EnumButtonStyle.Normal);
-                }
-
-                accumulatedY += 26;
-
-                if (data.PartialCredits != null)
-                {
-                    foreach (var partial in data.PartialCredits)
-                    {
-                        ElementBounds subLabelBounds = ElementBounds.Fixed(15, accumulatedY + 1, 105, 15).WithParent(containerBounds);
-                        ElementBounds subLabelMeasureBounds = ElementBounds.Fixed(15, accumulatedY + 1, 100, 22).WithParent(containerBounds);
-                        subLabelMeasureBounds.CalcWorldBounds();
-                        CairoFont subLabelFont = smallToolFont.Clone();
-                        subLabelFont.UnscaledFontsize = 14;
-                        subLabelFont.AutoFontSize(partial.Name, subLabelMeasureBounds);
-
-                        GuiElementRichtext subLabel = new(capi, VtmlUtil.Richtextify(capi, partial.Name, subLabelFont), subLabelBounds);
-                        scrollArea.Add(subLabel);
-
-                        ElementBounds subBarBounds = ElementBounds.Fixed(135, accumulatedY, 205, 16).WithParent(containerBounds);
-                        GuiElementStatbar subBar = new(capi, subBarBounds, GuiStyle.FoodBarColor, false, false);
-                        subBar.SetValues(partial.Percentage, 0f, 1f);
-                        subBar.ShowValueOnHover = false;
-                        scrollArea.Add(subBar);
-
-                        if (!string.IsNullOrEmpty(partial.Tooltip))
-                        {
-                            GuiElementHoverText subHover = new(capi, partial.Tooltip, CairoFont.WhiteSmallText(), 220, subBarBounds);
-                            subHover.SetAutoWidth(true);
-                            scrollArea.Add(subHover);
-                        }
-
-                        accumulatedY += 22;
-                        if (!isExpanded) break;
+                        GuiElementHoverText subHover = new(capi, partial.Tooltip, CairoFont.WhiteSmallText(), 220, subBarBounds);
+                        subHover.SetAutoWidth(true);
+                        scrollArea.Add(subHover);
                     }
-                }
 
-                if (!string.IsNullOrEmpty(data.ExtraInfo) && (!data.CollapseExtraInfo || isExpanded))
-                {
-                    ElementBounds extraBounds = ElementBounds.Fixed(10, accumulatedY, 345, 18).WithParent(containerBounds);
-                    GuiElementRichtext extraText = new(capi, VtmlUtil.Richtextify(capi, data.ExtraInfo, smallToolFont), extraBounds);
-                    scrollArea.Add(extraText);
-                    extraText.RecomposeText();
-                    accumulatedY += extraText.Bounds.fixedHeight;
+                    offset += 22;
+                    if (!isExpanded) break;
                 }
+            }
 
-                if (!string.IsNullOrEmpty(data.Instructions))
-                {
-                    ElementBounds instBounds = ElementBounds.Fixed(10, accumulatedY, 345, 36).WithParent(containerBounds);
-                    GuiElementRichtext instText = new(capi, VtmlUtil.Richtextify(capi, data.Instructions, smallToolFont), instBounds);
-                    scrollArea.Add(instText);
-                    instText.RecomposeText();
-                    accumulatedY += instText.Bounds.fixedHeight;
-                }
+            if (!string.IsNullOrEmpty(data.ExtraInfo) && (!data.CollapseExtraInfo || isExpanded))
+            {
+                ElementBounds extraBounds = ElementBounds.Fixed(10, offset, 345, 18).WithParent(containerBounds);
+                GuiElementRichtext extraText = new(capi, VtmlUtil.Richtextify(capi, data.ExtraInfo, smallToolFont), extraBounds);
+                scrollArea.Add(extraText);
+                extraText.RecomposeText();
+                offset += extraText.Bounds.fixedHeight;
+            }
 
-                accumulatedY += 4;
+            if (!string.IsNullOrEmpty(data.Instructions))
+            {
+                ElementBounds instBounds = ElementBounds.Fixed(10, offset, 345, 36).WithParent(containerBounds);
+                GuiElementRichtext instText = new(capi, VtmlUtil.Richtextify(capi, data.Instructions, smallToolFont), instBounds);
+                scrollArea.Add(instText);
+                instText.RecomposeText();
+                offset += instText.Bounds.fixedHeight;
+            }
+
+            offset += 4;
+            return offset;
         }
 
-        CairoFont baseFont = CairoFont.WhiteSmallText();
-        CairoFont buttonFont = CairoFont.WhiteSmallText();
-        CairoFont smallToolFont = CairoFont.WhiteSmallText().WithColor([0.6, 0.6, 0.6, 1.0]);
+        public readonly CairoFont baseFont = CairoFont.WhiteSmallText();
+        public readonly CairoFont buttonFont = CairoFont.WhiteSmallText();
+        public readonly CairoFont smallToolFont = CairoFont.WhiteSmallText().WithColor([0.6, 0.6, 0.6, 1.0]);
+
+        int dataLength = 0;
 
         public void RenderTabContent(GuiComposer childComposer, GuiDialogCharacterBase parentDialog)
         {
             if (childComposer == null || parentDialog == null) return;
             composer = childComposer;
+            bool isInitializing = true;
 
             int insetWidth = 365;
             int insetHeight = 315;
@@ -190,58 +196,82 @@ namespace SeraphLeveling.Gui
             ElementBounds insetBounds = ElementBounds.Fixed(10, 70, insetWidth, insetHeight);
             ElementBounds scrollbarBounds = insetBounds.RightCopy().WithFixedWidth(15);
             ElementBounds clipBounds = insetBounds.ForkContainingChild(0, 0, 0, 0);
+            GuiElementContainer scrollArea;
 
             if (LatestData == null || LatestData.Length == 0)
             {
                 composer.AddStaticText(Lang.Get("sl-progress-waiting"), CairoFont.WhiteSmallText(), insetBounds);
                 return;
             }
-
-            ElementBounds containerBounds = ElementBounds.Fixed(0, 0, 0, 0).WithParent(clipBounds);
-
-            // 1. Establish layout wrappers natively matching the wiki guide
-            composer.BeginChildElements()
-                .AddInset(insetBounds, insetDepth)
-                .BeginClip(clipBounds)
-                .AddContainer(containerBounds, "scroll-content");
-
-            // 2. Fetch the newly mounted container reference to populate our content loop inside it
-            GuiElementContainer scrollArea = composer.GetContainer("scroll-content");
-            if (scrollArea == null) return;
-
-            accumulatedY = 3;
-            baseFont.UnscaledFontsize = 16;
-            buttonFont.Orientation = EnumTextOrientation.Center;
-
-            for (int i = 0; i < LatestData.Length; i++)
+            if (dataLength == LatestData.Length)
             {
-                var data = LatestData[i];
-                bool isExpanded = expandedTraits.Contains(data.Name);
-
-                // Define positions using plain absolute row indices relative to the parent container frame
-                RenderData(data, isExpanded, containerBounds, scrollArea, parentDialog);
-            }
-            bool isInitializing = true;
-            composer.EndClip()
-                .AddVerticalScrollbar((value) =>
+                for (int i = 0; i < LatestData.Length; i++)
                 {
-                    if (!isInitializing)
+                    var data = LatestData[i];
+                    bool isExpanded = expandedTraits.Contains(data.Name);
+                    string innerContainerKey = $"data-{i}";
+                    GuiElementContainer innerContainer = composer.GetContainer(innerContainerKey);
+                    ElementBounds newContainerBounds = innerContainer.Bounds;
+                    newContainerBounds.fixedY = accumulatedY;
+                    var offset = RenderData(data, isExpanded, newContainerBounds, innerContainer, parentDialog);
+                    newContainerBounds.CalcWorldBounds();
+                    accumulatedY += offset;
+                }
+                scrollArea = composer.GetContainer("scroll-content");
+                scrollArea.Bounds.fixedHeight = accumulatedY;
+            }
+            else
+            {
+                ElementBounds containerBounds = ElementBounds.Fixed(0, 0, 0, 0).WithParent(clipBounds);
+
+                // 1. Establish layout wrappers natively matching the wiki guide
+                composer.BeginChildElements()
+                    .AddInset(insetBounds, insetDepth)
+                    .BeginClip(clipBounds)
+                    .AddContainer(containerBounds, "scroll-content");
+
+                // 2. Fetch the newly mounted container reference to populate our content loop inside it
+                scrollArea = composer.GetContainer("scroll-content");
+                if (scrollArea == null) return;
+
+                accumulatedY = 3;
+                baseFont.UnscaledFontsize = 16;
+                buttonFont.Orientation = EnumTextOrientation.Center;
+
+                for (int i = 0; i < LatestData.Length; i++)
+                {
+                    var data = LatestData[i];
+                    bool isExpanded = expandedTraits.Contains(data.Name);
+
+                    // Define positions using plain absolute row indices relative to the parent container frame
+                    ElementBounds newContainerBounds = ElementBounds.Fixed(0, accumulatedY, 0, 0).WithParent(containerBounds);
+                    string innerContainerKey = $"data-{i}";
+                    composer.AddContainer(newContainerBounds, innerContainerKey);
+                    GuiElementContainer innerContainer = composer.GetContainer(innerContainerKey);
+                    var offset = RenderData(data, isExpanded, newContainerBounds, innerContainer, parentDialog);
+                    newContainerBounds.CalcWorldBounds();
+                    accumulatedY += offset;
+                }
+                composer.EndClip()
+                    .AddVerticalScrollbar((value) =>
                     {
-                        currentScrollOffset = value;
-
-                        var container = composer.GetContainer("scroll-content");
-                        if (container != null)
+                        if (!isInitializing)
                         {
-                            container.Bounds.fixedY = 0 - value;
-                            container.Bounds.CalcWorldBounds();
+                            currentScrollOffset = value;
+
+                            var container = composer.GetContainer("scroll-content");
+                            if (container != null)
+                            {
+                                container.Bounds.fixedY = 0 - value;
+                                container.Bounds.CalcWorldBounds();
+                            }
                         }
-                    }
-                }, scrollbarBounds, "seraphScrollbar")
-                .EndChildElements();
+                    }, scrollbarBounds, "seraphScrollbar")
+                    .EndChildElements();
 
-            // Update container size constraints natively matching content length totals
-            containerBounds.fixedHeight = accumulatedY;
-
+                // Update container size constraints natively matching content length totals
+                containerBounds.fixedHeight = accumulatedY;
+            }
             GuiElementScrollbar scrollbar = composer.GetScrollbar("seraphScrollbar");
             if (scrollbar != null)
             {
