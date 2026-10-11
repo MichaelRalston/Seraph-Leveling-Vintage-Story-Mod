@@ -196,8 +196,8 @@ namespace SeraphLeveling.Data.Attributes
                     {
                         sb.AppendLine("Other unlock requirements:");
                         sb.Append(innerSb);
+                        if (!string.IsNullOrEmpty(InstructionsKey)) sb.AppendLine();
                     }
-                    if (!string.IsNullOrEmpty(InstructionsKey)) sb.AppendLine();
                 }
                 if (!string.IsNullOrEmpty(InstructionsKey))
                 {
@@ -209,6 +209,11 @@ namespace SeraphLeveling.Data.Attributes
         public override bool ShouldDisplay(EntityPlayer player, bool hasVanillaTrait)
         {
             return player.WatchedAttributes.GetBool(UnlockedKey, false);
+        }
+
+        public override bool ShouldSee(EntityPlayer player)
+        {
+            return Trait.Value.Attributes.Where(mod => mod.Attribute == this).All(mod => mod.ShouldSee(player));
         }
 
         public override object GetLocalizedTraitTextParam(EntityPlayer player)

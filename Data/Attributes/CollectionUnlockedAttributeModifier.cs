@@ -128,14 +128,15 @@ namespace SeraphLeveling.Data.Attributes
             CollectInstructions(player, instructionsSb);
             var extraInfoSb = new StringBuilder();
             CollectExtraInfo(player, extraInfoSb);
+            string extraInfoStr = extraInfoSb.ToString();
             return new Messages.ProgressReportContent()
             {
                 Name = Name,
                 Percentage = progress.IsUnlocked ? 1 : Math.Min(1.0f, progress.CollectedItems.Count / (float)RequiredCollectionSize),
                 Tooltip = $"{(progress.IsUnlocked ? "UNLOCKED" : $"{progress.CollectedItems.Count} / {RequiredCollectionSize} unique {CollectedItemDescription}")}",
                 PartialCredits = [],
-                ExtraInfo = extraInfoSb.ToString(),
-                CollapseExtraInfo = true,
+                ExtraInfo = extraInfoStr,
+                CollapseExtraInfo = !string.IsNullOrEmpty(extraInfoStr),
                 Instructions = instructionsSb.ToString(),
             };
         }

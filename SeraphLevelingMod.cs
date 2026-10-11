@@ -572,7 +572,8 @@ namespace SeraphLeveling
             {
                 HashSet<string> newProgressReportPlayers = [];
                 foreach (var p in api.World.AllOnlinePlayers)
-                    if (p is IServerPlayer sp && sp.Entity != null) {
+                    if (p is IServerPlayer sp && sp.Entity != null)
+                    {
                         PushProgressReport(sp);
                         if (progressReportPlayers.Contains(p.PlayerUID)) newProgressReportPlayers.Add(p.PlayerUID);
                     }
@@ -2170,7 +2171,10 @@ namespace SeraphLeveling
             var contentList = new List<ProgressReportContent>();
             foreach (var definition in LoadedAttributes.OrderBy(a => a.Name))
             {
-                contentList.Add(definition.CollectReportContent(player));
+                if (definition.ShouldSee(player.Entity))
+                {
+                    contentList.Add(definition.CollectReportContent(player));
+                }
             }
             return [.. contentList];
         }
@@ -2251,7 +2255,7 @@ namespace SeraphLeveling
                 if (!force && LastSentProgressReport.TryGetValue(player.PlayerUID, out string last) && last == report) return;
                 if (!force && LastSentProgressReportTime.TryGetValue(player.PlayerUID, out long lastTime))
                 {
-                    if (ServerApi.World.ElapsedMilliseconds < lastTime+250)
+                    if (ServerApi.World.ElapsedMilliseconds < lastTime + 250)
                     {
                         ProgressReportDirty[player.PlayerUID] = player;
                         return;
