@@ -7534,8 +7534,6 @@ namespace SeraphLeveling
 
         private void RegisterCustomCharacterTab()
         {
-            // OfType filters the object sequence down to just GuiDialogCharacterBase entries, 
-            // and FirstOrDefault cleanly selects the first matching instance safely without assembly blocks.
             GuiDialogCharacterBase characterDialog = clientApi.LoadedGuis
                 .OfType<GuiDialogCharacterBase>()
                 .FirstOrDefault();

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Vintagestory.API.Client;
 using Vintagestory.API.Config;
+using Vintagestory.API.Common;
 
 namespace SeraphLeveling.Gui
 {
@@ -11,9 +12,9 @@ namespace SeraphLeveling.Gui
     {
         private readonly ICoreClientAPI capi = capi;
         private readonly HashSet<string> expandedTraits = [];
-        // This persists the scroll coordinates across individual tab window redraw frames safely
         private float currentScrollOffset = 0f;
         public ProgressReportContent[] LatestData { get; set; } = [];
+        GuiComposer composer;
 
         public void OnProgressReportReceived(ProgressReportContent[] content)
         {
@@ -28,37 +29,34 @@ namespace SeraphLeveling.Gui
             }
         }
 
+        public void RunRecompose(GuiDialogCharacterBase parentDialog)
+        {
+            capi.Event.EnqueueMainThreadTask(() =>
+            {
+                composer?.ReCompose();
+            }, "liveupdateserraphtab");
+        }
+
         public void RefreshIfActive(GuiDialogCharacterBase characterDialog)
         {
             if (characterDialog != null && characterDialog.IsOpened())
             {
-                capi.Event.EnqueueMainThreadTask(() =>
-                {
-                    characterDialog.SingleComposer?.ReCompose();
-                }, "liveupdateserraphtab");
+                RunRecompose(characterDialog);
             }
         }
 
-
-        /// <summary>
-        /// Automatically called by Vintage Story's character screen layout loop when your tab header is clicked.
-        /// </summary>
-        public void RenderTabContent(GuiComposer composer, GuiDialogCharacterBase parentDialog)
+        public void RenderTabContent(GuiComposer childComposer, GuiDialogCharacterBase parentDialog)
         {
-            if (composer == null || parentDialog == null) return;
+            if (childComposer == null || parentDialog == null) return;
+            composer = childComposer;
 
             int insetWidth = 365;
             int insetHeight = 340;
             int insetDepth = 3;
 
-            // Define viewport and scroll dimensions exactly matching the wiki guidelines
             ElementBounds insetBounds = ElementBounds.Fixed(10, 45, insetWidth, insetHeight);
             ElementBounds scrollbarBounds = insetBounds.RightCopy().WithFixedWidth(15);
-
             ElementBounds clipBounds = insetBounds.ForkContainingChild(0, 0, 0, 0);
-
-            // This container bounds holds the layout elements vertically
-            ElementBounds containerBounds = insetBounds.ForkContainingChild(0, 0, 0, 0);
 
             if (LatestData == null || LatestData.Length == 0)
             {
@@ -66,62 +64,149 @@ namespace SeraphLeveling.Gui
                 return;
             }
 
+            double totalContentHeight = 0;
+            for (int i = 0; i < LatestData.Length; i++)
+            {
+                var data = LatestData[i];
+                totalContentHeight += 26;
+                if (data.PartialCredits != null)
+                {
+                    totalContentHeight += (expandedTraits.Contains(data.Name) ? data.PartialCredits.Length : 1) * 22;
+                }
+                if (!string.IsNullOrEmpty(data.ExtraInfo)) totalContentHeight += 20;
+                if (!string.IsNullOrEmpty(data.Instructions)) totalContentHeight += 40;
+                totalContentHeight += 4;
+            }
+
+            ElementBounds containerBounds = ElementBounds.Fixed(0, 0 - currentScrollOffset, insetWidth - 20, totalContentHeight).WithParent(clipBounds);
+
+
+            // 1. Establish layout wrappers natively matching the wiki guide
             composer.BeginChildElements()
                 .AddInset(insetBounds, insetDepth)
                 .BeginClip(clipBounds)
-                .AddCellList(
-                    containerBounds.WithFixedOffset(0, 0).WithFixedWidth(insetWidth - 20),
-                    (data, cellBounds) =>
+                .AddContainer(containerBounds, "scroll-content");
+
+            // 2. Fetch the newly mounted container reference to populate our content loop inside it
+            GuiElementContainer scrollArea = composer.GetContainer("scroll-content");
+            if (scrollArea == null) return;
+
+            double accumulatedY = 0;
+            CairoFont baseFont = CairoFont.WhiteSmallText();
+            baseFont.UnscaledFontsize = 16;
+            CairoFont smallToolFont = CairoFont.WhiteSmallText().WithColor([0.6, 0.6, 0.6, 1.0]);
+
+            for (int i = 0; i < LatestData.Length; i++)
+            {
+                var data = LatestData[i];
+                bool isExpanded = expandedTraits.Contains(data.Name);
+
+                // Define positions using plain absolute row indices relative to the parent container frame
+                ElementBounds titleBounds = ElementBounds.Fixed(0, accumulatedY + 4, 120, 22).WithParent(containerBounds);
+                GuiElementRichtext titleText = new(capi, VtmlUtil.Richtextify(capi, data.Name, baseFont), titleBounds);
+                scrollArea.Add(titleText);
+
+                ElementBounds barBounds = ElementBounds.Fixed(125, accumulatedY, 200, 22).WithParent(containerBounds);
+                GuiElementStatbar statBar = new(capi, barBounds, GuiStyle.XPBarColor, false, false);
+                statBar.SetValues((float)Math.Max(0.0, Math.Min(1.0, data.Percentage)), 0f, 1f);
+                statBar.ShowValueOnHover = false;
+                scrollArea.Add(statBar);
+
+                if (!string.IsNullOrEmpty(data.Tooltip))
+                {
+                    GuiElementHoverText hoverText = new(capi, data.Tooltip, CairoFont.WhiteSmallText(), 220, barBounds);
+                    scrollArea.Add(hoverText);
+                }
+
+                if (data.PartialCredits != null && data.PartialCredits.Length > 0)
+                {
+                    ElementBounds btnBounds = ElementBounds.Fixed(350, accumulatedY, 12, 22).WithParent(containerBounds);
+                    string btnText = isExpanded ? "−" : "+";
+                    string elementKey = $"btn_expand_{i}";
+
+                    composer.AddButton(btnText, () =>
                     {
-                        bool isExpanded = expandedTraits.Contains(data.Name);
+                        if (isExpanded) expandedTraits.Remove(data.Name);
+                        else expandedTraits.Add(data.Name);
 
-                        return new SeraphTraitCell(capi, cellBounds, data, isExpanded, currentScrollOffset, () =>
+                        RunRecompose(parentDialog);
+                        return true;
+                    }, btnBounds, baseFont, EnumButtonStyle.Normal, elementKey);
+                }
+
+                accumulatedY += 26;
+
+                if (isExpanded && data.PartialCredits != null)
+                {
+                    foreach (var partial in data.PartialCredits)
+                    {
+                        ElementBounds subLabelBounds = ElementBounds.Fixed(15, accumulatedY + 2, 105, 18).WithParent(containerBounds);
+                        GuiElementRichtext subLabel = new(capi, VtmlUtil.Richtextify(capi, partial.Name, smallToolFont), subLabelBounds);
+                        scrollArea.Add(subLabel);
+
+                        ElementBounds subBarBounds = ElementBounds.Fixed(125, accumulatedY, 200, 16).WithParent(containerBounds);
+                        GuiElementStatbar subBar = new(capi, subBarBounds, GuiStyle.FoodBarColor, false, false);
+                        subBar.SetValues(partial.Percentage, 0f, 1f);
+                        subBar.ShowValueOnHover = false;
+                        scrollArea.Add(subBar);
+
+                        if (!string.IsNullOrEmpty(partial.Tooltip))
                         {
-                            // This is the OnStateChanged callback from the button
-                            if (isExpanded) expandedTraits.Remove(data.Name);
-                            else expandedTraits.Add(data.Name);
+                            GuiElementHoverText subHover = new(capi, partial.Tooltip, CairoFont.WhiteSmallText(), 220, subBarBounds);
+                            scrollArea.Add(subHover);
+                        }
 
-                            // Safely trigger a layout redraw of the main character window
-                            parentDialog.SingleComposer?.ReCompose();
-                        });
-                    },
-                    LatestData,
-                    "seraphScrollList"
-                )
-                .EndClip()
+                        accumulatedY += 22;
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(data.ExtraInfo))
+                {
+                    ElementBounds extraBounds = ElementBounds.Fixed(10, accumulatedY, 345, 18).WithParent(containerBounds);
+                    GuiElementRichtext extraText = new(capi, VtmlUtil.Richtextify(capi, data.ExtraInfo, smallToolFont), extraBounds);
+                    scrollArea.Add(extraText);
+                    accumulatedY += 20;
+                }
+
+                if (!string.IsNullOrEmpty(data.Instructions))
+                {
+                    ElementBounds instBounds = ElementBounds.Fixed(10, accumulatedY, 345, 36).WithParent(containerBounds);
+                    GuiElementRichtext instText = new(capi, VtmlUtil.Richtextify(capi, data.Instructions, smallToolFont), instBounds);
+                    scrollArea.Add(instText);
+                    accumulatedY += 40;
+                }
+
+                accumulatedY += 4;
+            }
+
+            composer.EndClip()
                 .AddVerticalScrollbar((value) =>
                 {
-                    // Save the offset so it persists across redraws
                     currentScrollOffset = value;
 
-                    // Target the correct container name ("seraphScrollList")
-                    var cellList = composer.GetCellList<ProgressReportContent>("seraphScrollList");
-                    if (cellList != null)
+                    // AUTOMATIC LIVE SCROLLING: Simply update the container target bounds offset
+                    var container = composer.GetContainer("scroll-content");
+                    if (container != null)
                     {
-                        cellList.Bounds.fixedY = 0 - value;
-                        cellList.Bounds.CalcWorldBounds();
+                        container.Bounds.fixedY = 0 - value;
+                        container.Bounds.CalcWorldBounds();
                     }
                 }, scrollbarBounds, "seraphScrollbar")
                 .EndChildElements();
 
-            composer.Compose();
 
-            // 5. Connect heights cleanly so scroll slider limitations map rows perfectly
+            // Update container size constraints natively matching content length totals
+            containerBounds.fixedHeight = accumulatedY;
+
             GuiElementScrollbar scrollbar = composer.GetScrollbar("seraphScrollbar");
-            var finalCellList = composer.GetCellList<ProgressReportContent>("seraphScrollList");
-
-            if (scrollbar != null && finalCellList != null)
+            if (scrollbar != null)
             {
-                // Let the cell list determine how long it actually is based on all cell rows combined
-                float totalListHeight = (float)finalCellList.Bounds.fixedHeight;
-
-                scrollbar.SetHeights((float)clipBounds.fixedHeight, totalListHeight);
+                scrollbar.SetHeights((float)clipBounds.fixedHeight, (float)accumulatedY);
                 scrollbar.CurrentYPosition = currentScrollOffset;
 
-                finalCellList.Bounds.fixedY = 0 - currentScrollOffset;
-                finalCellList.Bounds.CalcWorldBounds();
+                // Keep the offset applied across redraw compositions safely
+                scrollArea.Bounds.fixedY = 0 - currentScrollOffset;
             }
         }
-
     }
 }
