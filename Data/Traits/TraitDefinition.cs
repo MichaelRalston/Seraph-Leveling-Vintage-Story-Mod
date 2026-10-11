@@ -245,7 +245,7 @@ namespace SeraphLeveling.Data.Traits
 
         protected virtual object[] GetLocalizedTraitTextParams(EntityPlayer player)
         {
-            return Attributes.Select(kvp => kvp.Attribute.GetLocalizedTraitTextParam(player)).Where(param => param != null).ToArray();
+            return [.. Attributes.Select(kvp => kvp.Attribute.GetLocalizedTraitTextParam(player)).Where(param => param != null)];
         }
     }
 }

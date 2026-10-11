@@ -162,7 +162,7 @@ namespace SeraphLeveling.Gui
                 if (data.PartialCredits != null && data.PartialCredits.Length > 1)
                 {
                     ElementBounds btnBounds = ElementBounds.Fixed(350, accumulatedY, 12, 22).WithParent(containerBounds);
-                    string btnText = isExpanded ? "−" : "+";
+                    string btnText = isExpanded ? "-" : "+";
                     string elementKey = $"btn_expand_{i}";
 
                     composer.AddButton(btnText, () =>
