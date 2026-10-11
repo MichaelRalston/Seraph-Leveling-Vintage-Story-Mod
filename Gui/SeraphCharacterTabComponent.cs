@@ -23,6 +23,9 @@ namespace SeraphLeveling.Gui
 
         public FieldInfo curTabField;
 
+        public double accumulatedY = 3;
+
+
         public void OnProgressReportReceived(ProgressReportContent[] content)
         {
             LatestData = content;
@@ -77,50 +80,8 @@ namespace SeraphLeveling.Gui
             }
         }
 
-        public void RenderTabContent(GuiComposer childComposer, GuiDialogCharacterBase parentDialog)
+        public void RenderData(ProgressReportContent data, bool isExpanded, ElementBounds containerBounds, GuiElementContainer scrollArea, GuiDialogCharacterBase parentDialog)
         {
-            if (childComposer == null || parentDialog == null) return;
-            composer = childComposer;
-
-            int insetWidth = 365;
-            int insetHeight = 315;
-            int insetDepth = 3;
-
-            ElementBounds insetBounds = ElementBounds.Fixed(10, 70, insetWidth, insetHeight);
-            ElementBounds scrollbarBounds = insetBounds.RightCopy().WithFixedWidth(15);
-            ElementBounds clipBounds = insetBounds.ForkContainingChild(0, 0, 0, 0);
-
-            if (LatestData == null || LatestData.Length == 0)
-            {
-                composer.AddStaticText(Lang.Get("sl-progress-waiting"), CairoFont.WhiteSmallText(), insetBounds);
-                return;
-            }
-
-            ElementBounds containerBounds = ElementBounds.Fixed(0, 0, 0, 0).WithParent(clipBounds);
-
-            // 1. Establish layout wrappers natively matching the wiki guide
-            composer.BeginChildElements()
-                .AddInset(insetBounds, insetDepth)
-                .BeginClip(clipBounds)
-                .AddContainer(containerBounds, "scroll-content");
-
-            // 2. Fetch the newly mounted container reference to populate our content loop inside it
-            GuiElementContainer scrollArea = composer.GetContainer("scroll-content");
-            if (scrollArea == null) return;
-
-            double accumulatedY = 3;
-            CairoFont baseFont = CairoFont.WhiteSmallText();
-            baseFont.UnscaledFontsize = 16;
-            CairoFont buttonFont = CairoFont.WhiteSmallText();
-            buttonFont.Orientation = EnumTextOrientation.Center;
-            CairoFont smallToolFont = CairoFont.WhiteSmallText().WithColor([0.6, 0.6, 0.6, 1.0]);
-
-            for (int i = 0; i < LatestData.Length; i++)
-            {
-                var data = LatestData[i];
-                bool isExpanded = expandedTraits.Contains(data.Name);
-
-                // Define positions using plain absolute row indices relative to the parent container frame
                 ElementBounds titleBounds = ElementBounds.Fixed(3, accumulatedY + 4, 120, 22).WithParent(containerBounds);
                 ElementBounds titleMeasureBounds = ElementBounds.Fixed(3, accumulatedY + 4, 112, 22).WithParent(containerBounds);
                 titleMeasureBounds.CalcWorldBounds();
@@ -147,7 +108,6 @@ namespace SeraphLeveling.Gui
                 {
                     ElementBounds btnBounds = ElementBounds.Fixed(350, accumulatedY, 12, 22).WithParent(containerBounds);
                     string btnText = isExpanded ? "-" : "+";
-                    string elementKey = $"btn_expand_{i}";
 
                     composer.AddButton(btnText, () =>
                     {
@@ -156,7 +116,7 @@ namespace SeraphLeveling.Gui
 
                         RunRecompose(parentDialog);
                         return true;
-                    }, btnBounds, buttonFont, EnumButtonStyle.Normal, elementKey);
+                    }, btnBounds, buttonFont, EnumButtonStyle.Normal);
                 }
 
                 accumulatedY += 26;
@@ -212,6 +172,54 @@ namespace SeraphLeveling.Gui
                 }
 
                 accumulatedY += 4;
+        }
+
+        CairoFont baseFont = CairoFont.WhiteSmallText();
+        CairoFont buttonFont = CairoFont.WhiteSmallText();
+        CairoFont smallToolFont = CairoFont.WhiteSmallText().WithColor([0.6, 0.6, 0.6, 1.0]);
+
+        public void RenderTabContent(GuiComposer childComposer, GuiDialogCharacterBase parentDialog)
+        {
+            if (childComposer == null || parentDialog == null) return;
+            composer = childComposer;
+
+            int insetWidth = 365;
+            int insetHeight = 315;
+            int insetDepth = 3;
+
+            ElementBounds insetBounds = ElementBounds.Fixed(10, 70, insetWidth, insetHeight);
+            ElementBounds scrollbarBounds = insetBounds.RightCopy().WithFixedWidth(15);
+            ElementBounds clipBounds = insetBounds.ForkContainingChild(0, 0, 0, 0);
+
+            if (LatestData == null || LatestData.Length == 0)
+            {
+                composer.AddStaticText(Lang.Get("sl-progress-waiting"), CairoFont.WhiteSmallText(), insetBounds);
+                return;
+            }
+
+            ElementBounds containerBounds = ElementBounds.Fixed(0, 0, 0, 0).WithParent(clipBounds);
+
+            // 1. Establish layout wrappers natively matching the wiki guide
+            composer.BeginChildElements()
+                .AddInset(insetBounds, insetDepth)
+                .BeginClip(clipBounds)
+                .AddContainer(containerBounds, "scroll-content");
+
+            // 2. Fetch the newly mounted container reference to populate our content loop inside it
+            GuiElementContainer scrollArea = composer.GetContainer("scroll-content");
+            if (scrollArea == null) return;
+
+            accumulatedY = 3;
+            baseFont.UnscaledFontsize = 16;
+            buttonFont.Orientation = EnumTextOrientation.Center;
+
+            for (int i = 0; i < LatestData.Length; i++)
+            {
+                var data = LatestData[i];
+                bool isExpanded = expandedTraits.Contains(data.Name);
+
+                // Define positions using plain absolute row indices relative to the parent container frame
+                RenderData(data, isExpanded, containerBounds, scrollArea, parentDialog);
             }
             bool isInitializing = true;
             composer.EndClip()
