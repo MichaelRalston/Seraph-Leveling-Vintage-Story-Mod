@@ -9,7 +9,7 @@ using System.Reflection;
 
 namespace SeraphLeveling.Gui
 {
-    public class SeraphCharacterTabComponent(ICoreClientAPI capi)
+    public partial class SeraphCharacterTabComponent(ICoreClientAPI capi)
     {
         private readonly ICoreClientAPI capi = capi;
         private readonly HashSet<string> expandedTraits = [];
@@ -79,10 +79,10 @@ namespace SeraphLeveling.Gui
             composer = childComposer;
 
             int insetWidth = 365;
-            int insetHeight = 340;
+            int insetHeight = 315;
             int insetDepth = 3;
 
-            ElementBounds insetBounds = ElementBounds.Fixed(10, 45, insetWidth, insetHeight);
+            ElementBounds insetBounds = ElementBounds.Fixed(10, 70, insetWidth, insetHeight);
             ElementBounds scrollbarBounds = insetBounds.RightCopy().WithFixedWidth(15);
             ElementBounds clipBounds = insetBounds.ForkContainingChild(0, 0, 0, 0);
 
@@ -92,22 +92,7 @@ namespace SeraphLeveling.Gui
                 return;
             }
 
-            double totalContentHeight = 0;
-            for (int i = 0; i < LatestData.Length; i++)
-            {
-                var data = LatestData[i];
-                totalContentHeight += 26;
-                if (data.PartialCredits != null)
-                {
-                    totalContentHeight += (expandedTraits.Contains(data.Name) ? data.PartialCredits.Length : 1) * 22;
-                }
-                if (!string.IsNullOrEmpty(data.ExtraInfo)) totalContentHeight += 20;
-                if (!string.IsNullOrEmpty(data.Instructions)) totalContentHeight += 40;
-                totalContentHeight += 4;
-            }
-
-            ElementBounds containerBounds = ElementBounds.Fixed(0, 0 - currentScrollOffset, insetWidth - 20, totalContentHeight).WithParent(clipBounds);
-
+            ElementBounds containerBounds = ElementBounds.Fixed(0, 0, 0, 0).WithParent(clipBounds);
 
             // 1. Establish layout wrappers natively matching the wiki guide
             composer.BeginChildElements()
@@ -131,22 +116,27 @@ namespace SeraphLeveling.Gui
 
                 // Define positions using plain absolute row indices relative to the parent container frame
                 ElementBounds titleBounds = ElementBounds.Fixed(0, accumulatedY + 4, 120, 22).WithParent(containerBounds);
-                GuiElementRichtext titleText = new(capi, VtmlUtil.Richtextify(capi, data.Name, baseFont), titleBounds);
+                ElementBounds titleMeasureBounds = ElementBounds.Fixed(0, accumulatedY + 4, 112, 22).WithParent(containerBounds);
+                titleMeasureBounds.CalcWorldBounds();
+                CairoFont rowTitleFont = baseFont.Clone();
+                rowTitleFont.UnscaledFontsize = 16;
+                string plainTitleText = StripTags().Replace(data.Name, "");
+                rowTitleFont.AutoFontSize(plainTitleText, titleMeasureBounds);
+                GuiElementRichtext titleText = new(capi, VtmlUtil.Richtextify(capi, data.Name, rowTitleFont), titleBounds);
                 scrollArea.Add(titleText);
 
-                ElementBounds barBounds = ElementBounds.Fixed(125, accumulatedY, 200, 22).WithParent(containerBounds);
-                GuiElementStatbar statBar = new(capi, barBounds, GuiStyle.XPBarColor, false, false);
+                GuiElementStatbar statBar = new(capi, ElementBounds.Fixed(125, accumulatedY, 200, 22).WithParent(containerBounds), GuiStyle.XPBarColor, false, false);
                 statBar.SetValues((float)Math.Max(0.0, Math.Min(1.0, data.Percentage)), 0f, 1f);
                 statBar.ShowValueOnHover = false;
                 scrollArea.Add(statBar);
 
                 if (!string.IsNullOrEmpty(data.Tooltip))
                 {
-                    GuiElementHoverText hoverText = new(capi, data.Tooltip, CairoFont.WhiteSmallText(), 220, barBounds);
+                    GuiElementHoverText hoverText = new(capi, data.Tooltip, CairoFont.WhiteSmallText(), 220, ElementBounds.Fixed(125, accumulatedY, 200, 22).WithParent(containerBounds));
                     scrollArea.Add(hoverText);
                 }
 
-                if (data.PartialCredits != null && data.PartialCredits.Length > 0)
+                if (data.PartialCredits != null && data.PartialCredits.Length > 1)
                 {
                     ElementBounds btnBounds = ElementBounds.Fixed(350, accumulatedY, 12, 22).WithParent(containerBounds);
                     string btnText = isExpanded ? "−" : "+";
@@ -164,12 +154,18 @@ namespace SeraphLeveling.Gui
 
                 accumulatedY += 26;
 
-                if (isExpanded && data.PartialCredits != null)
+                if (data.PartialCredits != null)
                 {
                     foreach (var partial in data.PartialCredits)
                     {
-                        ElementBounds subLabelBounds = ElementBounds.Fixed(15, accumulatedY + 2, 105, 18).WithParent(containerBounds);
-                        GuiElementRichtext subLabel = new(capi, VtmlUtil.Richtextify(capi, partial.Name, smallToolFont), subLabelBounds);
+                        ElementBounds subLabelBounds = ElementBounds.Fixed(15, accumulatedY + 1, 105, 15).WithParent(containerBounds);
+                        ElementBounds subLabelMeasureBounds = ElementBounds.Fixed(15, accumulatedY + 1, 100, 22).WithParent(containerBounds);
+                        subLabelMeasureBounds.CalcWorldBounds();
+                        CairoFont subLabelFont = smallToolFont.Clone();
+                        subLabelFont.UnscaledFontsize = 14;
+                        subLabelFont.AutoFontSize(partial.Name, subLabelMeasureBounds);
+
+                        GuiElementRichtext subLabel = new(capi, VtmlUtil.Richtextify(capi, partial.Name, subLabelFont), subLabelBounds);
                         scrollArea.Add(subLabel);
 
                         ElementBounds subBarBounds = ElementBounds.Fixed(125, accumulatedY, 200, 16).WithParent(containerBounds);
@@ -185,6 +181,7 @@ namespace SeraphLeveling.Gui
                         }
 
                         accumulatedY += 22;
+                        if (!isExpanded) break;
                     }
                 }
 
@@ -193,7 +190,8 @@ namespace SeraphLeveling.Gui
                     ElementBounds extraBounds = ElementBounds.Fixed(10, accumulatedY, 345, 18).WithParent(containerBounds);
                     GuiElementRichtext extraText = new(capi, VtmlUtil.Richtextify(capi, data.ExtraInfo, smallToolFont), extraBounds);
                     scrollArea.Add(extraText);
-                    accumulatedY += 20;
+                    extraText.RecomposeText();
+                    accumulatedY += extraText.Bounds.fixedHeight;
                 }
 
                 if (!string.IsNullOrEmpty(data.Instructions))
@@ -201,7 +199,8 @@ namespace SeraphLeveling.Gui
                     ElementBounds instBounds = ElementBounds.Fixed(10, accumulatedY, 345, 36).WithParent(containerBounds);
                     GuiElementRichtext instText = new(capi, VtmlUtil.Richtextify(capi, data.Instructions, smallToolFont), instBounds);
                     scrollArea.Add(instText);
-                    accumulatedY += 40;
+                    instText.RecomposeText();
+                    accumulatedY += instText.Bounds.fixedHeight;
                 }
 
                 accumulatedY += 4;
@@ -231,7 +230,7 @@ namespace SeraphLeveling.Gui
             if (scrollbar != null)
             {
                 scrollbar.SetHeights((float)clipBounds.fixedHeight, (float)accumulatedY);
-                float maxScroll = (float)Math.Max(0f, totalContentHeight - clipBounds.fixedHeight);
+                float maxScroll = (float)Math.Max(0f, accumulatedY - clipBounds.fixedHeight);
                 if (currentScrollOffset > maxScroll)
                 {
                     currentScrollOffset = maxScroll;
@@ -244,5 +243,8 @@ namespace SeraphLeveling.Gui
             }
             isInitializing = false;
         }
+
+        [System.Text.RegularExpressions.GeneratedRegex("<[^>]*>")]
+        private static partial System.Text.RegularExpressions.Regex StripTags();
     }
 }
