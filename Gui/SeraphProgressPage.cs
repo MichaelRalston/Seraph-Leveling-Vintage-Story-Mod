@@ -116,9 +116,7 @@ namespace SeraphLeveling.Gui
                 {
                     string line = raw.Trim();
                     if (line.Length == 0) { sb.Append("<br>"); continue; }
-                    string safe = line.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;");
-                    string descaped = safe.Replace("&lt;strong&gt;", "<strong>").Replace("&lt;/strong&gt;", "</strong>");
-                    sb.Append(descaped).Append("<br>");
+                    sb.Append(line).Append("<br>");
                 }
             }
             sb.Append("<br>").Append(Lang.Get("sl-progress-footer"));

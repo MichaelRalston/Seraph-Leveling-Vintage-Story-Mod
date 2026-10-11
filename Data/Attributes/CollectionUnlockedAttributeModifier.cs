@@ -109,6 +109,7 @@ namespace SeraphLeveling.Data.Attributes
         {
             var progress = GetDict(player);
             sb.AppendLine($"<strong>{Name}</strong> trait: {progress.CollectedItems.Count} / {RequiredCollectionSize} unique {CollectedItemDescription} ({(progress.IsUnlocked ? "UNLOCKED" : "Locked")})");
+            CollectExtraInfo(player, sb);
         }
 
         public virtual void CollectExtraInfo(IPlayer player, StringBuilder sb)
