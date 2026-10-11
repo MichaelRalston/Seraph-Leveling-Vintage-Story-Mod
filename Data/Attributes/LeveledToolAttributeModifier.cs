@@ -273,7 +273,7 @@ namespace SeraphLeveling.Data.Attributes
                 return TextCommandResult.Success($"{Definition.Name} credits set to {level} (+{bonusPercent}{Definition.Stat}). Per-tool progress reset.");
             }
         }
-        
+
         public override TextCommandResult SetLevelFromCommand(IServerPlayer player, int level, TextCommandCallingArgs args, int indexOffset)
         {
             if (args.ArgCount > 1 + indexOffset && args[1 + indexOffset] is string toolName)
@@ -429,7 +429,7 @@ namespace SeraphLeveling.Data.Attributes
                 sb.AppendLine($"\nNo {Definition.ToolsDescription} progress yet.");
             }
         }
-        
+
         public override Messages.PartialCredits[] CollectPartialCreditsForReport()
         {
             List<Messages.PartialCredits> partialCreditsList = [];
@@ -443,7 +443,7 @@ namespace SeraphLeveling.Data.Attributes
                     partialCreditsList.Add(new Messages.PartialCredits
                     {
                         Name = $"{((AssetLocation)LastToolUsed).ToShortString()}",
-                        Percentage = pcKvp.Value.Amount/pcKvp.Value.IncrementSize,
+                        Percentage = pcKvp.Value.Amount / pcKvp.Value.IncrementSize,
                         Tooltip = $"{pcKvp.Value.Amount:F2}/{pcKvp.Value.IncrementSize} {Definition.IncrementData[pcKvp.Key].IncrementUnits}"
                     });
                 }
@@ -463,7 +463,7 @@ namespace SeraphLeveling.Data.Attributes
                     partialCreditsList.Add(new Messages.PartialCredits
                     {
                         Name = $"{toolCode.ToShortString()}",
-                        Percentage = pcKvp.Value.Amount/pcKvp.Value.IncrementSize,
+                        Percentage = pcKvp.Value.Amount / pcKvp.Value.IncrementSize,
                         Tooltip = $"{pcKvp.Value.Amount:F2}/{pcKvp.Value.IncrementSize} {Definition.IncrementData[pcKvp.Key].IncrementUnits}"
                     });
                 }
@@ -738,6 +738,10 @@ namespace SeraphLeveling.Data.Attributes
 
                 // Check for trait unlocks that depend on trait level
                 Definition.OnCreditsChanged(player, oldCredits, (PD)this);
+            }
+            else
+            {
+                SeraphLevelingModSystem.PushProgressReport(player);
             }
         }
     }

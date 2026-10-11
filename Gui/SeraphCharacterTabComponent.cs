@@ -16,6 +16,10 @@ namespace SeraphLeveling.Gui
         private float currentScrollOffset = 0f;
         public ProgressReportContent[] LatestData { get; set; } = [];
         GuiComposer composer;
+        bool isListening = false;
+        public int assignedIndex;
+
+        public FieldInfo curTabField;
 
         public void OnProgressReportReceived(ProgressReportContent[] content)
         {
@@ -52,6 +56,25 @@ namespace SeraphLeveling.Gui
             return null;
         }
 
+        public void HandleListeningState(bool newState)
+        {
+            if (newState == isListening) return;
+            isListening = newState;
+            capi.Logger.Debug($"[SeraphLeveling] HandleListeningState went to {isListening}");
+            SeraphProgressPage.RequestReport(listening: isListening);
+        }
+
+        public void OnTick(float dt)
+        {
+            if (curTabField == null) return;
+            if (capi.Gui.LoadedGuis.Find(dlg => dlg is GuiDialogCharacterBase) is not GuiDialogCharacterBase charDlg)
+            {
+                HandleListeningState(false);
+                return;
+            }
+            int currentActiveTab = (int)curTabField.GetValue(charDlg);
+            HandleListeningState(currentActiveTab == assignedIndex);
+        }
         public void RunRecompose(GuiDialogCharacterBase parentDialog)
         {
             capi.Event.EnqueueMainThreadTask(() =>

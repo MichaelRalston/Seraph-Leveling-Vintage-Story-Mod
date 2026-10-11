@@ -50,6 +50,8 @@ namespace SeraphLeveling.Data.Attributes
             if (progress.TotalCredits >= GlobalMaxCredits)
             {
                 FireUnlockChangedEvent(player, false, true);
+            } else {
+                SeraphLevelingModSystem.PushProgressReport(player);
             }
         }
 
@@ -100,11 +102,11 @@ namespace SeraphLeveling.Data.Attributes
             return new Messages.ProgressReportContent()
             {
                 Name = Name,
-                Percentage = progress.TotalCredits/GlobalMaxCredits,
+                Percentage = progress.TotalCredits / GlobalMaxCredits,
                 Tooltip = $"{progress.TotalCredits}/{GlobalMaxCredits} {CreditDescription} ({(progress.IsUnlocked ? "UNLOCKED" : "locked")})",
                 PartialCredits = [],
                 Instructions = instructionsSb.ToString(),
-                ExtraInfo = progress.IsUnlocked? "UNLOCKED" : $"{Verb} {GlobalMaxCredits - progress.TotalCredits:F0} more {CreditDescription} to unlock!"
+                ExtraInfo = progress.IsUnlocked ? "UNLOCKED" : $"{Verb} {GlobalMaxCredits - progress.TotalCredits:F0} more {CreditDescription} to unlock!"
             };
         }
 

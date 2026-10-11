@@ -29,6 +29,7 @@ namespace SeraphLeveling.Gui
 
         /// <summary>Last report received over the network channel.</summary>
         public static string LatestReport;
+        static bool isAsking = false;
 
         /// <summary>The report this page last drew, so an unchanged re-sync does not redraw.</summary>
         private string shownReport;
@@ -48,9 +49,10 @@ namespace SeraphLeveling.Gui
         }
 
         /// <summary>Ask the server for the current report. force = send it even if nothing changed.</summary>
-        public static void RequestReport(bool force)
+        public static void RequestReport(bool listening)
         {
-            try { Channel?.SendPacket(new ProgressReportRequestMessage { Force = force }); }
+            Instance?.capi?.Logger?.Debug($"[SeraphLeveling] Sending progress report request with listening {listening}");
+            try { Channel?.SendPacket(new ProgressReportRequestMessage { Listening = listening }); }
             catch (Exception ex) { Instance?.capi?.Logger?.Debug("[SeraphLeveling] progress report request failed: {0}", ex.Message); }
         }
 
@@ -65,7 +67,13 @@ namespace SeraphLeveling.Gui
         public static void PollIfShowing()
         {
             var page = Instance;
-            if (page != null && page.DialogShowingThis() != null) RequestReport(false);
+            if (isAsking != (page != null && page.DialogShowingThis() != null))
+            {
+                Instance?.capi?.Logger?.Debug($"[SeraphLeveling] PollIfShowing when isAsking was {isAsking} says we need to update.");
+
+                isAsking = !isAsking;
+                RequestReport(isAsking);
+            }
         }
 
         /// <summary>The open handbook dialog with this page on screen, or null.</summary>
@@ -123,7 +131,7 @@ namespace SeraphLeveling.Gui
             var comps = VtmlUtil.Richtextify(capi, CurrentVtml(), CairoFont.WhiteSmallText().WithLineHeightMultiplier(1.2));
             detailViewGui.AddRichtext(comps, textBounds, "richtext");
             // Page just opened (or redrawn): make sure the numbers are current.
-            RequestReport(force: shownReport == null);
+            RequestReport(listening: true);
         }
 
         public override PageText GetPageText()

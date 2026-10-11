@@ -70,6 +70,10 @@ namespace SeraphLeveling.Data.Attributes
                 {
                     FireUnlockChangedEvent(player, false, true);
                 }
+                else
+                {
+                    SeraphLevelingModSystem.PushProgressReport(player);
+                }
             }
         }
 
@@ -95,7 +99,8 @@ namespace SeraphLeveling.Data.Attributes
             base.ResetProgress(player);
         }
 
-        public override void GetTraitUnlockableCommandLine(IPlayer player, StringBuilder sb) {
+        public override void GetTraitUnlockableCommandLine(IPlayer player, StringBuilder sb)
+        {
             var progress = GetDict(player);
             sb.AppendLine($"{Name}: {progress.CollectedItems.Count}/{RequiredCollectionSize} unique {CollectedItemDescription} ({(progress.IsUnlocked ? "UNLOCKED" : "locked")})");
         }
@@ -122,7 +127,7 @@ namespace SeraphLeveling.Data.Attributes
 
             var progress = GetDict(player);
 
-            int? newCredits = (int?)args[0+indexOffset];
+            int? newCredits = (int?)args[0 + indexOffset];
 
             // If no value provided, show current level
             if (!newCredits.HasValue)

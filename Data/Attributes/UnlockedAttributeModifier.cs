@@ -36,6 +36,7 @@ namespace SeraphLeveling.Data.Attributes
         protected void FireUnlockChangedEvent(IServerPlayer player, bool oldUnlock, bool newUnlock)
         {
             UnlockChanged?.Invoke(player, oldUnlock, newUnlock);
+            SeraphLevelingModSystem.PushProgressReport(player);
         }
 
         public virtual bool IsUnlockableForPlayer(IPlayer player)
@@ -58,7 +59,8 @@ namespace SeraphLeveling.Data.Attributes
             .EndSubCommand();
         }
 
-        public override void GetTraitUnlockableCommandLine(IPlayer player, StringBuilder sb) {
+        public override void GetTraitUnlockableCommandLine(IPlayer player, StringBuilder sb)
+        {
             var progress = GetDict(player);
             sb.AppendLine($"{Name}: {(progress.IsUnlocked ? "UNLOCKED" : "locked")}");
         }
@@ -140,7 +142,7 @@ namespace SeraphLeveling.Data.Attributes
             IServerPlayer player = args.Caller.Player as IServerPlayer;
             if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
 
-            bool unlock = (bool)args[0+indexOffset];
+            bool unlock = (bool)args[0 + indexOffset];
 
             var progress = GetDict(player);
             bool oldUnlock = progress.IsUnlocked;

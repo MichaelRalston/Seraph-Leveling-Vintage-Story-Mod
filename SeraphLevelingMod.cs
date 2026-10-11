@@ -557,6 +557,8 @@ namespace SeraphLeveling
                 !traitList.Where(tuple => ModsForTraits.ContainsKey(tuple.Trait.Id)).SelectMany(tuple => ModsForTraits[tuple.Trait.Id]).DistinctBy(m => m.ModId).Any(m => m.IsActive);
         }
 
+        static HashSet<string> progressReportPlayers = [];
+
         public override void StartServerSide(ICoreServerAPI api)
         {
             base.StartServerSide(api);
@@ -568,17 +570,33 @@ namespace SeraphLeveling
             // player whose report changed (unlocks, /trait setplayer, resets).
             api.Event.RegisterGameTickListener(dt =>
             {
+                HashSet<string> newProgressReportPlayers = [];
                 foreach (var p in api.World.AllOnlinePlayers)
-                    if (p is IServerPlayer sp && sp.Entity != null) PushProgressReport(sp);
+                    if (p is IServerPlayer sp && sp.Entity != null) {
+                        PushProgressReport(sp);
+                        if (progressReportPlayers.Contains(p.PlayerUID)) newProgressReportPlayers.Add(p.PlayerUID);
+                    }
+                progressReportPlayers = newProgressReportPlayers;
             }, 15000);
-            api.Event.RegisterGameTickListener(_ => FlushProgressReports(), 100);
+            // api.Event.RegisterGameTickListener(_ => FlushProgressReports(), 100);
 
             // Register network channel for level-up sound
             serverSoundChannel = api.Network.RegisterChannel("seraphleveling")
                 .RegisterMessageType<LevelUpSoundMessage>()
                 .RegisterMessageType<ProgressReportMessage>()
                 .RegisterMessageType<ProgressReportRequestMessage>()
-                .SetMessageHandler<ProgressReportRequestMessage>((player, msg) => PushProgressReport(player, force: msg?.Force ?? false));
+                .SetMessageHandler<ProgressReportRequestMessage>((player, msg) =>
+                {
+                    if (msg.Listening)
+                    {
+                        progressReportPlayers.Add(player.PlayerUID);
+                        PushProgressReport(player);
+                    }
+                    else
+                    {
+                        progressReportPlayers.Remove(player.PlayerUID);
+                    }
+                });
             ;
 
             // Load config file (sets defaults for new worlds)
@@ -1985,6 +2003,8 @@ namespace SeraphLeveling
             SleepMountHours.TryRemove(playerUid, out _);
             LastSleepBuffApplyTick.TryRemove(playerUid, out _);
             LastSentProgressReport.TryRemove(playerUid, out _);
+            LastSentProgressReportTime.TryRemove(playerUid, out _);
+            progressReportPlayers.Remove(playerUid);
             ProgressReportDirty.TryRemove(playerUid, out _);
             foreach (var key in TrackedItemDurabilities.Keys.Where(k => k.StartsWith(playerUid + "_", StringComparison.Ordinal)).ToList())
                 TrackedItemDurabilities.TryRemove(key, out _);
@@ -2192,6 +2212,7 @@ namespace SeraphLeveling
         // saved attribute survived restarts and made the push think the client
         // already had the report when the client had nothing.
         private static readonly ConcurrentDictionary<string, string> LastSentProgressReport = new();
+        private static readonly ConcurrentDictionary<string, long> LastSentProgressReportTime = new();
 
         // Players whose progress changed since the last push. A 100 ms server tick
         // flushes them, so a mined block is on the handbook page before the player
@@ -2225,8 +2246,18 @@ namespace SeraphLeveling
             try
             {
                 if (player?.Entity == null) return;
+                if (!force && !progressReportPlayers.Contains(player.PlayerUID)) return;
                 string report = BuildProgressReportForPlayer(player);
                 if (!force && LastSentProgressReport.TryGetValue(player.PlayerUID, out string last) && last == report) return;
+                if (!force && LastSentProgressReportTime.TryGetValue(player.PlayerUID, out long lastTime))
+                {
+                    if (ServerApi.World.ElapsedMilliseconds < lastTime+100)
+                    {
+                        ProgressReportDirty[player.PlayerUID] = player;
+                        return;
+                    }
+                }
+                lastTime = ServerApi.World.ElapsedMilliseconds;
                 ProgressReportContent[] progressReportContent = BuildProgressReportContentForPlayer(player);
                 serverSoundChannel.SendPacket(new ProgressReportMessage { Report = report, Content = progressReportContent }, player);
                 LastSentProgressReport[player.PlayerUID] = report;
@@ -2244,7 +2275,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void NotifyLevelUp(IServerPlayer player, string message)
         {
-            PushProgressReport(player);
+            PushProgressReport(player, true);
 
             if (EnableLevelUpMessages)
             {
@@ -7555,18 +7586,21 @@ namespace SeraphLeveling
 
                 if (!alreadyRegistered)
                 {
-                    int assignedIndex = characterDialog.Tabs.Count;
+                    tabComponent.assignedIndex = characterDialog.Tabs.Count;
+                    tabComponent.curTabField = characterDialog.GetType().GetField("curTab", BindingFlags.Instance | BindingFlags.NonPublic);
+
                     characterDialog.Tabs.Add(new GuiTab()
                     {
                         Name = tabName,
-                        DataInt = assignedIndex
+                        DataInt = tabComponent.assignedIndex
                     });
 
                     characterDialog.RenderTabHandlers.Add((composer) =>
                     {
-                        Gui.SeraphProgressPage.RequestReport(force: false);
+                        tabComponent.HandleListeningState(true);
                         tabComponent.RenderTabContent(composer, characterDialog);
                     });
+                    clientApi.Event.RegisterGameTickListener(tabComponent.OnTick, 250);
                 }
             }
         }
