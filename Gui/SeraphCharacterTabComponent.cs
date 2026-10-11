@@ -181,8 +181,6 @@ namespace SeraphLeveling.Gui
         public readonly CairoFont buttonFont = CairoFont.WhiteSmallText();
         public readonly CairoFont smallToolFont = CairoFont.WhiteSmallText().WithColor([0.6, 0.6, 0.6, 1.0]);
 
-        int dataLength = 0;
-
         public void RenderTabContent(GuiComposer childComposer, GuiDialogCharacterBase parentDialog)
         {
             if (childComposer == null || parentDialog == null) return;
@@ -203,75 +201,56 @@ namespace SeraphLeveling.Gui
                 composer.AddStaticText(Lang.Get("sl-progress-waiting"), CairoFont.WhiteSmallText(), insetBounds);
                 return;
             }
-            if (dataLength == LatestData.Length)
+            ElementBounds containerBounds = ElementBounds.Fixed(0, 0, 0, 0).WithParent(clipBounds);
+
+            // 1. Establish layout wrappers natively matching the wiki guide
+            composer.BeginChildElements()
+                .AddInset(insetBounds, insetDepth)
+                .BeginClip(clipBounds)
+                .AddContainer(containerBounds, "scroll-content");
+
+            // 2. Fetch the newly mounted container reference to populate our content loop inside it
+            scrollArea = composer.GetContainer("scroll-content");
+            if (scrollArea == null) return;
+
+            accumulatedY = 3;
+            baseFont.UnscaledFontsize = 16;
+            buttonFont.Orientation = EnumTextOrientation.Center;
+
+            for (int i = 0; i < LatestData.Length; i++)
             {
-                for (int i = 0; i < LatestData.Length; i++)
-                {
-                    var data = LatestData[i];
-                    bool isExpanded = expandedTraits.Contains(data.Name);
-                    string innerContainerKey = $"data-{i}";
-                    GuiElementContainer innerContainer = composer.GetContainer(innerContainerKey);
-                    ElementBounds newContainerBounds = innerContainer.Bounds;
-                    newContainerBounds.fixedY = accumulatedY;
-                    var offset = RenderData(data, isExpanded, newContainerBounds, innerContainer, parentDialog);
-                    newContainerBounds.CalcWorldBounds();
-                    accumulatedY += offset;
-                }
-                scrollArea = composer.GetContainer("scroll-content");
-                scrollArea.Bounds.fixedHeight = accumulatedY;
+                var data = LatestData[i];
+                bool isExpanded = expandedTraits.Contains(data.Name);
+
+                // Define positions using plain absolute row indices relative to the parent container frame
+                ElementBounds newContainerBounds = ElementBounds.Fixed(0, accumulatedY, 0, 0).WithParent(containerBounds);
+                string innerContainerKey = $"data-{i}";
+                composer.AddContainer(newContainerBounds, innerContainerKey);
+                GuiElementContainer innerContainer = composer.GetContainer(innerContainerKey);
+                var offset = RenderData(data, isExpanded, newContainerBounds, innerContainer, parentDialog);
+                newContainerBounds.CalcWorldBounds();
+                accumulatedY += offset;
             }
-            else
-            {
-                ElementBounds containerBounds = ElementBounds.Fixed(0, 0, 0, 0).WithParent(clipBounds);
-
-                // 1. Establish layout wrappers natively matching the wiki guide
-                composer.BeginChildElements()
-                    .AddInset(insetBounds, insetDepth)
-                    .BeginClip(clipBounds)
-                    .AddContainer(containerBounds, "scroll-content");
-
-                // 2. Fetch the newly mounted container reference to populate our content loop inside it
-                scrollArea = composer.GetContainer("scroll-content");
-                if (scrollArea == null) return;
-
-                accumulatedY = 3;
-                baseFont.UnscaledFontsize = 16;
-                buttonFont.Orientation = EnumTextOrientation.Center;
-
-                for (int i = 0; i < LatestData.Length; i++)
+            composer.EndClip()
+                .AddVerticalScrollbar((value) =>
                 {
-                    var data = LatestData[i];
-                    bool isExpanded = expandedTraits.Contains(data.Name);
-
-                    // Define positions using plain absolute row indices relative to the parent container frame
-                    ElementBounds newContainerBounds = ElementBounds.Fixed(0, accumulatedY, 0, 0).WithParent(containerBounds);
-                    string innerContainerKey = $"data-{i}";
-                    composer.AddContainer(newContainerBounds, innerContainerKey);
-                    GuiElementContainer innerContainer = composer.GetContainer(innerContainerKey);
-                    var offset = RenderData(data, isExpanded, newContainerBounds, innerContainer, parentDialog);
-                    newContainerBounds.CalcWorldBounds();
-                    accumulatedY += offset;
-                }
-                composer.EndClip()
-                    .AddVerticalScrollbar((value) =>
+                    if (!isInitializing)
                     {
-                        if (!isInitializing)
+                        currentScrollOffset = value;
+
+                        var container = composer.GetContainer("scroll-content");
+                        if (container != null)
                         {
-                            currentScrollOffset = value;
-
-                            var container = composer.GetContainer("scroll-content");
-                            if (container != null)
-                            {
-                                container.Bounds.fixedY = 0 - value;
-                                container.Bounds.CalcWorldBounds();
-                            }
+                            container.Bounds.fixedY = 0 - value;
+                            container.Bounds.CalcWorldBounds();
                         }
-                    }, scrollbarBounds, "seraphScrollbar")
-                    .EndChildElements();
+                    }
+                }, scrollbarBounds, "seraphScrollbar")
+                .EndChildElements();
 
-                // Update container size constraints natively matching content length totals
-                containerBounds.fixedHeight = accumulatedY;
-            }
+            // Update container size constraints natively matching content length totals
+            containerBounds.fixedHeight = accumulatedY;
+
             GuiElementScrollbar scrollbar = composer.GetScrollbar("seraphScrollbar");
             if (scrollbar != null)
             {
