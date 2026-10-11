@@ -127,9 +127,11 @@ namespace SeraphLeveling.Gui
             GuiElementContainer scrollArea = composer.GetContainer("scroll-content");
             if (scrollArea == null) return;
 
-            double accumulatedY = 0;
+            double accumulatedY = 3;
             CairoFont baseFont = CairoFont.WhiteSmallText();
             baseFont.UnscaledFontsize = 16;
+            CairoFont buttonFont = CairoFont.WhiteSmallText();
+            buttonFont.Orientation = EnumTextOrientation.Center;
             CairoFont smallToolFont = CairoFont.WhiteSmallText().WithColor([0.6, 0.6, 0.6, 1.0]);
 
             for (int i = 0; i < LatestData.Length; i++)
@@ -138,8 +140,8 @@ namespace SeraphLeveling.Gui
                 bool isExpanded = expandedTraits.Contains(data.Name);
 
                 // Define positions using plain absolute row indices relative to the parent container frame
-                ElementBounds titleBounds = ElementBounds.Fixed(0, accumulatedY + 4, 120, 22).WithParent(containerBounds);
-                ElementBounds titleMeasureBounds = ElementBounds.Fixed(0, accumulatedY + 4, 112, 22).WithParent(containerBounds);
+                ElementBounds titleBounds = ElementBounds.Fixed(3, accumulatedY + 4, 120, 22).WithParent(containerBounds);
+                ElementBounds titleMeasureBounds = ElementBounds.Fixed(3, accumulatedY + 4, 112, 22).WithParent(containerBounds);
                 titleMeasureBounds.CalcWorldBounds();
                 CairoFont rowTitleFont = baseFont.Clone();
                 rowTitleFont.UnscaledFontsize = 16;
@@ -148,7 +150,7 @@ namespace SeraphLeveling.Gui
                 GuiElementRichtext titleText = new(capi, VtmlUtil.Richtextify(capi, data.Name, rowTitleFont), titleBounds);
                 scrollArea.Add(titleText);
 
-                GuiElementStatbar statBar = new(capi, ElementBounds.Fixed(125, accumulatedY, 200, 22).WithParent(containerBounds), GuiStyle.XPBarColor, false, false);
+                GuiElementStatbar statBar = new(capi, ElementBounds.Fixed(125, accumulatedY, 225, 22).WithParent(containerBounds), GuiStyle.XPBarColor, false, false);
                 statBar.SetValues((float)Math.Max(0.0, Math.Min(1.0, data.Percentage)), 0f, 1f);
                 statBar.ShowValueOnHover = false;
                 scrollArea.Add(statBar);
@@ -172,7 +174,7 @@ namespace SeraphLeveling.Gui
 
                         RunRecompose(parentDialog);
                         return true;
-                    }, btnBounds, baseFont, EnumButtonStyle.Normal, elementKey);
+                    }, btnBounds, buttonFont, EnumButtonStyle.Normal, elementKey);
                 }
 
                 accumulatedY += 26;
@@ -191,7 +193,7 @@ namespace SeraphLeveling.Gui
                         GuiElementRichtext subLabel = new(capi, VtmlUtil.Richtextify(capi, partial.Name, subLabelFont), subLabelBounds);
                         scrollArea.Add(subLabel);
 
-                        ElementBounds subBarBounds = ElementBounds.Fixed(125, accumulatedY, 200, 16).WithParent(containerBounds);
+                        ElementBounds subBarBounds = ElementBounds.Fixed(135, accumulatedY, 205, 16).WithParent(containerBounds);
                         GuiElementStatbar subBar = new(capi, subBarBounds, GuiStyle.FoodBarColor, false, false);
                         subBar.SetValues(partial.Percentage, 0f, 1f);
                         subBar.ShowValueOnHover = false;
