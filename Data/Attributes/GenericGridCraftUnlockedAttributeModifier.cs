@@ -25,18 +25,6 @@ namespace SeraphLeveling.Data.Attributes
         {
             return new GenericGridCraftUnlockedAttributeModifierProgressData(def);
         }
-
-        public override void CollectStatus(IPlayer player, StringBuilder sb)
-        {
-            base.CollectStatus(player, sb);
-
-            var progress = GetDict(player);
-            if (!progress.IsUnlocked)
-            {
-                int remaining = (int)(GlobalMaxCredits - progress.TotalCredits);
-                sb.AppendLine($"Craft {remaining} more {CraftedItemName.ToLowerInvariant()} to unlock!");
-            }
-        }
     }
 
     public class GenericGridCraftUnlockedAttributeModifierProgressData(GenericGridCraftUnlockedAttributeModifierDefinition definition) : ScoredUnlockedAttributeModifierProgressData<GenericGridCraftUnlockedAttributeModifierDefinition, GenericGridCraftUnlockedAttributeModifierProgressData>(definition)

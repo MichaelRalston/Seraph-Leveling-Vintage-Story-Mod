@@ -557,6 +557,8 @@ namespace SeraphLeveling
                 !traitList.Where(tuple => ModsForTraits.ContainsKey(tuple.Trait.Id)).SelectMany(tuple => ModsForTraits[tuple.Trait.Id]).DistinctBy(m => m.ModId).Any(m => m.IsActive);
         }
 
+        static HashSet<string> progressReportPlayers = [];
+
         public override void StartServerSide(ICoreServerAPI api)
         {
             base.StartServerSide(api);
@@ -568,17 +570,34 @@ namespace SeraphLeveling
             // player whose report changed (unlocks, /trait setplayer, resets).
             api.Event.RegisterGameTickListener(dt =>
             {
+                HashSet<string> newProgressReportPlayers = [];
                 foreach (var p in api.World.AllOnlinePlayers)
-                    if (p is IServerPlayer sp && sp.Entity != null) PushProgressReport(sp);
+                    if (p is IServerPlayer sp && sp.Entity != null)
+                    {
+                        PushProgressReport(sp);
+                        if (progressReportPlayers.Contains(p.PlayerUID)) newProgressReportPlayers.Add(p.PlayerUID);
+                    }
+                progressReportPlayers = newProgressReportPlayers;
             }, 15000);
-            api.Event.RegisterGameTickListener(_ => FlushProgressReports(), 100);
+            // api.Event.RegisterGameTickListener(_ => FlushProgressReports(), 100);
 
             // Register network channel for level-up sound
             serverSoundChannel = api.Network.RegisterChannel("seraphleveling")
                 .RegisterMessageType<LevelUpSoundMessage>()
                 .RegisterMessageType<ProgressReportMessage>()
                 .RegisterMessageType<ProgressReportRequestMessage>()
-                .SetMessageHandler<ProgressReportRequestMessage>((player, msg) => PushProgressReport(player, force: msg?.Force ?? false));
+                .SetMessageHandler<ProgressReportRequestMessage>((player, msg) =>
+                {
+                    if (msg.Listening)
+                    {
+                        progressReportPlayers.Add(player.PlayerUID);
+                        PushProgressReport(player);
+                    }
+                    else
+                    {
+                        progressReportPlayers.Remove(player.PlayerUID);
+                    }
+                });
             ;
 
             // Load config file (sets defaults for new worlds)
@@ -1985,6 +2004,8 @@ namespace SeraphLeveling
             SleepMountHours.TryRemove(playerUid, out _);
             LastSleepBuffApplyTick.TryRemove(playerUid, out _);
             LastSentProgressReport.TryRemove(playerUid, out _);
+            LastSentProgressReportTime.TryRemove(playerUid, out _);
+            progressReportPlayers.Remove(playerUid);
             ProgressReportDirty.TryRemove(playerUid, out _);
             foreach (var key in TrackedItemDurabilities.Keys.Where(k => k.StartsWith(playerUid + "_", StringComparison.Ordinal)).ToList())
                 TrackedItemDurabilities.TryRemove(key, out _);
@@ -2145,11 +2166,21 @@ namespace SeraphLeveling
         }
 
 
-        public const string WATCHED_PROGRESS_REPORT = "seraphleveling:progressReport";
+        public static ProgressReportContent[] BuildProgressReportContentForPlayer(IServerPlayer player)
+        {
+            var contentList = new List<ProgressReportContent>();
+            foreach (var definition in LoadedAttributes.OrderBy(a => a.Name))
+            {
+                if (definition.ShouldSee(player.Entity))
+                {
+                    contentList.Add(definition.CollectReportContent(player));
+                }
+            }
+            return [.. contentList];
+        }
 
         public static string BuildProgressReportForPlayer(IServerPlayer player)
         {
-            string playerUid = player.PlayerUID;
             var sb = new StringBuilder();
             foreach (var definition in LoadedAttributes.OrderBy(a => a.Name))
             {
@@ -2163,7 +2194,6 @@ namespace SeraphLeveling
 
         public static string BuildAllCommandResult(IServerPlayer player)
         {
-            string playerUid = player.PlayerUID;
             var sb = new StringBuilder();
             sb.AppendLine("=== All Trait Progression ===");
             foreach (var definition in LoadedAttributes)
@@ -2186,6 +2216,7 @@ namespace SeraphLeveling
         // saved attribute survived restarts and made the push think the client
         // already had the report when the client had nothing.
         private static readonly ConcurrentDictionary<string, string> LastSentProgressReport = new();
+        private static readonly ConcurrentDictionary<string, long> LastSentProgressReportTime = new();
 
         // Players whose progress changed since the last push. A 100 ms server tick
         // flushes them, so a mined block is on the handbook page before the player
@@ -2219,9 +2250,20 @@ namespace SeraphLeveling
             try
             {
                 if (player?.Entity == null) return;
+                if (!force && !progressReportPlayers.Contains(player.PlayerUID)) return;
                 string report = BuildProgressReportForPlayer(player);
                 if (!force && LastSentProgressReport.TryGetValue(player.PlayerUID, out string last) && last == report) return;
-                serverSoundChannel.SendPacket(new ProgressReportMessage { Report = report }, player);
+                if (!force && LastSentProgressReportTime.TryGetValue(player.PlayerUID, out long lastTime))
+                {
+                    if (ServerApi.World.ElapsedMilliseconds < lastTime + 250)
+                    {
+                        ProgressReportDirty[player.PlayerUID] = player;
+                        return;
+                    }
+                }
+                lastTime = ServerApi.World.ElapsedMilliseconds;
+                ProgressReportContent[] progressReportContent = BuildProgressReportContentForPlayer(player);
+                serverSoundChannel.SendPacket(new ProgressReportMessage { Report = report, Content = progressReportContent }, player);
                 LastSentProgressReport[player.PlayerUID] = report;
             }
             catch (Exception ex)
@@ -2237,7 +2279,7 @@ namespace SeraphLeveling
         /// </summary>
         public static void NotifyLevelUp(IServerPlayer player, string message)
         {
-            PushProgressReport(player);
+            PushProgressReport(player, true);
 
             if (EnableLevelUpMessages)
             {
@@ -7441,6 +7483,21 @@ namespace SeraphLeveling
             }
         }
 
+        public static string GetToolDisplayName(AssetLocation toolCode)
+        {
+            if (toolCode == null)
+            {
+                return "Unknown";
+            }
+
+            Item item = ServerApi.World.GetItem(toolCode);
+            if (item == null)
+            {
+                return toolCode.ToShortString();
+            }
+
+            return new ItemStack(item).GetName();
+        }
     }
 
     /// <summary>
@@ -7466,6 +7523,8 @@ namespace SeraphLeveling
         private object characterSystemInstance;
         private long progressPollListenerId;
 
+        private Gui.SeraphCharacterTabComponent tabComponent;
+
         public override bool ShouldLoad(EnumAppSide forSide)
         {
             return forSide == EnumAppSide.Client;
@@ -7490,6 +7549,7 @@ namespace SeraphLeveling
                 {
                     api.Logger.Debug("[SeraphLeveling] progress report received ({0} chars)", msg?.Report?.Length ?? 0);
                     Gui.SeraphProgressPage.OnReportReceived(msg?.Report);
+                    tabComponent.OnProgressReportReceived(msg?.Content);
                 });
             Gui.SeraphProgressPage.Channel = channel;
             progressPollListenerId = api.Event.RegisterGameTickListener(_ => Gui.SeraphProgressPage.PollIfShowing(), 1000);
@@ -7517,6 +7577,51 @@ namespace SeraphLeveling
 
             var handbook = api.ModLoader.GetModSystem<ModSystemSurvivalHandbook>();
             handbook?.OnInitCustomPages += pages => pages.Add(new Gui.SeraphProgressPage(api));
+
+            tabComponent = new Gui.SeraphCharacterTabComponent(api);
+            api.Event.BlockTexturesLoaded += RegisterCustomCharacterTab;
+        }
+
+        private void RegisterCustomCharacterTab()
+        {
+            GuiDialogCharacterBase characterDialog = clientApi.LoadedGuis
+                .OfType<GuiDialogCharacterBase>()
+                .FirstOrDefault();
+
+            if (characterDialog != null)
+            {
+                string tabLangKey = "seraphleveling-tab-title";
+                string tabName = Lang.Get(tabLangKey);
+
+                bool alreadyRegistered = false;
+                foreach (var tab in characterDialog.Tabs)
+                {
+                    if (tab.Name == tabName)
+                    {
+                        alreadyRegistered = true;
+                        break;
+                    }
+                }
+
+                if (!alreadyRegistered)
+                {
+                    tabComponent.assignedIndex = characterDialog.Tabs.Count;
+                    tabComponent.curTabField = characterDialog.GetType().GetField("curTab", BindingFlags.Instance | BindingFlags.NonPublic);
+
+                    characterDialog.Tabs.Add(new GuiTab()
+                    {
+                        Name = tabName,
+                        DataInt = tabComponent.assignedIndex
+                    });
+
+                    characterDialog.RenderTabHandlers.Add((composer) =>
+                    {
+                        tabComponent.HandleListeningState(true);
+                        tabComponent.RenderTabContent(composer, characterDialog);
+                    });
+                    clientApi.Event.RegisterGameTickListener(tabComponent.OnTick, 250);
+                }
+            }
         }
 
         /// <summary>

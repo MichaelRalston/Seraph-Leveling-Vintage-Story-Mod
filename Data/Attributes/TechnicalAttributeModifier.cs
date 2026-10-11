@@ -28,18 +28,6 @@ namespace SeraphLeveling.Data.Attributes
             float gearCostReduction = progress.IsUnlocked ? -1f : 0f;
             player.Entity.Stats.Set("temporalGearTLRepairCost", "sitTechnicalBonus", gearCostReduction, false);
         }
-
-        public override void CollectStatus(IPlayer player, StringBuilder sb)
-        {
-            base.CollectStatus(player, sb);
-
-            var progress = GetDict(player);
-            if (!progress.IsUnlocked)
-            {
-                int remaining = (int)(GlobalMaxCredits - progress.TotalCredits);
-                sb.AppendLine($"Repair {remaining} more translocators to unlock!");
-            }
-        }
     }
 
     public class TechnicalAttributeModifierProgressData(TechnicalAttributeModifierDefinition definition) : ScoredUnlockedAttributeModifierProgressData<TechnicalAttributeModifierDefinition, TechnicalAttributeModifierProgressData>(definition)

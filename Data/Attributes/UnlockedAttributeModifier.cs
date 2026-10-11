@@ -7,6 +7,7 @@ using Vintagestory.API.Common;
 using Vintagestory.API.Config;
 using Vintagestory.API.Server;
 using Vintagestory.API.Util;
+using Vintagestory.GameContent;
 
 namespace SeraphLeveling.Data.Attributes
 {
@@ -29,6 +30,7 @@ namespace SeraphLeveling.Data.Attributes
     {
         public virtual string UnlockedKey { get => field ??= $"sit{FlatName}Unlocked"; init; }
         public string NotifyLangKey { get => field ??= $"seraphleveling:message-{SkillKey}-unlock"; init; } = null;
+        public string InstructionsKey { get; init; }
         public required Lazy<TraitDefinition> Trait { get; init; }
 
         public event UnlockChangedDelegate UnlockChanged;
@@ -36,6 +38,7 @@ namespace SeraphLeveling.Data.Attributes
         protected void FireUnlockChangedEvent(IServerPlayer player, bool oldUnlock, bool newUnlock)
         {
             UnlockChanged?.Invoke(player, oldUnlock, newUnlock);
+            SeraphLevelingModSystem.PushProgressReport(player);
         }
 
         public virtual bool IsUnlockableForPlayer(IPlayer player)
@@ -58,7 +61,8 @@ namespace SeraphLeveling.Data.Attributes
             .EndSubCommand();
         }
 
-        public override void GetTraitUnlockableCommandLine(IPlayer player, StringBuilder sb) {
+        public override void GetTraitUnlockableCommandLine(IPlayer player, StringBuilder sb)
+        {
             var progress = GetDict(player);
             sb.AppendLine($"{Name}: {(progress.IsUnlocked ? "UNLOCKED" : "locked")}");
         }
@@ -140,7 +144,7 @@ namespace SeraphLeveling.Data.Attributes
             IServerPlayer player = args.Caller.Player as IServerPlayer;
             if (player?.Entity == null) return TextCommandResult.Error("Player not found.");
 
-            bool unlock = (bool)args[0+indexOffset];
+            bool unlock = (bool)args[0 + indexOffset];
 
             var progress = GetDict(player);
             bool oldUnlock = progress.IsUnlocked;
@@ -162,6 +166,21 @@ namespace SeraphLeveling.Data.Attributes
             sb.AppendLine($"<strong>{Name}</strong> trait: {(progress.IsUnlocked ? "UNLOCKED" : "Locked")}");
         }
 
+        public override Messages.ProgressReportContent CollectReportContent(IPlayer player)
+        {
+            var progress = GetDict(player);
+            var instructionsSb = new StringBuilder();
+            CollectInstructions(player, instructionsSb);
+            return new Messages.ProgressReportContent()
+            {
+                Name = Name,
+                Percentage = progress.IsUnlocked ? 1 : 0,
+                Tooltip = $"{(progress.IsUnlocked ? "UNLOCKED" : "Locked")}",
+                PartialCredits = [],
+                Instructions = instructionsSb.ToString(),
+            };
+        }
+
         public override void CollectInstructions(IPlayer player, StringBuilder sb)
         {
             // Get the attribute modifier requirements for this attribute definition from its owning trait
@@ -177,7 +196,12 @@ namespace SeraphLeveling.Data.Attributes
                     {
                         sb.AppendLine("Other unlock requirements:");
                         sb.Append(innerSb);
+                        if (!string.IsNullOrEmpty(InstructionsKey)) sb.AppendLine();
                     }
+                }
+                if (!string.IsNullOrEmpty(InstructionsKey))
+                {
+                    sb.AppendLine(Lang.Get(InstructionsKey));
                 }
             }
         }
@@ -185,6 +209,11 @@ namespace SeraphLeveling.Data.Attributes
         public override bool ShouldDisplay(EntityPlayer player, bool hasVanillaTrait)
         {
             return player.WatchedAttributes.GetBool(UnlockedKey, false);
+        }
+
+        public override bool ShouldSee(EntityPlayer player)
+        {
+            return Trait.Value.Attributes.Where(mod => mod.Attribute == this).All(mod => mod.ShouldSee(player));
         }
 
         public override object GetLocalizedTraitTextParam(EntityPlayer player)

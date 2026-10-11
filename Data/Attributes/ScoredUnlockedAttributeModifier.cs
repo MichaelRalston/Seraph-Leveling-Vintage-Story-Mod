@@ -12,6 +12,8 @@ namespace SeraphLeveling.Data.Attributes
     {
         public required int GlobalMaxCredits { get; set; }
         public required string CreditDescription { get; init; }
+
+        public required string Verb { get; init; }
         public string WatchedCreditsAttributeKey { get; init; } = null;
         public override void ReadConfigData(Dictionary<string, int> dict)
         {
@@ -48,6 +50,8 @@ namespace SeraphLeveling.Data.Attributes
             if (progress.TotalCredits >= GlobalMaxCredits)
             {
                 FireUnlockChangedEvent(player, false, true);
+            } else {
+                SeraphLevelingModSystem.PushProgressReport(player);
             }
         }
 
@@ -82,6 +86,28 @@ namespace SeraphLeveling.Data.Attributes
 
             var progress = GetDict(player);
             sb.AppendLine($"{Name}: {progress.TotalCredits}/{GlobalMaxCredits} {CreditDescription} ({(progress.IsUnlocked ? "UNLOCKED" : "locked")})");
+            if (!progress.IsUnlocked)
+            {
+                int remaining = (int)(GlobalMaxCredits - progress.TotalCredits);
+                sb.AppendLine($"{Verb} {remaining} more {CreditDescription} to unlock!");
+            }
+
+        }
+
+        public override Messages.ProgressReportContent CollectReportContent(IPlayer player)
+        {
+            var progress = GetDict(player);
+            var instructionsSb = new StringBuilder();
+            CollectInstructions(player, instructionsSb);
+            return new Messages.ProgressReportContent()
+            {
+                Name = Name,
+                Percentage = progress.TotalCredits / GlobalMaxCredits,
+                Tooltip = $"{progress.TotalCredits}/{GlobalMaxCredits} {CreditDescription}",
+                PartialCredits = [],
+                Instructions = instructionsSb.ToString(),
+                ExtraInfo = progress.IsUnlocked ? "UNLOCKED" : $"{Verb} {GlobalMaxCredits - progress.TotalCredits:F0} more {CreditDescription} to unlock!"
+            };
         }
 
     }

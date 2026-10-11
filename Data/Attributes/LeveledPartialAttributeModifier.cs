@@ -131,6 +131,8 @@ namespace SeraphLeveling.Data.Attributes
                 // Notify player of level up with raw improvement (shows progress even when capped)
                 SeraphLevelingModSystem.NotifyLevelUp(player,
                     Lang.Get($"seraphleveling:message-{Definition.SkillKey}-level-up", TotalCredits, TotalCredits));
+            } else {
+                SeraphLevelingModSystem.PushProgressReport(player);
             }
         }
         public override void WriteIncrementLine(StringBuilder sb)

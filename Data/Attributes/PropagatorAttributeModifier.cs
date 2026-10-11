@@ -9,18 +9,6 @@ namespace SeraphLeveling.Data.Attributes
         {
             return new PropagatorAttributeModifierProgressData(def);
         }
-
-        public override void CollectStatus(IPlayer player, StringBuilder sb)
-        {
-            base.CollectStatus(player, sb);
-
-            var progress = GetDict(player);
-            if (!progress.IsUnlocked)
-            {
-                int remaining = (int)(GlobalMaxCredits - progress.TotalCredits);
-                sb.AppendLine($"Craft {remaining} more compost to unlock!");
-            }
-        }
     }
 
     public class PropagatorAttributeModifierProgressData(PropagatorAttributeModifierDefinition definition) : ScoredUnlockedAttributeModifierProgressData<PropagatorAttributeModifierDefinition, PropagatorAttributeModifierProgressData>(definition)

@@ -1,4 +1,5 @@
 {
+  "game:seraphleveling-tab-title": "Levels",
   "game:sl-progress-title": "Seraph Leveling ReClassed: My Progress",
   "game:sl-progress-waiting": "Fetching your progress from the server...",
   "game:sl-progress-footer": "Numbers are credits earned out of the cap for each skill. This page updates live while it is open. See the <a href=\"handbook://sl-guide\">Seraph Leveling ReClassed guide</a> for more information.",
@@ -304,6 +305,7 @@
   "gui-clayformspeed-instructions": "Harvest clay, peat, or soil with a tool to level.",
   "gui-clayrate-instructions": "Harvest clay, peat, or soil with a tool to level.",
   "gui-cleaverdamage-instructions": "Inflict damage with a knife to level.",
+  "gui-clothier-instructions": "Wear many kinds of different and unique clothing to unlock.",
   "gui-croprate-instructions": "Harvest farmed crops to level.",
   "gui-enlightenment-instructions": "Spend time meditating to level.",
   "gui-forager-instructions": "Harvest wild crops to level.",

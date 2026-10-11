@@ -273,7 +273,7 @@ namespace SeraphLeveling.Data.Attributes
                 return TextCommandResult.Success($"{Definition.Name} credits set to {level} (+{bonusPercent}{Definition.Stat}). Per-tool progress reset.");
             }
         }
-        
+
         public override TextCommandResult SetLevelFromCommand(IServerPlayer player, int level, TextCommandCallingArgs args, int indexOffset)
         {
             if (args.ArgCount > 1 + indexOffset && args[1 + indexOffset] is string toolName)
@@ -415,8 +415,8 @@ namespace SeraphLeveling.Data.Attributes
                 sb.AppendLine($"\nPer-{Definition.ToolsDescription} progress:");
                 foreach (var kvp in ToolProgress.OrderBy(p => p.Value.PartialCredit.Sum(t => p.Value.GetLevel(t.Key))))
                 {
-                    // Simplify the display name (remove "game:" prefix if present)
-                    string toolName = kvp.Key.ToShortString();
+                    // Get the display name for the tool
+                    string toolName = SeraphLevelingModSystem.GetToolDisplayName(kvp.Key);
 
                     foreach (var pcKvp in kvp.Value.PartialCredit)
                     {
@@ -428,6 +428,45 @@ namespace SeraphLeveling.Data.Attributes
             {
                 sb.AppendLine($"\nNo {Definition.ToolsDescription} progress yet.");
             }
+        }
+
+        public override Messages.PartialCredits[] CollectPartialCreditsForReport()
+        {
+            List<Messages.PartialCredits> partialCreditsList = [];
+            if (LastToolUsed != null && ToolProgress.TryGetValue(LastToolUsed, out var lastToolProgress))
+            {
+                foreach (var pcKvp in lastToolProgress.PartialCredit)
+                {
+                    partialCreditsList.Add(new Messages.PartialCredits
+                    {
+                        Name = SeraphLevelingModSystem.GetToolDisplayName(LastToolUsed),
+                        Percentage = pcKvp.Value.Amount / pcKvp.Value.IncrementSize,
+                        Tooltip = $"{pcKvp.Value.Amount:F2}/{pcKvp.Value.IncrementSize} {Definition.IncrementData[pcKvp.Key].IncrementUnits}"
+                    });
+                }
+            }
+            foreach (var kvp in ToolProgress)
+            {
+                var toolCode = kvp.Key;
+                var toolProgress = kvp.Value;
+                if (toolCode == LastToolUsed)
+                {
+                    // Skip the last tool used to avoid double-reporting
+                    continue;
+                }
+
+                foreach (var pcKvp in toolProgress.PartialCredit)
+                {
+                    partialCreditsList.Add(new Messages.PartialCredits
+                    {
+                        Name = SeraphLevelingModSystem.GetToolDisplayName(toolCode),
+                        Percentage = pcKvp.Value.Amount / pcKvp.Value.IncrementSize,
+                        Tooltip = $"{pcKvp.Value.Amount:F2}/{pcKvp.Value.IncrementSize} {Definition.IncrementData[pcKvp.Key].IncrementUnits}"
+                    });
+                }
+            }
+
+            return [.. partialCreditsList];
         }
 
         public static double DrainAccumulatorsLeveling(List<(AssetLocation key, E e, double value)> accumulators, double penalty)
@@ -580,10 +619,10 @@ namespace SeraphLeveling.Data.Attributes
                         var pc = after.GetPartialCredit(entry.Item2);
                         int newToolCr = Definition.IncrementData[entry.Item2].IncrementStep > 0 ? (pc.IncrementSize - Definition.IncrementData[entry.Item2].BaseIncrement) / Definition.IncrementStep : 0;
                         int toolLost = oldToolCr - newToolCr;
-                        sb.AppendLine($"    {entry.Item1}: {(int)entry.Item3}/{entry.Item3} \u2192 {after.PartialCredit:F0}/{pc.IncrementSize}{(toolLost > 0 ? $" (-{toolLost} cr)" : "")}");
+                        sb.AppendLine($"    {SeraphLevelingModSystem.GetToolDisplayName(entry.Item1)}: {(int)entry.Item3}/{entry.Item3} \u2192 {after.PartialCredit:F0}/{pc.IncrementSize}{(toolLost > 0 ? $" (-{toolLost} cr)" : "")}");
                     }
                     else
-                        sb.AppendLine($"    {entry.Item1}: {(int)entry.Item3}/{entry.Item3} \u2192 removed (-{oldToolCr} cr)");
+                        sb.AppendLine($"    {SeraphLevelingModSystem.GetToolDisplayName(entry.Item1)}: {(int)entry.Item3}/{entry.Item3} \u2192 removed (-{oldToolCr} cr)");
                 }
                 Definition.PendingSave = true;
                 if (lost > 0) return lost;
@@ -696,6 +735,10 @@ namespace SeraphLeveling.Data.Attributes
 
                 // Check for trait unlocks that depend on trait level
                 Definition.OnCreditsChanged(player, oldCredits, (PD)this);
+            }
+            else
+            {
+                SeraphLevelingModSystem.PushProgressReport(player);
             }
         }
     }

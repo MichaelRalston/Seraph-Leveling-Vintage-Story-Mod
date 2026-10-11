@@ -70,6 +70,10 @@ namespace SeraphLeveling.Data.Attributes
                 {
                     FireUnlockChangedEvent(player, false, true);
                 }
+                else
+                {
+                    SeraphLevelingModSystem.PushProgressReport(player);
+                }
             }
         }
 
@@ -95,7 +99,8 @@ namespace SeraphLeveling.Data.Attributes
             base.ResetProgress(player);
         }
 
-        public override void GetTraitUnlockableCommandLine(IPlayer player, StringBuilder sb) {
+        public override void GetTraitUnlockableCommandLine(IPlayer player, StringBuilder sb)
+        {
             var progress = GetDict(player);
             sb.AppendLine($"{Name}: {progress.CollectedItems.Count}/{RequiredCollectionSize} unique {CollectedItemDescription} ({(progress.IsUnlocked ? "UNLOCKED" : "locked")})");
         }
@@ -104,13 +109,38 @@ namespace SeraphLeveling.Data.Attributes
         {
             var progress = GetDict(player);
             sb.AppendLine($"<strong>{Name}</strong> trait: {progress.CollectedItems.Count} / {RequiredCollectionSize} unique {CollectedItemDescription} ({(progress.IsUnlocked ? "UNLOCKED" : "Locked")})");
+            CollectExtraInfo(player, sb);
+        }
 
+        public virtual void CollectExtraInfo(IPlayer player, StringBuilder sb)
+        {
+            var progress = GetDict(player);
             if (!progress.IsUnlocked && progress.CollectedItems.Count > 0)
             {
                 sb.AppendLine($"Collected:");
-                progress.CollectedItems.Foreach(item => sb.AppendLine($"  * {item}"));
+                progress.CollectedItems.Foreach(item => sb.AppendLine($"  * {SeraphLevelingModSystem.GetToolDisplayName(item)}"));
             }
         }
+        public override Messages.ProgressReportContent CollectReportContent(IPlayer player)
+        {
+            var progress = GetDict(player);
+            var instructionsSb = new StringBuilder();
+            CollectInstructions(player, instructionsSb);
+            var extraInfoSb = new StringBuilder();
+            CollectExtraInfo(player, extraInfoSb);
+            string extraInfoStr = extraInfoSb.ToString();
+            return new Messages.ProgressReportContent()
+            {
+                Name = Name,
+                Percentage = progress.IsUnlocked ? 1 : Math.Min(1.0f, progress.CollectedItems.Count / (float)RequiredCollectionSize),
+                Tooltip = $"{(progress.IsUnlocked ? "UNLOCKED" : $"{progress.CollectedItems.Count} / {RequiredCollectionSize} unique {CollectedItemDescription}")}",
+                PartialCredits = [],
+                ExtraInfo = extraInfoStr,
+                CollapseExtraInfo = !string.IsNullOrEmpty(extraInfoStr),
+                Instructions = instructionsSb.ToString(),
+            };
+        }
+
 
         public override TextCommandResult HandleLevelCommand(TextCommandCallingArgs args, int indexOffset)
         {
@@ -122,7 +152,7 @@ namespace SeraphLeveling.Data.Attributes
 
             var progress = GetDict(player);
 
-            int? newCredits = (int?)args[0+indexOffset];
+            int? newCredits = (int?)args[0 + indexOffset];
 
             // If no value provided, show current level
             if (!newCredits.HasValue)

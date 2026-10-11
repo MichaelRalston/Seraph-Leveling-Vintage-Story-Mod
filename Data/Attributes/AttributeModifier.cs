@@ -32,6 +32,8 @@ namespace SeraphLeveling.Data.Attributes
         /// </summary>
         public abstract void CollectStatus(IPlayer player, StringBuilder sb);
 
+        public abstract Messages.ProgressReportContent CollectReportContent(IPlayer player);
+
         /// <summary>
         /// Get an instructions string for the attribute to return when the player looks at their progress page
         /// </summary>
@@ -41,6 +43,8 @@ namespace SeraphLeveling.Data.Attributes
         /// Determine whether this attribute should be shown in trait text on the character screen
         /// </summary>
         public abstract bool ShouldDisplay(EntityPlayer player, bool hasVanillaTrait = false);
+
+        public abstract bool ShouldSee(EntityPlayer player);
 
         public abstract object GetLocalizedTraitTextParam(EntityPlayer player);
     }
@@ -113,8 +117,11 @@ namespace SeraphLeveling.Data.Attributes
         public required string PersistenceHeader { get; init; }
         public virtual byte PersistenceVersion { get; init; } = 1;
         public abstract void CollectStatus(IPlayer player, StringBuilder sb);
+        public abstract Messages.ProgressReportContent CollectReportContent(IPlayer player);
         public abstract void CollectInstructions(IPlayer player, StringBuilder sb);
         public abstract bool ShouldDisplay(EntityPlayer player, bool hasVanillaTrait);
+
+        public virtual bool ShouldSee(EntityPlayer player) { return true; }
         public abstract object GetLocalizedTraitTextParam(EntityPlayer player);
 
         public virtual void ReadConfigData(Dictionary<string, int> dict)
@@ -221,7 +228,7 @@ namespace SeraphLeveling.Data.Attributes
                     data = serverApi.WorldManager.SaveGame.GetData(SaveKeyUnflattened); // we had a mistake at initial release, and name was mixed. Convert it.
                     if (data != null && data.Length > 0)
                     {
-                        serverApi.WorldManager.SaveGame.StoreData(SaveKeyUnflattened, []);                    
+                        serverApi.WorldManager.SaveGame.StoreData(SaveKeyUnflattened, []);
                         PendingSave = true;
                     }
                 }
@@ -414,6 +421,7 @@ namespace SeraphLeveling.Data.Attributes
         public event ActiveStatusUpdatedDelegate ActiveStatusUpdated;
 
         public bool ShouldDisplay(IPlayer player, bool hasVanillaTrait = false);
+        public bool ShouldSee(EntityPlayer player);
         public bool ShouldUnlock(IPlayer player, bool hasVanillaTrait = false);
         public bool IsInRangeForDisplay(int combinedBonusPercentage);
 
@@ -483,6 +491,8 @@ namespace SeraphLeveling.Data.Attributes
 
             public abstract void CollectRequirementStatus(IPlayer player, StringBuilder sb, ISaveableAttribute exclude = null);
             public abstract bool ShouldDisplay(IPlayer player, bool hasVanillaTrait = false);
+
+            public virtual bool ShouldSee(EntityPlayer player) { return true; }
             public abstract bool ShouldUnlock(IPlayer player, bool hasVanillaTrait = false);
             public abstract bool IsInRangeForDisplay(int combinedBonusPercentage);
 
@@ -632,6 +642,11 @@ namespace SeraphLeveling.Data.Attributes
                     retVal = SeraphLevelingModSystem.PlayerHasTrait(player.Entity, ApplicableTrait);
                 }
                 return retVal;
+            }
+
+            public override bool ShouldSee(EntityPlayer player)
+            {
+                return SeraphLevelingModSystem.PlayerHasTrait(player, ApplicableTrait);
             }
 
             public override bool ShouldUnlock(IPlayer player, bool hasVanillaTrait = false)
