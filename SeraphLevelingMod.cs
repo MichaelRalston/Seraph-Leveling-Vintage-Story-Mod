@@ -7479,6 +7479,21 @@ namespace SeraphLeveling
             }
         }
 
+        public static string GetToolDisplayName(AssetLocation toolCode)
+        {
+            if (toolCode == null)
+            {
+                return "Unknown";
+            }
+
+            Item item = ServerApi.World.GetItem(toolCode);
+            if (item == null)
+            {
+                return toolCode.ToShortString();
+            }
+
+            return new ItemStack(item).GetName();
+        }
     }
 
     /// <summary>

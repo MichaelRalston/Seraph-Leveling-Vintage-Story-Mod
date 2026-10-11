@@ -415,8 +415,8 @@ namespace SeraphLeveling.Data.Attributes
                 sb.AppendLine($"\nPer-{Definition.ToolsDescription} progress:");
                 foreach (var kvp in ToolProgress.OrderBy(p => p.Value.PartialCredit.Sum(t => p.Value.GetLevel(t.Key))))
                 {
-                    // Simplify the display name (remove "game:" prefix if present)
-                    string toolName = kvp.Key.ToShortString();
+                    // Get the display name for the tool
+                    string toolName = SeraphLevelingModSystem.GetToolDisplayName(kvp.Key);
 
                     foreach (var pcKvp in kvp.Value.PartialCredit)
                     {
@@ -437,12 +437,9 @@ namespace SeraphLeveling.Data.Attributes
             {
                 foreach (var pcKvp in lastToolProgress.PartialCredit)
                 {
-                    var e = pcKvp.Key;
-                    var creditData = pcKvp.Value;
-
                     partialCreditsList.Add(new Messages.PartialCredits
                     {
-                        Name = $"{((AssetLocation)LastToolUsed).ToShortString()}",
+                        Name = SeraphLevelingModSystem.GetToolDisplayName(LastToolUsed),
                         Percentage = pcKvp.Value.Amount / pcKvp.Value.IncrementSize,
                         Tooltip = $"{pcKvp.Value.Amount:F2}/{pcKvp.Value.IncrementSize} {Definition.IncrementData[pcKvp.Key].IncrementUnits}"
                     });
@@ -462,7 +459,7 @@ namespace SeraphLeveling.Data.Attributes
                 {
                     partialCreditsList.Add(new Messages.PartialCredits
                     {
-                        Name = $"{toolCode.ToShortString()}",
+                        Name = SeraphLevelingModSystem.GetToolDisplayName(toolCode),
                         Percentage = pcKvp.Value.Amount / pcKvp.Value.IncrementSize,
                         Tooltip = $"{pcKvp.Value.Amount:F2}/{pcKvp.Value.IncrementSize} {Definition.IncrementData[pcKvp.Key].IncrementUnits}"
                     });
@@ -622,10 +619,10 @@ namespace SeraphLeveling.Data.Attributes
                         var pc = after.GetPartialCredit(entry.Item2);
                         int newToolCr = Definition.IncrementData[entry.Item2].IncrementStep > 0 ? (pc.IncrementSize - Definition.IncrementData[entry.Item2].BaseIncrement) / Definition.IncrementStep : 0;
                         int toolLost = oldToolCr - newToolCr;
-                        sb.AppendLine($"    {entry.Item1}: {(int)entry.Item3}/{entry.Item3} \u2192 {after.PartialCredit:F0}/{pc.IncrementSize}{(toolLost > 0 ? $" (-{toolLost} cr)" : "")}");
+                        sb.AppendLine($"    {SeraphLevelingModSystem.GetToolDisplayName(entry.Item1)}: {(int)entry.Item3}/{entry.Item3} \u2192 {after.PartialCredit:F0}/{pc.IncrementSize}{(toolLost > 0 ? $" (-{toolLost} cr)" : "")}");
                     }
                     else
-                        sb.AppendLine($"    {entry.Item1}: {(int)entry.Item3}/{entry.Item3} \u2192 removed (-{oldToolCr} cr)");
+                        sb.AppendLine($"    {SeraphLevelingModSystem.GetToolDisplayName(entry.Item1)}: {(int)entry.Item3}/{entry.Item3} \u2192 removed (-{oldToolCr} cr)");
                 }
                 Definition.PendingSave = true;
                 if (lost > 0) return lost;
