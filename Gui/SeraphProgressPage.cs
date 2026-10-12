@@ -29,7 +29,8 @@ namespace SeraphLeveling.Gui
 
         /// <summary>Last report received over the network channel.</summary>
         public static string LatestReport;
-        static bool isAsking = false;
+        static bool isAskingForHandbook = false;
+        static bool isAskingForCharacter = false;
 
         /// <summary>The report this page last drew, so an unchanged re-sync does not redraw.</summary>
         private string shownReport;
@@ -49,10 +50,18 @@ namespace SeraphLeveling.Gui
         }
 
         /// <summary>Ask the server for the current report. force = send it even if nothing changed.</summary>
-        public static void RequestReport(bool listening)
+        public static void RequestReport(bool? listeningToHandbook = null, bool? listeningToCharacter = null)
         {
-            Instance?.capi?.Logger?.Debug($"[SeraphLeveling] Sending progress report request with listening {listening}");
-            try { Channel?.SendPacket(new ProgressReportRequestMessage { Listening = listening }); }
+            if (listeningToHandbook != null)
+            {
+                isAskingForHandbook = listeningToHandbook.Value;
+            }
+            if (listeningToCharacter != null)
+            {
+                isAskingForCharacter = listeningToCharacter.Value;
+            }
+            Instance?.capi?.Logger?.Debug($"[SeraphLeveling] Sending progress report request with listening {isAskingForHandbook} and {isAskingForCharacter}");
+            try { Channel?.SendPacket(new ProgressReportRequestMessage { ListeningToHandbook = isAskingForHandbook, ListeningToCharacter = isAskingForCharacter }); }
             catch (Exception ex) { Instance?.capi?.Logger?.Debug("[SeraphLeveling] progress report request failed: {0}", ex.Message); }
         }
 
@@ -67,12 +76,9 @@ namespace SeraphLeveling.Gui
         public static void PollIfShowing()
         {
             var page = Instance;
-            if (isAsking != (page != null && page.DialogShowingThis() != null))
+            if (isAskingForHandbook != (page != null && page.DialogShowingThis() != null))
             {
-                Instance?.capi?.Logger?.Debug($"[SeraphLeveling] PollIfShowing when isAsking was {isAsking} says we need to update.");
-
-                isAsking = !isAsking;
-                RequestReport(isAsking);
+                RequestReport(listeningToHandbook: !isAskingForHandbook);
             }
         }
 
@@ -129,7 +135,7 @@ namespace SeraphLeveling.Gui
             var comps = VtmlUtil.Richtextify(capi, CurrentVtml(), CairoFont.WhiteSmallText().WithLineHeightMultiplier(1.2));
             detailViewGui.AddRichtext(comps, textBounds, "richtext");
             // Page just opened (or redrawn): make sure the numbers are current.
-            RequestReport(listening: true);
+            RequestReport(listeningToHandbook: true);
         }
 
         public override PageText GetPageText()

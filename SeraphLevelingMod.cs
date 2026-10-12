@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Collections.Generic;
+using System.Collections;
 using System.Reflection;
 using System.IO;
 using System.Linq;
@@ -557,7 +558,8 @@ namespace SeraphLeveling
                 !traitList.Where(tuple => ModsForTraits.ContainsKey(tuple.Trait.Id)).SelectMany(tuple => ModsForTraits[tuple.Trait.Id]).DistinctBy(m => m.ModId).Any(m => m.IsActive);
         }
 
-        static HashSet<string> progressReportPlayers = [];
+        static HashSet<string> characterProgressReportPlayers = [];
+        static HashSet<string> handbookProgressReportPlayers = [];
 
         public override void StartServerSide(ICoreServerAPI api)
         {
@@ -570,14 +572,17 @@ namespace SeraphLeveling
             // player whose report changed (unlocks, /trait setplayer, resets).
             api.Event.RegisterGameTickListener(dt =>
             {
-                HashSet<string> newProgressReportPlayers = [];
+                HashSet<string> newCharacterProgressReportPlayers = [];
+                HashSet<string> newHandbookProgressReportPlayers = [];
                 foreach (var p in api.World.AllOnlinePlayers)
                     if (p is IServerPlayer sp && sp.Entity != null)
                     {
                         PushProgressReport(sp);
-                        if (progressReportPlayers.Contains(p.PlayerUID)) newProgressReportPlayers.Add(p.PlayerUID);
+                        if (characterProgressReportPlayers.Contains(p.PlayerUID)) newCharacterProgressReportPlayers.Add(p.PlayerUID);
+                        if (handbookProgressReportPlayers.Contains(p.PlayerUID)) newHandbookProgressReportPlayers.Add(p.PlayerUID);
                     }
-                progressReportPlayers = newProgressReportPlayers;
+                characterProgressReportPlayers = newCharacterProgressReportPlayers;
+                handbookProgressReportPlayers = newHandbookProgressReportPlayers;
             }, 15000);
             // api.Event.RegisterGameTickListener(_ => FlushProgressReports(), 100);
 
@@ -588,14 +593,23 @@ namespace SeraphLeveling
                 .RegisterMessageType<ProgressReportRequestMessage>()
                 .SetMessageHandler<ProgressReportRequestMessage>((player, msg) =>
                 {
-                    if (msg.Listening)
+                    if (msg.ListeningToCharacter)
                     {
-                        progressReportPlayers.Add(player.PlayerUID);
+                        characterProgressReportPlayers.Add(player.PlayerUID);
                         PushProgressReport(player);
                     }
                     else
                     {
-                        progressReportPlayers.Remove(player.PlayerUID);
+                        characterProgressReportPlayers.Remove(player.PlayerUID);
+                    }
+                    if (msg.ListeningToHandbook)
+                    {
+                        handbookProgressReportPlayers.Add(player.PlayerUID);
+                        PushProgressReport(player);
+                    }
+                    else
+                    {
+                        handbookProgressReportPlayers.Remove(player.PlayerUID);
                     }
                 });
             ;
@@ -2005,7 +2019,8 @@ namespace SeraphLeveling
             LastSleepBuffApplyTick.TryRemove(playerUid, out _);
             LastSentProgressReport.TryRemove(playerUid, out _);
             LastSentProgressReportTime.TryRemove(playerUid, out _);
-            progressReportPlayers.Remove(playerUid);
+            characterProgressReportPlayers.Remove(playerUid);
+            handbookProgressReportPlayers.Remove(playerUid);
             ProgressReportDirty.TryRemove(playerUid, out _);
             foreach (var key in TrackedItemDurabilities.Keys.Where(k => k.StartsWith(playerUid + "_", StringComparison.Ordinal)).ToList())
                 TrackedItemDurabilities.TryRemove(key, out _);
@@ -2215,7 +2230,7 @@ namespace SeraphLeveling
         // refresh only sends when something changed. In memory on purpose: a
         // saved attribute survived restarts and made the push think the client
         // already had the report when the client had nothing.
-        private static readonly ConcurrentDictionary<string, string> LastSentProgressReport = new();
+        private static readonly ConcurrentDictionary<string, ProgressReportMessage> LastSentProgressReport = new();
         private static readonly ConcurrentDictionary<string, long> LastSentProgressReportTime = new();
 
         // Players whose progress changed since the last push. A 100 ms server tick
@@ -2250,9 +2265,12 @@ namespace SeraphLeveling
             try
             {
                 if (player?.Entity == null) return;
-                if (!force && !progressReportPlayers.Contains(player.PlayerUID)) return;
+                if (!force && !characterProgressReportPlayers.Contains(player.PlayerUID) && !handbookProgressReportPlayers.Contains(player.PlayerUID)) return;
                 string report = BuildProgressReportForPlayer(player);
-                if (!force && LastSentProgressReport.TryGetValue(player.PlayerUID, out string last) && last == report) return;
+                LastSentProgressReport.TryGetValue(player.PlayerUID, out ProgressReportMessage last);
+                if (!force && !characterProgressReportPlayers.Contains(player.PlayerUID) && last != null && last.Report == report) return;
+                ProgressReportContent[] progressReportContent = BuildProgressReportContentForPlayer(player);
+                if (!force && !handbookProgressReportPlayers.Contains(player.PlayerUID) && last != null && progressReportContent.SequenceEqual(last.Content, new ProgressReportComparer())) return;
                 if (!force && LastSentProgressReportTime.TryGetValue(player.PlayerUID, out long lastTime))
                 {
                     if (ServerApi.World.ElapsedMilliseconds < lastTime + 250)
@@ -2262,9 +2280,9 @@ namespace SeraphLeveling
                     }
                 }
                 lastTime = ServerApi.World.ElapsedMilliseconds;
-                ProgressReportContent[] progressReportContent = BuildProgressReportContentForPlayer(player);
-                serverSoundChannel.SendPacket(new ProgressReportMessage { Report = report, Content = progressReportContent }, player);
-                LastSentProgressReport[player.PlayerUID] = report;
+                var msg = new ProgressReportMessage { Report = report, Content = progressReportContent };
+                serverSoundChannel.SendPacket(msg, player);
+                LastSentProgressReport[player.PlayerUID] = msg;
             }
             catch (Exception ex)
             {

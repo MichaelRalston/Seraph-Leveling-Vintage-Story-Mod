@@ -46,7 +46,7 @@ namespace SeraphLeveling.Gui
             if (newState == isListening) return;
             isListening = newState;
             capi.Logger.Debug($"[SeraphLeveling] HandleListeningState went to {isListening}");
-            SeraphProgressPage.RequestReport(listening: isListening);
+            SeraphProgressPage.RequestReport(listeningToCharacter: isListening);
         }
 
         public void OnTick(float dt)

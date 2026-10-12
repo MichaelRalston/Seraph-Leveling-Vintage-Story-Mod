@@ -10,6 +10,8 @@ namespace SeraphLeveling.Messages
     public class ProgressReportRequestMessage
     {
         [ProtoMember(1)]
-        public bool Listening { get; set; }
+        public bool ListeningToCharacter { get; set; }
+        [ProtoMember(2)]
+        public bool ListeningToHandbook { get; set; }
     }
 }

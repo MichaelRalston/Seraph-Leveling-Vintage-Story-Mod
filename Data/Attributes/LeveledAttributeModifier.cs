@@ -253,7 +253,7 @@ namespace SeraphLeveling.Data.Attributes
             return new Messages.ProgressReportContent
             {
                 Name = Name,
-                Percentage = currentCredits/(float)maxCredits,
+                Percentage = maxCredits == 0?1:currentCredits/(float)maxCredits,
                 Tooltip = $"{progress.DisplayCredits}% / {maxCredits}%",
                 PartialCredits = progress.CollectPartialCreditsForReport(),
                 Instructions = Lang.Get(InstructionsKey),

@@ -1,4 +1,5 @@
 using ProtoBuf;
+using System.Collections.Generic;
 
 namespace SeraphLeveling.Messages
 {
@@ -49,8 +50,20 @@ namespace SeraphLeveling.Messages
                 {
                     if (!PartialCredits[i].IsSame(rhs.PartialCredits[i])) return false;
                 }
-            } else if (rhs.PartialCredits != null) return false;
+            }
+            else if (rhs.PartialCredits != null) return false;
             return true;
         }
+    }
+
+    public class ProgressReportComparer : IEqualityComparer<ProgressReportContent>
+    {
+        public bool Equals(ProgressReportContent lhs, ProgressReportContent rhs)
+        {
+            if (ReferenceEquals(lhs, rhs)) return true;
+            if (lhs is null || rhs is null) return false;
+            return lhs.IsSame(rhs);
+        }
+        public int GetHashCode(ProgressReportContent obj) => 0;
     }
 }
