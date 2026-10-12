@@ -261,5 +261,129 @@ namespace SeraphLeveling.Data.CharacterClasses
                 TraitDefinitions.RustTouch,
             ]
         };
+
+        public static readonly CharacterClassDefinition Timberborn = new()
+        {
+            Id = "timberborn",
+            Traits = [
+
+            ]
+        };
+
+        public static readonly CharacterClassDefinition Shadowstrider = new()
+        {
+            Id = "shadowstrider",
+            Traits = []
+        };
+
+        public static readonly CharacterClassDefinition Deepforger = new()
+        {
+            Id = "deepforger",
+            Traits = []
+        };
+
+        public static readonly CharacterClassDefinition Earthshaper = new()
+        {
+            Id = "earthshaper",
+            Traits = []
+        };
+
+        public static readonly CharacterClassDefinition Mason = new()
+        {
+            Id = "mason",
+            Traits = []
+        };
+
+        public static readonly CharacterClassDefinition Threadweaver = new()
+        {
+            Id = "threadweaver",
+            Traits = []
+        };
+
+        public static readonly CharacterClassDefinition Entropic = new()
+        {
+            Id = "entropic",
+            Traits = []
+        };
+
+        public static readonly CharacterClassDefinition Mercenary = new()
+        {
+            Id = "mercenary",
+            Traits = []
+        };
+
+        public static readonly CharacterClassDefinition Wildrunner = new()
+        {
+            Id = "wildrunner",
+            Traits = []
+        };
+
+        public static readonly CharacterClassDefinition Squire = new()
+        {
+            Id = "squire",
+            Traits = []
+        };
+
+        public static readonly CharacterClassDefinition Druid = new()
+        {
+            Id = "druid",
+            Traits = []
+        };
+
+        public static readonly CharacterClassDefinition Handwright = new()
+        {
+            Id = "handwright",
+            Traits = []
+        };
+
+        public static readonly CharacterClassDefinition Innkeeper = new()
+        {
+            Id = "innkeeper",
+            Traits = []
+        };
+
+        public static readonly CharacterClassDefinition Wanderer = new()
+        {
+            Id = "wanderer",
+            Traits = []
+        };
+
+        public static readonly CharacterClassDefinition Carpenter = new()
+        {
+            Id = "carpenter",
+            Traits = []
+        };
+
+        public static readonly CharacterClassDefinition Potter = new()
+        {
+            Id = "potter",
+            Traits = []
+        };
+
+        public static readonly CharacterClassDefinition AldiBlacksmith = new()
+        {
+            Id = "blacksmith",
+            Traits = []
+        };
+
+        public static readonly CharacterClassDefinition Lumberjack = new()
+        {
+            Id = "lumberjack",
+            Traits = []
+        };
+
+        public static readonly CharacterClassDefinition Farmer = new()
+        {
+            Id = "farmer",
+            Traits = []
+        };
+
+        public static readonly CharacterClassDefinition AldiMiner = new()
+        {
+            Id = "miner",
+            Traits = []
+        };
+
+
     }
 }

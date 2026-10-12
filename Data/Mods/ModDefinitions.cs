@@ -16,7 +16,7 @@ namespace SeraphLeveling.Data.Mods
         {
             ModId = "game",
             DisplayName = "Vintage Story",
-            IncompatibleWith = [ new(() => SacredClasses) ],    // Sacred Classes replaces the vanilla set of classes
+            IncompatibleWith = [new(() => SacredClasses)],    // Sacred Classes replaces the vanilla set of classes
             CharacterClasses = [
                 CharacterClassDefinitions.Commoner,
                 CharacterClassDefinitions.Hunter,
@@ -90,7 +90,7 @@ namespace SeraphLeveling.Data.Mods
         public static readonly ModDefinition CombatOverhaul = Register(new()
         {
             ModId = SeraphLevelingModSystem.COMBAT_OVERHAUL_BASE_ID,
-            ModVariants = [ SeraphLevelingModSystem.COMBAT_OVERHAUL_FORK_ID ],
+            ModVariants = [SeraphLevelingModSystem.COMBAT_OVERHAUL_FORK_ID],
             DisplayName = "Combat Overhaul",
             CharacterClasses = [],
         });
@@ -100,6 +100,34 @@ namespace SeraphLeveling.Data.Mods
             ModId = "prosequor",
             DisplayName = "Prosequor",
             CharacterClasses = [],
+        });
+
+        public static readonly ModDefinition Aldis = Register(new()
+        {
+            ModId = "aldiclasses",
+            DisplayName = "Aldi's Classes",
+            CharacterClasses = [
+                CharacterClassDefinitions.Timberborn,
+                CharacterClassDefinitions.Shadowstrider,
+                CharacterClassDefinitions.Deepforger,
+                CharacterClassDefinitions.Earthshaper,
+                CharacterClassDefinitions.Mason,
+                CharacterClassDefinitions.Threadweaver,
+                CharacterClassDefinitions.Entropic,
+                CharacterClassDefinitions.Mercenary,
+                CharacterClassDefinitions.Wildrunner,
+                CharacterClassDefinitions.Squire,
+                CharacterClassDefinitions.Druid,
+                CharacterClassDefinitions.Handwright,
+                CharacterClassDefinitions.Innkeeper,
+                CharacterClassDefinitions.Wanderer,
+                CharacterClassDefinitions.Carpenter,
+                CharacterClassDefinitions.Potter,
+                CharacterClassDefinitions.AldiBlacksmith,
+                CharacterClassDefinitions.Lumberjack,
+                CharacterClassDefinitions.Farmer,
+                CharacterClassDefinitions.AldiMiner,
+            ],
         });
 
         private static ModDefinition Register(ModDefinition def)
@@ -143,7 +171,7 @@ namespace SeraphLeveling.Data.Mods
                     SeraphLevelingModSystem.ServerApi?.Logger?.Notification($"[SeraphLeveling] Mod {mod.DisplayName} is incompatible with mod(s) {incompatibleStr}. Compatibility disabled for {mod.DisplayName}.");
                 });
             }
-            
+
             // Return the final set of mods to use for this run
             return [.. All.Where(mod => mod.IsActive)];
         }
