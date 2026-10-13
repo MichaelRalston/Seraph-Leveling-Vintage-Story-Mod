@@ -3287,14 +3287,10 @@ namespace SeraphLeveling
             string heldCheck = heldItemCode?.Path ?? "";
 
             // Check for arrow projectiles (bows)
-            if (projCheck.StartsWith("arrow-") || projCheck == "arrow" || projCheck.Contains("arrow"))
+            if (projCheck.StartsWith("arrow-", StringComparison.Ordinal) || projCheck == "arrow" || projCheck.Contains("arrow", StringComparison.Ordinal))
             {
-                // Get bow type from held item (if still holding a bow)
                 string bowCode = "unknown-bow";
-                if (heldCheck.StartsWith("bow-") || heldCheck == "bow" ||
-                    heldCheck.StartsWith("longbow") || heldCheck.StartsWith("recurvebow") ||
-                    heldCheck.StartsWith("crudebow") || heldCheck.StartsWith("simplebow") ||
-                    heldCheck.Contains("bow"))
+                if (tool == EnumTool.Bow)
                 {
                     bowCode = heldCheck;
                 }
@@ -3302,12 +3298,12 @@ namespace SeraphLeveling
             }
 
             // Check for crossbow bolts/quarrels
-            if (projCheck.StartsWith("bolt-") || projCheck == "bolt" || projCheck.Contains("bolt") ||
-                projCheck.StartsWith("quarrel-") || projCheck == "quarrel" || projCheck.Contains("quarrel"))
+            if (projCheck.StartsWith("bolt-", StringComparison.Ordinal) || projCheck == "bolt" || projCheck.Contains("bolt", StringComparison.Ordinal) ||
+                projCheck.StartsWith("quarrel-", StringComparison.Ordinal) || projCheck == "quarrel" || projCheck.Contains("quarrel", StringComparison.Ordinal))
             {
                 // Get crossbow type from held item
                 string crossbowCode = "unknown-crossbow";
-                if (heldCheck.StartsWith("crossbow") || heldCheck.Contains("crossbow"))
+                if (tool == EnumTool.Crossbow)
                 {
                     crossbowCode = heldCheck;
                 }
@@ -3315,15 +3311,13 @@ namespace SeraphLeveling
             }
 
             // Check for firearm projectiles (bullets, musket balls, etc.)
-            if (projCheck.StartsWith("bullet-") || projCheck == "bullet" || projCheck.Contains("bullet") ||
-                projCheck.StartsWith("musketball") || projCheck.Contains("musketball") ||
-                projCheck.StartsWith("shot-") || projCheck.Contains("shot"))
+            if (projCheck.StartsWith("bullet-", StringComparison.Ordinal) || projCheck == "bullet" || projCheck.Contains("bullet", StringComparison.Ordinal) ||
+                projCheck.StartsWith("musketball", StringComparison.Ordinal) || projCheck.Contains("musketball", StringComparison.Ordinal) ||
+                projCheck.StartsWith("shot-", StringComparison.Ordinal) || projCheck.Contains("shot", StringComparison.Ordinal))
             {
                 // Get firearm type from held item
                 string firearmCode = "unknown-firearm";
-                if (heldCheck.StartsWith("musket") || heldCheck.StartsWith("pistol") ||
-                    heldCheck.StartsWith("rifle") || heldCheck.StartsWith("blunderbuss") ||
-                    heldCheck.Contains("gun") || heldCheck.Contains("firearm"))
+                if (tool == EnumTool.Firearm)
                 {
                     firearmCode = heldCheck;
                 }
@@ -3331,12 +3325,12 @@ namespace SeraphLeveling
             }
 
             // Check for sling stones (slung from sling — entity is thrownstone-{rock})
-            if (projCheck.StartsWith("stone-") || projCheck == "stone" || projCheck.StartsWith("thrownstone") ||
-                projCheck.Contains("slingstone") || projCheck.Contains("sling-stone"))
+            if (projCheck.StartsWith("stone-", StringComparison.Ordinal) || projCheck == "stone" || projCheck.StartsWith("thrownstone", StringComparison.Ordinal) ||
+                projCheck.Contains("slingstone", StringComparison.Ordinal) || projCheck.Contains("sling-stone", StringComparison.Ordinal))
             {
                 // Check if holding a sling
                 string slingCode = "thrown";
-                if (heldCheck.StartsWith("sling") || heldCheck.Contains("sling"))
+                if (tool == EnumTool.Sling)
                 {
                     slingCode = heldCheck;
                 }
@@ -3354,7 +3348,7 @@ namespace SeraphLeveling
             // stones, bones, etc. as a single shared `game:thrownitem` projectile entity — the
             // actual item is in ProjectileStack. Peek there to figure out what was thrown so
             // Improviser etc. can recognize it as a stone.
-            if (projCheck == "thrownitem" || projCheck.StartsWith("thrownitem-") || projCheck.StartsWith("thrownitem+"))
+            if (projCheck == "thrownitem" || projCheck.StartsWith("thrownitem-", StringComparison.Ordinal) || projCheck.StartsWith("thrownitem+", StringComparison.Ordinal))
             {
                 var stackCode = (projectile as IProjectile)?.ProjectileStack?.Collectible?.Code;
                 string stackCheck = stackCode?.Path ?? "";
@@ -3366,20 +3360,18 @@ namespace SeraphLeveling
             }
 
             // Check for spear/javelin throws (thrown spears deal ranged damage)
-            if (projCheck.StartsWith("spear-") || projCheck.StartsWith("thrownspear") ||
-                projCheck.StartsWith("javelin-") || projCheck.Contains("javelin") ||
-                projCheck.StartsWith("pilum-") || projCheck.Contains("throwingspear"))
+            if (projTool == EnumTool.Spear)
             {
                 return ($"thrown+{projCheck}", projTool);
             }
 
             // Check for Atlatl darts (Return of the Atlatl mod)
             // Projectile entities are "atlatl:apdart-{material}", projCheck will be "apdart-{material}"
-            if (projCheck.StartsWith("apdart") || projectileCode.ToString().Contains("atlatl:apdart"))
+            if (projCheck.StartsWith("apdart", StringComparison.Ordinal) || projectileCode.ToString().Contains("atlatl:apdart", StringComparison.Ordinal))
             {
                 string launcherCode = "unknown-atlatl";
-                if (heldCheck.StartsWith("aplauncher") || heldCheck.Contains("aplauncher") ||
-                    heldItemCode.ToString().Contains("atlatl:aplauncher"))
+                if (heldCheck.StartsWith("aplauncher", StringComparison.Ordinal) || heldCheck.Contains("aplauncher", StringComparison.Ordinal) ||
+                    heldItemCode.ToString().Contains("atlatl:aplauncher", StringComparison.Ordinal))
                 {
                     launcherCode = heldCheck;
                 }
@@ -5852,10 +5844,11 @@ namespace SeraphLeveling
                 if (condition < 0)
                 {
                     return;
-                } else
+                }
+                else
                 {
                     maxDurability = 100;
-                    currentDurability = (int)condition*100;
+                    currentDurability = (int)condition * 100;
                 }
             }
 
@@ -6232,7 +6225,7 @@ namespace SeraphLeveling
 
             // Only charcoal piles from charcoal pits count
             const string PREFIX = "charcoalpile-";
-            return blockPath.StartsWith(PREFIX);
+            return blockPath.StartsWith(PREFIX, StringComparison.Ordinal);
         }
 
         // =========================================================================
