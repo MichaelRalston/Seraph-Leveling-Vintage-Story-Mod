@@ -1797,9 +1797,9 @@ namespace SeraphLeveling
                         AttributeModifierDefinitions.ArmorDurability.GetForPlayer(playerUid).ApplyFirstTimeBonus(player, itemCode, GetFirstEquipBonus(GetArmorType(itemCode)));
                         AttributeModifierDefinitions.ArmorWalkSpeed.GetForPlayer(playerUid).ApplyFirstTimeBonus(player, itemCode, GetFirstEquipBonus(GetArmorType(itemCode)));
                     }
-                    AttributeModifierDefinitions.ArmorWalkSpeed.GetForPlayer(playerUid).DoEvent(player, itemCode, 1f);
-                    AttributeModifierDefinitions.ArmorHealing.GetForPlayer(playerUid).DoEvent(player, itemCode, 1f);
-                    AttributeModifierDefinitions.ArmorHungerRate.GetForPlayer(playerUid).DoEvent(player, itemCode, 1f);
+                    AttributeModifierDefinitions.ArmorWalkSpeed.GetForPlayer(playerUid).DoEvent(player, itemCode, dt);
+                    AttributeModifierDefinitions.ArmorHealing.GetForPlayer(playerUid).DoEvent(player, itemCode, dt);
+                    AttributeModifierDefinitions.ArmorHungerRate.GetForPlayer(playerUid).DoEvent(player, itemCode, dt);
                 }
                 // Update the equipped armor tracking
                 playerEquippedArmor[playerUid] = currentArmor;
