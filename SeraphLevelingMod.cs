@@ -1912,7 +1912,8 @@ namespace SeraphLeveling
                 float distance = (float)Math.Sqrt(dx * dx + dz * dz);
 
                 // Update last position (no allocation - struct assignment)
-                lastPlayerPositions[playerUid] = new Position2D(currentX, currentZ);
+                lastPos.X = currentX;
+                lastPos.Z = currentZ;
 
                 // Skip if no movement or teleportation (too far)
                 if (distance < 0.01f || distance > MAX_DISTANCE_PER_TICK) continue;
@@ -2184,7 +2185,6 @@ namespace SeraphLeveling
                 ib.SlotModified += (slot) => { OnClothingModified(byPlayer, invKey, slot, ib[slot]); };
             }
         }
-
 
         public static ProgressReportContent[] BuildProgressReportContentForPlayer(IServerPlayer player)
         {
@@ -6146,7 +6146,8 @@ namespace SeraphLeveling
                 float distance = (float)Math.Sqrt(dx * dx + dz * dz);
 
                 // Update last position (no allocation - struct assignment)
-                lastSneakingPositions[playerUid] = new Position2D(currentX, currentZ);
+                lastPos.X = currentX;
+                lastPos.Z = currentZ;
 
                 // Skip if no movement or teleportation (too far)
                 if (distance < 0.01f || distance > MAX_DISTANCE_PER_TICK) continue;

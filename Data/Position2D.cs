@@ -5,7 +5,7 @@ namespace SeraphLeveling.Data
     /// Simple struct for tracking 2D positions without allocating Vec3d objects.
     /// Used in walking/sneaking tick handlers to avoid GC pressure.
     /// </summary>
-    public struct Position2D
+    public sealed class Position2D
     {
         public double X;
         public double Z;
