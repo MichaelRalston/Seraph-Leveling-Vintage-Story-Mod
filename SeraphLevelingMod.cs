@@ -1131,8 +1131,7 @@ namespace SeraphLeveling
             // Try exact match first (case-insensitive)
             foreach (var onlinePlayer in ServerApi.World.AllOnlinePlayers)
             {
-                var sp = onlinePlayer as IServerPlayer;
-                if (sp != null && string.Equals(sp.PlayerName, playerName, StringComparison.OrdinalIgnoreCase))
+                if (onlinePlayer is IServerPlayer sp && string.Equals(sp.PlayerName, playerName, StringComparison.OrdinalIgnoreCase))
                     return sp;
             }
 
@@ -1141,8 +1140,7 @@ namespace SeraphLeveling
             int matches = 0;
             foreach (var onlinePlayer in ServerApi.World.AllOnlinePlayers)
             {
-                var sp = onlinePlayer as IServerPlayer;
-                if (sp != null && sp.PlayerName.IndexOf(playerName, StringComparison.OrdinalIgnoreCase) >= 0)
+                if (onlinePlayer is IServerPlayer sp && sp.PlayerName.IndexOf(playerName, StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     match = sp;
                     matches++;
