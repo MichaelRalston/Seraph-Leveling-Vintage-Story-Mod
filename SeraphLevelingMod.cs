@@ -966,12 +966,6 @@ namespace SeraphLeveling
             // Register game tick listener for armor time tracking (every 1000ms / 1 second)
             api.Event.RegisterGameTickListener(OnArmorTick, 1000);
 
-            // Register game tick listener for clothing tracking (every 1000ms / 1 second)
-            api.Event.RegisterGameTickListener(OnClothingTick, 1000);
-
-            // Register game tick listener for Mender repair tracking (every 500ms for responsive detection)
-            api.Event.RegisterGameTickListener(OnMenderRepairTick, 500);
-
             // Register game tick listener for sneaking distance tracking (every 500ms for Furtive)
             api.Event.RegisterGameTickListener(OnSneakingTick, 500);
 
@@ -2176,6 +2170,13 @@ namespace SeraphLeveling
             }
 
             // Initialize equipped armor tracking for this player
+            var characterInventory = byPlayer.InventoryManager.GetOwnInventory(GlobalConstants.characterInvClassName);
+            if (characterInventory is InventoryBase ib)
+            {
+                ib.SlotModified += (slot) => { OnClothingModified(byPlayer, ib[slot]); };
+            }
+            InitializeMenderRepairTracking(byPlayer);
+            InitializeClothingTracking(byPlayer);
             InitializePlayerArmorTracking(byPlayer);
         }
 
@@ -5956,31 +5957,81 @@ namespace SeraphLeveling
         /// <summary>
         /// Tick handler for clothing tracking.
         /// </summary>
-        private void OnClothingTick(float dt)
+        private void InitializeClothingTracking(IServerPlayer player)
         {
             if (ServerApi == null) return;
 
             // Skip clothier progression if disabled
             if (IsAttributeModifierDisabled(AttributeModifierDefinitions.Clothier)) return;
+            if (player?.Entity == null) return;
+            if (!player.Entity.Alive) return;
 
-            foreach (IServerPlayer player in ServerApi.World.AllOnlinePlayers.Cast<IServerPlayer>())
+            // Skip if already unlocked
+            if (AttributeModifierDefinitions.Clothier.IsUnlockedForPlayer(player)) return;
+
+            // Get the player's currently equipped clothing using character inventory
+            var characterInventory = player.InventoryManager?.GetOwnInventory(GlobalConstants.characterInvClassName);
+            if (characterInventory != null)
             {
-                if (player?.Entity == null) continue;
-                if (!player.Entity.Alive) continue;
+                characterInventory
+                    .Where(slot => slot?.Itemstack?.Collectible != null)
+                    .Select(slot => slot.Itemstack.Collectible.Code)
+                    .Foreach(itemCode => AttributeModifierDefinitions.Clothier.AddCollectedItem(player, itemCode));
+            }
+        }
 
-                // Skip if already unlocked
-                if (AttributeModifierDefinitions.Clothier.IsUnlockedForPlayer(player)) continue;
-
-                // Get the player's currently equipped clothing using character inventory
-                var characterInventory = player.InventoryManager?.GetOwnInventory(GlobalConstants.characterInvClassName);
-                if (characterInventory != null)
+        private void OnClothingModified(IServerPlayer player, ItemSlot slot)
+        {
+            var itemCode = slot?.Itemstack?.Collectible?.Code;
+            if (itemCode != null)
+            {
+                if (!AttributeModifierDefinitions.Clothier.IsUnlockedForPlayer(player))
                 {
-                    characterInventory
-                        .Where(slot => slot?.Itemstack?.Collectible != null)
-                        .Select(slot => slot.Itemstack.Collectible.Code)
-                        .Foreach(itemCode => AttributeModifierDefinitions.Clothier.AddCollectedItem(player, itemCode));
+                    AttributeModifierDefinitions.Clothier.AddCollectedItem(player, itemCode);
+                }
+                ProcessMenderEvent(player, slot);
+            }
+        }
+
+        private void ProcessMenderEvent(IServerPlayer player, ItemSlot bSlot)
+        {
+            // Only track clothing and armor
+            if (bSlot is not ItemSlotCharacter slot) return;
+            var itemCode = slot.Itemstack.Collectible.Code;
+            if (!IsClothingItem(itemCode) && !IsArmorItem(itemCode)) return;
+
+            // Get current durability
+            int currentDurability = slot.Itemstack.Collectible.GetRemainingDurability(slot.Itemstack);
+            int maxDurability = slot.Itemstack.Collectible.GetMaxDurability(slot.Itemstack);
+
+            // Skip items without durability
+            if (maxDurability <= 0) return;
+
+            // Create a tracking key for this item in this slot
+            string trackingKey = $"{player.PlayerUID}_{slot.Type}_{itemCode}";
+
+            // Check if durability increased (repair happened)
+            if (TrackedItemDurabilities.TryGetValue(trackingKey, out int previousDurability))
+            {
+                if (currentDurability > previousDurability)
+                {
+                    // Durability increased - a repair happened!
+                    int durabilityRestored = currentDurability - previousDurability;
+                    int repairPercent = (durabilityRestored * 100) / maxDurability;
+
+                    // Only credit significant repairs (at least 5% durability restored)
+                    // This filters out minor fluctuations and avoids double-counting with method 1
+                    // Use a higher threshold since method 1 should catch most sewing kit repairs
+                    if (repairPercent >= 10)
+                    {
+                        ServerApi.Logger.Debug($"[SeraphLeveling] Player {player.PlayerName} repaired {itemCode} (+{repairPercent}% durability) via durability tracking");
+                        ProcessMenderRepair(player);
+                    }
                 }
             }
+
+            // Update tracked durability
+            TrackedItemDurabilities[trackingKey] = currentDurability;
         }
 
         /// <summary>
@@ -5998,68 +6049,29 @@ namespace SeraphLeveling
         /// 1. Tracks sewing kit consumption from mouse cursor (most reliable)
         /// 2. Tracks durability increases on wearable items (backup method)
         /// </summary>
-        private void OnMenderRepairTick(float dt)
+        private void InitializeMenderRepairTracking(IServerPlayer player)
         {
-            if (ServerApi == null) return;
+            if (player?.Entity == null) return;
+            if (!player.Entity.Alive) return;
 
-            foreach (IServerPlayer player in ServerApi.World.AllOnlinePlayers)
+            string playerUid = player.PlayerUID;
+
+            // =============================================
+            // Track durability increases on wearable items (grid repair backup)
+            // =============================================
+            var characterInventory = player.InventoryManager?.GetOwnInventory(GlobalConstants.characterInvClassName);
+            if (characterInventory == null) return;
+
+            int slotIndex = 0;
+            foreach (var slot in characterInventory)
             {
-                if (player?.Entity == null) continue;
-                if (!player.Entity.Alive) continue;
+                slotIndex++;
+                if (slot?.Itemstack?.Collectible == null) continue;
 
-                string playerUid = player.PlayerUID;
+                var itemCode = slot.Itemstack.Collectible.Code;
+                if (itemCode == null) continue;
 
-                // =============================================
-                // Track durability increases on wearable items (grid repair backup)
-                // =============================================
-                var characterInventory = player.InventoryManager?.GetOwnInventory(GlobalConstants.characterInvClassName);
-                if (characterInventory == null) continue;
-
-                int slotIndex = 0;
-                foreach (var slot in characterInventory)
-                {
-                    slotIndex++;
-                    if (slot?.Itemstack?.Collectible == null) continue;
-
-                    var itemCode = slot.Itemstack.Collectible.Code;
-                    if (itemCode == null) continue;
-
-                    // Only track clothing and armor
-                    if (!IsClothingItem(itemCode) && !IsArmorItem(itemCode)) continue;
-
-                    // Get current durability
-                    int currentDurability = slot.Itemstack.Collectible.GetRemainingDurability(slot.Itemstack);
-                    int maxDurability = slot.Itemstack.Collectible.GetMaxDurability(slot.Itemstack);
-
-                    // Skip items without durability
-                    if (maxDurability <= 0) continue;
-
-                    // Create a tracking key for this item in this slot
-                    string trackingKey = $"{playerUid}_{slotIndex}_{itemCode}";
-
-                    // Check if durability increased (repair happened)
-                    if (TrackedItemDurabilities.TryGetValue(trackingKey, out int previousDurability))
-                    {
-                        if (currentDurability > previousDurability)
-                        {
-                            // Durability increased - a repair happened!
-                            int durabilityRestored = currentDurability - previousDurability;
-                            int repairPercent = (durabilityRestored * 100) / maxDurability;
-
-                            // Only credit significant repairs (at least 5% durability restored)
-                            // This filters out minor fluctuations and avoids double-counting with method 1
-                            // Use a higher threshold since method 1 should catch most sewing kit repairs
-                            if (repairPercent >= 10)
-                            {
-                                ServerApi.Logger.Debug($"[SeraphLeveling] Player {player.PlayerName} repaired {itemCode} (+{repairPercent}% durability) via durability tracking");
-                                ProcessMenderRepair(player);
-                            }
-                        }
-                    }
-
-                    // Update tracked durability
-                    TrackedItemDurabilities[trackingKey] = currentDurability;
-                }
+                ProcessMenderEvent(player, slot);
             }
         }
 

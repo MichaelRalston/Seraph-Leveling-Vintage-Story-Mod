@@ -53,9 +53,11 @@ namespace SeraphLeveling.Data.Attributes
         public virtual void AddCollectedItem(IServerPlayer player, AssetLocation toAdd)
         {
             // Added item is invalid - abort
-            if (toAdd == null || !toAdd.Valid || !IsItemValid(toAdd)) return;
+            if (toAdd == null || !toAdd.Valid) return;
 
             var progress = GetDict(player);
+            if (progress.CollectedItems.Contains(toAdd)) return;
+            if (!IsItemValid(toAdd)) return;
 
             if (progress.CollectedItems.Add(toAdd))
             {
