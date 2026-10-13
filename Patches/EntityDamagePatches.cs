@@ -81,11 +81,9 @@ namespace SeraphLeveling.Patches
                 SeraphLevelingModSystem.ServerApi?.Logger?.Debug($"[SeraphLeveling] Melee hit with held item: '{itemCode}'");
             }
 
-            string weaponType = SeraphLevelingModSystem.GetWeaponTypeFromCode(itemCode);
-
-            if (weaponType != null)
+            if (heldItem.AttackPower > 0.5f)
             {
-                SeraphLevelingModSystem.ProcessDamage(attackerPlayer, __instance, false, heldItem.Tool, weaponType, damage);
+                SeraphLevelingModSystem.ProcessDamage(attackerPlayer, __instance, false, heldItem.Tool, itemCode, damage);
             }
 
             // Combat Overhaul: Also track CO melee proficiency if enabled

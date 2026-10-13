@@ -255,54 +255,6 @@ namespace SeraphLeveling.Tests
             // MELEE-005: Max credits for null entity
             int maxCredits = SeraphLevelingModSystem.GetMaxMeleeCredits(null);
             AssertEqual("MELEE-005", "Max melee credits (null entity)", SeraphLevelingModSystem.MaxMeleeDamagePercent, maxCredits);
-
-            // MELEE-006: Weapon detection - sword-copper
-            string swordResult = SeraphLevelingModSystem.GetWeaponTypeFromCode("game:sword-copper");
-            AssertTrue("MELEE-006", "Sword detected as valid melee weapon", swordResult != null, "not null", swordResult ?? "null");
-
-            // MELEE-007: Weapon detection - falx-copper
-            string falxResult = SeraphLevelingModSystem.GetWeaponTypeFromCode("game:falx-copper");
-            AssertTrue("MELEE-007", "Falx detected as valid melee weapon", falxResult != null, "not null", falxResult ?? "null");
-
-            // MELEE-008: Weapon detection - spear-copper
-            string spearResult = SeraphLevelingModSystem.GetWeaponTypeFromCode("game:spear-copper");
-            AssertTrue("MELEE-008", "Spear detected as valid melee weapon", spearResult != null, "not null", spearResult ?? "null");
-
-            // MELEE-009: Weapon detection - blade variant
-            string bladeResult = SeraphLevelingModSystem.GetWeaponTypeFromCode("blade-copper");
-            AssertTrue("MELEE-009", "Blade detected as valid melee weapon", bladeResult != null, "not null", bladeResult ?? "null");
-
-            // MELEE-010: Weapon detection - longsword variant
-            string longswordResult = SeraphLevelingModSystem.GetWeaponTypeFromCode("longsword-iron");
-            AssertTrue("MELEE-010", "Longsword detected as valid melee weapon", longswordResult != null, "not null", longswordResult ?? "null");
-
-            // MELEE-011: Weapon detection - shortsword variant
-            string shortswordResult = SeraphLevelingModSystem.GetWeaponTypeFromCode("shortsword-iron");
-            AssertTrue("MELEE-011", "Shortsword detected as valid melee weapon", shortswordResult != null, "not null", shortswordResult ?? "null");
-
-            // MELEE-012: Invalid weapon - knife
-            string knifeResult = SeraphLevelingModSystem.GetWeaponTypeFromCode("knife-copper");
-            AssertTrue("MELEE-012", "Knife NOT detected as melee weapon", knifeResult == null, "null", knifeResult ?? "null");
-
-            // MELEE-013: Invalid weapon - axe
-            string axeResult = SeraphLevelingModSystem.GetWeaponTypeFromCode("axe-copper");
-            AssertTrue("MELEE-013", "Axe NOT detected as melee weapon", axeResult == null, "null", axeResult ?? "null");
-
-            // MELEE-014: Invalid weapon - bow
-            string bowResult = SeraphLevelingModSystem.GetWeaponTypeFromCode("bow-long");
-            AssertTrue("MELEE-014", "Bow NOT detected as melee weapon", bowResult == null, "null", bowResult ?? "null");
-
-            // MELEE-015: Null input handling
-            string nullResult = SeraphLevelingModSystem.GetWeaponTypeFromCode(null);
-            AssertTrue("MELEE-015", "Null input returns null", nullResult == null, "null", nullResult ?? "null");
-
-            // MELEE-016: Empty input handling
-            string emptyResult = SeraphLevelingModSystem.GetWeaponTypeFromCode("");
-            AssertTrue("MELEE-016", "Empty input returns null", emptyResult == null, "null", emptyResult ?? "null");
-
-            // MELEE-017: Full code preserved
-            string fullCode = SeraphLevelingModSystem.GetWeaponTypeFromCode("game:sword-copper");
-            AssertEqual("MELEE-017", "Full item code preserved", "game:sword-copper", fullCode);
         }
 
         // =========================================================================
