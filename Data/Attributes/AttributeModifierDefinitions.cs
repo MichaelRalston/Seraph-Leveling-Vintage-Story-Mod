@@ -571,6 +571,16 @@ namespace SeraphLeveling.Data.Attributes
             Trait = new(() => Traits.TraitDefinitions.Hardy),
         };
 
+        public static readonly MaxHealthUnlockedAttributeModifierDefinition ToughHealth = new()
+        {
+            Id = "toughhealth",
+            SkillKey = "toughhealth",
+            PersistenceHeader = "TGH",
+            Name = "Tough Health",
+            ModifierAmount = 2,
+            Trait = new(() => Traits.TraitDefinitions.Tough),
+        };
+
         public static readonly MaxHealthUnlockedAttributeModifierDefinition BulwarkHealth = new()
         {
             Id = "bulwarkhealth",

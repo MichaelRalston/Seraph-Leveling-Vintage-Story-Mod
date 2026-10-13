@@ -712,6 +712,34 @@ namespace SeraphLeveling.Data.Traits
             ]
         };
 
+        public static readonly TraitDefinition MountainEater = new()
+        {
+            Id = "mountaineater",
+            Attributes = [
+                Bonus(OreDropRate, 50),
+                Bonus(MiningSpeed, 100)
+            ]
+        };
 
+        public static readonly TraitDefinition Myopic = new()
+        {
+            Id = "myopic",
+            Attributes = [
+                BasicPenalty(RangedDamage, 20),
+                BasicPenalty(RangedAccuracy, 30),
+                BasicPenalty(RangedDistance, 20)
+            ]
+        };
+
+        public static readonly TraitDefinition Tough = new()
+        {
+            Id = "tough",
+            Attributes = [
+                Bonus(MeleeDamage, 15),
+                Unlock(ToughHealth, [
+                    new LeveledAttributeMinimumRequirement { Attribute = MeleeDamage, ThresholdPercentage = 15 },
+                ]),
+            ]
+        };
     }
 }

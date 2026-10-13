@@ -381,7 +381,13 @@ namespace SeraphLeveling.Data.CharacterClasses
         public static readonly CharacterClassDefinition AldiMiner = new()
         {
             Id = "miner",
-            Traits = []
+            Traits = [
+                TraitDefinitions.MountainEater,
+                // TraitDefinitions.Prospector, -- NOT YET IMPLEMENTED.
+                TraitDefinitions.Tough,
+                TraitDefinitions.Myopic,
+                TraitDefinitions.Heavyhanded
+            ]
         };
 
 
