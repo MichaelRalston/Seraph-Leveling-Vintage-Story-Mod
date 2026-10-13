@@ -78,7 +78,7 @@ namespace SeraphLeveling.Patches
 
                 // Check if this is a poultice or bandage
                 var itemCode = __instance.Code;
-                if (itemCode == null || (!itemCode.Path.StartsWith("poultice-") && !itemCode.Path.StartsWith("bandage-"))) return;
+                if (itemCode == null || (!itemCode.Path.StartsWith("poultice-", StringComparison.Ordinal) && !itemCode.Path.StartsWith("bandage-", StringComparison.Ordinal))) return;
 
                 // Get the player
                 if (byEntity is not EntityPlayer playerEntity) return;

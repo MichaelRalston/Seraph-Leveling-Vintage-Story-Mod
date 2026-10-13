@@ -463,7 +463,7 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "CLT",
             Name = "Clothier",
             RequiredCollectionSize = 20,
-            CollectedItemDescription = "clothes worn",
+            CollectedItemDescription = "clothes acquired",
             CollectedItemCountKey = "sitClothierCount",
             TokenAllowList = ["clothes-", "shirt-", "trousers-", "dress-", "hat-", "cape-", "cloak-", "jacket-", "vest-", "skirt-", "gloves-", "boots-", "shoes-", "headband-", "mask-", "scarf-"],
             Trait = new(() => Traits.TraitDefinitions.Clothier),

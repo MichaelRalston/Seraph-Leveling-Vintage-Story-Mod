@@ -78,17 +78,17 @@ namespace SeraphLeveling.Data.Attributes
         public override void GetTraitUnlockableCommandLine(IPlayer player, StringBuilder sb)
         {
             var progress = GetDict(player);
-            sb.AppendLine($"{Name}: {progress.TotalCredits}/{GlobalMaxCredits} {CreditDescription} ({(progress.IsUnlocked ? "UNLOCKED" : "locked")})");
+            sb.AppendLine($"{Name}: {progress.GetDisplayCredits()}/{GlobalMaxCredits} {CreditDescription} ({(progress.IsUnlocked ? "UNLOCKED" : "locked")})");
         }
         public override void CollectStatus(IPlayer player, StringBuilder sb)
         {
             base.CollectStatus(player, sb);
 
             var progress = GetDict(player);
-            sb.AppendLine($"{Name}: {progress.TotalCredits}/{GlobalMaxCredits} {CreditDescription} ({(progress.IsUnlocked ? "UNLOCKED" : "locked")})");
+            sb.AppendLine($"{Name}: {progress.GetDisplayCredits()}/{GlobalMaxCredits} {CreditDescription} ({(progress.IsUnlocked ? "UNLOCKED" : "locked")})");
             if (!progress.IsUnlocked)
             {
-                int remaining = (int)(GlobalMaxCredits - progress.TotalCredits);
+                int remaining = (int)(GlobalMaxCredits - progress.GetDisplayCredits());
                 sb.AppendLine($"{Verb} {remaining} more {CreditDescription} to unlock!");
             }
 
@@ -102,11 +102,11 @@ namespace SeraphLeveling.Data.Attributes
             return new Messages.ProgressReportContent()
             {
                 Name = Name,
-                Percentage = progress.TotalCredits / GlobalMaxCredits,
-                Tooltip = $"{progress.TotalCredits}/{GlobalMaxCredits} {CreditDescription}",
+                Percentage = progress.GetDisplayCredits() / GlobalMaxCredits,
+                Tooltip = $"{progress.GetDisplayCredits()}/{GlobalMaxCredits} {CreditDescription}",
                 PartialCredits = [],
                 Instructions = instructionsSb.ToString(),
-                ExtraInfo = progress.IsUnlocked ? "UNLOCKED" : $"{Verb} {GlobalMaxCredits - progress.TotalCredits:F0} more {CreditDescription} to unlock!"
+                ExtraInfo = progress.IsUnlocked ? "UNLOCKED" : $"{Verb} {GlobalMaxCredits - progress.GetDisplayCredits():F0} more {CreditDescription} to unlock!"
             };
         }
 
@@ -115,6 +115,10 @@ namespace SeraphLeveling.Data.Attributes
     public class ScoredUnlockedAttributeModifierProgressData<D, PD>(D definition) : UnlockedAttributeModifierProgressData<D, PD>(definition) where PD : ScoredUnlockedAttributeModifierProgressData<D, PD> where D : ScoredUnlockedAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
     {
         public float TotalCredits { get; set; } = 0;
+        public float GetDisplayCredits()
+        {
+            return Math.Min(TotalCredits, Definition.GlobalMaxCredits);
+        }
 
         public override void ReadVersion(byte version, BinaryReader reader)
         {

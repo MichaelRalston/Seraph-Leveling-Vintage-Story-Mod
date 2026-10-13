@@ -8,13 +8,170 @@ using Vintagestory.API.Common;
 using System.Reflection;
 using Vintagestory.API.Datastructures;
 using HarmonyLib;
+using Vintagestory.GameContent;
 
 namespace SeraphLeveling.Gui
 {
+    public class SeraphCharacterTabRow(ICoreClientAPI capi, SeraphCharacterTabComponent parent, ElementBounds bounds, ProgressReportContent data, string composerUniqueKey) : GuiElement(capi, bounds)
+    {
+        readonly SeraphCharacterTabComponent parent = parent;
+        bool isExpanded = false;
+        ProgressReportContent data = data;
+        private GuiComposer composer;
+        private double offset = 0;
+
+        private readonly string composerUniqueKey = composerUniqueKey;
+
+        public double Process(ProgressReportContent data)
+        {
+            if (data.IsSame(this.data))
+            {
+                return offset;
+            }
+            this.data = data;
+            return RenderData(data);
+        }
+        public double RenderData(ProgressReportContent data)
+        {
+            if (composer != null)
+            {
+                composer.Clear(Bounds);
+                composer.Dispose();
+            }
+            composer = api.Gui.CreateCompo(composerUniqueKey, Bounds);
+            var containerBounds = Bounds.ForkContainingChild(0, 0, 0, 0);
+            composer.AddContainer(containerBounds, composerUniqueKey);
+            var scrollArea = composer.GetContainer(composerUniqueKey);
+            offset = 0;
+            ElementBounds titleBounds = ElementBounds.Fixed(3, offset + 4, 120, 22).WithParent(containerBounds);
+            ElementBounds titleMeasureBounds = ElementBounds.Fixed(3, offset + 4, 112, 22).WithParent(containerBounds);
+            titleMeasureBounds.CalcWorldBounds();
+            CairoFont rowTitleFont = parent.baseFont.Clone();
+            rowTitleFont.UnscaledFontsize = 16;
+            string plainTitleText = SeraphCharacterTabComponent.StripTags().Replace(data.Name, "");
+            rowTitleFont.AutoFontSize(plainTitleText, titleMeasureBounds);
+            GuiElementRichtext titleText = new(api, VtmlUtil.Richtextify(api, data.Name, rowTitleFont), titleBounds);
+            scrollArea.Add(titleText);
+
+            var barBounds = ElementBounds.Fixed(125, 0, 225, 22).WithParent(containerBounds);
+            GuiElementStatbar statBar = new(api, barBounds, GuiStyle.XPBarColor, false, false);
+            statBar.SetValues((float)Math.Max(0.0, Math.Min(1.0, data.Percentage)), 0f, 1f);
+            statBar.ShowValueOnHover = false;
+            scrollArea.Add(statBar);
+
+            if (!string.IsNullOrEmpty(data.Tooltip))
+            {
+                GuiElementHoverText hoverText = new(api, data.Tooltip, CairoFont.WhiteSmallText(), 220, barBounds);
+                hoverText.SetAutoWidth(true);
+                scrollArea.Add(hoverText);
+            }
+
+            if ((data.PartialCredits != null && data.PartialCredits.Length > 1) || data.CollapseExtraInfo)
+            {
+                ElementBounds btnBounds = ElementBounds.Fixed(350, offset, 12, 22).WithParent(containerBounds);
+                string btnText = isExpanded ? "-" : "+";
+
+                composer.AddButton(btnText, () =>
+                {
+                    isExpanded = !isExpanded;
+                    RenderData(data);
+
+                    parent.Reprocess();
+                    return true;
+                }, btnBounds, parent.buttonFont, EnumButtonStyle.Normal);
+            }
+
+            offset += 26;
+
+            if (data.PartialCredits != null)
+            {
+                foreach (var partial in data.PartialCredits)
+                {
+                    ElementBounds subLabelBounds = ElementBounds.Fixed(15, offset + 1, 105, 15).WithParent(containerBounds);
+                    ElementBounds subLabelMeasureBounds = ElementBounds.Fixed(15, offset + 1, 100, 22).WithParent(containerBounds);
+                    subLabelMeasureBounds.CalcWorldBounds();
+                    CairoFont subLabelFont = parent.smallToolFont.Clone();
+                    subLabelFont.UnscaledFontsize = 14;
+                    subLabelFont.AutoFontSize(partial.Name, subLabelMeasureBounds);
+
+                    GuiElementRichtext subLabel = new(api, VtmlUtil.Richtextify(api, partial.Name, subLabelFont), subLabelBounds);
+                    scrollArea.Add(subLabel);
+
+                    ElementBounds subBarBounds = ElementBounds.Fixed(135, offset, 205, 16).WithParent(containerBounds);
+                    GuiElementStatbar subBar = new(api, subBarBounds, GuiStyle.FoodBarColor, false, false);
+                    subBar.SetValues(partial.Percentage, 0f, 1f);
+                    subBar.ShowValueOnHover = false;
+                    scrollArea.Add(subBar);
+
+                    if (!string.IsNullOrEmpty(partial.Tooltip))
+                    {
+                        GuiElementHoverText subHover = new(api, partial.Tooltip, CairoFont.WhiteSmallText(), 220, subBarBounds);
+                        subHover.SetAutoWidth(true);
+                        scrollArea.Add(subHover);
+                    }
+
+                    offset += 22;
+                    if (!isExpanded) break;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(data.ExtraInfo) && (!data.CollapseExtraInfo || isExpanded))
+            {
+                ElementBounds extraBounds = ElementBounds.Fixed(10, offset, 345, 18).WithParent(containerBounds);
+                GuiElementRichtext extraText = new(api, VtmlUtil.Richtextify(api, data.ExtraInfo, parent.smallToolFont), extraBounds);
+                scrollArea.Add(extraText);
+                extraText.RecomposeText();
+                offset += extraText.Bounds.fixedHeight;
+            }
+
+            if (!string.IsNullOrEmpty(data.Instructions))
+            {
+                ElementBounds instBounds = ElementBounds.Fixed(10, offset, 345, 36).WithParent(containerBounds);
+                GuiElementRichtext instText = new(api, VtmlUtil.Richtextify(api, data.Instructions, parent.smallToolFont), instBounds);
+                scrollArea.Add(instText);
+                instText.RecomposeText();
+                offset += instText.Bounds.fixedHeight;
+            }
+
+            offset += 4;
+            composer.Compose();
+            return offset;
+        }
+
+        public override void RenderInteractiveElements(float deltaTime)
+        {
+            base.RenderInteractiveElements(deltaTime);
+            composer?.Render(deltaTime);
+        }
+
+        public override void OnMouseDown(ICoreClientAPI api, MouseEvent mouse)
+        {
+            composer?.OnMouseDown(mouse);
+            if (mouse.Handled) return;
+            base.OnMouseDown(api, mouse);
+        }
+
+        public override void OnMouseMove(ICoreClientAPI api, MouseEvent mouse)
+        {
+            composer?.OnMouseMove(mouse);
+            base.OnMouseMove(api, mouse);
+        }
+
+        public override void OnMouseUp(ICoreClientAPI api, MouseEvent mouse)
+        {
+            composer?.OnMouseUp(mouse);
+            base.OnMouseUp(api, mouse);
+        }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+            composer?.Dispose();
+        }
+    }
     public partial class SeraphCharacterTabComponent(ICoreClientAPI capi)
     {
         private readonly ICoreClientAPI capi = capi;
-        private readonly HashSet<string> expandedTraits = [];
         private float currentScrollOffset = 0f;
         public ProgressReportContent[] LatestData { get; set; } = [];
         GuiComposer composer;
@@ -29,11 +186,11 @@ namespace SeraphLeveling.Gui
         public void OnProgressReportReceived(ProgressReportContent[] content)
         {
             LatestData = content;
+            Reprocess();
             foreach (GuiDialog openGui in capi.OpenedGuis.Cast<GuiDialog>())
             {
                 if (openGui is GuiDialogCharacterBase characterDialog && characterDialog.IsOpened())
                 {
-                    RefreshIfActive(characterDialog);
                     break;
                 }
             }
@@ -72,114 +229,56 @@ namespace SeraphLeveling.Gui
             }, "liveupdateserraphtab");
         }
 
-        public void RefreshIfActive(GuiDialogCharacterBase characterDialog)
-        {
-            if (characterDialog != null && characterDialog.IsOpened())
-            {
-                RunRecompose(characterDialog);
-            }
-        }
-
-        public double RenderData(ProgressReportContent data, bool isExpanded, ElementBounds containerBounds, GuiElementContainer scrollArea, GuiDialogCharacterBase parentDialog)
-        {
-            double offset = 0;
-            scrollArea.Elements.Clear();
-            ElementBounds titleBounds = ElementBounds.Fixed(3, offset + 4, 120, 22).WithParent(containerBounds);
-            ElementBounds titleMeasureBounds = ElementBounds.Fixed(3, offset + 4, 112, 22).WithParent(containerBounds);
-            titleMeasureBounds.CalcWorldBounds();
-            CairoFont rowTitleFont = baseFont.Clone();
-            rowTitleFont.UnscaledFontsize = 16;
-            string plainTitleText = StripTags().Replace(data.Name, "");
-            rowTitleFont.AutoFontSize(plainTitleText, titleMeasureBounds);
-            GuiElementRichtext titleText = new(capi, VtmlUtil.Richtextify(capi, data.Name, rowTitleFont), titleBounds);
-            scrollArea.Add(titleText);
-
-            GuiElementStatbar statBar = new(capi, ElementBounds.Fixed(125, 0, 225, 22).WithParent(containerBounds), GuiStyle.XPBarColor, false, false);
-            statBar.SetValues((float)Math.Max(0.0, Math.Min(1.0, data.Percentage)), 0f, 1f);
-            statBar.ShowValueOnHover = false;
-            scrollArea.Add(statBar);
-
-            if (!string.IsNullOrEmpty(data.Tooltip))
-            {
-                GuiElementHoverText hoverText = new(capi, data.Tooltip, CairoFont.WhiteSmallText(), 220, ElementBounds.Fixed(125, offset, 200, 22).WithParent(containerBounds));
-                hoverText.SetAutoWidth(true);
-                scrollArea.Add(hoverText);
-            }
-
-            if ((data.PartialCredits != null && data.PartialCredits.Length > 1) || data.CollapseExtraInfo)
-            {
-                ElementBounds btnBounds = ElementBounds.Fixed(350, offset, 12, 22).WithParent(containerBounds);
-                string btnText = isExpanded ? "-" : "+";
-
-                composer.AddButton(btnText, () =>
-                {
-                    if (isExpanded) expandedTraits.Remove(data.Name);
-                    else expandedTraits.Add(data.Name);
-
-                    RunRecompose(parentDialog);
-                    return true;
-                }, btnBounds, buttonFont, EnumButtonStyle.Normal);
-            }
-
-            offset += 26;
-
-            if (data.PartialCredits != null)
-            {
-                foreach (var partial in data.PartialCredits)
-                {
-                    ElementBounds subLabelBounds = ElementBounds.Fixed(15, offset + 1, 105, 15).WithParent(containerBounds);
-                    ElementBounds subLabelMeasureBounds = ElementBounds.Fixed(15, offset + 1, 100, 22).WithParent(containerBounds);
-                    subLabelMeasureBounds.CalcWorldBounds();
-                    CairoFont subLabelFont = smallToolFont.Clone();
-                    subLabelFont.UnscaledFontsize = 14;
-                    subLabelFont.AutoFontSize(partial.Name, subLabelMeasureBounds);
-
-                    GuiElementRichtext subLabel = new(capi, VtmlUtil.Richtextify(capi, partial.Name, subLabelFont), subLabelBounds);
-                    scrollArea.Add(subLabel);
-
-                    ElementBounds subBarBounds = ElementBounds.Fixed(135, offset, 205, 16).WithParent(containerBounds);
-                    GuiElementStatbar subBar = new(capi, subBarBounds, GuiStyle.FoodBarColor, false, false);
-                    subBar.SetValues(partial.Percentage, 0f, 1f);
-                    subBar.ShowValueOnHover = false;
-                    scrollArea.Add(subBar);
-
-                    if (!string.IsNullOrEmpty(partial.Tooltip))
-                    {
-                        GuiElementHoverText subHover = new(capi, partial.Tooltip, CairoFont.WhiteSmallText(), 220, subBarBounds);
-                        subHover.SetAutoWidth(true);
-                        scrollArea.Add(subHover);
-                    }
-
-                    offset += 22;
-                    if (!isExpanded) break;
-                }
-            }
-
-            if (!string.IsNullOrEmpty(data.ExtraInfo) && (!data.CollapseExtraInfo || isExpanded))
-            {
-                ElementBounds extraBounds = ElementBounds.Fixed(10, offset, 345, 18).WithParent(containerBounds);
-                GuiElementRichtext extraText = new(capi, VtmlUtil.Richtextify(capi, data.ExtraInfo, smallToolFont), extraBounds);
-                scrollArea.Add(extraText);
-                extraText.RecomposeText();
-                offset += extraText.Bounds.fixedHeight;
-            }
-
-            if (!string.IsNullOrEmpty(data.Instructions))
-            {
-                ElementBounds instBounds = ElementBounds.Fixed(10, offset, 345, 36).WithParent(containerBounds);
-                GuiElementRichtext instText = new(capi, VtmlUtil.Richtextify(capi, data.Instructions, smallToolFont), instBounds);
-                scrollArea.Add(instText);
-                instText.RecomposeText();
-                offset += instText.Bounds.fixedHeight;
-            }
-
-            offset += 4;
-            return offset;
-        }
-
         public readonly CairoFont baseFont = CairoFont.WhiteSmallText();
         public readonly CairoFont buttonFont = CairoFont.WhiteSmallText();
         public readonly CairoFont smallToolFont = CairoFont.WhiteSmallText().WithColor([0.6, 0.6, 0.6, 1.0]);
+
+        public readonly List<SeraphCharacterTabRow> reportTabLines = [];
+
+        private readonly int initialOffset = 3;
+        public void Reprocess()
+        {
+            if (reportTabLines.Count != LatestData.Length)
+            {
+                reportTabLines.Clear();
+                foreach (GuiDialog openGui in capi.OpenedGuis.Cast<GuiDialog>())
+                {
+                    if (openGui is GuiDialogCharacterBase characterDialog && characterDialog.IsOpened())
+                    {
+                        RunRecompose(characterDialog);
+                    }
+                }
+                return;
+            }
+            accumulatedY = initialOffset;
+            for (int i = 0; i < LatestData.Length; i++)
+            {
+                reportTabLines[i].Bounds.fixedY = accumulatedY;
+                accumulatedY += reportTabLines[i].Process(LatestData[i]);
+                reportTabLines[i].Bounds.CalcWorldBounds();
+            }
+            var scrollArea = composer.GetContainer("scroll-content");
+            scrollArea.Bounds.fixedY = accumulatedY;
+            scrollArea.Bounds.CalcWorldBounds();
+            GuiElementScrollbar scrollbar = composer.GetScrollbar("seraphScrollbar");
+            if (scrollbar != null)
+            {
+                float targetScroll = currentScrollOffset;
+                scrollbar.SetHeights((float)clipBounds.fixedHeight, (float)accumulatedY);
+                float maxScroll = (float)Math.Max(0f, accumulatedY - clipBounds.fixedHeight);
+                if (targetScroll > maxScroll)
+                {
+                    targetScroll = maxScroll;
+                }
+                scrollbar.CurrentYPosition = currentScrollOffset = targetScroll;
+
+                // Keep the offset applied across redraw compositions safely
+                scrollArea.Bounds.fixedY = 0 - currentScrollOffset;
+                scrollArea.Bounds.CalcWorldBounds();
+            }
+        }
+
+        ElementBounds clipBounds;
 
         public void RenderTabContent(GuiComposer childComposer, GuiDialogCharacterBase parentDialog)
         {
@@ -193,7 +292,7 @@ namespace SeraphLeveling.Gui
 
             ElementBounds insetBounds = ElementBounds.Fixed(10, 70, insetWidth, insetHeight);
             ElementBounds scrollbarBounds = insetBounds.RightCopy().WithFixedWidth(15);
-            ElementBounds clipBounds = insetBounds.ForkContainingChild(0, 0, 0, 0);
+            clipBounds = insetBounds.ForkContainingChild(0, 0, 0, 0);
             GuiElementContainer scrollArea;
 
             if (LatestData == null || LatestData.Length == 0)
@@ -213,21 +312,23 @@ namespace SeraphLeveling.Gui
             scrollArea = composer.GetContainer("scroll-content");
             if (scrollArea == null) return;
 
-            accumulatedY = 3;
+            accumulatedY = initialOffset;
             baseFont.UnscaledFontsize = 16;
             buttonFont.Orientation = EnumTextOrientation.Center;
 
             for (int i = 0; i < LatestData.Length; i++)
             {
                 var data = LatestData[i];
-                bool isExpanded = expandedTraits.Contains(data.Name);
 
                 // Define positions using plain absolute row indices relative to the parent container frame
                 ElementBounds newContainerBounds = ElementBounds.Fixed(0, accumulatedY, 0, 0).WithParent(containerBounds);
                 string innerContainerKey = $"data-{i}";
                 composer.AddContainer(newContainerBounds, innerContainerKey);
-                GuiElementContainer innerContainer = composer.GetContainer(innerContainerKey);
-                var offset = RenderData(data, isExpanded, newContainerBounds, innerContainer, parentDialog);
+                SeraphCharacterTabRow elem = new(capi, this, newContainerBounds, data, innerContainerKey);
+
+                var offset = elem.RenderData(data);
+                reportTabLines.Add(elem);
+                scrollArea.Add(elem);
                 newContainerBounds.CalcWorldBounds();
                 accumulatedY += offset;
             }
@@ -270,6 +371,6 @@ namespace SeraphLeveling.Gui
         }
 
         [System.Text.RegularExpressions.GeneratedRegex("<[^>]*>")]
-        private static partial System.Text.RegularExpressions.Regex StripTags();
+        public static partial System.Text.RegularExpressions.Regex StripTags();
     }
 }

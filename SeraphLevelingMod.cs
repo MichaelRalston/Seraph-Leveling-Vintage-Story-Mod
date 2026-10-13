@@ -966,12 +966,6 @@ namespace SeraphLeveling
             // Register game tick listener for armor time tracking (every 1000ms / 1 second)
             api.Event.RegisterGameTickListener(OnArmorTick, 1000);
 
-            // Register game tick listener for clothing tracking (every 1000ms / 1 second)
-            api.Event.RegisterGameTickListener(OnClothingTick, 1000);
-
-            // Register game tick listener for Mender repair tracking (every 500ms for responsive detection)
-            api.Event.RegisterGameTickListener(OnMenderRepairTick, 500);
-
             // Register game tick listener for sneaking distance tracking (every 500ms for Furtive)
             api.Event.RegisterGameTickListener(OnSneakingTick, 500);
 
@@ -1137,8 +1131,7 @@ namespace SeraphLeveling
             // Try exact match first (case-insensitive)
             foreach (var onlinePlayer in ServerApi.World.AllOnlinePlayers)
             {
-                var sp = onlinePlayer as IServerPlayer;
-                if (sp != null && string.Equals(sp.PlayerName, playerName, StringComparison.OrdinalIgnoreCase))
+                if (onlinePlayer is IServerPlayer sp && string.Equals(sp.PlayerName, playerName, StringComparison.OrdinalIgnoreCase))
                     return sp;
             }
 
@@ -1147,8 +1140,7 @@ namespace SeraphLeveling
             int matches = 0;
             foreach (var onlinePlayer in ServerApi.World.AllOnlinePlayers)
             {
-                var sp = onlinePlayer as IServerPlayer;
-                if (sp != null && sp.PlayerName.IndexOf(playerName, StringComparison.OrdinalIgnoreCase) >= 0)
+                if (onlinePlayer is IServerPlayer sp && sp.PlayerName.IndexOf(playerName, StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     match = sp;
                     matches++;
@@ -1649,16 +1641,13 @@ namespace SeraphLeveling
 
         /// <summary>
         /// Determines the armor type from an item code.
-        /// Returns: "light" (leather, gambeson), "chain", "brigandine", "scale", "plate", or null if not armor.
+        /// Returns: "light" (leather, gambeson), "chain", "brigandine", "scale", "plate". ONLY use on verified armor.
         /// </summary>
         public static string GetArmorType(AssetLocation itemCode)
         {
             if (itemCode == null || !itemCode.Valid) return null;
 
             string codeToCheck = itemCode.Path;
-
-            // Check if it's armor (starts with "armor-")
-            if (!codeToCheck.StartsWith("armor-")) return null;
 
             // Determine armor type from code
             if (codeToCheck.Contains("-plate-")) return "plate";
@@ -1727,7 +1716,8 @@ namespace SeraphLeveling
                 // Armor slots are typically: 12 = head, 13 = body, 14 = legs (may vary)
                 foreach (var slot in characterInventory)
                 {
-                    if (slot?.Itemstack?.Collectible != null)
+                    var slotType = (slot as ItemSlotCharacter)?.Type;
+                    if ((slotType == EnumCharacterDressType.ArmorBody || slotType == EnumCharacterDressType.ArmorHead || slotType == EnumCharacterDressType.ArmorLegs) && slot?.Itemstack?.Collectible != null)
                     {
                         var itemCode = slot.Itemstack.Collectible.Code;
                         string armorType = GetArmorType(itemCode);
@@ -1770,12 +1760,13 @@ namespace SeraphLeveling
                 {
                     foreach (var slot in characterInventory)
                     {
-                        if (slot?.Itemstack?.Collectible != null)
+                        var slotType = (slot as ItemSlotCharacter)?.Type;
+                        if ((slotType == EnumCharacterDressType.ArmorBody || slotType == EnumCharacterDressType.ArmorHead || slotType == EnumCharacterDressType.ArmorLegs) && slot?.Itemstack?.Collectible != null)
                         {
-                            var itemCode = slot.Itemstack.Collectible.Code;
-                            string armorType = GetArmorType(itemCode);
-                            if (armorType != null)
+                            if (slot?.Itemstack?.Collectible != null)
                             {
+                                var itemCode = slot.Itemstack.Collectible.Code;
+                                string armorType = GetArmorType(itemCode);
                                 string slotId = slot.Inventory?.InventoryID + "_" + slot.Inventory?.GetSlotId(slot);
                                 currentArmor[slotId] = itemCode;
                             }
@@ -1798,9 +1789,9 @@ namespace SeraphLeveling
                         AttributeModifierDefinitions.ArmorDurability.GetForPlayer(playerUid).ApplyFirstTimeBonus(player, itemCode, GetFirstEquipBonus(GetArmorType(itemCode)));
                         AttributeModifierDefinitions.ArmorWalkSpeed.GetForPlayer(playerUid).ApplyFirstTimeBonus(player, itemCode, GetFirstEquipBonus(GetArmorType(itemCode)));
                     }
-                    AttributeModifierDefinitions.ArmorWalkSpeed.GetForPlayer(playerUid).DoEvent(player, itemCode, 1f);
-                    AttributeModifierDefinitions.ArmorHealing.GetForPlayer(playerUid).DoEvent(player, itemCode, 1f);
-                    AttributeModifierDefinitions.ArmorHungerRate.GetForPlayer(playerUid).DoEvent(player, itemCode, 1f);
+                    AttributeModifierDefinitions.ArmorWalkSpeed.GetForPlayer(playerUid).DoEvent(player, itemCode, dt);
+                    AttributeModifierDefinitions.ArmorHealing.GetForPlayer(playerUid).DoEvent(player, itemCode, dt);
+                    AttributeModifierDefinitions.ArmorHungerRate.GetForPlayer(playerUid).DoEvent(player, itemCode, dt);
                 }
                 // Update the equipped armor tracking
                 playerEquippedArmor[playerUid] = currentArmor;
@@ -1921,7 +1912,8 @@ namespace SeraphLeveling
                 float distance = (float)Math.Sqrt(dx * dx + dz * dz);
 
                 // Update last position (no allocation - struct assignment)
-                lastPlayerPositions[playerUid] = new Position2D(currentX, currentZ);
+                lastPos.X = currentX;
+                lastPos.Z = currentZ;
 
                 // Skip if no movement or teleportation (too far)
                 if (distance < 0.01f || distance > MAX_DISTANCE_PER_TICK) continue;
@@ -2177,9 +2169,22 @@ namespace SeraphLeveling
             }
 
             // Initialize equipped armor tracking for this player
+            RegisterClothingTracking(byPlayer, GlobalConstants.characterInvClassName, "c");
+            RegisterClothingTracking(byPlayer, GlobalConstants.hotBarInvClassName, "h");
+            RegisterClothingTracking(byPlayer, GlobalConstants.backpackInvClassName, "b");
+            InitializeMenderRepairTracking(byPlayer);
+            InitializeClothingTracking(byPlayer);
             InitializePlayerArmorTracking(byPlayer);
         }
 
+        public void RegisterClothingTracking(IServerPlayer byPlayer, string invConstant, string invKey)
+        {
+            var characterInventory = byPlayer.InventoryManager.GetOwnInventory(invConstant);
+            if (characterInventory is InventoryBase ib)
+            {
+                ib.SlotModified += (slot) => { OnClothingModified(byPlayer, invKey, slot, ib[slot]); };
+            }
+        }
 
         public static ProgressReportContent[] BuildProgressReportContentForPlayer(IServerPlayer player)
         {
@@ -2286,7 +2291,7 @@ namespace SeraphLeveling
             }
             catch (Exception ex)
             {
-                ServerApi?.Logger?.Warning($"[SeraphLeveling] Could not sync the progress report for {player?.PlayerName}: {ex.Message}");
+                ServerApi?.Logger?.Warning($"[SeraphLeveling] Could not sync the progress report for {player?.PlayerName}: {ex}");
             }
         }
 
@@ -3264,168 +3269,6 @@ namespace SeraphLeveling
         }
 
         /// <summary>
-        /// Gets the weapon code from a held item if it's a qualifying melee weapon, or null otherwise.
-        /// Returns the full item code (e.g., "game:sword-copper") to track each weapon type individually.
-        /// Static version for use from Harmony patches.
-        /// </summary>
-        public static AssetLocation GetWeaponTypeFromCode(AssetLocation itemCode)
-        {
-            if (itemCode == null || !itemCode.Valid) return null;
-
-            // Remove namespace prefix for pattern matching
-            string lowerCode = itemCode.Path.ToLowerInvariant();
-
-            // =================================================================
-            // SWORDS (one-handed and two-handed)
-            // =================================================================
-
-            // Two-handed swords
-            if (lowerCode.StartsWith("greatsword-") || lowerCode.StartsWith("zweihander-") ||
-                lowerCode.StartsWith("claymore-") || lowerCode.StartsWith("flamberge-") ||
-                lowerCode.StartsWith("montante-") || lowerCode.StartsWith("nodachi-") ||
-                lowerCode.StartsWith("2hsword-") || lowerCode.StartsWith("2h-sword-") ||
-                lowerCode.StartsWith("twohandedsword-") || lowerCode.StartsWith("twohanded-sword-") ||
-                lowerCode.StartsWith("sword-great-") || lowerCode.StartsWith("sword-long-") ||
-                lowerCode.StartsWith("longsword-") ||
-                (lowerCode.Contains("twohanded") && lowerCode.Contains("sword")) ||
-                (lowerCode.Contains("2h") && lowerCode.Contains("sword")))
-            {
-                return itemCode;
-            }
-
-            // One-handed swords, blades, and similar
-            if (lowerCode.StartsWith("sword-") || lowerCode.StartsWith("blade-") ||
-                lowerCode.StartsWith("shortsword-") || lowerCode.StartsWith("sword-short-") ||
-                lowerCode.StartsWith("sword-arming-") ||
-                lowerCode.StartsWith("saber-") || lowerCode.StartsWith("sabre-") ||
-                lowerCode.StartsWith("rapier-") || lowerCode.StartsWith("scimitar-") ||
-                lowerCode.StartsWith("cutlass-") || lowerCode.StartsWith("falx-") ||
-                lowerCode.StartsWith("falchion-") || lowerCode.StartsWith("kopis-") ||
-                lowerCode.StartsWith("gladius-") || lowerCode.StartsWith("messer-"))
-            {
-                return itemCode;
-            }
-
-            // Daggers and knives (combat)
-            if (lowerCode.StartsWith("dagger-") || lowerCode.StartsWith("knife-") ||
-                lowerCode.StartsWith("stiletto-") || lowerCode.StartsWith("khanjar-") ||
-                lowerCode.StartsWith("baselard-") || lowerCode.StartsWith("dirk-") ||
-                lowerCode.StartsWith("tanto-") || lowerCode.StartsWith("kukri-"))
-            {
-                return itemCode;
-            }
-
-            // =================================================================
-            // POLEARMS
-            // =================================================================
-
-            // Spears (melee)
-            if (lowerCode.StartsWith("spear-") || lowerCode.StartsWith("pike-") ||
-                lowerCode.StartsWith("lance-") || lowerCode.StartsWith("trident-") ||
-                lowerCode.StartsWith("pilum-") || lowerCode.StartsWith("sarissa-"))
-            {
-                return itemCode;
-            }
-
-            // Javelins (can be used in melee too)
-            if (lowerCode.StartsWith("javelin-") || lowerCode.StartsWith("throwing-spear-") ||
-                lowerCode.StartsWith("thrown-spear-") || lowerCode.StartsWith("dart-") ||
-                lowerCode.StartsWith("plumbata-") ||
-                lowerCode.Contains("javelin") || lowerCode.Contains("throwingspear") ||
-                lowerCode.Contains("thrownspear"))
-            {
-                return itemCode;
-            }
-
-            // Halberds and poleaxes
-            if (lowerCode.StartsWith("halberd-") || lowerCode.StartsWith("poleaxe-") ||
-                lowerCode.StartsWith("glaive-") || lowerCode.StartsWith("bardiche-") ||
-                lowerCode.StartsWith("voulge-") || lowerCode.StartsWith("guisarme-") ||
-                lowerCode.StartsWith("billhook-") || lowerCode.StartsWith("partisan-") ||
-                lowerCode.StartsWith("naginata-") || lowerCode.StartsWith("sovnya-"))
-            {
-                return itemCode;
-            }
-
-            // Quarterstaves
-            if (lowerCode.StartsWith("quarterstaff-") || lowerCode.StartsWith("staff-") ||
-                lowerCode.StartsWith("bo-") || lowerCode.Contains("bo-staff"))
-            {
-                return itemCode;
-            }
-
-            // =================================================================
-            // BLUNT WEAPONS
-            // =================================================================
-
-            // Maces and warhammers
-            if (lowerCode.StartsWith("mace-") || lowerCode.StartsWith("morningstar-") ||
-                lowerCode.StartsWith("flail-") || lowerCode.StartsWith("warhammer-") ||
-                lowerCode.StartsWith("maul-") || lowerCode.StartsWith("hammer-") ||
-                lowerCode.StartsWith("flangedmace-") || lowerCode.StartsWith("spikedmace-"))
-            {
-                return itemCode;
-            }
-
-            // Clubs
-            if (lowerCode.StartsWith("club-") || lowerCode.StartsWith("cudgel-") ||
-                lowerCode.StartsWith("baton-") || lowerCode.StartsWith("truncheon-") ||
-                lowerCode.StartsWith("shillelagh-") || lowerCode.StartsWith("blackjack-"))
-            {
-                return itemCode;
-            }
-
-            // =================================================================
-            // AXES (combat, not tools)
-            // =================================================================
-            if (lowerCode.StartsWith("battleaxe-") || lowerCode.StartsWith("waraxe-") ||
-                lowerCode.StartsWith("handaxe-") || lowerCode.StartsWith("hatchet-") ||
-                lowerCode.StartsWith("tomahawk-") || lowerCode.StartsWith("francisca-") ||
-                lowerCode.StartsWith("dane-axe-") || lowerCode.StartsWith("daneaxe-") ||
-                lowerCode.StartsWith("broadaxe-") || lowerCode.StartsWith("labrys-") ||
-                (lowerCode.StartsWith("axe-") && !lowerCode.Contains("pickaxe")))
-            {
-                return itemCode;
-            }
-
-            // =================================================================
-            // ANCIENT ARMORY MOD WEAPONS
-            // =================================================================
-
-            // aa-blade: gladius, arming, claymore, sabre, longsword, falchion (swords)
-            if (lowerCode.StartsWith("aa-blade-"))
-            {
-                return itemCode;
-            }
-
-            // aa-axe: bearded, battle, bardiche (battle axes)
-            if (lowerCode.StartsWith("aa-axe-"))
-            {
-                return itemCode;
-            }
-
-            // aa-club: flanged, morningstar, spiked, warhammer (maces)
-            if (lowerCode.StartsWith("aa-club-"))
-            {
-                return itemCode;
-            }
-
-            // aa-knife: dagger, stiletto, khanjar, baselard (combat knives)
-            if (lowerCode.StartsWith("aa-knife-"))
-            {
-                return itemCode;
-            }
-
-            // aa-spear: boar, voulge, fork, ranseur (polearms)
-            if (lowerCode.StartsWith("aa-spear-"))
-            {
-                return itemCode;
-            }
-
-            return null;
-        }
-
-        /// <summary>
         /// Gets a weapon combination code from a projectile and the shooter's held weapon.
         /// For bows+arrows, returns "bowCode+arrowCode" (e.g., "bow-long+arrow-copper").
         /// For slings+stones, returns "sling+stone".
@@ -3444,14 +3287,10 @@ namespace SeraphLeveling
             string heldCheck = heldItemCode?.Path ?? "";
 
             // Check for arrow projectiles (bows)
-            if (projCheck.StartsWith("arrow-") || projCheck == "arrow" || projCheck.Contains("arrow"))
+            if (projCheck.StartsWith("arrow-", StringComparison.Ordinal) || projCheck == "arrow" || projCheck.Contains("arrow", StringComparison.Ordinal))
             {
-                // Get bow type from held item (if still holding a bow)
                 string bowCode = "unknown-bow";
-                if (heldCheck.StartsWith("bow-") || heldCheck == "bow" ||
-                    heldCheck.StartsWith("longbow") || heldCheck.StartsWith("recurvebow") ||
-                    heldCheck.StartsWith("crudebow") || heldCheck.StartsWith("simplebow") ||
-                    heldCheck.Contains("bow"))
+                if (tool == EnumTool.Bow)
                 {
                     bowCode = heldCheck;
                 }
@@ -3459,12 +3298,12 @@ namespace SeraphLeveling
             }
 
             // Check for crossbow bolts/quarrels
-            if (projCheck.StartsWith("bolt-") || projCheck == "bolt" || projCheck.Contains("bolt") ||
-                projCheck.StartsWith("quarrel-") || projCheck == "quarrel" || projCheck.Contains("quarrel"))
+            if (projCheck.StartsWith("bolt-", StringComparison.Ordinal) || projCheck == "bolt" || projCheck.Contains("bolt", StringComparison.Ordinal) ||
+                projCheck.StartsWith("quarrel-", StringComparison.Ordinal) || projCheck == "quarrel" || projCheck.Contains("quarrel", StringComparison.Ordinal))
             {
                 // Get crossbow type from held item
                 string crossbowCode = "unknown-crossbow";
-                if (heldCheck.StartsWith("crossbow") || heldCheck.Contains("crossbow"))
+                if (tool == EnumTool.Crossbow)
                 {
                     crossbowCode = heldCheck;
                 }
@@ -3472,15 +3311,13 @@ namespace SeraphLeveling
             }
 
             // Check for firearm projectiles (bullets, musket balls, etc.)
-            if (projCheck.StartsWith("bullet-") || projCheck == "bullet" || projCheck.Contains("bullet") ||
-                projCheck.StartsWith("musketball") || projCheck.Contains("musketball") ||
-                projCheck.StartsWith("shot-") || projCheck.Contains("shot"))
+            if (projCheck.StartsWith("bullet-", StringComparison.Ordinal) || projCheck == "bullet" || projCheck.Contains("bullet", StringComparison.Ordinal) ||
+                projCheck.StartsWith("musketball", StringComparison.Ordinal) || projCheck.Contains("musketball", StringComparison.Ordinal) ||
+                projCheck.StartsWith("shot-", StringComparison.Ordinal) || projCheck.Contains("shot", StringComparison.Ordinal))
             {
                 // Get firearm type from held item
                 string firearmCode = "unknown-firearm";
-                if (heldCheck.StartsWith("musket") || heldCheck.StartsWith("pistol") ||
-                    heldCheck.StartsWith("rifle") || heldCheck.StartsWith("blunderbuss") ||
-                    heldCheck.Contains("gun") || heldCheck.Contains("firearm"))
+                if (tool == EnumTool.Firearm)
                 {
                     firearmCode = heldCheck;
                 }
@@ -3488,12 +3325,12 @@ namespace SeraphLeveling
             }
 
             // Check for sling stones (slung from sling — entity is thrownstone-{rock})
-            if (projCheck.StartsWith("stone-") || projCheck == "stone" || projCheck.StartsWith("thrownstone") ||
-                projCheck.Contains("slingstone") || projCheck.Contains("sling-stone"))
+            if (projCheck.StartsWith("stone-", StringComparison.Ordinal) || projCheck == "stone" || projCheck.StartsWith("thrownstone", StringComparison.Ordinal) ||
+                projCheck.Contains("slingstone", StringComparison.Ordinal) || projCheck.Contains("sling-stone", StringComparison.Ordinal))
             {
                 // Check if holding a sling
                 string slingCode = "thrown";
-                if (heldCheck.StartsWith("sling") || heldCheck.Contains("sling"))
+                if (tool == EnumTool.Sling)
                 {
                     slingCode = heldCheck;
                 }
@@ -3511,7 +3348,7 @@ namespace SeraphLeveling
             // stones, bones, etc. as a single shared `game:thrownitem` projectile entity — the
             // actual item is in ProjectileStack. Peek there to figure out what was thrown so
             // Improviser etc. can recognize it as a stone.
-            if (projCheck == "thrownitem" || projCheck.StartsWith("thrownitem-") || projCheck.StartsWith("thrownitem+"))
+            if (projCheck == "thrownitem" || projCheck.StartsWith("thrownitem-", StringComparison.Ordinal) || projCheck.StartsWith("thrownitem+", StringComparison.Ordinal))
             {
                 var stackCode = (projectile as IProjectile)?.ProjectileStack?.Collectible?.Code;
                 string stackCheck = stackCode?.Path ?? "";
@@ -3523,20 +3360,18 @@ namespace SeraphLeveling
             }
 
             // Check for spear/javelin throws (thrown spears deal ranged damage)
-            if (projCheck.StartsWith("spear-") || projCheck.StartsWith("thrownspear") ||
-                projCheck.StartsWith("javelin-") || projCheck.Contains("javelin") ||
-                projCheck.StartsWith("pilum-") || projCheck.Contains("throwingspear"))
+            if (projTool == EnumTool.Spear)
             {
                 return ($"thrown+{projCheck}", projTool);
             }
 
             // Check for Atlatl darts (Return of the Atlatl mod)
             // Projectile entities are "atlatl:apdart-{material}", projCheck will be "apdart-{material}"
-            if (projCheck.StartsWith("apdart") || projectileCode.ToString().Contains("atlatl:apdart"))
+            if (projCheck.StartsWith("apdart", StringComparison.Ordinal) || projectileCode.ToString().Contains("atlatl:apdart", StringComparison.Ordinal))
             {
                 string launcherCode = "unknown-atlatl";
-                if (heldCheck.StartsWith("aplauncher") || heldCheck.Contains("aplauncher") ||
-                    heldItemCode.ToString().Contains("atlatl:aplauncher"))
+                if (heldCheck.StartsWith("aplauncher", StringComparison.Ordinal) || heldCheck.Contains("aplauncher", StringComparison.Ordinal) ||
+                    heldItemCode.ToString().Contains("atlatl:aplauncher", StringComparison.Ordinal))
                 {
                     launcherCode = heldCheck;
                 }
@@ -5957,31 +5792,90 @@ namespace SeraphLeveling
         /// <summary>
         /// Tick handler for clothing tracking.
         /// </summary>
-        private void OnClothingTick(float dt)
+        private void InitializeClothingTracking(IServerPlayer player)
         {
             if (ServerApi == null) return;
 
             // Skip clothier progression if disabled
             if (IsAttributeModifierDisabled(AttributeModifierDefinitions.Clothier)) return;
+            if (player?.Entity == null) return;
+            if (!player.Entity.Alive) return;
 
-            foreach (IServerPlayer player in ServerApi.World.AllOnlinePlayers.Cast<IServerPlayer>())
+            // Skip if already unlocked
+            if (AttributeModifierDefinitions.Clothier.IsUnlockedForPlayer(player)) return;
+
+            // Get the player's currently equipped clothing using character inventory
+            var characterInventory = player.InventoryManager?.GetOwnInventory(GlobalConstants.characterInvClassName);
+            if (characterInventory != null)
             {
-                if (player?.Entity == null) continue;
-                if (!player.Entity.Alive) continue;
+                characterInventory
+                    .Where(slot => slot?.Itemstack?.Collectible != null)
+                    .Select(slot => slot.Itemstack.Collectible.Code)
+                    .Foreach(itemCode => AttributeModifierDefinitions.Clothier.AddCollectedItem(player, itemCode));
+            }
+        }
 
-                // Skip if already unlocked
-                if (AttributeModifierDefinitions.Clothier.IsUnlockedForPlayer(player)) continue;
-
-                // Get the player's currently equipped clothing using character inventory
-                var characterInventory = player.InventoryManager?.GetOwnInventory(GlobalConstants.characterInvClassName);
-                if (characterInventory != null)
+        private void OnClothingModified(IServerPlayer player, string inventoryStr, int slotId, ItemSlot slot)
+        {
+            var itemCode = slot?.Itemstack?.Collectible?.Code;
+            if (itemCode != null)
+            {
+                if (!AttributeModifierDefinitions.Clothier.IsUnlockedForPlayer(player))
                 {
-                    characterInventory
-                        .Where(slot => slot?.Itemstack?.Collectible != null)
-                        .Select(slot => slot.Itemstack.Collectible.Code)
-                        .Foreach(itemCode => AttributeModifierDefinitions.Clothier.AddCollectedItem(player, itemCode));
+                    AttributeModifierDefinitions.Clothier.AddCollectedItem(player, itemCode);
+                }
+                ProcessMenderEvent(player, inventoryStr, slotId, slot);
+            }
+        }
+
+        private void ProcessMenderEvent(IServerPlayer player, string inventoryStr, int slotId, ItemSlot slot)
+        {
+            // Only track clothing and armor
+            if (slot?.Itemstack?.Collectible == null) return;
+            var itemCode = slot.Itemstack.Collectible.Code;
+            if (!IsClothingItem(itemCode) && !IsArmorItem(itemCode)) return;
+
+            // Get current durability
+            int currentDurability = slot.Itemstack.Collectible.GetRemainingDurability(slot.Itemstack);
+            int maxDurability = slot.Itemstack.Collectible.GetMaxDurability(slot.Itemstack);
+            if (maxDurability <= 0)
+            {
+                double condition = slot.Itemstack.Attributes.GetDouble("condition", -1);
+                if (condition < 0)
+                {
+                    return;
+                }
+                else
+                {
+                    maxDurability = 100;
+                    currentDurability = (int)condition * 100;
                 }
             }
+
+            // Create a tracking key for this item in this slot
+            string trackingKey = $"{player.PlayerUID}_{inventoryStr}-{slotId}_{itemCode}";
+
+            // Check if durability increased (repair happened)
+            if (TrackedItemDurabilities.TryGetValue(trackingKey, out int previousDurability))
+            {
+                if (currentDurability > previousDurability)
+                {
+                    // Durability increased - a repair happened!
+                    int durabilityRestored = currentDurability - previousDurability;
+                    int repairPercent = durabilityRestored * 100 / maxDurability;
+
+                    // Only credit significant repairs (at least 5% durability restored)
+                    // This filters out minor fluctuations and avoids double-counting with method 1
+                    // Use a higher threshold since method 1 should catch most sewing kit repairs
+                    if (repairPercent >= 10)
+                    {
+                        ProcessMenderRepair(player);
+                    }
+                }
+            }
+
+            // Update tracked durability
+            TrackedItemDurabilities[trackingKey] = currentDurability;
         }
 
         /// <summary>
@@ -5993,75 +5887,43 @@ namespace SeraphLeveling
             return AttributeModifierDefinitions.Clothier.IsItemValid(itemCode);
         }
 
+        private void InitializeMenderRepairTrackingForInventory(IServerPlayer player, string invConstant, string invString)
+        {
+            var characterInventory = player.InventoryManager?.GetOwnInventory(invConstant);
+            if (characterInventory == null) return;
+
+            int slotIndex = 0;
+            foreach (var slot in characterInventory)
+            {
+                if (slot?.Itemstack?.Collectible == null) continue;
+
+                var itemCode = slot.Itemstack.Collectible.Code;
+                if (itemCode == null) continue;
+
+                ProcessMenderEvent(player, invString, slotIndex, slot);
+                slotIndex++;
+            }
+        }
+
         /// <summary>
         /// Tick handler for Mender repair detection.
         /// Uses two detection methods:
         /// 1. Tracks sewing kit consumption from mouse cursor (most reliable)
         /// 2. Tracks durability increases on wearable items (backup method)
         /// </summary>
-        private void OnMenderRepairTick(float dt)
+        private void InitializeMenderRepairTracking(IServerPlayer player)
         {
-            if (ServerApi == null) return;
+            if (player?.Entity == null) return;
+            if (!player.Entity.Alive) return;
 
-            foreach (IServerPlayer player in ServerApi.World.AllOnlinePlayers)
-            {
-                if (player?.Entity == null) continue;
-                if (!player.Entity.Alive) continue;
+            string playerUid = player.PlayerUID;
 
-                string playerUid = player.PlayerUID;
-
-                // =============================================
-                // Track durability increases on wearable items (grid repair backup)
-                // =============================================
-                var characterInventory = player.InventoryManager?.GetOwnInventory(GlobalConstants.characterInvClassName);
-                if (characterInventory == null) continue;
-
-                int slotIndex = 0;
-                foreach (var slot in characterInventory)
-                {
-                    slotIndex++;
-                    if (slot?.Itemstack?.Collectible == null) continue;
-
-                    var itemCode = slot.Itemstack.Collectible.Code;
-                    if (itemCode == null) continue;
-
-                    // Only track clothing and armor
-                    if (!IsClothingItem(itemCode) && !IsArmorItem(itemCode)) continue;
-
-                    // Get current durability
-                    int currentDurability = slot.Itemstack.Collectible.GetRemainingDurability(slot.Itemstack);
-                    int maxDurability = slot.Itemstack.Collectible.GetMaxDurability(slot.Itemstack);
-
-                    // Skip items without durability
-                    if (maxDurability <= 0) continue;
-
-                    // Create a tracking key for this item in this slot
-                    string trackingKey = $"{playerUid}_{slotIndex}_{itemCode}";
-
-                    // Check if durability increased (repair happened)
-                    if (TrackedItemDurabilities.TryGetValue(trackingKey, out int previousDurability))
-                    {
-                        if (currentDurability > previousDurability)
-                        {
-                            // Durability increased - a repair happened!
-                            int durabilityRestored = currentDurability - previousDurability;
-                            int repairPercent = (durabilityRestored * 100) / maxDurability;
-
-                            // Only credit significant repairs (at least 5% durability restored)
-                            // This filters out minor fluctuations and avoids double-counting with method 1
-                            // Use a higher threshold since method 1 should catch most sewing kit repairs
-                            if (repairPercent >= 10)
-                            {
-                                ServerApi.Logger.Debug($"[SeraphLeveling] Player {player.PlayerName} repaired {itemCode} (+{repairPercent}% durability) via durability tracking");
-                                ProcessMenderRepair(player);
-                            }
-                        }
-                    }
-
-                    // Update tracked durability
-                    TrackedItemDurabilities[trackingKey] = currentDurability;
-                }
-            }
+            // =============================================
+            // Track durability increases on wearable items (grid repair backup)
+            // =============================================
+            InitializeMenderRepairTrackingForInventory(player, GlobalConstants.characterInvClassName, "c");
+            InitializeMenderRepairTrackingForInventory(player, GlobalConstants.hotBarInvClassName, "h");
+            InitializeMenderRepairTrackingForInventory(player, GlobalConstants.backpackInvClassName, "b");
         }
 
         /// <summary>
@@ -6115,7 +5977,8 @@ namespace SeraphLeveling
                 float distance = (float)Math.Sqrt(dx * dx + dz * dz);
 
                 // Update last position (no allocation - struct assignment)
-                lastSneakingPositions[playerUid] = new Position2D(currentX, currentZ);
+                lastPos.X = currentX;
+                lastPos.Z = currentZ;
 
                 // Skip if no movement or teleportation (too far)
                 if (distance < 0.01f || distance > MAX_DISTANCE_PER_TICK) continue;
@@ -6362,7 +6225,7 @@ namespace SeraphLeveling
 
             // Only charcoal piles from charcoal pits count
             const string PREFIX = "charcoalpile-";
-            return blockPath.StartsWith(PREFIX);
+            return blockPath.StartsWith(PREFIX, StringComparison.Ordinal);
         }
 
         // =========================================================================
