@@ -94,14 +94,15 @@ namespace SeraphLeveling.Gui
             GuiElementRichtext titleText = new(capi, VtmlUtil.Richtextify(capi, data.Name, rowTitleFont), titleBounds);
             scrollArea.Add(titleText);
 
-            GuiElementStatbar statBar = new(capi, ElementBounds.Fixed(125, 0, 225, 22).WithParent(containerBounds), GuiStyle.XPBarColor, false, false);
+            var barBounds = ElementBounds.Fixed(125, 0, 225, 22).WithParent(containerBounds);
+            GuiElementStatbar statBar = new(capi, barBounds, GuiStyle.XPBarColor, false, false);
             statBar.SetValues((float)Math.Max(0.0, Math.Min(1.0, data.Percentage)), 0f, 1f);
             statBar.ShowValueOnHover = false;
             scrollArea.Add(statBar);
 
             if (!string.IsNullOrEmpty(data.Tooltip))
             {
-                GuiElementHoverText hoverText = new(capi, data.Tooltip, CairoFont.WhiteSmallText(), 220, ElementBounds.Fixed(125, offset, 200, 22).WithParent(containerBounds));
+                GuiElementHoverText hoverText = new(capi, data.Tooltip, CairoFont.WhiteSmallText(), 220, barBounds);
                 hoverText.SetAutoWidth(true);
                 scrollArea.Add(hoverText);
             }
