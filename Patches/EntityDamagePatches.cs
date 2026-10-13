@@ -132,7 +132,8 @@ namespace SeraphLeveling.Patches
             // Use hit probability: 50% body, 30% legs, 20% head
             foreach (var slot in characterInventory)
             {
-                if (slot?.Itemstack?.Collectible == null) continue;
+                var slotType = (slot as ItemSlotCharacter)?.Type;
+                if (!(slotType == EnumCharacterDressType.ArmorBody || slotType == EnumCharacterDressType.ArmorHead || slotType == EnumCharacterDressType.ArmorLegs) || slot?.Itemstack?.Collectible != null) continue;
 
                 var itemCode = slot.Itemstack.Collectible.Code;
                 string armorType = SeraphLevelingModSystem.GetArmorType(itemCode);

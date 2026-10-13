@@ -1649,16 +1649,13 @@ namespace SeraphLeveling
 
         /// <summary>
         /// Determines the armor type from an item code.
-        /// Returns: "light" (leather, gambeson), "chain", "brigandine", "scale", "plate", or null if not armor.
+        /// Returns: "light" (leather, gambeson), "chain", "brigandine", "scale", "plate". ONLY use on verified armor.
         /// </summary>
         public static string GetArmorType(AssetLocation itemCode)
         {
             if (itemCode == null || !itemCode.Valid) return null;
 
             string codeToCheck = itemCode.Path;
-
-            // Check if it's armor (starts with "armor-")
-            if (!codeToCheck.StartsWith("armor-")) return null;
 
             // Determine armor type from code
             if (codeToCheck.Contains("-plate-")) return "plate";
@@ -1727,7 +1724,8 @@ namespace SeraphLeveling
                 // Armor slots are typically: 12 = head, 13 = body, 14 = legs (may vary)
                 foreach (var slot in characterInventory)
                 {
-                    if (slot?.Itemstack?.Collectible != null)
+                    var slotType = (slot as ItemSlotCharacter)?.Type;
+                    if ((slotType == EnumCharacterDressType.ArmorBody || slotType == EnumCharacterDressType.ArmorHead || slotType == EnumCharacterDressType.ArmorLegs) && slot?.Itemstack?.Collectible != null)
                     {
                         var itemCode = slot.Itemstack.Collectible.Code;
                         string armorType = GetArmorType(itemCode);
@@ -1770,12 +1768,13 @@ namespace SeraphLeveling
                 {
                     foreach (var slot in characterInventory)
                     {
-                        if (slot?.Itemstack?.Collectible != null)
+                        var slotType = (slot as ItemSlotCharacter)?.Type;
+                        if ((slotType == EnumCharacterDressType.ArmorBody || slotType == EnumCharacterDressType.ArmorHead || slotType == EnumCharacterDressType.ArmorLegs) && slot?.Itemstack?.Collectible != null)
                         {
-                            var itemCode = slot.Itemstack.Collectible.Code;
-                            string armorType = GetArmorType(itemCode);
-                            if (armorType != null)
+                            if (slot?.Itemstack?.Collectible != null)
                             {
+                                var itemCode = slot.Itemstack.Collectible.Code;
+                                string armorType = GetArmorType(itemCode);
                                 string slotId = slot.Inventory?.InventoryID + "_" + slot.Inventory?.GetSlotId(slot);
                                 currentArmor[slotId] = itemCode;
                             }
