@@ -45,6 +45,7 @@ namespace SeraphLeveling.Messages
             if (!((Name == rhs.Name) && (Percentage == rhs.Percentage) && (Tooltip == rhs.Tooltip) && (ExtraInfo == rhs.ExtraInfo) && (Instructions == rhs.Instructions) && (CollapseExtraInfo == rhs.CollapseExtraInfo))) return false;
             if (PartialCredits != null)
             {
+                if (rhs.PartialCredits == null) return false;
                 if (PartialCredits.Length != rhs.PartialCredits.Length) return false;
                 for (int i = 0; i < PartialCredits.Length; i++)
                 {

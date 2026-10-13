@@ -2286,7 +2286,7 @@ namespace SeraphLeveling
             }
             catch (Exception ex)
             {
-                ServerApi?.Logger?.Warning($"[SeraphLeveling] Could not sync the progress report for {player?.PlayerName}: {ex.Message}");
+                ServerApi?.Logger?.Warning($"[SeraphLeveling] Could not sync the progress report for {player?.PlayerName}: {ex}");
             }
         }
 
