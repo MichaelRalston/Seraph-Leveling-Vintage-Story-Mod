@@ -741,5 +741,63 @@ namespace SeraphLeveling.Data.Traits
                 ]),
             ]
         };
+
+        public static readonly TraitDefinition Farmer = new()
+        {
+            Id = "farmer",
+            Attributes = [
+                Bonus(AldiFarmedCropDropRate, 30),
+            ]
+        };
+
+        public static readonly TraitDefinition AnimalFriend = new()
+        {
+            Id = "animalfriend",
+            Attributes = [
+                Bonus(AttributeModifierDefinitions.Furtive, 20),
+            ],
+        };
+
+        public static readonly TraitDefinition StrongShoulders = new()
+        {
+            Id = "strongshoulders",
+            Attributes = [
+                Bonus(RangedDamage, 20),
+                Bonus(RangedDistance, 20),
+            ]
+        };
+
+        public static readonly TraitDefinition Preserver = new()
+        {
+            Id = "preserver",
+            Attributes = [
+                Bonus(AttributeModifierDefinitions.Preserver, 400),
+            ]
+        };
+
+        public static readonly TraitDefinition Saddler = new()
+        {
+            Id = "saddler",
+            Attributes = [
+                Unlock(AttributeModifierDefinitions.Saddler, [
+                    new UnlockedAttributeRequirement { Attribute = SaddlerSaddle },
+                    new UnlockedAttributeRequirement { Attribute = SaddlerSaddlebag }
+                ]),
+                Unlock(SaddlerSaddle, [ new UnlockedAttributeRequirement { Attribute = SaddlerSaddle }]),
+                Unlock(SaddlerSaddlebag, [ new UnlockedAttributeRequirement { Attribute = SaddlerSaddlebag }]),
+            ]
+        };
+
+        public static readonly TraitDefinition GreenFingered = new()
+        {
+            Id = "greenfingered",
+            Attributes = [
+                Unlock(AttributeModifierDefinitions.GreenFingered, [
+                    new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.GreenFingered },
+                    new LeveledAttributeMinimumRequirement { Attribute = AldiFarmedCropDropRate, ThresholdPercentage = 10 },
+                ])
+            ],
+        };
+
     }
 }

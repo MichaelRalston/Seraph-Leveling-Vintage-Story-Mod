@@ -375,7 +375,18 @@ namespace SeraphLeveling.Data.CharacterClasses
         public static readonly CharacterClassDefinition Farmer = new()
         {
             Id = "farmer",
-            Traits = []
+            Traits = [
+                TraitDefinitions.Forager,
+                TraitDefinitions.Improviser,
+                TraitDefinitions.Nervous,
+                TraitDefinitions.Claustrophobic,
+                TraitDefinitions.Farmer,
+                TraitDefinitions.AnimalFriend,
+                TraitDefinitions.StrongShoulders,
+                TraitDefinitions.Preserver,
+                TraitDefinitions.Saddler,
+                TraitDefinitions.GreenFingered,
+            ]
         };
 
         public static readonly CharacterClassDefinition AldiMiner = new()

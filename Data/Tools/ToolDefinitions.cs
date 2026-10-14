@@ -33,5 +33,6 @@ namespace SeraphLeveling.Data.Tools
         {
             MatchOverride = Or(Simple("stone-", MatcherType.PathContains), Simple("stone"), Simple("thrownstone", MatcherType.PathContains), And(Simple("stone", MatcherType.PathContains), Not(Simple("whetstone", MatcherType.PathContains))))
         };
+        public static readonly ToolDefinition Saw = new("saw", EnumTool.Saw);
     }
 }
