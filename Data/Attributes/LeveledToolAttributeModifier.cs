@@ -681,8 +681,6 @@ namespace SeraphLeveling.Data.Attributes
                 // Check for trait unlocks that depend on trait level
                 Definition.OnCreditsChanged(player, oldCredits, (PD)this);
             }
-            var tp = GetToolProgress(toolCode);
-
         }
         public void DoEvent(IServerPlayer player, AssetLocation toolCode, float score, E scoreType = default)
         {

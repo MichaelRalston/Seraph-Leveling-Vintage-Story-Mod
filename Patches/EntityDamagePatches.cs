@@ -162,9 +162,9 @@ namespace SeraphLeveling.Patches
                 // Determine hit probability based on armor slot type (from item code)
                 string itemPath = itemCode.Path;
                 float hitProbability;
-                if (itemPath.Contains("-head-") || itemPath.Contains("-helmet-"))
+                if (slotType == EnumCharacterDressType.ArmorHead)
                     hitProbability = 0.2f;
-                else if (itemPath.Contains("-legs-") || itemPath.Contains("-leggings-"))
+                else if (slotType == EnumCharacterDressType.ArmorLegs)
                     hitProbability = 0.3f;
                 else // body
                     hitProbability = 0.5f;

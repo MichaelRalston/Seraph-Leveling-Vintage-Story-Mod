@@ -187,5 +187,11 @@ namespace SeraphLeveling.Data.Attributes
             // Calculate what the increment size should be at this level
             CurrentIncrementSize = Definition.BaseIncrement + (TotalCredits * Definition.IncrementStep);
         }
+
+        public override Messages.PartialCredits[] CollectPartialCreditsForReport()
+        {
+            return [new() {Name = "Progress", Percentage = ((float)PartialCredit)/CurrentIncrementSize, Tooltip = $"{PartialCredit}/{CurrentIncrementSize} {Definition.IncrementUnits}"}];
+        }
+
     }
 }
