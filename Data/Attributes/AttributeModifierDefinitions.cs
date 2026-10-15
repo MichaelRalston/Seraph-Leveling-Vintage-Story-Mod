@@ -412,8 +412,16 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "WDR",
             Tools = [ToolDefinitions.Shears, ToolDefinitions.Axe],
             IncrementData = LeavesIncrementData,
-            GlobalMaxCredits = new(100),
-            StatName = new("sacredlib:woodDropRate"),
+            GlobalMaxCredits = new(() => true switch
+            {
+                _ when SeraphLevelingModSystem.LoadedMods.Contains(ModDefinitions.Aldis) => 25,
+                _ => 100
+            }),
+            StatName = new(() => true switch
+            {
+                _ when SeraphLevelingModSystem.LoadedMods.Contains(ModDefinitions.Aldis) => "woodDropRate",
+                _ => "sacredlib:woodDropRate"
+            }),
             BrokenBlockScores = LeavesPoints,
             InstructionsKey = "seraphleveling:gui-woodrate-instructions",
         };
@@ -915,8 +923,16 @@ namespace SeraphLeveling.Data.Attributes
             IncrementUnits = "pit charcoal harvested",
             BaseIncrement = 30,
             IncrementStep = 10,
-            GlobalMaxCredits = new(200),
-            StatName = new("sacredlib:charcoalDropRate"),
+            GlobalMaxCredits = new(() => true switch
+            {
+                _ when SeraphLevelingModSystem.LoadedMods.Contains(ModDefinitions.Aldis) => 50,
+                _ => 200
+            }),
+            StatName = new(() => true switch
+            {
+                _ when SeraphLevelingModSystem.LoadedMods.Contains(ModDefinitions.Aldis) => "charcoalPileDropRate",
+                _ => "sacredlib:charcoalDropRate"
+            }),
             InstructionsKey = "seraphleveling:gui-charcoalrate-instructions",
         };
 
@@ -1456,6 +1472,15 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "WEX",
             Name = "Wilderness Explorer",
             Trait = new(() => Traits.TraitDefinitions.WildernessExplorer)
+        };
+
+        public static readonly GenericUnlockedAttributeModifierDefinition Woodsman = new()
+        {
+            Id = "woodsman",
+            SkillKey = "woodsman",
+            PersistenceHeader = "WDM",
+            Name = "Woodsman",
+            Trait = new(() => Traits.TraitDefinitions.Woodsman)
         };
 
         public static readonly GenericLeveledAttributeModifierDefinition TemporalStabilityDamageReceived = new()

@@ -206,6 +206,7 @@
   "attribute-weaver-contents": "Exclusive craftable <a href=\"handbooksearch:// linen or flax twine \">weaving items</a>",
   "attribute-interiordesigner-contents": "Exclusive craftable <a href=\"handbooksearch:// wallpaper \">wallpapers</a>",
   "attribute-wildernessexplorer-contents": "Exclusive craftable <a href=\"handbooksearch://Huntsman's bag\">Huntsman's bag</a>",
+  "attribute-woodsman-contents": "Can produce more <a href=\"handbooksearch://firewood\">firewood</a> when chopping logs, <a href=\"handbooksearch://stick\">sticks</a> from firewood and a handy <a href=\"handbooksearch://firewoodframe\">firewoodframe</a>.",
   "attribute-lactoseenthusiast-contents": "Exclusive craftable <a href=\"handbooksearch://milking bucket\">milking bucket</a>",
 
   "message-animalharvester-level-up": "Resourceful level up! You are now level {0} with +{1}% animal harvesting speed.",
@@ -301,6 +302,7 @@
   "message-technician-unlock": "Technician unlocked! You are now better at crafting machinery.",
   "message-weaver-unlock": "Weaver unlocked! You are now a master of the weaving arts.",
   "message-wildernessexplorer-unlock": "Wilderness Explorer unlocked! You are now better able to carry the spoils of your hunts.",
+  "message-woodsman-unlock": "Woodsman unlocked! You've really learned your way around trees.",
 
   "gui-animalharvester-instructions": "Harvest or butcher dead creatures to level.",
   "gui-armordurability-instructions": "Repair or block damage with armor to level.",

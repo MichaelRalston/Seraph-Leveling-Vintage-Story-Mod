@@ -799,5 +799,30 @@ namespace SeraphLeveling.Data.Traits
             ],
         };
 
+        public static readonly TraitDefinition AldiLumberjack = new()
+        {
+            Id = "lumberjack",
+            Attributes = [
+                Bonus(WoodDropRate, 10),
+                Bonus(StickDropRate, 30),
+                Bonus(MeleeDamage, 15),
+            ]
+        };
+
+        public static readonly TraitDefinition Burner = new()
+        {
+            Id = "burner",
+            Attributes = [
+                Bonus(CharcoalDropRate, 35)
+            ]
+        };
+
+        public static readonly TraitDefinition Woodsman = new()
+        {
+            Id = "woodsman",
+            Attributes = [
+                Unlock(AttributeModifierDefinitions.Woodsman, [new LeveledAttributeMinimumRequirement{ Attribute = WoodDropRate, ThresholdPercentage = 5}])
+            ]
+        };
     }
 }
