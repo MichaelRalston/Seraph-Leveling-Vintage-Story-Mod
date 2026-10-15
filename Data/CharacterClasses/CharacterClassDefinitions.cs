@@ -378,7 +378,13 @@ namespace SeraphLeveling.Data.CharacterClasses
         public static readonly CharacterClassDefinition Lumberjack = new()
         {
             Id = "lumberjack",
-            Traits = []
+            Traits = [
+                TraitDefinitions.AldiLumberjack,
+                // TraitDefinitions.Forester -- NOT YET IMPLEMENTED
+                TraitDefinitions.Burner,
+                TraitDefinitions.Woodsman,
+                TraitDefinitions.Kind,
+            ]
         };
 
         public static readonly CharacterClassDefinition Farmer = new()
