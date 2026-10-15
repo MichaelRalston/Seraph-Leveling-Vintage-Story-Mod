@@ -799,5 +799,64 @@ namespace SeraphLeveling.Data.Traits
             ],
         };
 
+        public static readonly TraitDefinition Gatherer = new()
+        {
+            Id = "gatherer",
+            Attributes = [
+                Bonus(ForageLootingBonus, 50),
+                Bonus(StingingNettleDropRate, 20),
+            ],
+        };
+
+        public static readonly TraitDefinition Backpacker = new()
+        {
+            Id = "backpacker",
+            Attributes = [
+                Unlock(AttributeModifierDefinitions.Backpacker, [
+                    new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Backpacker },
+                ])
+            ],
+        };
+
+        public static readonly TraitDefinition Frugal = new()
+        {
+            Id = "frugal",
+            Attributes = [
+                Bonus(HungerRate, 20),
+            ],
+        };
+
+        public static readonly TraitDefinition Healthy = new()
+        {
+            Id = "healthy",
+            Attributes = [
+                Unlock(HealthyHealth, [
+                    new LeveledAttributeMinimumRequirement { Attribute = HungerRate, ThresholdPercentage = 10 },
+                    new LeveledAttributeMinimumRequirement { Attribute = WalkingSpeed, ThresholdPercentage = 10 }
+                ]),
+            ]
+        };
+
+        public static readonly TraitDefinition VeganIngenuity = new()
+        {
+            Id = "veganingenuity",
+            Attributes = [
+                Unlock(AttributeModifierDefinitions.VeganIngenuity, [
+                    new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.VeganIngenuity },
+                    new LeveledAttributeMinimumRequirement { Attribute = ForageLootingBonus, ThresholdPercentage = 10 },
+                ])
+            ]
+        };
+
+        public static readonly TraitDefinition PacifistExorcist = new()
+        {
+            Id = "pacifistexorcist",
+            Attributes = [
+                BasicPenalty(MeleeDamage, 50),
+                BasicPenalty(RangedDamage, 50),
+                BasicPenalty(AnimalDropRate, 80),
+                BasicPenalty(AnimalHarvestRate, 35),
+            ],
+        };
     }
 }

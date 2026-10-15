@@ -345,7 +345,16 @@ namespace SeraphLeveling.Data.CharacterClasses
         public static readonly CharacterClassDefinition Wanderer = new()
         {
             Id = "wanderer",
-            Traits = []
+            Traits = [
+                TraitDefinitions.Gatherer,
+                TraitDefinitions.Backpacker,
+                TraitDefinitions.Frugal,
+                TraitDefinitions.Fleetfooted,
+                TraitDefinitions.Healthy,
+                TraitDefinitions.AnimalFriend,
+                TraitDefinitions.VeganIngenuity,
+                TraitDefinitions.PacifistExorcist,
+            ]
         };
 
         public static readonly CharacterClassDefinition Carpenter = new()

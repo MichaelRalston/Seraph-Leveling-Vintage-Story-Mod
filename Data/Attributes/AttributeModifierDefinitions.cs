@@ -1532,5 +1532,76 @@ namespace SeraphLeveling.Data.Attributes
             StatName = new("lakeiceDropRate"),
             InstructionsKey = "seraphleveling:gui-preserver-instructions",
         };
+
+        public static readonly ConcurrentDictionary<SimpleToolProgress, IncrementData> NettleIncrementData = new()
+        {
+            [default] = new IncrementData
+            {
+                IncrementUnits = "nettles",
+                BaseIncrement = 10,
+                IncrementStep = 10,
+            }
+        };
+
+        private static readonly ConcurrentDictionary<IAssetLocationMatcher, float> NettlePoints = new()
+        {
+            [Simple("tallnettle")] = 1,
+        };
+
+        public static readonly GenericToolAttributeModifierDefinition StingingNettleDropRate = new()
+        {
+            Id = "stingingNettleDropRate",
+            SkillKey = "nettlelooting",
+            PersistenceHeader = "SND",
+            Name = "Stinging Nettle Loot",
+            LongDescription = "stinging nettle looting bonus",
+            Stat = "% stinging nettle loot",
+            Tools = [ToolDefinitions.Knife, ToolDefinitions.Scythe],
+            IncrementData = NettleIncrementData,
+            BrokenBlockScores = NettlePoints,
+            GlobalMaxCredits = new(20),
+            IncrementUnits = "nettles",
+            StatName = new("nettleleavesDropRate"),
+            InstructionsKey = "seraphleveling:gui-nettlelooting-instructions",
+        };
+
+        public static readonly GenericGridCraftUnlockedAttributeModifierDefinition Backpacker = new()
+        {
+            Id = "backpacker",
+            SkillKey = "backpacker",
+            PersistenceHeader = "BCK",
+            Name = "Backpacker",
+            GlobalMaxCredits = 16,
+            CreditDescription = "hunter's backpacks",
+            WatchedCreditsAttributeKey = "sitBackpackerHunterBackpacks",
+            Trait = new(() => Traits.TraitDefinitions.Backpacker),
+            CraftedItemName = "Hunter's backpacks",
+            Verb = "Craft",
+            ResultAllowList = Simple("hunterbackpack"),
+        };
+
+        public static readonly MaxHealthUnlockedAttributeModifierDefinition HealthyHealth = new()
+        {
+            Id = "healthyhealth",
+            SkillKey = "healthyhealth",
+            PersistenceHeader = "HEH",
+            Name = "Healthy Health",
+            ModifierAmount = 2,
+            Trait = new(() => Traits.TraitDefinitions.Healthy),
+        };
+
+        public static readonly GenericCollectionUnlockedAttributeModifierDefinition VeganIngenuity = new()
+        {
+            Id = "veganingenuity",
+            SkillKey = "veganingenuity",
+            PersistenceHeader = "VGI",
+            Name = "Vegan Ingenuity",
+            RequiredCollectionSize = 12,
+            CollectedItemDescription = "mushrooms acquired",
+            CollectedItemCountKey = "sitMushroomCount",
+            TokenAllowList = ["mushroom-"],
+            Trait = new(() => Traits.TraitDefinitions.VeganIngenuity),
+            InstructionsKey = "seraphleveling:gui-veganingenuity-instructions",
+        };
     }
 }

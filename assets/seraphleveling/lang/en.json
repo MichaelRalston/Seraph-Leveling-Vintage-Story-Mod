@@ -181,6 +181,8 @@
   "attribute-temporalstabilitydamage-contents": "{0}% temporal instability damage",
   "attribute-enlightenment-contents": "{0}% temporal stability loss from meditation",
   "attribute-preserver-contents": "{0}% bonus chance of getting lake ice",
+  "attribute-stingingnettledroprate-contents": "{0}% stinging nettle loot",
+  "attribute-healthyhealth-contents": "{0} health points",
 
   "attribute-bowyer-contents": "Exclusive craftable <a href=\"handbooksearch://crude bow or crude arrow or recurve bow\">bows and arrows</a>",
   "attribute-clothier-contents": "Exclusive craftable <a href=\"handbooksearch://sewing kit or chateau or pastoral or reindeer or moon or minstrel or fortune or nomad or spice or cobalt or azure or thigh-high or fine trousers or high leather\">sewing kit and clothes</a>",
@@ -262,6 +264,7 @@
   "message-townie-level-up": "Townie level up! You are now level {0} with +{1}% walk speed on paths.",
   "message-treechopping-level-up": "Tree chopping level up! You are now level {0} with +{1}% tree chopping speed.",
   "message-woodrate-level-up": "Wood drop rate level up! You are now level {0} with +{1}% wood drop rate.",
+  "message-nettlelooting-level-up": "Stinging nettle drop rate level up! You are now level {0} with +{1}% stinging nettle drop rate.",
 
   "message-bowyer-unlock": "Bowyer unlocked! You can now craft crude bows and arrows.",
   "message-civil-unlock": "Civil overcome! You've learned to forage effectively.",
@@ -333,6 +336,7 @@
   "gui-melee-instructions": "Inflict damage with melee weapons to level.",
   "gui-mender-instructions": "Repair clothing or armor to level.",
   "gui-mining-instructions": "Mine stone and ore to level.",
+  "gui-nettlelooting-instructions": "Harvest stinging nettles to level.",
   "gui-orerate-instructions": "Mine stone and ore to level.",
   "gui-peatrate-instructions": "Harvest clay, peat, or soil with a tool to level.",
   "gui-pickaxedurability-instructions": "Repair or use a pickaxe to level.",
@@ -352,6 +356,7 @@
   "gui-temporalstabilitydamage-instructions": "Spend time at or below half temporal stability to level.",
   "gui-townie-instructions": "Walk across path blocks to level.",
   "gui-treechopping-instructions": "Chop down trees to level.",
+  "gui-veganingenuity-instructions": "Acquire many kinds of different and unique mushrooms to unlock.",
   "gui-vesseldroprate-instructions": "Loot cracked vessels to level.",
   "gui-walking-instructions": "Walk across any block to level.",
   "gui-wholevesselrate-instructions": "Loot cracked vessels to level.",
