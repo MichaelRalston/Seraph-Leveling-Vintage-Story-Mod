@@ -10,7 +10,7 @@ namespace SeraphLeveling.Data.Attributes
 {
     public interface ILeveledAttributeModifierDefinition : ISaveableAttribute
     {
-        public string StatName { get; }
+        public Lazy<string> StatName { get; }
         public string InstructionsKey { get; }
         public int GetCreditsForPlayer(IPlayer player);
         public bool IsLeveledForPlayer(IPlayer player, int requiredCredits) => GetCreditsForPlayer(player) >= requiredCredits;
@@ -34,7 +34,7 @@ namespace SeraphLeveling.Data.Attributes
     public abstract class LeveledAttributeModifierDefinition<D, PD> : AttributeModifierDefinition<D, PD>, ILeveledAttributeModifierDefinition where PD : LeveledAttributeModifierProgressData<D, PD> where D : LeveledAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
     {
         public required string Stat { get; init; }
-        public required int GlobalMaxCredits { get; init; }
+        public required Lazy<int> GlobalMaxCredits { get; init; }
         protected int? ConfiguredMaxCredits {
             get;
             private set
@@ -57,7 +57,7 @@ namespace SeraphLeveling.Data.Attributes
         {
             get => field ??= $"sit{FlatName}BonusPercent"; init;
         }
-        public required string StatName { get; init; }
+        public required Lazy<string> StatName { get; init; }
         public required string InstructionsKey { get; init; }
         public override void ReadConfigData(Dictionary<string, int> dict)
         {
@@ -109,7 +109,7 @@ namespace SeraphLeveling.Data.Attributes
                     {
                         maxCreditsFromTraits = traitList.Select(tuple => tuple.Value).OrderDescending().FirstOrDefault(val => val > 0, 0);
                     }
-                    retVal = Math.Max(GlobalMaxCredits, maxCreditsFromTraits);
+                    retVal = Math.Max(GlobalMaxCredits.Value, maxCreditsFromTraits);
                 }
                 CachedBaseMaxCredits = retVal;
                 return retVal;
@@ -150,7 +150,7 @@ namespace SeraphLeveling.Data.Attributes
             int bonusPercent = (int)Math.Ceiling(bonus * 100);
 
             // Always apply stats (they're not persistent)
-            player.Entity.Stats.Set(StatName, StatCode, IsInverted ? -bonus : bonus, false);
+            player.Entity.Stats.Set(StatName.Value, StatCode, IsInverted ? -bonus : bonus, false);
 
             // Check if any values have changed before updating WatchedAttributes
             var watchedAttrs = player.Entity.WatchedAttributes;

@@ -47,7 +47,7 @@ namespace SeraphLeveling.Data.Mods
                 CharacterClassDefinitions.Haberdasher,
                 CharacterClassDefinitions.Zealot,
                 CharacterClassDefinitions.SacredClassesDummy,
-            ]
+            ],
         });
 
         public static readonly ModDefinition Butchering = Register(new()

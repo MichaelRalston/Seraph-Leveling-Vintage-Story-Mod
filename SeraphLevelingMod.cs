@@ -6092,7 +6092,6 @@ namespace SeraphLeveling
             string playerUid = player.PlayerUID;
 
             AttributeModifierDefinitions.FarmedCropDropRate.GetForPlayer(playerUid).DoEvent(player, 1);
-            AttributeModifierDefinitions.AldiFarmedCropDropRate.GetForPlayer(playerUid).DoEvent(player, 1);
         }
         /// <summary>
         /// Check if a block is a wild crop (for Forager progression).

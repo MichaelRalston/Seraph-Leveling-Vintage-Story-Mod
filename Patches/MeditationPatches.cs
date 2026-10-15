@@ -36,7 +36,7 @@ namespace SeraphLeveling.Patches
                     var pd = AttributeModifierDefinitions.Enlightenment.GetForPlayer(playerUid);
                     
                     pd.DoEvent(serverPlayer, 1);
-                    var stat = serverPlayer.Entity.Stats.GetBlended(AttributeModifierDefinitions.Enlightenment.StatName);
+                    var stat = serverPlayer.Entity.Stats.GetBlended(AttributeModifierDefinitions.Enlightenment.StatName.Value);
                     double adjustment = (1-stat)/20f;
                     double modifiedDrain = Math.Max(0.01, originalDrain-adjustment); // Cap your reduction in case you stack it with the resonator or whatever it is.
 

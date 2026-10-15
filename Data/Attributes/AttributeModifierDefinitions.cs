@@ -118,8 +118,8 @@ namespace SeraphLeveling.Data.Attributes
             IncrementUnits = "blocks",
             BaseIncrement = 1000,
             IncrementStep = 1000,
-            GlobalMaxCredits = 15,
-            StatName = "walkspeed",
+            GlobalMaxCredits = new(15),
+            StatName = new("walkspeed"),
             InstructionsKey = "seraphleveling:gui-walking-instructions",
         };
 
@@ -134,8 +134,8 @@ namespace SeraphLeveling.Data.Attributes
             IncrementUnits = "blocks",
             BaseIncrement = 250,
             IncrementStep = 250,
-            GlobalMaxCredits = 15,
-            StatName = "sacredlib:onTheRoad",
+            GlobalMaxCredits = new(15),
+            StatName = new("sacredlib:onTheRoad"),
             InstructionsKey = "seraphleveling:gui-townie-instructions",
         };
 
@@ -148,11 +148,11 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% animal detection range",
             LongDescription = "furtive",
             IncrementUnits = "blocks",
-            StatName = "animalSeekingRange",
+            StatName = new("animalSeekingRange"),
             IsInverted = true,
             BaseIncrement = 100,
             IncrementStep = 100,
-            GlobalMaxCredits = 35,
+            GlobalMaxCredits = new(35),
             InstructionsKey = "seraphleveling:gui-furtive-instructions",
         };
 
@@ -168,8 +168,8 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% hunger rate",
             BaseIncrement = 300,
             IncrementStep = 60,
-            GlobalMaxCredits = 25,
-            StatName = "hungerrate",
+            GlobalMaxCredits = new(25),
+            StatName = new("hungerrate"),
             InstructionsKey = "seraphleveling:gui-hunger-instructions",
         };
 
@@ -183,9 +183,9 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% foraging loot",
             BaseIncrement = 10,
             IncrementStep = 10,
-            GlobalMaxCredits = 20,
+            GlobalMaxCredits = new(20),
             IncrementUnits = "crops",
-            StatName = "forageDropRate",
+            StatName = new("forageDropRate"),
             InstructionsKey = "seraphleveling:gui-foragerlooting-instructions",
         };
 
@@ -199,9 +199,9 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% wild crop drops",
             BaseIncrement = 10,
             IncrementStep = 10,
-            GlobalMaxCredits = 20,
+            GlobalMaxCredits = new(20),
             IncrementUnits = "crops",
-            StatName = "wildCropDropRate",
+            StatName = new("wildCropDropRate"),
             InstructionsKey = "seraphleveling:gui-forager-instructions",
         };
 
@@ -215,28 +215,19 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% produce drop rate",
             BaseIncrement = 15,
             IncrementStep = 15,
-            GlobalMaxCredits = 250,
+            GlobalMaxCredits = new(() => true switch
+            {
+                _ when SeraphLevelingModSystem.LoadedMods.Contains(ModDefinitions.Aldis) => 50,
+                _ => 250
+            }),
+            StatName = new(() => true switch
+            {
+                _ when SeraphLevelingModSystem.LoadedMods.Contains(ModDefinitions.Aldis) => "produceDropRate",
+                _ => "sacredlib:produceDropRate"
+            }),
             IncrementUnits = "crops",
-            StatName = "sacredlib:produceDropRate",
             InstructionsKey = "seraphleveling:gui-croprate-instructions",
         };
-
-        public static readonly GenericLeveledAttributeModifierDefinition AldiFarmedCropDropRate = new()
-        {
-            Id = "cropRate",
-            SkillKey = "croprate",
-            PersistenceHeader = "FCR",
-            Name = "Crop Rate",
-            LongDescription = "produce drop rate",
-            Stat = "% produce drop rate",
-            BaseIncrement = 15,
-            IncrementStep = 15,
-            GlobalMaxCredits = 50,
-            IncrementUnits = "crops",
-            StatName = "produceDropRate",
-            InstructionsKey = "seraphleveling:gui-croprate-instructions",
-        };
-
 
         public static readonly GenericLeveledAttributeModifierDefinition AnimalDropRate = new()
         {
@@ -247,9 +238,9 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% animal loot",
             BaseIncrement = 10,
             IncrementStep = 10,
-            GlobalMaxCredits = 20,
+            GlobalMaxCredits = new(20),
             IncrementUnits = "animals",
-            StatName = "animalLootDropRate",
+            StatName = new("animalLootDropRate"),
             InstructionsKey = "seraphleveling:gui-resourceful-instructions",
         };
 
@@ -262,9 +253,9 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% animal harvest rate",
             BaseIncrement = 10,
             IncrementStep = 10,
-            GlobalMaxCredits = 25,
+            GlobalMaxCredits = new(25),
             IncrementUnits = "animals",
-            StatName = "animalHarvestingTime",
+            StatName = new("animalHarvestingTime"),
             InstructionsKey = "seraphleveling:gui-animalharvester-instructions",
         };
 
@@ -278,8 +269,8 @@ namespace SeraphLeveling.Data.Attributes
             IncrementUnits = "vessels looted",
             BaseIncrement = 10,
             IncrementStep = 10,
-            GlobalMaxCredits = 20,
-            StatName = "rustyGearDropRate",
+            GlobalMaxCredits = new(20),
+            StatName = new("rustyGearDropRate"),
             InstructionsKey = "seraphleveling:gui-geardroprate-instructions",
         };
 
@@ -293,8 +284,8 @@ namespace SeraphLeveling.Data.Attributes
             IncrementUnits = "vessels looted",
             BaseIncrement = 10,
             IncrementStep = 10,
-            GlobalMaxCredits = 20,
-            StatName = "vesselContentsDropRate",
+            GlobalMaxCredits = new(20),
+            StatName = new("vesselContentsDropRate"),
             InstructionsKey = "seraphleveling:gui-vesseldroprate-instructions",
         };
 
@@ -308,8 +299,8 @@ namespace SeraphLeveling.Data.Attributes
             IncrementUnits = "vessels looted",
             BaseIncrement = 10,
             IncrementStep = 10,
-            GlobalMaxCredits = 20,
-            StatName = "wholeVesselLootChance",
+            GlobalMaxCredits = new(20),
+            StatName = new("wholeVesselLootChance"),
             InstructionsKey = "seraphleveling:gui-wholevesselrate-instructions",
         };
 
@@ -325,8 +316,8 @@ namespace SeraphLeveling.Data.Attributes
             IncrementUnits = "repairs",
             BaseIncrement = 5,
             IncrementStep = 1,
-            GlobalMaxCredits = 25,
-            StatName = "armorDurabilityLoss",
+            GlobalMaxCredits = new(25),
+            StatName = new("armorDurabilityLoss"),
             InstructionsKey = "seraphleveling:gui-mender-instructions",
         };
 
@@ -357,8 +348,8 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "SIT",
             Tools = [ToolDefinitions.Pickaxe],
             IncrementData = MiningIncrementData,
-            GlobalMaxCredits = 50,
-            StatName = "miningSpeedMul",
+            GlobalMaxCredits = new(50),
+            StatName = new("miningSpeedMul"),
             BrokenBlockScores = StoneBlockPoints,
             InstructionsKey = "seraphleveling:gui-mining-instructions",
         };
@@ -373,8 +364,8 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "SDR",
             Tools = [ToolDefinitions.Pickaxe],
             IncrementData = MiningIncrementData,
-            GlobalMaxCredits = 300,
-            StatName = "sacredlib:stoneDropRate",
+            GlobalMaxCredits = new(300),
+            StatName = new("sacredlib:stoneDropRate"),
             BrokenBlockScores = StoneBlockPoints,
             InstructionsKey = "seraphleveling:gui-stonerate-instructions",
         };
@@ -389,8 +380,8 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "SDR",
             Tools = [ToolDefinitions.Pickaxe],
             IncrementData = MiningIncrementData,
-            GlobalMaxCredits = 300,
-            StatName = "sacredlib:oreDropRate",
+            GlobalMaxCredits = new(300),
+            StatName = new("sacredlib:oreDropRate"),
             BrokenBlockScores = StoneBlockPoints,
             InstructionsKey = "seraphleveling:gui-orerate-instructions",
         };
@@ -421,8 +412,8 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "WDR",
             Tools = [ToolDefinitions.Shears, ToolDefinitions.Axe],
             IncrementData = LeavesIncrementData,
-            GlobalMaxCredits = 100,
-            StatName = "sacredlib:woodDropRate",
+            GlobalMaxCredits = new(100),
+            StatName = new("sacredlib:woodDropRate"),
             BrokenBlockScores = LeavesPoints,
             InstructionsKey = "seraphleveling:gui-woodrate-instructions",
         };
@@ -437,8 +428,8 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "SDR",
             Tools = [ToolDefinitions.Shears, ToolDefinitions.Axe],
             IncrementData = LeavesIncrementData,
-            GlobalMaxCredits = 1000,
-            StatName = "sacredlib:treeseedDropRate",
+            GlobalMaxCredits = new(1000),
+            StatName = new("sacredlib:treeseedDropRate"),
             BrokenBlockScores = LeavesPoints,
             InstructionsKey = "seraphleveling:gui-seedrate-instructions",
         };
@@ -453,8 +444,16 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "WDR",
             Tools = [ToolDefinitions.Shears, ToolDefinitions.Axe],
             IncrementData = LeavesIncrementData,
-            GlobalMaxCredits = 300,
-            StatName = "sacredlib:stickDropRate",
+            GlobalMaxCredits = new(() => true switch
+            {
+                _ when SeraphLevelingModSystem.LoadedMods.Contains(ModDefinitions.Aldis) => 50,
+                _ => 300
+            }),
+            StatName = new(() => true switch
+            {
+                _ when SeraphLevelingModSystem.LoadedMods.Contains(ModDefinitions.Aldis) => "stickDropRate",
+                _ => "sacredlib:stickDropRate"
+            }),
             BrokenBlockScores = LeavesPoints,
             InstructionsKey = "seraphleveling:gui-stickrate-instructions",
         };
@@ -508,8 +507,8 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "SIR",
             Tools = [ToolDefinitions.Weapon],
             IncrementData = DamageIncrementData,
-            GlobalMaxCredits = 50,
-            StatName = "rangedWeaponsDamage",
+            GlobalMaxCredits = new(50),
+            StatName = new("rangedWeaponsDamage"),
             Weapons = [ToolDefinitions.RangedWeapon],
             InstructionsKey = "seraphleveling:gui-ranged-instructions",
         };
@@ -524,8 +523,8 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "SIR",
             Tools = [ToolDefinitions.Weapon],
             IncrementData = DamageIncrementData,
-            GlobalMaxCredits = 50,
-            StatName = "rangedWeaponsAcc",
+            GlobalMaxCredits = new(50),
+            StatName = new("rangedWeaponsAcc"),
             Weapons = [ToolDefinitions.RangedWeapon],
             InstructionsKey = "seraphleveling:gui-rangedaccuracy-instructions",
         };
@@ -540,8 +539,8 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "SIR",
             Tools = [ToolDefinitions.Weapon],
             IncrementData = DamageIncrementData,
-            GlobalMaxCredits = 50,
-            StatName = "bowDrawingStrength",
+            GlobalMaxCredits = new(50),
+            StatName = new("bowDrawingStrength"),
             Weapons = [ToolDefinitions.RangedWeapon],
             InstructionsKey = "seraphleveling:gui-rangeddistance-instructions",
         };
@@ -556,8 +555,8 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "SIM",
             Tools = [ToolDefinitions.Weapon],
             IncrementData = DamageIncrementData,
-            GlobalMaxCredits = 50,
-            StatName = "meleeWeaponsDamage",
+            GlobalMaxCredits = new(50),
+            StatName = new("meleeWeaponsDamage"),
             Weapons = [ToolDefinitions.MeleeWeapon],
             InstructionsKey = "seraphleveling:gui-melee-instructions",
         };
@@ -572,8 +571,8 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "PRC",
             Tools = [ToolDefinitions.Weapon],
             IncrementData = DamageIncrementData,
-            GlobalMaxCredits = 30,
-            StatName = "mechanicalsDamage",
+            GlobalMaxCredits = new(30),
+            StatName = new("mechanicalsDamage"),
             Weapons = [ToolDefinitions.Weapon],
             InstructionsKey = "seraphleveling:gui-precise-instructions",
         };
@@ -714,10 +713,10 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "ARD",
             IsInverted = true,
             InvertedOnDisplay = false,
-            StatName = "armorDurabilityLoss",
+            StatName = new("armorDurabilityLoss"),
             Tools = [ToolDefinitions.Armor],
             IncrementData = ArmorDurabilityIncrementData,
-            GlobalMaxCredits = 50,
+            GlobalMaxCredits = new(50),
             InstructionsKey = "seraphleveling:gui-armordurability-instructions",
         };
 
@@ -739,10 +738,10 @@ namespace SeraphLeveling.Data.Attributes
             SkillKey = "armorwalkspeed",
             PersistenceHeader = "ARW",
             IsInverted = true,
-            StatName = "armorWalkSpeedAffectedness",
+            StatName = new("armorWalkSpeedAffectedness"),
             Tools = [ToolDefinitions.Armor],
             IncrementData = ArmorWornIncrementData,
-            GlobalMaxCredits = 50,
+            GlobalMaxCredits = new(50),
             InstructionsKey = "seraphleveling:gui-armorwalkspeed-instructions",
         };
 
@@ -754,10 +753,10 @@ namespace SeraphLeveling.Data.Attributes
             SkillKey = "armorhungerrate",
             PersistenceHeader = "ARH",
             IsInverted = true,
-            StatName = "hungerrate",
+            StatName = new("hungerrate"),
             Tools = [ToolDefinitions.Armor],
             IncrementData = ArmorWornIncrementData,
-            GlobalMaxCredits = 50,
+            GlobalMaxCredits = new(50),
             InstructionsKey = "seraphleveling:gui-armorhungerrate-instructions",
         };
 
@@ -768,10 +767,10 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% armor healing effectiveness",
             SkillKey = "armorhealing",
             PersistenceHeader = "ARH",
-            StatName = "healingeffectivness", // yes, misspelled - that's correct.
+            StatName = new("healingeffectivness"), // yes, misspelled - that's correct.
             Tools = [ToolDefinitions.Armor],
             IncrementData = ArmorWornIncrementData,
-            GlobalMaxCredits = 25,
+            GlobalMaxCredits = new(25),
             InstructionsKey = "seraphleveling:gui-armorhealing-instructions",
         };
 
@@ -854,8 +853,8 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "TRC",
             Tools = [ToolDefinitions.Axe],
             IncrementData = TreeChoppingIncrementData,
-            GlobalMaxCredits = 250,
-            StatName = "ats:wood|axe-?-harvestSpeed",
+            GlobalMaxCredits = new(250),
+            StatName = new("ats:wood|axe-?-harvestSpeed"),
             BrokenBlockScores = WoodLogPoints,
             InstructionsKey = "seraphleveling:gui-treechopping-instructions",
         };
@@ -870,8 +869,8 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "XDM",
             Tools = [ToolDefinitions.Axe],
             IncrementData = TreeChoppingIncrementData,
-            GlobalMaxCredits = 100,
-            StatName = "ats:axe-?-meleeDamageMult",
+            GlobalMaxCredits = new(100),
+            StatName = new("ats:axe-?-meleeDamageMult"),
             BrokenBlockScores = WoodLogPoints,
             InstructionsKey = "seraphleveling:gui-axedamage-instructions",
         };
@@ -885,7 +884,7 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "XDU",
             IsInverted = true,
             InvertedOnDisplay = false,
-            StatName = "ats:axe-?-reduceDurabilityLoss",
+            StatName = new("ats:axe-?-reduceDurabilityLoss"),
             Tools = [ToolDefinitions.Axe],
             IncrementData = new()
             {
@@ -902,7 +901,7 @@ namespace SeraphLeveling.Data.Attributes
                     IncrementStep = 1,
                 }
             },
-            GlobalMaxCredits = 75,
+            GlobalMaxCredits = new(75),
             InstructionsKey = "seraphleveling:gui-axedurability-instructions",
         };
 
@@ -916,8 +915,8 @@ namespace SeraphLeveling.Data.Attributes
             IncrementUnits = "pit charcoal harvested",
             BaseIncrement = 30,
             IncrementStep = 10,
-            GlobalMaxCredits = 200,
-            StatName = "sacredlib:charcoalDropRate",
+            GlobalMaxCredits = new(200),
+            StatName = new("sacredlib:charcoalDropRate"),
             InstructionsKey = "seraphleveling:gui-charcoalrate-instructions",
         };
 
@@ -948,8 +947,8 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "CLD",
             Tools = [ToolDefinitions.Shovel],
             IncrementData = DiggingIncrementData,
-            GlobalMaxCredits = 50,
-            StatName = "sacredlib:clayDropRate",
+            GlobalMaxCredits = new(50),
+            StatName = new("sacredlib:clayDropRate"),
             BrokenBlockScores = DirtPoints,
             InstructionsKey = "seraphleveling:gui-clayrate-instructions",
         };
@@ -964,8 +963,8 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "PDR",
             Tools = [ToolDefinitions.Shovel],
             IncrementData = DiggingIncrementData,
-            GlobalMaxCredits = 50,
-            StatName = "sacredlib:peatDropRate",
+            GlobalMaxCredits = new(50),
+            StatName = new("sacredlib:peatDropRate"),
             BrokenBlockScores = DirtPoints,
             InstructionsKey = "seraphleveling:gui-peatrate-instructions",
         };
@@ -980,8 +979,8 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "CFS",
             Tools = [ToolDefinitions.Shovel],
             IncrementData = DiggingIncrementData,
-            GlobalMaxCredits = 100,
-            StatName = "ats:handclayformingspeed",
+            GlobalMaxCredits = new(100),
+            StatName = new("ats:handclayformingspeed"),
             BrokenBlockScores = DirtPoints,
             InstructionsKey = "seraphleveling:gui-clayformspeed-instructions",
         };
@@ -1036,8 +1035,8 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "HUS",
             Tools = [ToolDefinitions.Poultice],
             IncrementData = HealingIncrementData,
-            GlobalMaxCredits = 75,
-            StatName = "ats:healitemusetime",
+            GlobalMaxCredits = new(75),
+            StatName = new("ats:healitemusetime"),
             InstructionsKey = "seraphleveling:gui-healusespeed-instructions",
         };
 
@@ -1106,8 +1105,8 @@ namespace SeraphLeveling.Data.Attributes
                     IncrementStep = 1,
                 }
             },
-            GlobalMaxCredits = 75,
-            StatName = "ats:hoe-?-reduceDurabilityLoss",
+            GlobalMaxCredits = new(75),
+            StatName = new("ats:hoe-?-reduceDurabilityLoss"),
             InstructionsKey = "seraphleveling:gui-hoedurability-instructions",
         };
 
@@ -1135,8 +1134,8 @@ namespace SeraphLeveling.Data.Attributes
                     IncrementStep = 1,
                 }
             },
-            GlobalMaxCredits = 75,
-            StatName = "ats:scythe-?-reduceDurabilityLoss",
+            GlobalMaxCredits = new(75),
+            StatName = new("ats:scythe-?-reduceDurabilityLoss"),
             InstructionsKey = "seraphleveling:gui-scythedurability-instructions",
         };
 
@@ -1164,8 +1163,8 @@ namespace SeraphLeveling.Data.Attributes
                     IncrementStep = 1,
                 }
             },
-            GlobalMaxCredits = 75,
-            StatName = "ats:hammer-?-reduceDurabilityLoss",
+            GlobalMaxCredits = new(75),
+            StatName = new("ats:hammer-?-reduceDurabilityLoss"),
             InstructionsKey = "seraphleveling:gui-hammerdurability-instructions",
         };
 
@@ -1193,8 +1192,8 @@ namespace SeraphLeveling.Data.Attributes
                     IncrementStep = 1,
                 }
             },
-            GlobalMaxCredits = 75,
-            StatName = "ats:pickaxe-?-reduceDurabilityLoss",
+            GlobalMaxCredits = new(75),
+            StatName = new("ats:pickaxe-?-reduceDurabilityLoss"),
             InstructionsKey = "seraphleveling:gui-pickaxedurability-instructions",
         };
 
@@ -1222,8 +1221,8 @@ namespace SeraphLeveling.Data.Attributes
                     IncrementStep = 1,
                 }
             },
-            GlobalMaxCredits = 75,
-            StatName = "ats:bow-?-reduceDurabilityLoss",
+            GlobalMaxCredits = new(75),
+            StatName = new("ats:bow-?-reduceDurabilityLoss"),
             InstructionsKey = "seraphleveling:gui-bowdurability-instructions",
         };
 
@@ -1251,8 +1250,8 @@ namespace SeraphLeveling.Data.Attributes
                     IncrementStep = 1,
                 }
             },
-            GlobalMaxCredits = 75,
-            StatName = "ats:bow-?-rangedDamageMult",
+            GlobalMaxCredits = new(75),
+            StatName = new("ats:bow-?-rangedDamageMult"),
             Weapons = [ToolDefinitions.Bow],
             InstructionsKey = "seraphleveling:gui-bowdamage-instructions",
         };
@@ -1309,8 +1308,8 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "SMS",
             Tools = [ToolDefinitions.Hammer],
             IncrementData = SmithingIncrementData,
-            GlobalMaxCredits = 100,
-            StatName = "ats:handsmithingspeed",
+            GlobalMaxCredits = new(100),
+            StatName = new("ats:handsmithingspeed"),
             InstructionsKey = "seraphleveling:gui-smithing-instructions",
         };
 
@@ -1324,8 +1323,8 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "BRR",
             Tools = [ToolDefinitions.Hammer],
             IncrementData = SmithingIncrementData,
-            GlobalMaxCredits = 100,
-            StatName = "ats:bitrecoveryrate",
+            GlobalMaxCredits = new(100),
+            StatName = new("ats:bitrecoveryrate"),
             InstructionsKey = "seraphleveling:gui-bitrecoveryrate-instructions",
         };
 
@@ -1339,8 +1338,8 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "HDM",
             Tools = [ToolDefinitions.Hammer],
             IncrementData = DamageIncrementData,
-            GlobalMaxCredits = 100,
-            StatName = "ats:hammer-?-meleeDamageMult",
+            GlobalMaxCredits = new(100),
+            StatName = new("ats:hammer-?-meleeDamageMult"),
             Weapons = [ToolDefinitions.Hammer],
             InstructionsKey = "seraphleveling:gui-hammerdamage-instructions",
         };
@@ -1355,8 +1354,8 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "TPL",
             Tools = [ToolDefinitions.Hammer],
             IncrementData = DamageIncrementData,
-            GlobalMaxCredits = 10,
-            StatName = "ats:temperingpowerlossrate",
+            GlobalMaxCredits = new(10),
+            StatName = new("ats:temperingpowerlossrate"),
             IsInverted = true,
             Weapons = [ToolDefinitions.Hammer],
             InstructionsKey = "seraphleveling:gui-temperpowerloss-instructions",
@@ -1372,8 +1371,8 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "QNS",
             Tools = [ToolDefinitions.Hammer],
             IncrementData = DamageIncrementData,
-            GlobalMaxCredits = 5,
-            StatName = "ats:quenchshatterrate",
+            GlobalMaxCredits = new(5),
+            StatName = new("ats:quenchshatterrate"),
             IsInverted = true,
             Weapons = [ToolDefinitions.Hammer],
             InstructionsKey = "seraphleveling:gui-quenchshatter-instructions",
@@ -1389,8 +1388,8 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "KDM",
             Tools = [ToolDefinitions.Knife],
             IncrementData = DamageIncrementData,
-            GlobalMaxCredits = 100,
-            StatName = "ats:knife-?-meleeDamageMult",
+            GlobalMaxCredits = new(100),
+            StatName = new("ats:knife-?-meleeDamageMult"),
             Weapons = [ToolDefinitions.Knife],
             InstructionsKey = "seraphleveling:gui-knifedamage-instructions",
         };
@@ -1419,8 +1418,8 @@ namespace SeraphLeveling.Data.Attributes
                     IncrementStep = 1,
                 }
             },
-            GlobalMaxCredits = 75,
-            StatName = "ats:knife-?-reduceDurabilityLoss",
+            GlobalMaxCredits = new(75),
+            StatName = new("ats:knife-?-reduceDurabilityLoss"),
             InstructionsKey = "seraphleveling:gui-knifedurability-instructions",
         };
 
@@ -1435,8 +1434,8 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "CDM",
             Tools = [ToolDefinitions.Knife],
             IncrementData = DamageIncrementData,
-            GlobalMaxCredits = 100,
-            StatName = "ats:aculinaryartillery:cleaver-?-meleeDamageMult",
+            GlobalMaxCredits = new(100),
+            StatName = new("ats:aculinaryartillery:cleaver-?-meleeDamageMult"),
             Weapons = [ToolDefinitions.Knife],
             InstructionsKey = "seraphleveling:gui-cleaverdamage-instructions",
         };
@@ -1471,8 +1470,8 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% temporal instability damage received",
             BaseIncrement = 300,
             IncrementStep = 60,
-            GlobalMaxCredits = 80,
-            StatName = "ats:temporalstabilitydamagereceived",
+            GlobalMaxCredits = new(80),
+            StatName = new("ats:temporalstabilitydamagereceived"),
             InstructionsKey = "seraphleveling:gui-temporalstabilitydamage-instructions",
         };
 
@@ -1498,8 +1497,8 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% temporal stability lost to meditation",
             BaseIncrement = 20,
             IncrementStep = 10,
-            GlobalMaxCredits = 50,
-            StatName = "seraphleveling:enlightenment",
+            GlobalMaxCredits = new(50),
+            StatName = new("seraphleveling:enlightenment"),
             InstructionsKey = "seraphleveling:gui-enlightenment-instructions",
         };
 
@@ -1529,8 +1528,8 @@ namespace SeraphLeveling.Data.Attributes
             Tools = [ToolDefinitions.Saw],
             IncrementData = IceIncrementData,
             BrokenBlockScores = IcePoints,
-            GlobalMaxCredits = 500,
-            StatName = "lakeiceDropRate",
+            GlobalMaxCredits = new(500),
+            StatName = new("lakeiceDropRate"),
             InstructionsKey = "seraphleveling:gui-preserver-instructions",
         };
     }

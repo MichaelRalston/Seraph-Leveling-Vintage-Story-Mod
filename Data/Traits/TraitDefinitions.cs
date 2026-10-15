@@ -746,7 +746,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "farmer",
             Attributes = [
-                Bonus(AldiFarmedCropDropRate, 30),
+                Bonus(FarmedCropDropRate, 30),
             ]
         };
 
@@ -794,7 +794,7 @@ namespace SeraphLeveling.Data.Traits
             Attributes = [
                 Unlock(AttributeModifierDefinitions.GreenFingered, [
                     new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.GreenFingered },
-                    new LeveledAttributeMinimumRequirement { Attribute = AldiFarmedCropDropRate, ThresholdPercentage = 10 },
+                    new LeveledAttributeMinimumRequirement { Attribute = FarmedCropDropRate, ThresholdPercentage = 10 },
                 ])
             ],
         };
