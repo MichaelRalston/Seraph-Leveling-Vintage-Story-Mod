@@ -380,8 +380,16 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "SDR",
             Tools = [ToolDefinitions.Pickaxe],
             IncrementData = MiningIncrementData,
-            GlobalMaxCredits = new(300),
-            StatName = new("sacredlib:oreDropRate"),
+            GlobalMaxCredits = new(() => true switch
+            {
+                _ when SeraphLevelingModSystem.LoadedMods.Contains(ModDefinitions.Aldis) => 50,
+                _ => 300
+            }),
+            StatName = new(() => true switch
+            {
+                _ when SeraphLevelingModSystem.LoadedMods.Contains(ModDefinitions.Aldis) => "oreDropRate",
+                _ => "sacredlib:oreDropRate"
+            }),
             BrokenBlockScores = StoneBlockPoints,
             InstructionsKey = "seraphleveling:gui-orerate-instructions",
         };
@@ -492,6 +500,21 @@ namespace SeraphLeveling.Data.Attributes
             TokenAllowList = ["clothes-", "shirt-", "trousers-", "dress-", "hat-", "cape-", "cloak-", "jacket-", "vest-", "skirt-", "gloves-", "boots-", "shoes-", "headband-", "mask-", "scarf-"],
             Trait = new(() => Traits.TraitDefinitions.Clothier),
             InstructionsKey = "seraphleveling:gui-clothier-instructions",
+        };
+
+        public static readonly GenericCollectionUnlockedAttributeModifierDefinition Glassblower = new()
+        {
+            Id = "glassblower",
+            SkillKey = "glassblower",
+            PersistenceHeader = "GLB",
+            Name = "Glassblower",
+            RequiredCollectionSize = 5,
+            CollectedItemDescription = "colored glass acquired",
+            CollectedItemCountKey = "sitGlassblowerCount",
+            TokenAllowList = ["glassblock-", "glassslab-"],
+            TokenBanList = ["-clear", "-quartz"],
+            Trait = new(() => Traits.TraitDefinitions.Glassblower),
+            InstructionsKey = "seraphleveling:gui-glassblower-instructions",
         };
 
         public static readonly ConcurrentDictionary<SimpleToolProgress, IncrementData> DamageIncrementData = new()
@@ -1296,6 +1319,19 @@ namespace SeraphLeveling.Data.Attributes
             CollectedItemCountKey = "sitMasterCraftsmanCount",
             TokenAllowList = ["*"],
             Trait = new(() => Traits.TraitDefinitions.MasterCraftsman),
+        };
+
+        public static readonly GenericCollectionUnlockedAttributeModifierDefinition Smith = new()
+        {
+            Id = "smith",
+            SkillKey = "smith",
+            PersistenceHeader = "SMH",
+            Name = "Smith",
+            RequiredCollectionSize = 10,
+            CollectedItemDescription = "items smithed",
+            CollectedItemCountKey = "sitSmithCount",
+            TokenAllowList = ["*"],
+            Trait = new(() => Traits.TraitDefinitions.Smith),
         };
 
         public static readonly ConcurrentDictionary<RepairableToolProgress, IncrementData> SmithingIncrementData = new()

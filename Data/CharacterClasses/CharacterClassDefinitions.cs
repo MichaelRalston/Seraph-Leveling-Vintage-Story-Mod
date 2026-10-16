@@ -279,7 +279,18 @@ namespace SeraphLeveling.Data.CharacterClasses
         public static readonly CharacterClassDefinition Deepforger = new()
         {
             Id = "deepforger",
-            Traits = []
+            Traits = [
+                TraitDefinitions.Smith,
+                TraitDefinitions.Miner,
+                // TraitDefinitions.CokeFurnaceMaster,
+                TraitDefinitions.StrongArms,
+                TraitDefinitions.Glassblower,
+                // TraitDefinitions.Prospector, -- NOT YET IMPLEMENTED.
+                TraitDefinitions.Tough,
+                TraitDefinitions.Myopic,
+                TraitDefinitions.Heavyhanded
+
+            ]
         };
 
         public static readonly CharacterClassDefinition Earthshaper = new()
@@ -372,7 +383,15 @@ namespace SeraphLeveling.Data.CharacterClasses
         public static readonly CharacterClassDefinition AldiBlacksmith = new()
         {
             Id = "blacksmith",
-            Traits = []
+            Traits = [
+                TraitDefinitions.Smith,
+                // TraitDefinitions.CokeFurnaceMaster,
+                TraitDefinitions.Mender,
+                TraitDefinitions.StrongArms,
+                TraitDefinitions.Nearsighted,
+                TraitDefinitions.Kind,
+                TraitDefinitions.Glassblower
+            ]
         };
 
         public static readonly CharacterClassDefinition Lumberjack = new()

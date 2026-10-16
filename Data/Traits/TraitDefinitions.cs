@@ -884,5 +884,40 @@ namespace SeraphLeveling.Data.Traits
                 Unlock(AttributeModifierDefinitions.Woodsman, [new LeveledAttributeMinimumRequirement{ Attribute = WoodDropRate, ThresholdPercentage = 5}])
             ]
         };
+
+        public static readonly TraitDefinition StrongArms = new()
+        {
+            Id = "strongarms",
+            Attributes = [
+                Bonus(MeleeDamage, 15)
+            ]
+        };
+
+        public static readonly TraitDefinition Smith = new()
+        {
+            Id = "smith",
+            Attributes = [
+                Unlock(AttributeModifierDefinitions.Smith, [
+                    new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Smith },
+                    new LeveledAttributeMinimumRequirement { Attribute = MeleeDamage, ThresholdPercentage = 5 },
+                ])
+            ],
+        };
+        public static readonly TraitDefinition Glassblower = new()
+        {
+            Id = "glassblower",
+            Attributes = [
+                Unlock(AttributeModifierDefinitions.Glassblower, [new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Glassblower }])
+            ]
+        };
+
+        public static readonly TraitDefinition Miner = new()
+        {
+            Id = "miner",
+            Attributes = [
+                Bonus(OreDropRate, 40),
+                Bonus(MiningSpeed, 75),
+            ]
+        };
     }
 }
