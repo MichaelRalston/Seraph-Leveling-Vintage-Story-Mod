@@ -1664,5 +1664,20 @@ namespace SeraphLeveling.Data.Attributes
             Trait = new(() => Traits.TraitDefinitions.VeganIngenuity),
             InstructionsKey = "seraphleveling:gui-veganingenuity-instructions",
         };
+
+        public static readonly GenericCookingUnlockedAttributeModifierDefinition AldiCulinary = new()
+        {
+            Id = "aldiculinary",
+            SkillKey = "aldiculinary",
+            PersistenceHeader = "CUL",
+            Name = "Culinary",
+            GlobalMaxCredits = 50,
+            CreditDescription = "food portions",
+            WatchedCreditsAttributeKey = "sitAldiCulinaryFoodPortions",
+            Trait = new(() => Traits.TraitDefinitions.AldiCulinary),
+            CookedItemName = "Food portions",
+            Verb = "Cook",
+            ResultAllowList = Simple(IAssetLocationMatcher.MATCH_ALL),
+        };
     }
 }

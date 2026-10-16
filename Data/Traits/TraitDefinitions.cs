@@ -1,5 +1,6 @@
 using System;
 using SeraphLeveling.Data.Attributes;
+using Vintagestory.GameContent;
 using static SeraphLeveling.Data.Attributes.AttributeModifierDefinitions;
 using static SeraphLeveling.Data.Attributes.IAttributeModifier;
 
@@ -917,6 +918,50 @@ namespace SeraphLeveling.Data.Traits
             Attributes = [
                 Bonus(OreDropRate, 40),
                 Bonus(MiningSpeed, 75),
+            ]
+        };
+        
+        public static readonly TraitDefinition AldiButcher = new()
+        {
+            Id = "butcher",
+            Attributes = [
+                Bonus(AnimalDropRate, 50),
+                BasicPenalty(AnimalHarvestRate, 30)
+            ]
+        };
+
+        public static readonly TraitDefinition AldiCulinary = new()
+        {
+            Id = "culinary",
+            Attributes = [
+                Unlock(AttributeModifierDefinitions.AldiCulinary, [
+                    new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.AldiCulinary },
+                ])
+            ],
+        };
+
+        public static readonly TraitDefinition FoodSnitcher = new()
+        {
+            Id = "foodsnitcher",
+            Attributes = [
+                Bonus(HungerRate, 30)
+            ]
+        };
+
+        public static readonly TraitDefinition Heavy = new()
+        {
+            Id = "heavy",
+            Attributes = [
+                Bonus(ArmorWalkSpeed, 100)
+            ]
+        };
+
+        public static readonly TraitDefinition Booming = new()
+        {
+            Id = "booming",
+            Attributes = [
+                BasicPenalty(AttributeModifierDefinitions.Furtive, 50),
+                BasicPenalty(WalkingSpeed, 10)
             ]
         };
     }

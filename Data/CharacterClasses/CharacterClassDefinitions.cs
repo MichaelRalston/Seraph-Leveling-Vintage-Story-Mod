@@ -350,7 +350,17 @@ namespace SeraphLeveling.Data.CharacterClasses
         public static readonly CharacterClassDefinition Innkeeper = new()
         {
             Id = "innkeeper",
-            Traits = []
+            Traits = [
+                TraitDefinitions.AldiButcher,
+                TraitDefinitions.AldiCulinary,
+                // TraitDefinitions.FireStarter, --- NOT YET IMPLEMENTED
+                TraitDefinitions.FoodSnitcher,
+                TraitDefinitions.Heavy,
+                TraitDefinitions.Tough,
+                TraitDefinitions.Booming,
+                TraitDefinitions.Heavyhanded,
+                TraitDefinitions.Myopic,
+            ]
         };
 
         public static readonly CharacterClassDefinition Wanderer = new()
