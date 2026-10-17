@@ -2448,8 +2448,6 @@ namespace SeraphLeveling
         {
             base.AssetsFinalize(api);
 
-            if (api.Side != EnumAppSide.Server) return;
-
             // Add InteractionTrackingBehavior to all cooking blocks.
             // Also add the OnBaked hook to all cookable blocks (vanilla and modded) that implement IBakeableCallback.
             foreach (var block in api.World.Blocks)
@@ -7434,6 +7432,7 @@ namespace SeraphLeveling
                 });
             Gui.SeraphProgressPage.Channel = channel;
             progressPollListenerId = api.Event.RegisterGameTickListener(_ => Gui.SeraphProgressPage.PollIfShowing(), 1000);
+            api.RegisterBlockEntityBehaviorClass("InteractionTrackingBehavior", typeof(BlockEntityBehavior)); // Just shoosh it.
 
 
             // Apply Harmony patches manually for better control
