@@ -249,14 +249,15 @@ namespace SeraphLeveling.Data.Attributes
             int currentCredits = progress.TotalCredits;
             string displayPercent = CalculateDisplayBonus(player.Entity, progress);
             int maxCredits = GetMaxCredits(player.Entity);
+            bool isCapped = currentCredits >= maxCredits;
 
             return new Messages.ProgressReportContent
             {
                 Name = Name,
                 Percentage = maxCredits == 0?1:currentCredits/(float)maxCredits,
                 Tooltip = $"{progress.DisplayCredits}% / {maxCredits}%",
-                PartialCredits = progress.CollectPartialCreditsForReport(),
-                Instructions = Lang.Get(InstructionsKey),
+                PartialCredits = isCapped?[]:progress.CollectPartialCreditsForReport(),
+                Instructions = isCapped?null:Lang.Get(InstructionsKey),
                 ExtraInfo = $"Current bonus: {displayPercent}{Stat}"
             };
         }
