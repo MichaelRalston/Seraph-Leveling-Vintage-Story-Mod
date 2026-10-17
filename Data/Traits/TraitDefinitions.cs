@@ -1006,5 +1006,59 @@ namespace SeraphLeveling.Data.Traits
                 Bonus(RangedDamage, 20),
             ]
         };
+
+        public static readonly TraitDefinition Unstoppable = new()
+        {
+            Id = "unstoppable",
+            Attributes = [
+                Bonus(MeleeDamage, 30),
+                Bonus(ArmorDurability, 20),
+                Bonus(ArmorWalkSpeed, 50),
+            ]
+        };
+
+        public static readonly TraitDefinition KeepThemNear = new()
+        {
+            Id = "keepthemnear",
+            Attributes = [
+                Penalty(RangedDamage, 80, [ new LeveledAttributeMinimumRequirement { Attribute = RangedDamage, ThresholdPercentage = 0 }]),
+            ]
+        };
+
+        public static readonly TraitDefinition HighConsumption = new()
+        {
+            Id = "highconsumption",
+            Attributes = [
+                Penalty(HungerRate, 15, [ new LeveledAttributeMinimumRequirement { Attribute = HungerRate, ThresholdPercentage = 0 }]),
+            ]
+        };
+
+        public static readonly TraitDefinition Loud = new()
+        {
+            Id = "loud",
+            Attributes = [
+                Penalty(AttributeModifierDefinitions.Furtive, 20, [ new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.Furtive, ThresholdPercentage = 0 }]),
+            ]
+        };
+
+        public static readonly TraitDefinition CarefulStrike = new()
+        {
+            Id = "carefulstrike",
+            Attributes = [
+                Bonus(StoneDropRate, 30)
+            ]
+        };
+
+        public static readonly TraitDefinition Sturdy = new()
+        {
+            Id = "sturdy",
+            Attributes = [
+                Bonus(MeleeDamage, 10),
+                Unlock(HardyHealth, [
+                    new LeveledAttributeMinimumRequirement { Attribute = MiningSpeed, ThresholdPercentage = 10 },
+                    new LeveledAttributeMinimumRequirement { Attribute = ArmorDurability, ThresholdPercentage = 10 }
+                ]),
+            ]
+        };
     }
 }

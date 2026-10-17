@@ -296,13 +296,29 @@ namespace SeraphLeveling.Data.CharacterClasses
         public static readonly CharacterClassDefinition Earthshaper = new()
         {
             Id = "earthshaper",
-            Traits = []
+            Traits = [
+                TraitDefinitions.Potter,
+                TraitDefinitions.Artisan,
+                TraitDefinitions.Digger,
+                TraitDefinitions.Mason,
+                TraitDefinitions.CarefulStrike,
+                TraitDefinitions.Sturdy,
+                TraitDefinitions.Civil,
+                TraitDefinitions.Hungry,
+
+            ]
         };
 
         public static readonly CharacterClassDefinition Mason = new()
         {
             Id = "mason",
-            Traits = []
+            Traits = [
+                TraitDefinitions.Mason,
+                TraitDefinitions.CarefulStrike,
+                TraitDefinitions.Sturdy,
+                TraitDefinitions.Civil,
+                TraitDefinitions.Hungry,
+            ]
         };
 
         public static readonly CharacterClassDefinition Threadweaver = new()
@@ -320,7 +336,15 @@ namespace SeraphLeveling.Data.CharacterClasses
         public static readonly CharacterClassDefinition Mercenary = new()
         {
             Id = "mercenary",
-            Traits = []
+            Traits = [
+                TraitDefinitions.Unstoppable,
+                // TraitDefinitions.Greedy,
+                TraitDefinitions.Hardy,
+                TraitDefinitions.Merciless,
+                TraitDefinitions.HighConsumption,
+                TraitDefinitions.Loud,
+                TraitDefinitions.KeepThemNear,
+            ]
         };
 
         public static readonly CharacterClassDefinition Wildrunner = new()

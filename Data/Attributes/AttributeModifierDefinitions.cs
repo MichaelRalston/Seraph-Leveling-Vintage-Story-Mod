@@ -364,8 +364,16 @@ namespace SeraphLeveling.Data.Attributes
             PersistenceHeader = "SDR",
             Tools = [ToolDefinitions.Pickaxe],
             IncrementData = MiningIncrementData,
-            GlobalMaxCredits = new(300),
-            StatName = new("sacredlib:stoneDropRate"),
+            GlobalMaxCredits = new(() => true switch
+            {
+                _ when SeraphLevelingModSystem.LoadedMods.Contains(ModDefinitions.Aldis) => 50,
+                _ => 300
+            }),
+            StatName = new(() => true switch
+            {
+                _ when SeraphLevelingModSystem.LoadedMods.Contains(ModDefinitions.Aldis) => "rockDropRate",
+                _ => "sacredlib:stoneDropRate"
+            }),
             BrokenBlockScores = StoneBlockPoints,
             InstructionsKey = "seraphleveling:gui-stonerate-instructions",
         };
@@ -522,7 +530,7 @@ namespace SeraphLeveling.Data.Attributes
             Id = "artisan",
             SkillKey = "artisan",
             PersistenceHeader = "ART",
-            Name = "artisan",
+            Name = "Artisan",
             RequiredCollectionSize = 5,
             CollectedItemDescription = "fancy storage vessels acquired",
             CollectedItemCountKey = "sitArtisanCount",
