@@ -517,6 +517,21 @@ namespace SeraphLeveling.Data.Attributes
             InstructionsKey = "seraphleveling:gui-glassblower-instructions",
         };
 
+        public static readonly GenericCollectionUnlockedAttributeModifierDefinition Artisan = new()
+        {
+            Id = "artisan",
+            SkillKey = "artisan",
+            PersistenceHeader = "ART",
+            Name = "artisan",
+            RequiredCollectionSize = 5,
+            CollectedItemDescription = "fancy storage vessels acquired",
+            CollectedItemCountKey = "sitArtisanCount",
+            TokenAllowList = ["storagevessel-"],
+            TokenBanList = ["-burned", "-raw", "-blue-fired", "-red-fired"],
+            Trait = new(() => Traits.TraitDefinitions.Artisan),
+            InstructionsKey = "seraphleveling:gui-artisan-instructions",
+        };
+
         public static readonly ConcurrentDictionary<SimpleToolProgress, IncrementData> DamageIncrementData = new()
         {
             [default] = new IncrementData
@@ -987,7 +1002,11 @@ namespace SeraphLeveling.Data.Attributes
             Tools = [ToolDefinitions.Shovel],
             IncrementData = DiggingIncrementData,
             GlobalMaxCredits = new(50),
-            StatName = new("sacredlib:clayDropRate"),
+            StatName = new(() => true switch
+            {
+                _ when SeraphLevelingModSystem.LoadedMods.Contains(ModDefinitions.Aldis) => "clayDropRate",
+                _ => "sacredlib:clayDropRate"
+            }),
             BrokenBlockScores = DirtPoints,
             InstructionsKey = "seraphleveling:gui-clayrate-instructions",
         };
@@ -1003,7 +1022,11 @@ namespace SeraphLeveling.Data.Attributes
             Tools = [ToolDefinitions.Shovel],
             IncrementData = DiggingIncrementData,
             GlobalMaxCredits = new(50),
-            StatName = new("sacredlib:peatDropRate"),
+            StatName = new(() => true switch
+            {
+                _ when SeraphLevelingModSystem.LoadedMods.Contains(ModDefinitions.Aldis) => "peatDropRate",
+                _ => "sacredlib:peatDropRate"
+            }),
             BrokenBlockScores = DirtPoints,
             InstructionsKey = "seraphleveling:gui-peatrate-instructions",
         };

@@ -911,6 +911,13 @@ namespace SeraphLeveling.Data.Traits
                 Unlock(AttributeModifierDefinitions.Glassblower, [new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Glassblower }])
             ]
         };
+        public static readonly TraitDefinition Artisan = new()
+        {
+            Id = "artisan",
+            Attributes = [
+                Unlock(AttributeModifierDefinitions.Artisan, [new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Artisan }])
+            ]
+        };
 
         public static readonly TraitDefinition Miner = new()
         {
@@ -962,6 +969,41 @@ namespace SeraphLeveling.Data.Traits
             Attributes = [
                 BasicPenalty(AttributeModifierDefinitions.Furtive, 50),
                 BasicPenalty(WalkingSpeed, 10)
+            ]
+        };
+
+        public static readonly TraitDefinition Digger = new()
+        {
+            Id = "digger",
+            Attributes = [
+                Bonus(MiningSpeed, 30),
+                Bonus(PeatDropRate, 30),
+                Bonus(ClayDropRate, 20),
+            ]
+        };
+
+        public static readonly TraitDefinition Hungry = new()
+        {
+            Id = "hungry",
+            Attributes = [
+                Penalty(HungerRate, 10, [ new LeveledAttributeMinimumRequirement { Attribute = HungerRate, ThresholdPercentage = 0 }]),
+            ]
+        };
+
+        public static readonly TraitDefinition ClumsyMiner = new()
+        {
+            Id = "clumsyminer",
+            Attributes = [
+                Penalty(OreDropRate, 10, [ new LeveledAttributeMinimumRequirement { Attribute = OreDropRate, ThresholdPercentage = 0 }])
+            ]
+        };
+
+        public static readonly TraitDefinition Versatile = new()
+        {
+            Id = "versatile",
+            Attributes = [
+                Bonus(MeleeDamage, 15),
+                Bonus(RangedDamage, 20),
             ]
         };
     }

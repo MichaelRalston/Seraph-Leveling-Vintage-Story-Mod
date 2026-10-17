@@ -332,7 +332,14 @@ namespace SeraphLeveling.Data.CharacterClasses
         public static readonly CharacterClassDefinition Squire = new()
         {
             Id = "squire",
-            Traits = []
+            Traits = [
+                TraitDefinitions.Fleetfooted,
+                TraitDefinitions.Healthy,
+                TraitDefinitions.Forager,
+                TraitDefinitions.Hungry,
+                TraitDefinitions.ClumsyMiner,
+                TraitDefinitions.Versatile,
+            ]
         };
 
         public static readonly CharacterClassDefinition Druid = new()
@@ -387,7 +394,14 @@ namespace SeraphLeveling.Data.CharacterClasses
         public static readonly CharacterClassDefinition Potter = new()
         {
             Id = "potter",
-            Traits = []
+            Traits = [
+                TraitDefinitions.Potter,
+                TraitDefinitions.Artisan,
+                TraitDefinitions.Digger,
+                TraitDefinitions.StrongArms,
+                TraitDefinitions.Civil,
+                TraitDefinitions.Hungry,
+            ]
         };
 
         public static readonly CharacterClassDefinition AldiBlacksmith = new()
