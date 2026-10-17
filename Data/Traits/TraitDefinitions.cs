@@ -251,6 +251,15 @@ namespace SeraphLeveling.Data.Traits
             ],
         };
 
+        public static readonly TraitDefinition Fragile = new()
+        {
+            Id = "weak",
+            Attributes = [
+                PenaltyOffset(WeakHealthOffset, 1, WeakHealthPenalty, [
+                    new LeveledAttributeMinimumRequirement { Attribute = MiningSpeed, ThresholdPercentage = 0 },
+                ]),
+            ]
+        };
         public static readonly TraitDefinition Kind = new()
         {
             Id = "kind",
@@ -1060,5 +1069,23 @@ namespace SeraphLeveling.Data.Traits
                 ]),
             ]
         };
+
+        public static readonly TraitDefinition PreciousHands = new()
+        {
+            Id = "precioushands",
+            Attributes = [
+                Penalty(OreDropRate, 15),
+                Penalty(MiningSpeed, 50),
+            ]
+        };
+
+        public static readonly TraitDefinition KeepThemAway = new()
+        {
+            Id = "keepthemaway",
+            Attributes = [
+                Penalty(MeleeDamage, 50, [ new LeveledAttributeMinimumRequirement { Attribute = MeleeDamage, ThresholdPercentage = 0 }]),
+            ]
+        };
+
     }
 }

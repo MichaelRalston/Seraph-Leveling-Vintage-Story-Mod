@@ -350,7 +350,16 @@ namespace SeraphLeveling.Data.CharacterClasses
         public static readonly CharacterClassDefinition Wildrunner = new()
         {
             Id = "wildrunner",
-            Traits = []
+            Traits = [
+                TraitDefinitions.Ranger,
+                TraitDefinitions.Furtive,
+                // TraitDefinitions.Dexterous, -- I don't wanna think about jump height rightn ow.
+                TraitDefinitions.Bowyer,
+                TraitDefinitions.Fragile,
+                TraitDefinitions.PreciousHands,
+                TraitDefinitions.KeepThemAway,
+                // TraitDefinitions.SurvivalExpert,
+            ]
         };
 
         public static readonly CharacterClassDefinition Squire = new()
