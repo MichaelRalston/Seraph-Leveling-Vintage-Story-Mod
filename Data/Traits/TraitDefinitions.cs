@@ -1087,5 +1087,73 @@ namespace SeraphLeveling.Data.Traits
             ]
         };
 
+        public static readonly TraitDefinition Dexterous = new()
+        {
+            Id = "dexterous",
+            Attributes = [
+                Bonus(DexterousJumpHeight, 50, [
+                    new LeveledAttributeMinimumRequirement { Attribute = WalkingSpeed, ThresholdPercentage = 15 },
+                ]),
+                Bonus(WalkingSpeed, 15),
+            ]
+        };
+
+        public static readonly TraitDefinition FreeAsTheWind = new()
+        {
+            Id = "freeaswind",
+            Attributes = [
+                Bonus(FreeAsTheWindJumpHeight, 100, [
+                    new LeveledAttributeMinimumRequirement { Attribute = WalkingSpeed, ThresholdPercentage = 25 },
+                ]),
+                Bonus(FreeAsTheWindFallDamageThreshold, 300, [
+                    new LeveledAttributeMinimumRequirement { Attribute = WalkingSpeed, ThresholdPercentage = 25 },
+                ]),
+                Bonus(WalkingSpeed, 25),
+            ]
+        };
+
+        public static readonly TraitDefinition GetInGetLootGetOut = new()
+        {
+            Id = "getingetlootgetout",
+            Attributes = [
+                Bonus(VesselDropRate, 30),
+                Bonus(WholeVesselRate, 30),
+            ]
+        };
+
+        public static readonly TraitDefinition HighlyEfficient = new()
+        {
+            Id = "highlyefficient",
+            Attributes = [
+                Bonus(HungerRate, 25),
+            ]
+        };
+
+        public static readonly TraitDefinition Evasive = new()
+        {
+            Id = "evasive",
+            Attributes = [
+                Bonus(AttributeModifierDefinitions.Furtive, 50),
+            ]
+        };
+
+        public static readonly TraitDefinition WeaponShy = new()
+        {
+            Id = "weaponshy",
+            Attributes = [
+                BasicPenalty(RangedDamage, 30),
+                BasicPenalty(MeleeDamage, 20),
+            ]
+        };
+
+        public static readonly TraitDefinition AldiNudist = new()
+        {
+            Id = "nudist",
+            Attributes = [
+                BasicPenalty(ArmorWalkSpeed, 200),
+                BasicPenalty(ArmorDurability, 500),
+            ]
+        };
+
     }
 }

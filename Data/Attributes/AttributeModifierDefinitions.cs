@@ -1710,5 +1710,41 @@ namespace SeraphLeveling.Data.Attributes
             Verb = "Cook",
             ResultAllowList = Simple(IAssetLocationMatcher.MATCH_ALL),
         };
+
+        public static readonly UnlockedStatAttributeModifierDefinition DexterousJumpHeight = new()
+        {
+            Id = "dexterousjumpheight",
+            SkillKey = "dexterousjumpheight",
+            PersistenceHeader = "DXJ",
+            Name = "Dexterous Jump Height",
+            StatName = "jumpHeightMul",
+            ModifierAmount = 0.5f,
+            ModifierIsPercentage = true,
+            Trait = new(() => Traits.TraitDefinitions.Dexterous),
+        };
+
+        public static readonly UnlockedStatAttributeModifierDefinition FreeAsTheWindJumpHeight = new()
+        {
+            Id = "freeaswindjumpheight",
+            SkillKey = "freeaswindjumpheight",
+            PersistenceHeader = "FWJ",
+            Name = "Free As The Wind Jump Height",
+            StatName = "jumpHeightMul",
+            ModifierAmount = 1f,
+            ModifierIsPercentage = true,
+            Trait = new(() => Traits.TraitDefinitions.FreeAsTheWind),
+        };
+
+        public static readonly UnlockedStatAttributeModifierDefinition FreeAsTheWindFallDamageThreshold = new()
+        {
+            Id = "freeaswindfalldamage",
+            SkillKey = "freeaswindfalldamage",
+            PersistenceHeader = "FWF",
+            Name = "Free As The Wind Fall Damage Threshold",
+            StatName = "fallDamageThreshold",
+            ModifierAmount = 3f,
+            ModifierIsPercentage = true,
+            Trait = new(() => Traits.TraitDefinitions.FreeAsTheWind),
+        };
     }
 }

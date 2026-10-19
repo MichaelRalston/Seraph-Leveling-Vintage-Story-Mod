@@ -273,7 +273,14 @@ namespace SeraphLeveling.Data.CharacterClasses
         public static readonly CharacterClassDefinition Shadowstrider = new()
         {
             Id = "shadowstrider",
-            Traits = []
+            Traits = [
+                TraitDefinitions.FreeAsTheWind,
+                TraitDefinitions.GetInGetLootGetOut,
+                TraitDefinitions.HighlyEfficient,
+                TraitDefinitions.Evasive,
+                TraitDefinitions.WeaponShy,
+                TraitDefinitions.AldiNudist,
+            ]
         };
 
         public static readonly CharacterClassDefinition Deepforger = new()
@@ -353,7 +360,7 @@ namespace SeraphLeveling.Data.CharacterClasses
             Traits = [
                 TraitDefinitions.Ranger,
                 TraitDefinitions.Furtive,
-                // TraitDefinitions.Dexterous, -- I don't wanna think about jump height rightn ow.
+                TraitDefinitions.Dexterous,
                 TraitDefinitions.Bowyer,
                 TraitDefinitions.Fragile,
                 TraitDefinitions.PreciousHands,
