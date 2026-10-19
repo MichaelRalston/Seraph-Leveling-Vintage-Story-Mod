@@ -1199,5 +1199,154 @@ namespace SeraphLeveling.Data.Traits
                 BasicPenalty(VesselDropRate, 25)
             ]
         };
+
+        public static readonly TraitDefinition Timberborn = new()
+        {
+            Id = "timberborn",
+            Attributes = [
+                // TODO: IMPLEMENT
+    //   "fruittreeDropRate": 1,
+    //   "treeseedShearsDropRate": 2,
+    //   "treeseedShearsRareDropRate": 15,
+                Bonus(MeleeDamage, 15),
+                Bonus(StickDropRate, 30),
+                Bonus(WoodDropRate, 10),
+                Bonus(SeedDropRate, 200),
+            ]
+        };
+
+        public static readonly TraitDefinition Timberwright = new()
+        {
+            Id = "timberwright",
+            Attributes = [
+                // TODO: IMPLEMENT.
+            ]
+        };
+
+        public static readonly TraitDefinition CokeFurnaceMaster = new()
+        {
+            Id = "cokefurnacemaster",
+            Attributes = [
+                // TODO: IMPLEMENT
+            ]
+        };
+
+        public static readonly TraitDefinition Prospector = new()
+        {
+            Id = "prospector",
+            Attributes = [
+                // TODO: IMPLEMENT
+            ]
+        };
+        public static readonly TraitDefinition Threadweaver = new()
+        {
+            Id = "threadweaver",
+            Attributes = [
+                // TODO: IMPLEMENT
+            ]
+        };
+        public static readonly TraitDefinition Sailwright = new()
+        {
+            Id = "sailwright",
+            Attributes = [
+                // TODO: IMPLEMENT
+            ]
+        };
+
+        public static readonly TraitDefinition CarefulCut = new()
+        {
+            Id = "carefulcut",
+            Attributes = [
+                // TODO: IMPLEMENT
+                // "grassDropRate": 0.2,
+                Bonus(StingingNettleDropRate, 50)
+            ]
+        };
+
+        public static readonly TraitDefinition Entropy = new()
+        {
+            Id = "entropy",
+            Attributes = [
+                // TODO: IMPLEMENT
+            ]
+        };
+        public static readonly TraitDefinition Greedy = new()
+        {
+            Id = "greedy",
+            Attributes = [
+                // TODO: IMPLEMENT
+                //   "flaxEnemyDropRate": 0.3,
+                //   "temporalGearDropRate": 0.3
+                Bonus(GearDropRate, 30),
+            ]
+        };
+        public static readonly TraitDefinition SurvivalExpert = new()
+        {
+            Id = "survivalexpert",
+            Attributes = [
+                // TODO: IMPLEMENT
+            ]
+        };
+
+        public static readonly TraitDefinition Druid = new()
+        {
+            Id = "druid",
+            Attributes = [
+                // TODO: IMPLEMENT
+            ]
+        };
+        public static readonly TraitDefinition Herbalist = new()
+        {
+            Id = "herbalist",
+            Attributes = [
+                // TODO: IMPLEMENT
+    //   "mistletoeDropRate": 1,
+                Bonus(ForageLootingBonus, 25),
+                Bonus(AttributeModifierDefinitions.Furtive, 20),
+                Bonus(StingingNettleDropRate, 20),
+            ]
+        };
+
+        public static readonly TraitDefinition Handwright = new()
+        {
+            Id = "handwright",
+            Attributes = [
+                // TODO: IMPLEMENT
+            ]
+        };
+        public static readonly TraitDefinition Firestarter = new()
+        {
+            Id = "firestarter",
+            Attributes = [
+                // TODO: IMPLEMENT
+                // "flaxEnemyDropRate": 0.2
+            ]
+        };
+
+        public static readonly TraitDefinition Millwright = new()
+        {
+            Id = "millwright",
+            Attributes = [
+                // TODO: IMPLEMENT
+            ]
+        };
+        public static readonly TraitDefinition Fitter = new()
+        {
+            Id = "fitter",
+            Attributes = [
+                // TODO: IMPLEMENT
+            ]
+        };
+        public static readonly TraitDefinition Forester = new()
+        {
+            Id = "forester",
+            Attributes = [
+    //   "fruittreeDropRate": 1,
+    //   "treeseedShearsDropRate": 2,
+    //   "treeseedShearsRareDropRate": 15
+                // TODO: IMPLEMENT
+                Bonus(SeedDropRate, 200),
+            ]
+        };
     }
 }

@@ -266,8 +266,8 @@ namespace SeraphLeveling.Data.CharacterClasses
         {
             Id = "timberborn",
             Traits = [
-                // TraitDefinitions.Timberborn,
-                // TraitDefinitions.Timberwright,
+                TraitDefinitions.Timberborn,
+                TraitDefinitions.Timberwright,
                 TraitDefinitions.Burner,
                 TraitDefinitions.Woodsman,
                 TraitDefinitions.Naturebound,
@@ -295,10 +295,10 @@ namespace SeraphLeveling.Data.CharacterClasses
             Traits = [
                 TraitDefinitions.Smith,
                 TraitDefinitions.Miner,
-                // TraitDefinitions.CokeFurnaceMaster,
+                TraitDefinitions.CokeFurnaceMaster,
                 TraitDefinitions.StrongArms,
                 TraitDefinitions.Glassblower,
-                // TraitDefinitions.Prospector, -- NOT YET IMPLEMENTED.
+                TraitDefinitions.Prospector,
                 TraitDefinitions.Tough,
                 TraitDefinitions.Myopic,
                 TraitDefinitions.Heavyhanded
@@ -338,10 +338,10 @@ namespace SeraphLeveling.Data.CharacterClasses
         {
             Id = "threadweaver",
             Traits = [
-                // TraitDefinitions.Threadweaver,
-                // TraitDefinitions.Sailwright,
+                TraitDefinitions.Threadweaver,
+                TraitDefinitions.Sailwright,
                 TraitDefinitions.Clothier,
-                // TraitDefinitions.CarefulCut,
+                TraitDefinitions.CarefulCut,
                 TraitDefinitions.Mender,
                 TraitDefinitions.Precise,
                 TraitDefinitions.Frail,
@@ -353,7 +353,7 @@ namespace SeraphLeveling.Data.CharacterClasses
         {
             Id = "entropic",
             Traits = [
-                // TraitDefinitions.Entropy,
+                TraitDefinitions.Entropy,
                 TraitDefinitions.Tinkerer,
                 TraitDefinitions.Technical,
                 TraitDefinitions.Precise,
@@ -368,7 +368,7 @@ namespace SeraphLeveling.Data.CharacterClasses
             Id = "mercenary",
             Traits = [
                 TraitDefinitions.Unstoppable,
-                // TraitDefinitions.Greedy,
+                TraitDefinitions.Greedy,
                 TraitDefinitions.Hardy,
                 TraitDefinitions.Merciless,
                 TraitDefinitions.HighConsumption,
@@ -388,7 +388,7 @@ namespace SeraphLeveling.Data.CharacterClasses
                 TraitDefinitions.Fragile,
                 TraitDefinitions.PreciousHands,
                 TraitDefinitions.KeepThemAway,
-                // TraitDefinitions.SurvivalExpert,
+                TraitDefinitions.SurvivalExpert,
             ]
         };
 
@@ -409,8 +409,8 @@ namespace SeraphLeveling.Data.CharacterClasses
         {
             Id = "druid",
             Traits = [
-                // TraitDefinitions.Druid,
-                // TraitDefinitions.Herbalist,
+                TraitDefinitions.Druid,
+                TraitDefinitions.Herbalist,
                 TraitDefinitions.Fleetfooted,
                 TraitDefinitions.Focused,
                 TraitDefinitions.Kind,
@@ -422,7 +422,7 @@ namespace SeraphLeveling.Data.CharacterClasses
         {
             Id = "handwright",
             Traits = [
-                // TraitDefinitions.Handwright,
+                TraitDefinitions.Handwright,
                 TraitDefinitions.StrongArms,
                 TraitDefinitions.StrongShoulders,
                 TraitDefinitions.Hungry,
@@ -436,7 +436,7 @@ namespace SeraphLeveling.Data.CharacterClasses
             Traits = [
                 TraitDefinitions.AldiButcher,
                 TraitDefinitions.AldiCulinary,
-                // TraitDefinitions.FireStarter, --- NOT YET IMPLEMENTED
+                TraitDefinitions.Firestarter,
                 TraitDefinitions.FoodSnitcher,
                 TraitDefinitions.Heavy,
                 TraitDefinitions.Tough,
@@ -465,9 +465,9 @@ namespace SeraphLeveling.Data.CharacterClasses
         {
             Id = "carpenter",
             Traits = [
-                // TraitDefinitions.Millwright,
+                TraitDefinitions.Millwright,
                 TraitDefinitions.Carpenter,
-                // TraitDefinitions.Fitter,
+                TraitDefinitions.Fitter,
                 TraitDefinitions.StrongArms,
                 TraitDefinitions.Civil,
             ]
@@ -491,7 +491,7 @@ namespace SeraphLeveling.Data.CharacterClasses
             Id = "blacksmith",
             Traits = [
                 TraitDefinitions.Smith,
-                // TraitDefinitions.CokeFurnaceMaster,
+                TraitDefinitions.CokeFurnaceMaster,
                 TraitDefinitions.Mender,
                 TraitDefinitions.StrongArms,
                 TraitDefinitions.Nearsighted,
@@ -505,7 +505,7 @@ namespace SeraphLeveling.Data.CharacterClasses
             Id = "lumberjack",
             Traits = [
                 TraitDefinitions.AldiLumberjack,
-                // TraitDefinitions.Forester -- NOT YET IMPLEMENTED
+                TraitDefinitions.Forester,
                 TraitDefinitions.Burner,
                 TraitDefinitions.Woodsman,
                 TraitDefinitions.Kind,
@@ -534,13 +534,11 @@ namespace SeraphLeveling.Data.CharacterClasses
             Id = "miner",
             Traits = [
                 TraitDefinitions.MountainEater,
-                // TraitDefinitions.Prospector, -- NOT YET IMPLEMENTED.
+                TraitDefinitions.Prospector,
                 TraitDefinitions.Tough,
                 TraitDefinitions.Myopic,
                 TraitDefinitions.Heavyhanded
             ]
         };
-
-
     }
 }

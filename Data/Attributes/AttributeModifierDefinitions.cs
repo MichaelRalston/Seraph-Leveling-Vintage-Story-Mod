@@ -429,8 +429,16 @@ namespace SeraphLeveling.Data.Attributes
             Tools = [ ToolDefinitions.Shears, ToolDefinitions.Axe ],
             ToolScoreMults = new() { [ToolDefinitions.Axe] = 0.2f },
             IncrementData = LeavesIncrementData,
-            GlobalMaxCredits = new(1000),
-            StatName = new("sacredlib:treeseedDropRate"),
+            GlobalMaxCredits = new(() => true switch
+            {
+                _ when SeraphLevelingModSystem.LoadedMods.Contains(ModDefinitions.Aldis) => 250,
+                _ => 1000
+            }),
+            StatName = new(() => true switch
+            {
+                _ when SeraphLevelingModSystem.LoadedMods.Contains(ModDefinitions.Aldis) => "treeseedDropRate",
+                _ => "sacredlib:treeseedDropRate"
+            }),
             BrokenBlockScores = LeavesPoints,
             InstructionsKey = "seraphleveling:gui-seedrate-instructions",
         };
@@ -1673,7 +1681,7 @@ namespace SeraphLeveling.Data.Attributes
             Tools = [ToolDefinitions.Knife, ToolDefinitions.Scythe],
             IncrementData = NettleIncrementData,
             BrokenBlockScores = NettlePoints,
-            GlobalMaxCredits = new(20),
+            GlobalMaxCredits = new(50),
             IncrementUnits = "nettles",
             StatName = new("nettleleavesDropRate"),
             InstructionsKey = "seraphleveling:gui-nettlelooting-instructions",
