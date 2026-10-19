@@ -1,6 +1,7 @@
 using System;
 using System.Text;
 using SeraphLeveling.Data.Traits;
+using SeraphLeveling.Messages;
 using Vintagestory.API.Common;
 using Vintagestory.API.Server;
 
@@ -13,6 +14,7 @@ namespace SeraphLeveling.Data.Attributes
         public string RequiredValue { get; }
         public bool IsSatisfied(IPlayer player);
         public void CollectStatus(IPlayer player, StringBuilder sb);
+        public Messages.PartialCredits[] CollectPartialCredit(IPlayer player);
 
         /// <summary>
         /// Registers a method to be called every time satisfaction of this requirement changes for a player
@@ -68,8 +70,19 @@ namespace SeraphLeveling.Data.Attributes
             if (player?.Entity != null)
             {
                 var percent = GetCombinedModifierPercent(player.Entity);
-                sb.AppendLine($"  <strong>{Attribute.Name}</strong> level: {percent}% / {ThresholdPercentage}% {(percent >= ThresholdPercentage ? "<font color=\"green\"><icon path=\"icons/checkmark.svg\"></icon></font>":"<font color=\"red\"><icon name=wpX></icon></font>")}");
+                sb.AppendLine($"  <strong>{Attribute.Name}</strong> level: {percent}% / {ThresholdPercentage}% {(percent >= ThresholdPercentage ? "<font color=\"green\"><icon path=\"icons/checkmark.svg\"></icon></font>" : "<font color=\"red\"><icon name=wpX></icon></font>")}");
             }
+        }
+
+        public PartialCredits[] CollectPartialCredit(IPlayer player)
+        {
+            var percent = GetCombinedModifierPercent(player.Entity);
+            bool satisfied = IsSatisfied(player);
+            return [new PartialCredits {
+                Name = Attribute.Name,
+                Percentage = satisfied?1:Math.Min(0, Math.Max(1, percent / ThresholdPercentage)),
+                Tooltip = satisfied?$"{Attribute.Name} unlocked":$"{Attribute.Name} at {percent}% out of {ThresholdPercentage}% required"
+            }];
         }
 
         protected virtual int GetCombinedModifierPercent(EntityPlayer player)
@@ -123,6 +136,16 @@ namespace SeraphLeveling.Data.Attributes
         public event SatisfactionChangedDelegate SatisfactionChanged;
 
         public bool IsSatisfied(IPlayer player) => Attribute.IsUnlockableForPlayer(player);
+
+        public PartialCredits[] CollectPartialCredit(IPlayer player)
+        {
+            var rc = Attribute.CollectReportContent(player);
+            return [new PartialCredits {
+                Name = rc.Name,
+                Percentage = rc.Percentage,
+                Tooltip = rc.Tooltip
+            }];
+        }
 
         private void OnRequirementSatisfactionChanged(IServerPlayer player, bool oldUnlock, bool newUnlock)
         {

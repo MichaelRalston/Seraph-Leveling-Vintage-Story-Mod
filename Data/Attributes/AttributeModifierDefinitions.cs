@@ -849,7 +849,7 @@ namespace SeraphLeveling.Data.Attributes
             ResultAllowList = Simple("plank-"),
         };
 
-        public static readonly GenericUnlockedAttributeModifierDefinition Saddler = new()
+        public static readonly GenericStackedUnlockedAttributeModifierDefinition Saddler = new()
         {
             Id = "saddler",
             Name = "Saddler",
@@ -862,13 +862,14 @@ namespace SeraphLeveling.Data.Attributes
             Id = "saddlersaddlebag",
             SkillKey = "saddlersaddlebag",
             PersistenceHeader = "SSG",
-            Name = "Saddler (Saddlebag)",
+            Name = "Saddlebags",
             GlobalMaxCredits = 2,
             CreditDescription = "saddlebags",
             WatchedCreditsAttributeKey = "sitSaddlerSaddlebag",
             Trait = new(() => Traits.TraitDefinitions.Saddler),
             CraftedItemName = "Saddlebags",
             Verb = "Craft",
+            IsVisible = false,
             ResultAllowList = Simple("-saddlebag", MatcherType.PathContains),
         };
 
@@ -877,13 +878,14 @@ namespace SeraphLeveling.Data.Attributes
             Id = "saddlersaddle",
             SkillKey = "saddlersaddle",
             PersistenceHeader = "SDS",
-            Name = "Saddler (Saddle)",
+            Name = "Saddles",
             GlobalMaxCredits = 2,
             CreditDescription = "saddles",
             WatchedCreditsAttributeKey = "sitSaddlerSaddle",
             Trait = new(() => Traits.TraitDefinitions.Saddler),
             CraftedItemName = "Saddles",
             Verb = "Craft",
+            IsVisible = false,
             ResultAllowList = Simple("-saddle", MatcherType.PathContains),
             ResultBanList = Simple("-saddlebag", MatcherType.PathContains),
         };

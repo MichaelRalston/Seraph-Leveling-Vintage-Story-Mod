@@ -793,8 +793,8 @@ namespace SeraphLeveling.Data.Traits
                     new UnlockedAttributeRequirement { Attribute = SaddlerSaddle },
                     new UnlockedAttributeRequirement { Attribute = SaddlerSaddlebag }
                 ]),
-                Unlock(SaddlerSaddle, [ new UnlockedAttributeRequirement { Attribute = SaddlerSaddle }]),
-                Unlock(SaddlerSaddlebag, [ new UnlockedAttributeRequirement { Attribute = SaddlerSaddlebag }]),
+                Unlock(SaddlerSaddle, [ new UnlockedAttributeRequirement { Attribute = SaddlerSaddle }], false),
+                Unlock(SaddlerSaddlebag, [ new UnlockedAttributeRequirement { Attribute = SaddlerSaddlebag }], false),
             ]
         };
 

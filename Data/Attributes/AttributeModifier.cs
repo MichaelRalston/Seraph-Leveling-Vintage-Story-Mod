@@ -116,12 +116,14 @@ namespace SeraphLeveling.Data.Attributes
         public virtual bool InvertedOnDisplay { get; init; } = true;
         public required string PersistenceHeader { get; init; }
         public virtual byte PersistenceVersion { get; init; } = 1;
+
+        public virtual bool IsVisible { get; init; } = true;
         public abstract void CollectStatus(IPlayer player, StringBuilder sb);
         public abstract Messages.ProgressReportContent CollectReportContent(IPlayer player);
         public abstract void CollectInstructions(IPlayer player, StringBuilder sb);
         public abstract bool ShouldDisplay(EntityPlayer player, bool hasVanillaTrait);
 
-        public virtual bool ShouldSee(EntityPlayer player) { return true; }
+        public virtual bool ShouldSee(EntityPlayer player) { return IsVisible; }
         public abstract object GetLocalizedTraitTextParam(EntityPlayer player);
 
         public virtual void ReadConfigData(Dictionary<string, int> dict)
@@ -425,6 +427,8 @@ namespace SeraphLeveling.Data.Attributes
         public bool ShouldUnlock(IPlayer player, bool hasVanillaTrait = false);
         public bool IsInRangeForDisplay(int combinedBonusPercentage);
 
+        public Messages.PartialCredits[] CollectPartialCredit(IPlayer player);
+
         /// <summary>
         /// Get a status string for the attribute modifier's requirements when the player uses the /trait command
         /// </summary>
@@ -439,9 +443,9 @@ namespace SeraphLeveling.Data.Attributes
             return new BonusInstance(AttributeModifierType.BONUS, attribute, absModifierValue, unlockWith);
         }
 
-        public static IAttributeModifier Unlock(ISaveableAttribute attribute, List<IAttributeRequirement> unlockWith)
+        public static IAttributeModifier Unlock(ISaveableAttribute attribute, List<IAttributeRequirement> unlockWith, bool isVisible = true)
         {
-            return new BonusInstance(AttributeModifierType.UNLOCK, attribute, 1, unlockWith);
+            return new BonusInstance(AttributeModifierType.UNLOCK, attribute, 1, unlockWith) { IsVisible = isVisible };
         }
 
         public static IAttributeModifier Penalty(ISaveableAttribute attribute, int absModifierValue, List<IAttributeRequirement> removeWith = null)
@@ -487,12 +491,15 @@ namespace SeraphLeveling.Data.Attributes
             }
             public TraitDefinition ApplicableTrait { get; set; }
 
+            public bool IsVisible { get; init; } = true;
+
             public event ActiveStatusUpdatedDelegate ActiveStatusUpdated;
 
             public abstract void CollectRequirementStatus(IPlayer player, StringBuilder sb, ISaveableAttribute exclude = null);
+            public abstract Messages.PartialCredits[] CollectPartialCredit(IPlayer player);
             public abstract bool ShouldDisplay(IPlayer player, bool hasVanillaTrait = false);
 
-            public virtual bool ShouldSee(EntityPlayer player) { return true; }
+            public virtual bool ShouldSee(EntityPlayer player) { return IsVisible; }
             public abstract bool ShouldUnlock(IPlayer player, bool hasVanillaTrait = false);
             public abstract bool IsInRangeForDisplay(int combinedBonusPercentage);
 
@@ -528,6 +535,11 @@ namespace SeraphLeveling.Data.Attributes
             {
                 // Requirement output is specifically for unlocking bonus traits, not removing penalties
                 UnlockWith.Where(req => req.AttributeId != exclude?.Id).Foreach(req => req.CollectStatus(player, sb));
+            }
+
+            public override Messages.PartialCredits[] CollectPartialCredit(IPlayer player)
+            {
+                return [.. UnlockWith.SelectMany(req => req.CollectPartialCredit(player))];
             }
 
             public override bool ShouldDisplay(IPlayer player, bool hasVanillaTrait = false) => IsActive(player, hasVanillaTrait);
@@ -572,6 +584,10 @@ namespace SeraphLeveling.Data.Attributes
             public override void CollectRequirementStatus(IPlayer player, StringBuilder sb, ISaveableAttribute exclude = null)
             {
                 // Do nothing; penalties don't have requirement status to be displayed
+            }
+            public override Messages.PartialCredits[] CollectPartialCredit(IPlayer player)
+            {
+                return [.. RemoveWith.SelectMany(req => req.CollectPartialCredit(player))];
             }
 
             public override bool ShouldDisplay(IPlayer player, bool hasVanillaTrait = false) => IsActive(player, hasVanillaTrait);
@@ -620,6 +636,11 @@ namespace SeraphLeveling.Data.Attributes
             {
                 // Requirement output is specifically for unlocking bonus traits, not removing penalties
                 ApplyWith.Where(req => req.AttributeId != exclude?.Id).Foreach(req => req.CollectStatus(player, sb));
+            }
+
+            public override Messages.PartialCredits[] CollectPartialCredit(IPlayer player)
+            {
+                return [.. ApplyWith.SelectMany(req => req.CollectPartialCredit(player))];
             }
 
             public override bool IsInRangeForDisplay(int combinedBonusPercentage) => combinedBonusPercentage < 0;
