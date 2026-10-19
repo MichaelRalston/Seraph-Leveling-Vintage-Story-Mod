@@ -1733,7 +1733,7 @@ namespace SeraphLeveling.Data.Attributes
             ResultAllowList = Simple(IAssetLocationMatcher.MATCH_ALL),
         };
 
-        public static readonly UnlockedStatAttributeModifierDefinition DexterousJumpHeight = new()
+        public static readonly ExactUnlockedStatAttributeModifierDefinition DexterousJumpHeight = new()
         {
             Id = "dexterousjumpheight",
             SkillKey = "dexterousjumpheight",
@@ -1745,7 +1745,7 @@ namespace SeraphLeveling.Data.Attributes
             Trait = new(() => Traits.TraitDefinitions.Dexterous),
         };
 
-        public static readonly UnlockedStatAttributeModifierDefinition FreeAsTheWindJumpHeight = new()
+        public static readonly ExactUnlockedStatAttributeModifierDefinition FreeAsTheWindJumpHeight = new()
         {
             Id = "freeaswindjumpheight",
             SkillKey = "freeaswindjumpheight",
