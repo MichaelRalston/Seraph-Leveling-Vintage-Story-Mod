@@ -255,7 +255,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "fragile",
             Attributes = [
-                PenaltyOffset(WeakHealthOffset, 1, WeakHealthPenalty, [
+                PenaltyOffset(FragileHealthOffset, 1, FragileHealthPenalty, [
                     new LeveledAttributeMinimumRequirement { Attribute = MiningSpeed, ThresholdPercentage = 0 },
                 ]),
             ]

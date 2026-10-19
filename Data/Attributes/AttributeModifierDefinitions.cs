@@ -723,6 +723,26 @@ namespace SeraphLeveling.Data.Attributes
             Trait = new(() => Traits.TraitDefinitions.Weak),
         };
 
+        public static readonly MaxHealthUnlockedAttributeModifierDefinition FragileHealthPenalty = new()
+        {
+            Id = "fragilehealthpenalty",
+            SkillKey = "fragilehealth",
+            PersistenceHeader = "FRH",
+            Name = "Fragile Health",
+            ModifierAmount = -2,
+            Trait = new(() => Traits.TraitDefinitions.Fragile),
+        };
+
+        public static readonly MaxHealthUnlockedAttributeModifierDefinition FragileHealthOffset = new()
+        {
+            Id = "fragilehealth",
+            SkillKey = "fragilehealth",
+            PersistenceHeader = "FRH",
+            Name = "Fragile Health",
+            ModifierAmount = 2,
+            Trait = new(() => Traits.TraitDefinitions.Fragile),
+        };
+
         public static readonly MaxHealthUnlockedAttributeModifierDefinition FracturedHealthPenalty = new()
         {
             Id = "fracturedhealthpenalty",

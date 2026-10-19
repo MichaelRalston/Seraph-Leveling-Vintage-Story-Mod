@@ -107,6 +107,10 @@
   "trait-weak-mining-only-dynamic": "<font color=\"#ff8484\">• Weak </font> <font opacity=\"0.6\">(-{0}% mining speed)</font>",
   "trait-weak-removed": "<font color=\"#84ff84\">• Weak Overcome </font> <font opacity=\"0.6\">(penalties removed)</font>",
 
+  "trait-fragile-dynamic": "-{0} health points",
+  "trait-fragile-hp-only-dynamic": "<font color=\"#ff8484\">• Fragile </font> <font opacity=\"0.6\">(-{0} health points)</font>",
+  "trait-fragile-removed": "<font color=\"#ff8484\">• Fragile Overcome </font> <font opacity=\"0.6\">(penalties removed)</font>",
+
   "trait-kind-dynamic": "-{0}% animal loot, -{1}% harvesting speed",
   "trait-kind-loot-only-dynamic": "-{0}% animal loot",
   "trait-kind-speed-only-dynamic": "-{0}% harvesting speed",
@@ -154,6 +158,7 @@
   "attribute-vesseldroprate-contents": "{0}% cracked vessel drops",
   "attribute-walkingspeed-contents": "{0}% walk speed",
   "attribute-weakhealth-contents": "{0} health points",
+  "attribute-fragilehealth-contents": "{0} health points",
   "attribute-fracturedhealth-contents": "{0} health points",
   "attribute-wholevesselrate-contents": "{0}% vessel collection",
 
@@ -294,6 +299,7 @@
   "message-technical-unlock": "Technical unlocked! You can now repair translocators more efficiently.",
   "message-tinkerer-unlock": "Tinkerer unlocked! You can now craft tuning spears.",
   "message-weakhealth-unlock": "Weak overcome! You've grown stronger.",
+  "message-fragilehealth-unlock": "Fragile overcome! You've grown stronger.",
   "message-fracturedhealth-unlock": "Fractured overcome! You've grown stronger.",
   "message-artisan-unlock": "Artisan unlocked! You can now create decorative storage vessels.",
   "message-glassblower-unlock": "Glassblower unlocked! You can now craft colored glass efficiently.",
