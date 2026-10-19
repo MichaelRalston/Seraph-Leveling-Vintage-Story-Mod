@@ -390,8 +390,8 @@ namespace SeraphLeveling.Data.Attributes
 
         private static readonly ConcurrentDictionary<IAssetLocationMatcher, float> LeavesPoints = new()
         {
-            [Simple("leavesbranchy-grown")] = 5,
-            [Or(Simple("leaves-grown"), Simple("leavesnarrow-grown"))] = 2,
+            [Simple("leavesbranchy-grown")] = 2,
+            [Or(Simple("leaves-grown"), Simple("leavesnarrow-grown"))] = 1,
         };
 
         public static readonly GenericToolAttributeModifierDefinition WoodDropRate = new()
@@ -402,11 +402,11 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% bonus wood drop rate",
             LongDescription = "wood drop rate",
             PersistenceHeader = "WDR",
-            Tools = [ ToolDefinitions.Shears, ToolDefinitions.Axe ],
-            IncrementData = LeavesIncrementData,
+            Tools = [ ToolDefinitions.Axe ],
+            IncrementData = TreeChoppingIncrementData,
             GlobalMaxCredits = 100,
             StatName = "sacredlib:woodDropRate",
-            BrokenBlockScores = LeavesPoints,
+            BrokenBlockScores = WoodLogPoints,
             InstructionsKey = "seraphleveling:gui-woodrate-instructions",
         };
 
@@ -419,6 +419,7 @@ namespace SeraphLeveling.Data.Attributes
             LongDescription = "tree seed drop rate",
             PersistenceHeader = "SDR",
             Tools = [ ToolDefinitions.Shears, ToolDefinitions.Axe ],
+            ToolScoreMults = new() { [ToolDefinitions.Axe] = 0.2f },
             IncrementData = LeavesIncrementData,
             GlobalMaxCredits = 1000,
             StatName = "sacredlib:treeseedDropRate",
@@ -435,6 +436,7 @@ namespace SeraphLeveling.Data.Attributes
             LongDescription = "stick drop rate",
             PersistenceHeader = "WDR",
             Tools = [ ToolDefinitions.Shears, ToolDefinitions.Axe ],
+            ToolScoreMults = new() { [ToolDefinitions.Axe] = 0.2f },
             IncrementData = LeavesIncrementData,
             GlobalMaxCredits = 300,
             StatName = "sacredlib:stickDropRate",
@@ -767,15 +769,15 @@ namespace SeraphLeveling.Data.Attributes
         {
             [default] = new IncrementData
             {
-                IncrementUnits = "trees",
-                BaseIncrement = 100,
-                IncrementStep = 100,
+                IncrementUnits = "logs",
+                BaseIncrement = 50,
+                IncrementStep = 50,
             }
         };
 
         private static readonly ConcurrentDictionary<IAssetLocationMatcher, float> WoodLogPoints = new()
         {
-            [Simple("log-grown-")] = 5,
+            [Simple("log-grown-")] = 1,
         };
 
         public static readonly GenericToolAttributeModifierDefinition TreeChoppingSpeed = new()
@@ -825,7 +827,7 @@ namespace SeraphLeveling.Data.Attributes
             {
                 [RepairableToolProgress.Usage] = new()
                 {
-                    IncrementUnits = "trees",
+                    IncrementUnits = "logs",
                     BaseIncrement = 100,
                     IncrementStep = 100,
                 },

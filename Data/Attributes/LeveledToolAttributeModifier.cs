@@ -57,6 +57,7 @@ namespace SeraphLeveling.Data.Attributes
             };
         }
         public required List<ToolDefinition> Tools { get; init; }
+        public virtual ConcurrentDictionary<ToolDefinition, float> ToolScoreMults { get; init; }
         public virtual string ToolsDescription
         {
             get
