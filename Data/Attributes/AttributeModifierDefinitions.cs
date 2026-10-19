@@ -394,22 +394,6 @@ namespace SeraphLeveling.Data.Attributes
             [Or(Simple("leaves-grown"), Simple("leavesnarrow-grown"))] = 1,
         };
 
-        public static readonly GenericToolAttributeModifierDefinition WoodDropRate = new()
-        {
-            Id = "woodDropRate",
-            SkillKey = "woodrate",
-            Name = "Wood Drop Rate",
-            Stat = "% bonus wood drop rate",
-            LongDescription = "wood drop rate",
-            PersistenceHeader = "WDR",
-            Tools = [ ToolDefinitions.Axe ],
-            IncrementData = TreeChoppingIncrementData,
-            GlobalMaxCredits = 100,
-            StatName = "sacredlib:woodDropRate",
-            BrokenBlockScores = WoodLogPoints,
-            InstructionsKey = "seraphleveling:gui-woodrate-instructions",
-        };
-
         public static readonly GenericToolAttributeModifierDefinition SeedDropRate = new()
         {
             Id = "seedDropRate",
@@ -794,6 +778,22 @@ namespace SeraphLeveling.Data.Attributes
             StatName = "ats:wood|axe-?-harvestSpeed",
             BrokenBlockScores = WoodLogPoints,
             InstructionsKey = "seraphleveling:gui-treechopping-instructions",
+        };
+
+        public static readonly GenericToolAttributeModifierDefinition WoodDropRate = new()
+        {
+            Id = "woodDropRate",
+            SkillKey = "woodrate",
+            Name = "Wood Drop Rate",
+            Stat = "% bonus wood drop rate",
+            LongDescription = "wood drop rate",
+            PersistenceHeader = "WDR",
+            Tools = [ ToolDefinitions.Axe ],
+            IncrementData = TreeChoppingIncrementData,
+            GlobalMaxCredits = 100,
+            StatName = "sacredlib:woodDropRate",
+            BrokenBlockScores = WoodLogPoints,
+            InstructionsKey = "seraphleveling:gui-woodrate-instructions",
         };
 
         public static readonly GenericToolAttributeModifierDefinition AxeDamage = new()
