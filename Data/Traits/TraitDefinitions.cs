@@ -1155,5 +1155,49 @@ namespace SeraphLeveling.Data.Traits
             ]
         };
 
+        public static readonly TraitDefinition Untrained = new()
+        {
+            Id = "untrained",
+            Attributes = [
+                BasicPenalty(ArmorWalkSpeed, 30)
+            ]
+        };
+
+        public static readonly TraitDefinition KeenEye = new()
+        {
+            Id = "keeneye",
+            Attributes = [
+                Bonus(OreDropRate, 30),
+                Bonus(GearDropRate, 20),
+            ]
+        };
+
+        public static readonly TraitDefinition NoTimeForThat = new()
+        {
+            Id = "notimeforthat",
+            Attributes = [
+                BasicPenalty(OreDropRate, 15),
+                BasicPenalty(ForageLootingBonus, 80),
+                BasicPenalty(AnimalDropRate, 75),
+            ]
+        };
+
+        public static readonly TraitDefinition Naturebound = new()
+        {
+            Id = "naturebound",
+            Attributes = [
+                Bonus(ForageLootingBonus, 10),
+                Bonus(AttributeModifierDefinitions.Furtive, 20),
+            ]
+        };
+
+        public static readonly TraitDefinition LabourOfChoice = new()
+        {
+            Id = "labourofchoice",
+            Attributes = [
+                BasicPenalty(MiningSpeed, 15),
+                BasicPenalty(VesselDropRate, 25)
+            ]
+        };
     }
 }

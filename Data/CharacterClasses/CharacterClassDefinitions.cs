@@ -266,7 +266,13 @@ namespace SeraphLeveling.Data.CharacterClasses
         {
             Id = "timberborn",
             Traits = [
-
+                // TraitDefinitions.Timberborn,
+                // TraitDefinitions.Timberwright,
+                TraitDefinitions.Burner,
+                TraitDefinitions.Woodsman,
+                TraitDefinitions.Naturebound,
+                TraitDefinitions.Kind,
+                TraitDefinitions.LabourOfChoice,
             ]
         };
 
@@ -331,13 +337,30 @@ namespace SeraphLeveling.Data.CharacterClasses
         public static readonly CharacterClassDefinition Threadweaver = new()
         {
             Id = "threadweaver",
-            Traits = []
+            Traits = [
+                // TraitDefinitions.Threadweaver,
+                // TraitDefinitions.Sailwright,
+                TraitDefinitions.Clothier,
+                // TraitDefinitions.CarefulCut,
+                TraitDefinitions.Mender,
+                TraitDefinitions.Precise,
+                TraitDefinitions.Frail,
+                TraitDefinitions.Untrained,
+            ]
         };
 
         public static readonly CharacterClassDefinition Entropic = new()
         {
             Id = "entropic",
-            Traits = []
+            Traits = [
+                // TraitDefinitions.Entropy,
+                TraitDefinitions.Tinkerer,
+                TraitDefinitions.Technical,
+                TraitDefinitions.Precise,
+                TraitDefinitions.KeenEye,
+                TraitDefinitions.Untrained,
+                TraitDefinitions.Nervous,
+            ]
         };
 
         public static readonly CharacterClassDefinition Mercenary = new()
@@ -385,13 +408,26 @@ namespace SeraphLeveling.Data.CharacterClasses
         public static readonly CharacterClassDefinition Druid = new()
         {
             Id = "druid",
-            Traits = []
+            Traits = [
+                // TraitDefinitions.Druid,
+                // TraitDefinitions.Herbalist,
+                TraitDefinitions.Fleetfooted,
+                TraitDefinitions.Focused,
+                TraitDefinitions.Kind,
+                TraitDefinitions.ClumsyMiner,
+            ]
         };
 
         public static readonly CharacterClassDefinition Handwright = new()
         {
             Id = "handwright",
-            Traits = []
+            Traits = [
+                // TraitDefinitions.Handwright,
+                TraitDefinitions.StrongArms,
+                TraitDefinitions.StrongShoulders,
+                TraitDefinitions.Hungry,
+                TraitDefinitions.NoTimeForThat,
+            ]
         };
 
         public static readonly CharacterClassDefinition Innkeeper = new()
@@ -428,7 +464,13 @@ namespace SeraphLeveling.Data.CharacterClasses
         public static readonly CharacterClassDefinition Carpenter = new()
         {
             Id = "carpenter",
-            Traits = []
+            Traits = [
+                // TraitDefinitions.Millwright,
+                TraitDefinitions.Carpenter,
+                // TraitDefinitions.Fitter,
+                TraitDefinitions.StrongArms,
+                TraitDefinitions.Civil,
+            ]
         };
 
         public static readonly CharacterClassDefinition Potter = new()
