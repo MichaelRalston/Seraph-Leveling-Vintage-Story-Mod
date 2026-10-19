@@ -414,32 +414,8 @@ namespace SeraphLeveling.Data.Attributes
 
         private static readonly ConcurrentDictionary<IAssetLocationMatcher, float> LeavesPoints = new()
         {
-            [Simple("leavesbranchy-grown")] = 5,
-            [Or(Simple("leaves-grown"), Simple("leavesnarrow-grown"))] = 2,
-        };
-
-        public static readonly GenericToolAttributeModifierDefinition WoodDropRate = new()
-        {
-            Id = "woodDropRate",
-            SkillKey = "woodrate",
-            Name = "Wood Drop Rate",
-            Stat = "% bonus wood drop rate",
-            LongDescription = "wood drop rate",
-            PersistenceHeader = "WDR",
-            Tools = [ToolDefinitions.Shears, ToolDefinitions.Axe],
-            IncrementData = LeavesIncrementData,
-            GlobalMaxCredits = new(() => true switch
-            {
-                _ when SeraphLevelingModSystem.LoadedMods.Contains(ModDefinitions.Aldis) => 25,
-                _ => 100
-            }),
-            StatName = new(() => true switch
-            {
-                _ when SeraphLevelingModSystem.LoadedMods.Contains(ModDefinitions.Aldis) => "woodDropRate",
-                _ => "sacredlib:woodDropRate"
-            }),
-            BrokenBlockScores = LeavesPoints,
-            InstructionsKey = "seraphleveling:gui-woodrate-instructions",
+            [Simple("leavesbranchy-grown")] = 2,
+            [Or(Simple("leaves-grown"), Simple("leavesnarrow-grown"))] = 1,
         };
 
         public static readonly GenericToolAttributeModifierDefinition SeedDropRate = new()
@@ -450,7 +426,8 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% bonus tree seed drop rate",
             LongDescription = "tree seed drop rate",
             PersistenceHeader = "SDR",
-            Tools = [ToolDefinitions.Shears, ToolDefinitions.Axe],
+            Tools = [ ToolDefinitions.Shears, ToolDefinitions.Axe ],
+            ToolScoreMults = new() { [ToolDefinitions.Axe] = 0.2f },
             IncrementData = LeavesIncrementData,
             GlobalMaxCredits = new(1000),
             StatName = new("sacredlib:treeseedDropRate"),
@@ -466,7 +443,8 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% bonus stick drop rate",
             LongDescription = "stick drop rate",
             PersistenceHeader = "WDR",
-            Tools = [ToolDefinitions.Shears, ToolDefinitions.Axe],
+            Tools = [ ToolDefinitions.Shears, ToolDefinitions.Axe ],
+            ToolScoreMults = new() { [ToolDefinitions.Axe] = 0.2f },
             IncrementData = LeavesIncrementData,
             GlobalMaxCredits = new(() => true switch
             {
@@ -906,15 +884,15 @@ namespace SeraphLeveling.Data.Attributes
         {
             [default] = new IncrementData
             {
-                IncrementUnits = "trees",
-                BaseIncrement = 100,
-                IncrementStep = 100,
+                IncrementUnits = "logs",
+                BaseIncrement = 50,
+                IncrementStep = 50,
             }
         };
 
         private static readonly ConcurrentDictionary<IAssetLocationMatcher, float> WoodLogPoints = new()
         {
-            [Simple("log-grown-")] = 5,
+            [Simple("log-grown-")] = 1,
         };
 
         public static readonly GenericToolAttributeModifierDefinition TreeChoppingSpeed = new()
@@ -931,6 +909,30 @@ namespace SeraphLeveling.Data.Attributes
             StatName = new("ats:wood|axe-?-harvestSpeed"),
             BrokenBlockScores = WoodLogPoints,
             InstructionsKey = "seraphleveling:gui-treechopping-instructions",
+        };
+
+        public static readonly GenericToolAttributeModifierDefinition WoodDropRate = new()
+        {
+            Id = "woodDropRate",
+            SkillKey = "woodrate",
+            Name = "Wood Drop Rate",
+            Stat = "% bonus wood drop rate",
+            LongDescription = "wood drop rate",
+            PersistenceHeader = "WDR",
+            Tools = [ ToolDefinitions.Axe ],
+            IncrementData = TreeChoppingIncrementData,
+            GlobalMaxCredits = new(() => true switch
+            {
+                _ when SeraphLevelingModSystem.LoadedMods.Contains(ModDefinitions.Aldis) => 25,
+                _ => 100
+            }),
+            StatName = new(() => true switch
+            {
+                _ when SeraphLevelingModSystem.LoadedMods.Contains(ModDefinitions.Aldis) => "woodDropRate",
+                _ => "sacredlib:woodDropRate"
+            }),
+            BrokenBlockScores = WoodLogPoints,
+            InstructionsKey = "seraphleveling:gui-woodrate-instructions",
         };
 
         public static readonly GenericToolAttributeModifierDefinition AxeDamage = new()
@@ -964,7 +966,7 @@ namespace SeraphLeveling.Data.Attributes
             {
                 [RepairableToolProgress.Usage] = new()
                 {
-                    IncrementUnits = "trees",
+                    IncrementUnits = "logs",
                     BaseIncrement = 100,
                     IncrementStep = 100,
                 },

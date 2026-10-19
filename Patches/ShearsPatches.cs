@@ -14,5 +14,9 @@ namespace SeraphLeveling.Patches
         {
             SeraphLevelingModSystem.OnMultiBlockBreaking(plr, pos);
         }
+        public static void ItemScythe_breakMultiBlock_Prefix(ItemScythe __instance, BlockPos pos, IPlayer plr)
+        {
+            SeraphLevelingModSystem.OnMultiBlockBreaking(plr, pos);
+        }
     }
 }

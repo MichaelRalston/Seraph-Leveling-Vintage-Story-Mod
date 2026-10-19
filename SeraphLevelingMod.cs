@@ -1863,7 +1863,7 @@ namespace SeraphLeveling
             // Breaking blocks with shears is instead handled by OnMultiBlockBreaking, which cannot differentiate
             // between the central block and its surrounding blocks. Skip here to avoid double counting that
             // central block.
-            if (ToolDefinitions.Shears.Matches(byPlayer.Entity?.RightHandItemSlot?.Itemstack?.Collectible?.Tool)) return;
+            if (ToolDefinitions.Shears.Matches(byPlayer.Entity?.RightHandItemSlot?.Itemstack?.Collectible?.Tool) || ToolDefinitions.Axe.Matches(byPlayer.Entity?.RightHandItemSlot?.Itemstack?.Collectible?.Tool)) return;
 
             // Fire event for attributes that care about broken blocks
             BlockBrokenTrigger?.Invoke(byPlayer, toolCode, oldblockId, blockSel?.Position);
@@ -2887,6 +2887,34 @@ namespace SeraphLeveling
 
                 serverHarmony.Patch(breakMultiBlockMethod, prefix: new HarmonyMethod(prefixMethod));
                 api.Logger.Notification("[SeraphLeveling] Successfully patched ItemShears.breakMultiBlock for detecting multi-block breaking with shears");
+            }
+            catch (Exception ex)
+            {
+                api.Logger.Warning($"[SeraphLeveling] Failed to patch ItemShears: {ex.Message}");
+            }
+            try
+            {
+                // Find the ItemShears type in VSSurvivalMod
+                var scytheType = AccessTools.TypeByName("Vintagestory.GameContent.ItemScythe");
+                if (scytheType == null)
+                {
+                    api.Logger.Warning("[SeraphLeveling] Could not find ItemShears type");
+                    return;
+                }
+
+                // Find the breakMultiBlock method
+                var breakMultiBlockMethod = AccessTools.Method(scytheType, "breakMultiBlock");
+                if (breakMultiBlockMethod == null)
+                {
+                    api.Logger.Warning("[SeraphLeveling] Could not find breakMultiBlock method in ItemScyhe");
+                    return;
+                }
+
+                // Get our prefix method
+                var prefixMethod = AccessTools.Method(typeof(ShearsPatches), nameof(ShearsPatches.ItemScythe_breakMultiBlock_Prefix));
+
+                serverHarmony.Patch(breakMultiBlockMethod, prefix: new HarmonyMethod(prefixMethod));
+                api.Logger.Notification("[SeraphLeveling] Successfully patched ItemScythe.breakMultiBlock for detecting multi-block breaking with scythes");
             }
             catch (Exception ex)
             {

@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using Vintagestory.API.Common;
 using Vintagestory.API.Server;
 using SeraphLeveling.Util;
+using SeraphLeveling.Data.Tools;
 
 namespace SeraphLeveling.Data.Attributes
 {

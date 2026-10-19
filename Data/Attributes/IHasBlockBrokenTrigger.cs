@@ -16,6 +16,7 @@ namespace SeraphLeveling.Data.Attributes
     {
         public List<ToolDefinition> Tools { get; }
         public ConcurrentDictionary<IAssetLocationMatcher, float> BrokenBlockScores { get; }
+        public ConcurrentDictionary<ToolDefinition, float> ToolScoreMults { get; }
 
         public PD GetForPlayer(string playerUid);
 
@@ -47,7 +48,19 @@ namespace SeraphLeveling.Data.Attributes
                 var score = GetBlockScore(blockId, blockPos);
                 if (score > 0)
                 {
-                    GetForPlayer(player.PlayerUID).DoEvent(player, toolCode, score);
+                    float toolMult = 0;
+                    if (ToolScoreMults != null)
+                    {
+                        foreach (var (tool, toolScore) in ToolScoreMults)
+                        {
+                            if (tool.Matches(toolCode))
+                            {
+                                toolMult = Math.Max(toolMult, toolScore);
+                            }
+                        }
+                    }
+                    if (toolMult == 0) toolMult = 1;
+                    GetForPlayer(player.PlayerUID).DoEvent(player, toolCode, score*toolMult);
                 }
             }
         }
