@@ -426,7 +426,7 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% bonus tree seed drop rate",
             LongDescription = "tree seed drop rate",
             PersistenceHeader = "SDR",
-            Tools = [ ToolDefinitions.Shears, ToolDefinitions.Axe ],
+            Tools = [ToolDefinitions.Shears, ToolDefinitions.Axe],
             ToolScoreMults = new() { [ToolDefinitions.Axe] = 0.2f },
             IncrementData = LeavesIncrementData,
             GlobalMaxCredits = new(() => true switch
@@ -451,7 +451,7 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% bonus stick drop rate",
             LongDescription = "stick drop rate",
             PersistenceHeader = "WDR",
-            Tools = [ ToolDefinitions.Shears, ToolDefinitions.Axe ],
+            Tools = [ToolDefinitions.Shears, ToolDefinitions.Axe],
             ToolScoreMults = new() { [ToolDefinitions.Axe] = 0.2f },
             IncrementData = LeavesIncrementData,
             GlobalMaxCredits = new(() => true switch
@@ -929,7 +929,7 @@ namespace SeraphLeveling.Data.Attributes
             Stat = "% bonus wood drop rate",
             LongDescription = "wood drop rate",
             PersistenceHeader = "WDR",
-            Tools = [ ToolDefinitions.Axe ],
+            Tools = [ToolDefinitions.Axe],
             IncrementData = TreeChoppingIncrementData,
             GlobalMaxCredits = new(() => true switch
             {
@@ -1777,6 +1777,61 @@ namespace SeraphLeveling.Data.Attributes
             ModifierAmount = 3f,
             ModifierIsPercentage = true,
             Trait = new(() => Traits.TraitDefinitions.FreeAsTheWind),
+        };
+
+        public static readonly GenericGridCraftUnlockedAttributeModifierDefinition Sailwright = new()
+        {
+            Id = "sailwright",
+            SkillKey = "sailwright",
+            PersistenceHeader = "SWT",
+            Name = "Sailwright",
+            GlobalMaxCredits = 32,
+            WatchedCreditsAttributeKey = "sitSailwrightCredits",
+            CreditDescription = "sails",
+            Trait = new(() => Traits.TraitDefinitions.Sailwright),
+            CraftedItemName = "Sails",
+            Verb = "Craft",
+            ResultAllowList = Simple("sail"),
+        };
+
+        public static readonly GenericStackedUnlockedAttributeModifierDefinition Druid = new()
+        {
+            Id = "druid",
+            Name = "Druid",
+            SkillKey = "druid",
+            PersistenceHeader = "DRD",
+            Trait = new(() => Traits.TraitDefinitions.Druid),
+        };
+
+        // THIS DOES NOT ACTUALLY WORK.
+        public static readonly GenericGridCraftUnlockedAttributeModifierDefinition DruidMistletoe = new()
+        {
+            Id = "druidmistletoe",
+            SkillKey = "druidmistletoe",
+            PersistenceHeader = "DMT",
+            Name = "Mistletoe",
+            GlobalMaxCredits = 12,
+            CreditDescription = "mistletoe",
+            WatchedCreditsAttributeKey = "sitDruidMistletoe",
+            Trait = new(() => Traits.TraitDefinitions.Druid),
+            CraftedItemName = "Mistletoe",
+            Verb = "Harvest",
+            IsVisible = false,
+            ResultAllowList = Simple("-saddlebag", MatcherType.PathContains),
+        };
+
+        public static readonly GenericCollectionUnlockedAttributeModifierDefinition DruidMushroom = new()
+        {
+            Id = "druidmushroom",
+            SkillKey = "druidmushroom",
+            PersistenceHeader = "DRM",
+            Name = "Mushrooms",
+            RequiredCollectionSize = 5,
+            CollectedItemDescription = "Poisonous Mushrooms",
+            CollectedItemCountKey = "sitDruidMushroom",
+            TokenAllowList = ["flyagaric", "earthball", "deathcap", "elfinsaddle", "jackolantern", "devilbolete", "bitterbolete", "devilstooth", "golddropmilkcap", "goldcap", "libertycap", "wavycap", "bluemeanie", "laughingjim", "foolsconecap", "sickener", "funeralbell", "pinkbonnet"],
+            Trait = new(() => Traits.TraitDefinitions.Druid),
+            IsVisible = false,
         };
     }
 }

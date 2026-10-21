@@ -1249,7 +1249,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "sailwright",
             Attributes = [
-                // TODO: IMPLEMENT
+                Unlock(AttributeModifierDefinitions.Sailwright, [new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Sailwright }])
             ]
         };
 
@@ -1292,7 +1292,12 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "druid",
             Attributes = [
-                // TODO: IMPLEMENT
+                Unlock(AttributeModifierDefinitions.Druid, [
+                    new UnlockedAttributeRequirement { Attribute = DruidMistletoe },
+                    new UnlockedAttributeRequirement { Attribute = DruidMushroom }
+                ]),
+                Unlock(DruidMistletoe, [ new UnlockedAttributeRequirement { Attribute = DruidMistletoe }], false),
+                Unlock(DruidMushroom, [ new UnlockedAttributeRequirement { Attribute = DruidMushroom }], false),
             ]
         };
         public static readonly TraitDefinition Herbalist = new()
