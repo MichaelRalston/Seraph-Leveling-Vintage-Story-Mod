@@ -196,6 +196,9 @@
   "attribute-preserver-contents": "{0}% bonus chance of getting lake ice",
   "attribute-stingingnettledroprate-contents": "{0}% stinging nettle loot",
   "attribute-healthyhealth-contents": "{0} health points",
+  "attribute-freeaswindjumpheight-contents": "{0} blocks more jump height",
+  "attribute-dextrousjumpheight-contents": "{0} blocks more jump height",
+  "attribute-freeaswindfalldamage-contents": "{0} blocks less fall damage",
 
   "attribute-bowyer-contents": "Exclusive craftable <a href=\"handbooksearch://crude bow or crude arrow or recurve bow\">bows and arrows</a>",
   "attribute-clothier-contents": "Exclusive craftable <a href=\"handbooksearch://sewing kit or chateau or pastoral or reindeer or moon or minstrel or fortune or nomad or spice or cobalt or azure or thigh-high or fine trousers or high leather\">sewing kit and clothes</a>",
@@ -204,7 +207,11 @@
   "attribute-technical-contents": "-1 temporal gear cost to repair translocators",
   "attribute-tinkerer-contents": "Exclusive craftable <a href=\"handbooksearch://tuning spear\">device</a> to tame locusts",
   "attribute-prospector-contents": "Exclusive craftables <a href=\"handbooksearch://copper pan\">copper pan</a>, <a href=\"handbooksearch://mining lantern\">mining lantern</a>",
-
+  "attribute-glassblower-contents": "As a seasoned glassblower, you are able to efficiently craft various kinds of <a href=\"handbooksearch://green glass or blue glass or violet glass or red glass or yellow glass or brown glass or vintage glass or smoky glass or pink glass or quartz glass\">glass</a>.",
+  "attribute-backpacker-contents": "<i>Countless journeys have taught you how to reinforce and expand your <a href=\"handbooksearch://bigger\">backpacks</a>, turning simple packs into sturdier and more spacious gear.</i>",
+  "attribute-aldiculinary-contents": "Able to craft various of the <a href=\"handbooksearch://copper cooking or bismuthbronze cooking or iron cooking or steel cooking or gold plated cooking or meteoric iron cooking or tinbronze pot or blackbronze pot\">metal cooking pots</a>, can make Jerky old fashion <a href=\"handbooksearch://vintage beef\">vintage beef</a>, can prepare <a href=\"handbooksearch://spice pouch\">spice pouches</a> and uses food scraps to make <a href=\"handbooksearch://kebab\">kebabs</a>.",
+  "attribute-veganingenuity-contents": "Brings the knowledge to craft an alternative <a href=\"handbook://block-fruitpress-ns\">fruit press</a> to produce fat from grain oils and <a href=\"handbook://item-aldiclasses:choppedmushroom\">vegan leather</a> with the help of mycelium through a lengthy process.",
+  
   "attribute-alchemist-contents": "Exclusive craftable <a href=\"handbooksearch://medicine or blasting powder\">medicines</a>",
   "attribute-carpenter-contents": "Exclusive craftable <a href=\"handbooksearch://board or quarter logs or support beams\">construction material</a>",
   "attribute-saddler-contents": "As a seasoned farmer, you are intimately familiar with working alongside animals and making full use of them. Craft cheaper <a href=\"handbooksearch://saddle or saddlebags\">saddles and saddlebags</a>.",
