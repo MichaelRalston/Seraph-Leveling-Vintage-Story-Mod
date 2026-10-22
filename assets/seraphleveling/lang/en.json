@@ -342,6 +342,10 @@
   "message-weaver-unlock": "Weaver unlocked! You are now a master of the weaving arts.",
   "message-wildernessexplorer-unlock": "Wilderness Explorer unlocked! You are now better able to carry the spoils of your hunts.",
   "message-woodsman-unlock": "Woodsman unlocked! You've really learned your way around trees.",
+  "message-healthyhealth-unlock": "Healthy unlocked! You've grown stronger.",
+  "message-dexterousjumpheight-unlock": "Dexterous Jump Height unlocked! You can now jump higher than before.",
+  "message-freeaswindjumpheight-unlock": "Free As The Wind Jump Height unlocked! You can now jump higher than before.",
+  "message-freeaswindfalldamage-unlock": "Free As The Wind Fall Damage unlocked! You now suffer less damage from falling.",
 
   "gui-animalharvester-instructions": "Harvest or butcher dead creatures to level.",
   "gui-armordurability-instructions": "Repair or block damage with armor to level.",
