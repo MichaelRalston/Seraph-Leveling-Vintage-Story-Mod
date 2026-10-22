@@ -1235,7 +1235,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "prospector",
             Attributes = [
-                // TODO: IMPLEMENT
+                Unlock(AttributeModifierDefinitions.Prospector, [new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Prospector }])
             ]
         };
         public static readonly TraitDefinition Threadweaver = new()

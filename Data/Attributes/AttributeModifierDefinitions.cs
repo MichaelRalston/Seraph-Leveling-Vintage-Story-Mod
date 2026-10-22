@@ -1833,5 +1833,18 @@ namespace SeraphLeveling.Data.Attributes
             Trait = new(() => Traits.TraitDefinitions.Druid),
             IsVisible = false,
         };
+
+        public static readonly ProspectorAttributeModifierDefinition Prospector = new()
+        {
+            Id = "prospector",
+            SkillKey = "prospector",
+            PersistenceHeader = "PRS",
+            Name = "Prospector",
+            GlobalMaxCredits = 100,
+            CreditDescription = "blocks",
+            Verb = "Pan",
+            Trait = new(() => Traits.TraitDefinitions.Prospector),
+        };
+
     }
 }
