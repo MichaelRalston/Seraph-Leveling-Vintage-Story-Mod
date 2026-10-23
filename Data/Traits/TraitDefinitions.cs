@@ -1335,13 +1335,15 @@ namespace SeraphLeveling.Data.Traits
                 // TODO: IMPLEMENT
             ]
         };
+        
         public static readonly TraitDefinition Fitter = new()
         {
             Id = "fitter",
             Attributes = [
-                // TODO: IMPLEMENT
+                Unlock(AttributeModifierDefinitions.Fitter, [new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Fitter }])
             ]
         };
+
         public static readonly TraitDefinition Forester = new()
         {
             Id = "forester",

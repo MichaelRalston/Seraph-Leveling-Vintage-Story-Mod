@@ -1846,5 +1846,20 @@ namespace SeraphLeveling.Data.Attributes
             Trait = new(() => Traits.TraitDefinitions.Prospector),
         };
 
+        public static readonly GenericGridCraftUnlockedAttributeModifierDefinition Fitter = new()
+        {
+            Id = "fitter",
+            SkillKey = "fitter",
+            PersistenceHeader = "FTR",
+            Name = "Fitter",
+            GlobalMaxCredits = 100,
+            WatchedCreditsAttributeKey = "sitFitterCredits",
+            CreditDescription = "planks",
+            Trait = new(() => Traits.TraitDefinitions.Fitter),
+            CraftedItemName = "Planks",
+            Verb = "Craft",
+            ResultAllowList = Simple("planks-"),
+        };
+
     }
 }

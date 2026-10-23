@@ -236,6 +236,7 @@
   "attribute-wildernessexplorer-contents": "Exclusive craftable <a href=\"handbooksearch://Huntsman's bag\">Huntsman's bag</a>",
   "attribute-woodsman-contents": "Can produce more <a href=\"handbooksearch://firewood\">firewood</a> when chopping logs, <a href=\"handbooksearch://stick\">sticks</a> from firewood and a handy <a href=\"handbooksearch://firewoodframe\">firewoodframe</a>.",
   "attribute-lactoseenthusiast-contents": "Exclusive craftable <a href=\"handbooksearch://milking bucket\">milking bucket</a>",
+  "attribute-fitter-contents": "<i>Fitters excel at making the wood they install look attractive. If you want a fancy <a href=\"handbooksearch://planks\">wooden floor</a>, you will want a Fitter to make the wood for you.</i>",
 
   "message-animalharvester-level-up": "Resourceful level up! You are now level {0} with +{1}% animal harvesting speed.",
   "message-armordurability-level-up": "Armor durability level up! You are now level {0} with +{1}% armor durability.",
@@ -346,6 +347,7 @@
   "message-dexterousjumpheight-unlock": "Dexterous Jump Height unlocked! You can now jump higher than before.",
   "message-freeaswindjumpheight-unlock": "Free As The Wind Jump Height unlocked! You can now jump higher than before.",
   "message-freeaswindfalldamage-unlock": "Free As The Wind Fall Damage unlocked! You now suffer less damage from falling.",
+  "message-fitter-unlock": "Fitter unlocked! You are now better at crafting with wood.",
 
   "gui-animalharvester-instructions": "Harvest or butcher dead creatures to level.",
   "gui-armordurability-instructions": "Repair or block damage with armor to level.",
