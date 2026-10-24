@@ -1273,9 +1273,8 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "greedy",
             Attributes = [
-                // TODO: IMPLEMENT
-                //   "flaxEnemyDropRate": 0.3,
-                //   "temporalGearDropRate": 0.3
+                Bonus(FlaxDrop, 30),
+                Bonus(TemporalGearDrop, 30),
                 Bonus(GearDropRate, 30),
             ]
         };
@@ -1322,8 +1321,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "firestarter",
             Attributes = [
-                // TODO: IMPLEMENT
-                // "flaxEnemyDropRate": 0.2
+                Bonus(FlaxDrop, 20),
             ]
         };
 

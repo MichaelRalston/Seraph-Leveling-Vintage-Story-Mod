@@ -562,6 +562,47 @@ namespace SeraphLeveling.Data.Attributes
                 IncrementStep = 100,
             }
         };
+        public static readonly ConcurrentDictionary<SimpleToolProgress, IncrementData> SlowDamageIncrementData = new()
+        {
+            [default] = new IncrementData
+            {
+                IncrementUnits = "damage",
+                BaseIncrement = 75,
+                IncrementStep = 150,
+            }
+        };
+
+        public static readonly DamageAttributeModifierDefinition FlaxDrop = new()
+        {
+            Id = "flaxDropRate",
+            Name = "Flax Drop Rate",
+            LongDescription = "flax drop rate",
+            Stat = "% extra flax drop",
+            SkillKey = "flaxdrop",
+            PersistenceHeader = "FDR",
+            Tools = [ToolDefinitions.Weapon],
+            IncrementData = SlowDamageIncrementData,
+            GlobalMaxCredits = new(50),
+            StatName = new("flaxEnemyDropRate"),
+            Weapons = [ToolDefinitions.AnyWeapon],
+            InstructionsKey = "seraphleveling:gui-flaxdrop-instructions",
+        };
+
+        public static readonly DamageAttributeModifierDefinition TemporalGearDrop = new()
+        {
+            Id = "temporalGearDropRate",
+            Name = "Temporal Gear Drop Rate",
+            LongDescription = "temporal gear drop rate",
+            Stat = "% extra temporal gear drop",
+            SkillKey = "temporalgeardrop",
+            PersistenceHeader = "FDR",
+            Tools = [ToolDefinitions.Weapon],
+            IncrementData = SlowDamageIncrementData,
+            GlobalMaxCredits = new(50),
+            StatName = new("temporalGearDropRate"),
+            Weapons = [ToolDefinitions.AnyWeapon],
+            InstructionsKey = "seraphleveling:gui-temporalgeardrop-instructions",
+        };
 
 
         public static readonly DamageAttributeModifierDefinition RangedDamage = new()
