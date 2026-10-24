@@ -1901,5 +1901,20 @@ namespace SeraphLeveling.Data.Attributes
             IsVisible = false,
             ResultAllowList = Simple("windmillrotor-"),
         };
+
+        public static readonly GenericGridCraftUnlockedAttributeModifierDefinition CokeFurnaceMaster = new()
+        {
+            Id = "cokefurnacemaster",
+            SkillKey = "cokefurnacemaster",
+            PersistenceHeader = "CFM",
+            Name = "Coke Furnace Master",
+            GlobalMaxCredits = 25,
+            CreditDescription = "refractory bricks blocks",
+            WatchedCreditsAttributeKey = "sitCokeFurnaceMaster",
+            Trait = new(() => Traits.TraitDefinitions.CokeFurnaceMaster),
+            CraftedItemName = "Refractory Bricks blocks",
+            Verb = "Craft",
+            ResultAllowList = Simple("refractorybricks-good-"),
+        };
     }
 }

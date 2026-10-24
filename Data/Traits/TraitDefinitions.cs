@@ -1227,7 +1227,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "cokefurnacemaster",
             Attributes = [
-                // TODO: IMPLEMENT
+                Unlock(AttributeModifierDefinitions.CokeFurnaceMaster, [ new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.CokeFurnaceMaster }]),
             ]
         };
 

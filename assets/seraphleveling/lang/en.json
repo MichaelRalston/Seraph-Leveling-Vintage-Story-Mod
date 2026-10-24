@@ -240,6 +240,7 @@
   "attribute-millwright-contents": "<i>Able to produce <a href=\"handbooksearch://windmill rotor or axle or large gear section or helve hammer base or pulverizer frame\">windmill parts</a> with less material.</i>",
   "attribute-millwrightaxle-contents": "",
   "attribute-millwrightrotor-contents": "",
+  "attribute-cokefurnacemaster-contents": "<i>A good smith doesn't just know how to use coke to make steel, they also know how to use <a href=\"handbooksearch://washery grade coke\">washery grade coke</a> to make their supplies of coal go further.</i>",
 
   "message-animalharvester-level-up": "Resourceful level up! You are now level {0} with +{1}% animal harvesting speed.",
   "message-armordurability-level-up": "Armor durability level up! You are now level {0} with +{1}% armor durability.",
@@ -354,6 +355,7 @@
   "message-millwright-unlock": "Millwright unlocked! You are now better at crafting machinery.",
   "message-millwrightaxle-unlock": "You are now practiced with making wooden axles, on your way to unlocking Millwright.",
   "message-millwrightrotor-unlock": "You are now practiced with making windmill rotors, on your way to unlocking Millwright.",
+  "message-cokefurnacemaster-unlock": "Coke Furnace Master unlocked! You are now better at working with coal coke.",
 
   "gui-animalharvester-instructions": "Harvest or butcher dead creatures to level.",
   "gui-armordurability-instructions": "Repair or block damage with armor to level.",
