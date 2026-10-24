@@ -1861,5 +1861,45 @@ namespace SeraphLeveling.Data.Attributes
             ResultAllowList = Simple("planks-"),
         };
 
+        public static readonly GenericStackedUnlockedAttributeModifierDefinition Millwright = new()
+        {
+            Id = "millwright",
+            Name = "Millwright",
+            SkillKey = "millwright",
+            PersistenceHeader = "MIW",
+            Trait = new(() => Traits.TraitDefinitions.Millwright),
+        };
+
+        public static readonly GenericGridCraftUnlockedAttributeModifierDefinition MillwrightAxle = new()
+        {
+            Id = "millwrightaxle",
+            SkillKey = "millwrightaxle",
+            PersistenceHeader = "MWA",
+            Name = "Axles",
+            GlobalMaxCredits = 20,
+            CreditDescription = "wooden axles",
+            WatchedCreditsAttributeKey = "sitMillwrightAxles",
+            Trait = new(() => Traits.TraitDefinitions.Millwright),
+            CraftedItemName = "Wooden Axles",
+            Verb = "Craft",
+            IsVisible = false,
+            ResultAllowList = Simple("woodenaxle-"),
+        };
+
+        public static readonly GenericGridCraftUnlockedAttributeModifierDefinition MillwrightRotor = new()
+        {
+            Id = "millwrightrotor",
+            SkillKey = "millwrightrotor",
+            PersistenceHeader = "MWR",
+            Name = "Rotors",
+            GlobalMaxCredits = 2,
+            CreditDescription = "windmill rotors",
+            WatchedCreditsAttributeKey = "sitMillwrightRotors",
+            Trait = new(() => Traits.TraitDefinitions.Millwright),
+            CraftedItemName = "Windmill Rotors",
+            Verb = "Craft",
+            IsVisible = false,
+            ResultAllowList = Simple("windmillrotor-"),
+        };
     }
 }

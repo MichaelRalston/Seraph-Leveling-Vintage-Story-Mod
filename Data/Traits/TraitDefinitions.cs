@@ -1332,7 +1332,12 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "millwright",
             Attributes = [
-                // TODO: IMPLEMENT
+                Unlock(AttributeModifierDefinitions.Millwright, [
+                    new UnlockedAttributeRequirement { Attribute = MillwrightAxle },
+                    new UnlockedAttributeRequirement { Attribute = MillwrightRotor }
+                ]),
+                Unlock(MillwrightAxle, [ new UnlockedAttributeRequirement { Attribute = MillwrightAxle }], false),
+                Unlock(MillwrightRotor, [ new UnlockedAttributeRequirement { Attribute = MillwrightRotor }], false),
             ]
         };
         

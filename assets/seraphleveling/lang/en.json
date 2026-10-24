@@ -197,7 +197,7 @@
   "attribute-stingingnettledroprate-contents": "{0}% stinging nettle loot",
   "attribute-healthyhealth-contents": "{0} health points",
   "attribute-freeaswindjumpheight-contents": "{0} blocks more jump height",
-  "attribute-dextrousjumpheight-contents": "{0} blocks more jump height",
+  "attribute-dexterousjumpheight-contents": "{0} blocks more jump height",
   "attribute-freeaswindfalldamage-contents": "{0} blocks less fall damage",
 
   "attribute-bowyer-contents": "Exclusive craftable <a href=\"handbooksearch://crude bow or crude arrow or recurve bow\">bows and arrows</a>",
@@ -237,6 +237,9 @@
   "attribute-woodsman-contents": "Can produce more <a href=\"handbooksearch://firewood\">firewood</a> when chopping logs, <a href=\"handbooksearch://stick\">sticks</a> from firewood and a handy <a href=\"handbooksearch://firewoodframe\">firewoodframe</a>.",
   "attribute-lactoseenthusiast-contents": "Exclusive craftable <a href=\"handbooksearch://milking bucket\">milking bucket</a>",
   "attribute-fitter-contents": "<i>Fitters excel at making the wood they install look attractive. If you want a fancy <a href=\"handbooksearch://planks\">wooden floor</a>, you will want a Fitter to make the wood for you.</i>",
+  "attribute-millwright-contents": "<i>Able to produce <a href=\"handbooksearch://windmill rotor or axle or large gear section or helve hammer base or pulverizer frame\">windmill parts</a> with less material.</i>",
+  "attribute-millwrightaxle-contents": "",
+  "attribute-millwrightrotor-contents": "",
 
   "message-animalharvester-level-up": "Resourceful level up! You are now level {0} with +{1}% animal harvesting speed.",
   "message-armordurability-level-up": "Armor durability level up! You are now level {0} with +{1}% armor durability.",
@@ -348,6 +351,9 @@
   "message-freeaswindjumpheight-unlock": "Free As The Wind Jump Height unlocked! You can now jump higher than before.",
   "message-freeaswindfalldamage-unlock": "Free As The Wind Fall Damage unlocked! You now suffer less damage from falling.",
   "message-fitter-unlock": "Fitter unlocked! You are now better at crafting with wood.",
+  "message-millwright-unlock": "Millwright unlocked! You are now better at crafting machinery.",
+  "message-millwrightaxle-unlock": "You are now practiced with making wooden axles, on your way to unlocking Millwright.",
+  "message-millwrightrotor-unlock": "You are now practiced with making windmill rotors, on your way to unlocking Millwright.",
 
   "gui-animalharvester-instructions": "Harvest or butcher dead creatures to level.",
   "gui-armordurability-instructions": "Repair or block damage with armor to level.",
