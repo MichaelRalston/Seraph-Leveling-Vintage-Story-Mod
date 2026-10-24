@@ -1282,7 +1282,10 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "survivalexpert",
             Attributes = [
-                // TODO: IMPLEMENT
+                Unlock(AttributeModifierDefinitions.SurvivalExpert, [
+                    new LeveledAttributeMinimumRequirement { Attribute = WalkingSpeed, ThresholdPercentage = 10 },
+                    new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.Furtive, ThresholdPercentage = 10 },
+                ]),
             ]
         };
 

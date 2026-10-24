@@ -1632,6 +1632,15 @@ namespace SeraphLeveling.Data.Attributes
             Trait = new(() => Traits.TraitDefinitions.Culinary)
         };
 
+        public static readonly GenericUnlockedAttributeModifierDefinition SurvivalExpert = new()
+        {
+            Id = "survivalexpert",
+            SkillKey = "survivalexpert",
+            PersistenceHeader = "SVE",
+            Name = "Survival Expert",
+            Trait = new(() => Traits.TraitDefinitions.SurvivalExpert)
+        };
+
         public static readonly GenericUnlockedAttributeModifierDefinition WildernessExplorer = new()
         {
             Id = "wildernessExplorer",
