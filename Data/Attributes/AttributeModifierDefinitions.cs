@@ -205,6 +205,33 @@ namespace SeraphLeveling.Data.Attributes
             InstructionsKey = "seraphleveling:gui-forager-instructions",
         };
 
+        public static readonly ConcurrentDictionary<SimpleToolProgress, IncrementData> GrassIncrementData = new()
+        {
+            [default] = new IncrementData
+            {
+                IncrementUnits = "grass",
+                BaseIncrement = 20,
+                IncrementStep = 20,
+            }
+        };
+
+        public static readonly GenericToolAttributeModifierDefinition GrassDropRate = new()
+        {
+            Id = "grass",
+            SkillKey = "grass",
+            PersistenceHeader = "GDR",
+            Name = "Grass",
+            LongDescription = "grass drop rate",
+            Tools = [ToolDefinitions.Knife, ToolDefinitions.Scythe],
+            Stat = "% grass drop rate",
+            IncrementData = GrassIncrementData,
+            GlobalMaxCredits = new(25),
+            BrokenBlockScores = new() { [Simple("tallgrass")] = 1},
+            StatName = new("grassDropRate"),
+            InstructionsKey = "seraphleveling:gui-grass-instructions",
+        };
+
+
         public static readonly GenericLeveledAttributeModifierDefinition FarmedCropDropRate = new()
         {
             Id = "cropRate",
@@ -1804,6 +1831,7 @@ namespace SeraphLeveling.Data.Attributes
         };
 
         // THIS DOES NOT ACTUALLY WORK.
+        // TODO: IMPLEMENT
         public static readonly GenericGridCraftUnlockedAttributeModifierDefinition DruidMistletoe = new()
         {
             Id = "druidmistletoe",

@@ -1257,8 +1257,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "carefulcut",
             Attributes = [
-                // TODO: IMPLEMENT
-                // "grassDropRate": 0.2,
+                Bonus(GrassDropRate, 20),
                 Bonus(StingingNettleDropRate, 50)
             ]
         };
