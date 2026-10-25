@@ -1868,6 +1868,21 @@ namespace SeraphLeveling.Data.Attributes
             ResultAllowList = Simple("hunterbackpack"),
         };
 
+        public static readonly GenericGridCraftUnlockedAttributeModifierDefinition Threadweaver = new()
+        {
+            Id = "threadweaver",
+            SkillKey = "threadweaver",
+            PersistenceHeader = "TDW",
+            Name = "Threadweaver",
+            GlobalMaxCredits = 1,
+            CreditDescription = "copper hackle",
+            WatchedCreditsAttributeKey = "sitThreadweaverHackle",
+            Trait = new(() => Traits.TraitDefinitions.Threadweaver),
+            CraftedItemName = "Copper hackle",
+            Verb = "Craft",
+            ResultAllowList = Simple("hackle-copper"),
+        };
+
         public static readonly MaxHealthUnlockedAttributeModifierDefinition HealthyHealth = new()
         {
             Id = "healthyhealth",

@@ -1246,7 +1246,7 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "threadweaver",
             Attributes = [
-                // TODO: IMPLEMENT
+                Unlock(AttributeModifierDefinitions.Threadweaver, [new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Threadweaver }, new LeveledAttributeMinimumRequirement { Attribute = WildCropDropRate, ThresholdPercentage = 5 } ])
             ]
         };
         public static readonly TraitDefinition Sailwright = new()
