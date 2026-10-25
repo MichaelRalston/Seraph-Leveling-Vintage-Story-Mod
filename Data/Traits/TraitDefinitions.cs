@@ -1266,7 +1266,11 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "entropy",
             Attributes = [
-                // TODO: IMPLEMENT
+                Unlock(AttributeModifierDefinitions.Entropy, [
+                    new UnlockedAttributeRequirement { Attribute = EntropyRings },
+                    new UnlockedAttributeRequirement { Attribute = EntropyClearQuartz },
+                    new UnlockedAttributeRequirement { Attribute = EntropySmokeyQuartz },
+                ]),
             ]
         };
         public static readonly TraitDefinition Greedy = new()

@@ -245,6 +245,7 @@
   "attribute-millwrightrotor-contents": "",
   "attribute-cokefurnacemaster-contents": "<i>A good smith doesn't just know how to use coke to make steel, they also know how to use <a href=\"handbooksearch://washery grade coke\">washery grade coke</a> to make their supplies of coal go further.</i>",
   "attribute-survivalexpert-contents": "You’re well-versed in the hidden tricks of the wild. Find a <a href=\"handbooksearch://andesite stone or granite stone or basalt stone or peridotite stone or suevite stone or kimberlite stone\">fitting stone</a> and keep yourself warm with a <a href=\"handbooksearch://cold heatcore\">hot heatcore</a> on your belt.",
+  "attribute-entropy-contents": "Awakens <a href=\"handbooksearch://embraced\">quartz</a> to burn with an unnatural light, is able to forge <a href=\"handbooksearch://temporal gear\">temporal gears</a> and craft <a href=\"handbooksearch://raw copper or raw tin or raw black bronze or raw iron or raw silver or raw gold\">raw metallic stewpots</a> by means no one fully understands. <i>Whether brilliance or madness, no one can say.</i>",
 
   "message-animalharvester-level-up": "Resourceful level up! You are now level {0} with +{1}% animal harvesting speed.",
   "message-armordurability-level-up": "Armor durability level up! You are now level {0} with +{1}% armor durability.",
@@ -364,6 +365,7 @@
   "message-millwrightrotor-unlock": "You are now practiced with making windmill rotors, on your way to unlocking Millwright.",
   "message-cokefurnacemaster-unlock": "Coke Furnace Master unlocked! You are now better at working with coal coke.",
   "message-survivalexpert-unlock": "Survival Expert unlocked! You are well-versed in the hidden tricks of the wild.",
+  "message-entropy-unlock": "Entropy unlocked! Your brilliance and/or madness shine brightly.",
 
   "gui-animalharvester-instructions": "Harvest or butcher dead creatures to level.",
   "gui-armordurability-instructions": "Repair or block damage with armor to level.",

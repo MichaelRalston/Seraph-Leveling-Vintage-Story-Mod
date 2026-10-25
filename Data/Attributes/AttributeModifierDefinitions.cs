@@ -1980,6 +1980,58 @@ namespace SeraphLeveling.Data.Attributes
             ResultAllowList = Simple("windmillrotor-"),
         };
 
+        public static readonly GenericStackedUnlockedAttributeModifierDefinition Entropy = new()
+        {
+            Id = "entropy",
+            Name = "Entropy",
+            SkillKey = "entropy",
+            PersistenceHeader = "ETP",
+            Trait = new(() => Traits.TraitDefinitions.Entropy),
+        };
+
+        public static readonly GenericGridCraftUnlockedAttributeModifierDefinition EntropyRings = new()
+        {
+            Id = "entropyrings",
+            SkillKey = "entropyrings",
+            PersistenceHeader = "ETR",
+            Name = "Rings",
+            GlobalMaxCredits = 10,
+            CreditDescription = "stone rings",
+            WatchedCreditsAttributeKey = "sitEntropyRings",
+            Trait = new(() => Traits.TraitDefinitions.Entropy),
+            CraftedItemName = "Stone Rings",
+            Verb = "Craft",
+            IsVisible = false,
+            ResultAllowList = Simple("aldiclasses:stonering"),
+        };
+
+        public static readonly GenericCollectionUnlockedAttributeModifierDefinition EntropyClearQuartz = new()
+        {
+            Id = "entropyquartz1",
+            SkillKey = "entropyquartz1",
+            PersistenceHeader = "ETQ",
+            Name = "Clear Quartz",
+            RequiredCollectionSize = 1,
+            CollectedItemDescription = "clear quartz acquired",
+            CollectedItemCountKey = "sitEntropyQuartzCount",
+            TokenAllowList = ["clearquartz"],
+            IsVisible = false,
+            Trait = new(() => Traits.TraitDefinitions.Entropy),
+        };
+        public static readonly GenericCollectionUnlockedAttributeModifierDefinition EntropySmokeyQuartz = new()
+        {
+            Id = "entropyquartz2",
+            SkillKey = "entropyquartz2",
+            PersistenceHeader = "ETQ",
+            Name = "Smoky Quartz",
+            RequiredCollectionSize = 1,
+            CollectedItemDescription = "smoky quartz acquired",
+            CollectedItemCountKey = "sitEntropyQuartzCount2",
+            TokenAllowList = ["smokyquartz"],
+            IsVisible = false,
+            Trait = new(() => Traits.TraitDefinitions.Entropy),
+        };
+
         public static readonly GenericGridCraftUnlockedAttributeModifierDefinition CokeFurnaceMaster = new()
         {
             Id = "cokefurnacemaster",
