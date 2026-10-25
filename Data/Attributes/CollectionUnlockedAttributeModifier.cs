@@ -10,8 +10,21 @@ using Vintagestory.API.Util;
 
 namespace SeraphLeveling.Data.Attributes
 {
-    public abstract class CollectionUnlockedAttributeModifierDefinition<D, PD> : UnlockedAttributeModifierDefinition<D, PD> where PD : CollectionUnlockedAttributeModifierProgressData<D, PD> where D : CollectionUnlockedAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
+    public abstract class CollectionUnlockedAttributeModifierDefinition<D, PD> : UnlockedAttributeModifierDefinition<D, PD>
+        where PD : CollectionUnlockedAttributeModifierProgressData<D, PD>
+        where D : CollectionUnlockedAttributeModifierDefinition<D, PD>,
+        IConstructable<D, PD>,
+        IHasCollectionTrigger<D, PD>
     {
+        public CollectionUnlockedAttributeModifierDefinition()
+        {
+            SeraphLevelingModSystem.ItemCollectedTrigger += ((IHasCollectionTrigger<D, PD>)this).OnTriggerItemCollected;
+        }
+
+        ~CollectionUnlockedAttributeModifierDefinition()
+        {
+            SeraphLevelingModSystem.ItemCollectedTrigger -= ((IHasCollectionTrigger<D, PD>)this).OnTriggerItemCollected;
+        }
         public required int RequiredCollectionSize { get; set; }
         public required string CollectedItemDescription { get; init; }
         public required string CollectedItemCountKey { get; init; }
@@ -52,11 +65,13 @@ namespace SeraphLeveling.Data.Attributes
 
         public virtual void AddCollectedItem(IServerPlayer player, AssetLocation toAdd)
         {
+            if (IsUnlockedForPlayer(player)) return;
             // Added item is invalid - abort
             if (toAdd == null || !toAdd.Valid) return;
 
             var progress = GetDict(player);
             if (progress.CollectedItems.Contains(toAdd)) return;
+
             if (!IsItemValid(toAdd)) return;
 
             if (progress.CollectedItems.Add(toAdd))
@@ -187,7 +202,7 @@ namespace SeraphLeveling.Data.Attributes
         }
     }
 
-    public class CollectionUnlockedAttributeModifierProgressData<D, PD>(D definition) : UnlockedAttributeModifierProgressData<D, PD>(definition) where PD : CollectionUnlockedAttributeModifierProgressData<D, PD> where D : CollectionUnlockedAttributeModifierDefinition<D, PD>, IConstructable<D, PD>
+    public class CollectionUnlockedAttributeModifierProgressData<D, PD>(D definition) : UnlockedAttributeModifierProgressData<D, PD>(definition) where PD : CollectionUnlockedAttributeModifierProgressData<D, PD> where D : CollectionUnlockedAttributeModifierDefinition<D, PD>, IConstructable<D, PD>, IHasCollectionTrigger<D, PD>
     {
         public HashSet<AssetLocation> CollectedItems { get; private set; } = [];
 

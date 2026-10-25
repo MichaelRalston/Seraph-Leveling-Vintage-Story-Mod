@@ -32,6 +32,7 @@ using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json;
 using Vintagestory.API.Datastructures;
 using SeraphLeveling.Data.Tools;
+using SeraphLeveling.Behaviors;
 
 namespace SeraphLeveling
 {
@@ -2182,7 +2183,7 @@ namespace SeraphLeveling
             var characterInventory = byPlayer.InventoryManager.GetOwnInventory(invConstant);
             if (characterInventory is InventoryBase ib)
             {
-                ib.SlotModified += (slot) => { OnClothingModified(byPlayer, invKey, slot, ib[slot]); };
+                ib.SlotModified += (slot) => { OnInventoryModified(byPlayer, invKey, slot, ib[slot]); };
             }
         }
 
@@ -5840,16 +5841,14 @@ namespace SeraphLeveling
                     .Foreach(itemCode => AttributeModifierDefinitions.Clothier.AddCollectedItem(player, itemCode));
             }
         }
+        public static event TriggerItemCollectedDelegate ItemCollectedTrigger;
 
-        private void OnClothingModified(IServerPlayer player, string inventoryStr, int slotId, ItemSlot slot)
+        private void OnInventoryModified(IServerPlayer player, string inventoryStr, int slotId, ItemSlot slot)
         {
             var itemCode = slot?.Itemstack?.Collectible?.Code;
             if (itemCode != null)
             {
-                if (!AttributeModifierDefinitions.Clothier.IsUnlockedForPlayer(player))
-                {
-                    AttributeModifierDefinitions.Clothier.AddCollectedItem(player, itemCode);
-                }
+                ItemCollectedTrigger?.Invoke(player, itemCode);
                 ProcessMenderEvent(player, inventoryStr, slotId, slot);
             }
         }
@@ -7460,7 +7459,7 @@ namespace SeraphLeveling
                 });
             Gui.SeraphProgressPage.Channel = channel;
             progressPollListenerId = api.Event.RegisterGameTickListener(_ => Gui.SeraphProgressPage.PollIfShowing(), 1000);
-            api.RegisterBlockEntityBehaviorClass("InteractionTrackingBehavior", typeof(BlockEntityBehavior)); // Just shoosh it.
+            api.RegisterBlockEntityBehaviorClass("InteractionTrackingBehavior", typeof(InteractionTrackingBehaviorClientStub)); // Just shoosh it.
 
 
             // Apply Harmony patches manually for better control

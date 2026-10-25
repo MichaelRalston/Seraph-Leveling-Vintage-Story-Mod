@@ -1271,6 +1271,9 @@ namespace SeraphLeveling.Data.Traits
                     new UnlockedAttributeRequirement { Attribute = EntropyClearQuartz },
                     new UnlockedAttributeRequirement { Attribute = EntropySmokeyQuartz },
                 ]),
+                Unlock(EntropySmokeyQuartz, [ new UnlockedAttributeRequirement { Attribute = EntropySmokeyQuartz }]),
+                Unlock(EntropyRings, [ new UnlockedAttributeRequirement { Attribute = EntropyRings }]),
+                Unlock(EntropyClearQuartz, [ new UnlockedAttributeRequirement { Attribute = EntropyClearQuartz }]),
             ]
         };
         public static readonly TraitDefinition Greedy = new()
