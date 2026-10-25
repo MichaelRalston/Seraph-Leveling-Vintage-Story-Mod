@@ -534,7 +534,7 @@ namespace SeraphLeveling.Data.Attributes
             GlobalMaxCredits = new(1500),
             StatName = new("treeseedShearsRareDropRate"),
             BrokenBlockScores = LeavesPoints,
-            InstructionsKey = "seraphleveling:gui-seedshearrate-instructions",
+            InstructionsKey = "seraphleveling:gui-seedrareshearrate-instructions",
         };
 
 
