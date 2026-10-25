@@ -1204,10 +1204,9 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "timberborn",
             Attributes = [
-                // TODO: IMPLEMENT
-    //   "fruittreeDropRate": 1,
-    //   "treeseedShearsDropRate": 2,
-    //   "treeseedShearsRareDropRate": 15,
+                Bonus(SeedRareShearsDropRate, 1500),
+                Bonus(SeedShearsDropRate, 200),
+                Bonus(FruitTreeRate, 100),
                 Bonus(MeleeDamage, 15),
                 Bonus(StickDropRate, 30),
                 Bonus(WoodDropRate, 10),
@@ -1356,10 +1355,9 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "forester",
             Attributes = [
-    //   "fruittreeDropRate": 1,
-    //   "treeseedShearsDropRate": 2,
-    //   "treeseedShearsRareDropRate": 15
-                // TODO: IMPLEMENT
+                Bonus(SeedRareShearsDropRate, 1500),
+                Bonus(SeedShearsDropRate, 200),
+                Bonus(FruitTreeRate, 100),
                 Bonus(SeedDropRate, 200),
             ]
         };

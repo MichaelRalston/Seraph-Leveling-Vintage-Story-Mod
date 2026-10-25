@@ -496,6 +496,48 @@ namespace SeraphLeveling.Data.Attributes
             InstructionsKey = "seraphleveling:gui-seedrate-instructions",
         };
 
+        public static readonly GenericToolAttributeModifierDefinition SeedShearsDropRate = new()
+        {
+            Id = "seedShearsDropRate",
+            SkillKey = "seedshearrate",
+            Name = "Seed Shear Drop Rate",
+            Stat = "% bonus tree seed drop rate with shears",
+            LongDescription = "tree seed drop rate with shears",
+            PersistenceHeader = "SDR",
+            Tools = [ToolDefinitions.Shears],
+            IncrementData = LeavesIncrementData,
+            GlobalMaxCredits = new(250),
+            StatName = new("treeseedShearsDropRate"),
+            BrokenBlockScores = LeavesPoints,
+            InstructionsKey = "seraphleveling:gui-seedshearrate-instructions",
+        };
+
+        public static readonly ConcurrentDictionary<SimpleToolProgress, IncrementData> RareLeavesIncrementData = new()
+        {
+            [default] = new IncrementData
+            {
+                IncrementUnits = "leaves",
+                BaseIncrement = 5,
+                IncrementStep = 1,
+            }
+        };
+        public static readonly GenericToolAttributeModifierDefinition SeedRareShearsDropRate = new()
+        {
+            Id = "seedRareShearsDropRate",
+            SkillKey = "rareseedshearrate",
+            Name = "Rare Seed Shear Drop Rate",
+            Stat = "% bonus rare tree seed drop rate with shears",
+            LongDescription = "rare tree seed drop rate with shears",
+            PersistenceHeader = "SDR",
+            Tools = [ToolDefinitions.Shears],
+            IncrementData = RareLeavesIncrementData,
+            GlobalMaxCredits = new(1500),
+            StatName = new("treeseedShearsRareDropRate"),
+            BrokenBlockScores = LeavesPoints,
+            InstructionsKey = "seraphleveling:gui-seedshearrate-instructions",
+        };
+
+
         public static readonly GenericToolAttributeModifierDefinition StickDropRate = new()
         {
             Id = "stickDropRate",
@@ -2043,6 +2085,37 @@ namespace SeraphLeveling.Data.Attributes
             CraftedItemName = "Refractory Bricks blocks",
             Verb = "Craft",
             ResultAllowList = Simple("refractorybricks-good-"),
+        };
+
+        public static readonly ConcurrentDictionary<SimpleToolProgress, IncrementData> FruitTreeIncrementData = new()
+        {
+            [default] = new IncrementData
+            {
+                IncrementUnits = "saplings",
+                BaseIncrement = 2,
+                IncrementStep = 2,
+            }
+        };
+
+        private static readonly ConcurrentDictionary<IAssetLocationMatcher, float> FruitTreePoints = new()
+        {
+            [And([Simple("fruittree"), Simple("-branch", MatcherType.PathContains)])] = 1,
+        };
+
+        public static readonly GenericToolAttributeModifierDefinition FruitTreeRate = new()
+        {
+            Id = "fruittreerate",
+            SkillKey = "fruittreerate",
+            PersistenceHeader = "FTR",
+            Name = "Fruit Trees",
+            LongDescription = "fruit tree drop rate",
+            Stat = "% bonus fruit tree drop rate",
+            Tools = [ToolDefinitions.Axe],
+            IncrementData = FruitTreeIncrementData,
+            BrokenBlockScores = FruitTreePoints,
+            GlobalMaxCredits = new(100),
+            StatName = new("fruittreeDropRate"),
+            InstructionsKey = "seraphleveling:gui-fruittreerate-instructions",
         };
     }
 }
