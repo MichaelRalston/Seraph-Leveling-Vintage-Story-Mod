@@ -1301,19 +1301,15 @@ namespace SeraphLeveling.Data.Traits
             Id = "druid",
             Attributes = [
                 Unlock(AttributeModifierDefinitions.Druid, [
-                    new UnlockedAttributeRequirement { Attribute = DruidMistletoe },
-                    new UnlockedAttributeRequirement { Attribute = DruidMushroom }
+                    new LeveledAttributeMinimumRequirement { Attribute = MistletoeRate, ThresholdPercentage = 5 },
                 ]),
-                Unlock(DruidMistletoe, [ new UnlockedAttributeRequirement { Attribute = DruidMistletoe }], false),
-                Unlock(DruidMushroom, [ new UnlockedAttributeRequirement { Attribute = DruidMushroom }], false),
             ]
         };
         public static readonly TraitDefinition Herbalist = new()
         {
             Id = "herbalist",
             Attributes = [
-                // TODO: IMPLEMENT
-    //   "mistletoeDropRate": 1,
+                Bonus(MistletoeRate, 100),
                 Bonus(ForageLootingBonus, 25),
                 Bonus(AttributeModifierDefinitions.Furtive, 20),
                 Bonus(StingingNettleDropRate, 20),

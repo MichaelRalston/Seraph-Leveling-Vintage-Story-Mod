@@ -232,6 +232,32 @@ namespace SeraphLeveling.Data.Attributes
         };
 
 
+        public static readonly ConcurrentDictionary<SimpleToolProgress, IncrementData> MistletoeIncrementData = new()
+        {
+            [default] = new IncrementData
+            {
+                IncrementUnits = "oak branches",
+                BaseIncrement = 10,
+                IncrementStep = 5,
+            }
+        };
+        public static readonly GenericToolAttributeModifierDefinition MistletoeRate = new()
+        {
+            Id = "mistletoe",
+            SkillKey = "mistletoe",
+            PersistenceHeader = "MTR",
+            Name = "Mistletoe",
+            LongDescription = "mistletoe drop rate",
+            Tools = [ToolDefinitions.Knife],
+            Stat = "% mistletoe drop rate",
+            IncrementData = MistletoeIncrementData,
+            GlobalMaxCredits = new(100),
+            BrokenBlockScores = new() { [And([Simple("leavesbranchy"), Simple("-oak", MatcherType.PathContains)])] = 1},
+            StatName = new("mistletoeDropRate"),
+            InstructionsKey = "seraphleveling:gui-mistletoe-instructions",
+        };
+
+
         public static readonly GenericLeveledAttributeModifierDefinition FarmedCropDropRate = new()
         {
             Id = "cropRate",
@@ -1871,45 +1897,17 @@ namespace SeraphLeveling.Data.Attributes
             ResultAllowList = Simple("sail"),
         };
 
-        public static readonly GenericStackedUnlockedAttributeModifierDefinition Druid = new()
+        public static readonly GenericCollectionUnlockedAttributeModifierDefinition Druid = new()
         {
             Id = "druid",
-            Name = "Druid",
             SkillKey = "druid",
-            PersistenceHeader = "DRD",
-            Trait = new(() => Traits.TraitDefinitions.Druid),
-        };
-
-        // THIS DOES NOT ACTUALLY WORK.
-        // TODO: IMPLEMENT
-        public static readonly GenericGridCraftUnlockedAttributeModifierDefinition DruidMistletoe = new()
-        {
-            Id = "druidmistletoe",
-            SkillKey = "druidmistletoe",
-            PersistenceHeader = "DMT",
-            Name = "Mistletoe",
-            GlobalMaxCredits = 12,
-            CreditDescription = "mistletoe",
-            WatchedCreditsAttributeKey = "sitDruidMistletoe",
-            Trait = new(() => Traits.TraitDefinitions.Druid),
-            CraftedItemName = "Mistletoe",
-            Verb = "Harvest",
-            IsVisible = false,
-            ResultAllowList = Simple("-saddlebag", MatcherType.PathContains),
-        };
-
-        public static readonly GenericCollectionUnlockedAttributeModifierDefinition DruidMushroom = new()
-        {
-            Id = "druidmushroom",
-            SkillKey = "druidmushroom",
             PersistenceHeader = "DRM",
-            Name = "Mushrooms",
+            Name = "Druid",
             RequiredCollectionSize = 5,
             CollectedItemDescription = "Poisonous Mushrooms",
             CollectedItemCountKey = "sitDruidMushroom",
             TokenAllowList = ["flyagaric", "earthball", "deathcap", "elfinsaddle", "jackolantern", "devilbolete", "bitterbolete", "devilstooth", "golddropmilkcap", "goldcap", "libertycap", "wavycap", "bluemeanie", "laughingjim", "foolsconecap", "sickener", "funeralbell", "pinkbonnet"],
             Trait = new(() => Traits.TraitDefinitions.Druid),
-            IsVisible = false,
         };
 
         public static readonly ProspectorAttributeModifierDefinition Prospector = new()
@@ -2002,7 +2000,7 @@ namespace SeraphLeveling.Data.Attributes
             CraftedItemName = "Stone Rings",
             Verb = "Craft",
             IsVisible = false,
-            ResultAllowList = Simple("aldiclasses:stonering"),
+            ResultAllowList = Simple("stonering"),
         };
 
         public static readonly GenericCollectionUnlockedAttributeModifierDefinition EntropyClearQuartz = new()
