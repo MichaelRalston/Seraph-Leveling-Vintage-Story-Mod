@@ -1218,7 +1218,12 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "timberwright",
             Attributes = [
-                // TODO: IMPLEMENT.
+                Unlock(AttributeModifierDefinitions.Timberwright,
+                [
+                    new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Carpenter },
+                    new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Fitter },
+                    new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Millwright },
+                ])
             ]
         };
 
@@ -1319,7 +1324,12 @@ namespace SeraphLeveling.Data.Traits
         {
             Id = "handwright",
             Attributes = [
-                // TODO: IMPLEMENT
+                Unlock(AttributeModifierDefinitions.Handwright,
+                [
+                    new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Timberwright },
+                    new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Potter },
+                    new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Mason },
+                ])
             ]
         };
         public static readonly TraitDefinition Firestarter = new()

@@ -1700,6 +1700,25 @@ namespace SeraphLeveling.Data.Attributes
             Trait = new(() => Traits.TraitDefinitions.Culinary)
         };
 
+        public static readonly GenericUnlockedAttributeModifierDefinition Timberwright = new()
+        {
+            Id = "timberwright",
+            SkillKey = "timberwright",
+            PersistenceHeader = "TBW",
+            Name = "Timberwright",
+            Trait = new(() => Traits.TraitDefinitions.Timberwright)
+        };
+
+        public static readonly GenericUnlockedAttributeModifierDefinition Handwright = new()
+        {
+            Id = "handwright",
+            SkillKey = "handwright",
+            PersistenceHeader = "HDW",
+            Name = "Handwright",
+            Trait = new(() => Traits.TraitDefinitions.Handwright)
+        };
+
+
         public static readonly GenericUnlockedAttributeModifierDefinition SurvivalExpert = new()
         {
             Id = "survivalexpert",
