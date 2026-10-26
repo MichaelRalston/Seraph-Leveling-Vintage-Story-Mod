@@ -1826,22 +1826,31 @@ namespace SeraphLeveling
         public static event TriggerBlockBrokenDelegate BlockBrokenTrigger;
 
         /// <summary>
-        /// Called when a player breaks a block. Updates mining progress based on new mechanics:
-        /// - Only counts blocks broken with pickaxes
-        /// - Only counts stone (1 point) and ore (5 points) blocks
-        /// - Each pickaxe type tracks its own increment progress independently
+        /// Called when a player breaks a block.
         /// </summary>
         private void OnBlockBroken(IServerPlayer byPlayer, int oldblockId, BlockSelection blockSel)
         {
             if (byPlayer?.Entity == null) return;
+            var toolCode = byPlayer.Entity?.RightHandItemSlot?.Itemstack?.Collectible?.Code;
+            // Breaking blocks with shears is instead handled by OnMultiBlockBreaking, which cannot differentiate
+            // between the central block and its surrounding blocks. Skip here to avoid double counting that
+            // central block.
+            if (toolCode != null && (ToolDefinitions.Shears.Matches(byPlayer.Entity?.RightHandItemSlot?.Itemstack?.Collectible?.Tool) ||
+                ToolDefinitions.Axe.Matches(byPlayer.Entity?.RightHandItemSlot?.Itemstack?.Collectible?.Tool) ||
+                ToolDefinitions.Scythe.Matches(byPlayer.Entity?.RightHandItemSlot?.Itemstack?.Collectible?.Tool))) return;
 
+            ProcessBlockBroken(byPlayer, oldblockId, blockSel?.Position, toolCode);
+        }
+
+        private static void ProcessBlockBroken(IServerPlayer byPlayer, int oldblockId, BlockPos position, string toolCode)
+        {
             // Check for Forager progression (wild crops on dirt, not farmland)
-            if (IsWildCropBlock(oldblockId, blockSel?.Position))
+            if (IsWildCropBlock(oldblockId, position))
             {
                 ProcessWildCropBroken(byPlayer);
             }
 
-            if (IsFarmedCropBlock(oldblockId, blockSel?.Position))
+            if (IsFarmedCropBlock(oldblockId, position))
             {
                 ProcessFarmedCropBroken(byPlayer);
             }
@@ -1858,16 +1867,10 @@ namespace SeraphLeveling
                 ProcessCharcoalBreak(byPlayer);
             }
 
-            var toolCode = byPlayer.Entity?.RightHandItemSlot?.Itemstack?.Collectible?.Code;
             if (toolCode == null) return;
 
-            // Breaking blocks with shears is instead handled by OnMultiBlockBreaking, which cannot differentiate
-            // between the central block and its surrounding blocks. Skip here to avoid double counting that
-            // central block.
-            if (ToolDefinitions.Shears.Matches(byPlayer.Entity?.RightHandItemSlot?.Itemstack?.Collectible?.Tool) || ToolDefinitions.Axe.Matches(byPlayer.Entity?.RightHandItemSlot?.Itemstack?.Collectible?.Tool)) return;
-
             // Fire event for attributes that care about broken blocks
-            BlockBrokenTrigger?.Invoke(byPlayer, toolCode, oldblockId, blockSel?.Position);
+            BlockBrokenTrigger?.Invoke(byPlayer, toolCode, oldblockId, position);
         }
 
         /// <summary>
@@ -1881,9 +1884,7 @@ namespace SeraphLeveling
             if (toolCode == null) return;
 
             int blockId = ServerApi.World.BlockAccessor.GetBlock(position).Id;
-
-            // Fire event for attributes that care about broken blocks
-            BlockBrokenTrigger?.Invoke(serverPlayer, toolCode, blockId, position);
+            ProcessBlockBroken(serverPlayer, blockId, position, toolCode);
         }
 
         /// <summary>
