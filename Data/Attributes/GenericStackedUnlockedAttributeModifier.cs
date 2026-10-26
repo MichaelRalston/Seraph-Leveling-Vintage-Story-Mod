@@ -29,10 +29,17 @@ namespace SeraphLeveling.Data.Attributes
             {
                 attrs.Foreach(mod => partialCredits.AddRange(mod.CollectPartialCredit(player)));
             }
+            float percentage = 0f;
+            float percentageBase = 0f;
+            partialCredits.ForEach(pc => { percentage += pc.Percentage; percentageBase += 1; });
+            if (percentageBase > 0)
+            {
+                percentage /= percentageBase;
+            }
             return new ProgressReportContent()
             {
                 Name = Name,
-                Percentage = progress.IsUnlocked ? 1 : 0,
+                Percentage = progress.IsUnlocked ? 1 : percentage,
                 Tooltip = $"{(progress.IsUnlocked ? "UNLOCKED" : "Locked")}",
                 PartialCredits = [.. partialCredits],
                 Instructions = instructionsSb.ToString(),
