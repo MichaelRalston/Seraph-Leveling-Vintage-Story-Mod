@@ -208,12 +208,12 @@ namespace SeraphLeveling.Data.Attributes
 
         public override bool ShouldDisplay(EntityPlayer player, bool hasVanillaTrait)
         {
-            return IsVisible && player.WatchedAttributes.GetBool(UnlockedKey, false);
+            return player.WatchedAttributes.GetBool(UnlockedKey, false);
         }
 
         public override bool ShouldSee(EntityPlayer player)
         {
-            return Trait.Value.Attributes.Where(mod => mod.Attribute == this).All(mod => mod.ShouldSee(player));
+            return IsVisible && Trait.Value.Attributes.Where(mod => mod.Attribute == this).All(mod => mod.ShouldSee(player));
         }
 
         public override object GetLocalizedTraitTextParam(EntityPlayer player)
