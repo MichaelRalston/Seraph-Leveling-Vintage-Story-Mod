@@ -164,7 +164,7 @@ namespace SeraphLeveling.Data.Traits
                             return DEBUG_SHOW_BROKEN_L10N ? modKey : null;
                         }
                     }
-                }).Where(token => token != null));
+                }).Where(token => token != null && token != ""));
                 string fullMessage = string.IsNullOrEmpty(contentText) ? "" : Lang.Get(CharacterSystemPatches.FULL_TRAIT_MESSAGE_KEY, headerText, contentText);
                 bool messageComplete = DEBUG_SHOW_BROKEN_L10N || fullMessage != CharacterSystemPatches.FULL_TRAIT_MESSAGE_KEY;
                 if (messageComplete)
