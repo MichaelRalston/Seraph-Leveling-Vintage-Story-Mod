@@ -280,8 +280,8 @@
   "message-temporalgeardrop-level-up": "Temporal gear drop rate level up! You are now level {0} with +{1}% extra chance of getting temporal gears from enemies.",
   "message-mistletoe-level-up": "Mistletoe drop rate level up! You are now level {0} with +{1}% extra chance to get mistletoe from oak branches.",
   "message-fruittreerate-level-up": "Fruit tree rate level up! You are now level {0} with +{1}% extra chance to get fruit tree grafts.",
-  "message-seedshearsdroprate-level-up": "Seed shear drop rate level up! You are now level {0} with +{1}% extra chance for bonus tree seed drops when using shears.",
-  "message-seedrareshearsdroprate-level-up": "Rare seed shear drop rate level up! You are now level {0} with +{1}% extra chance for bonus rare tree seed drops when using shears.",
+  "message-seedshearrate-level-up": "Seed shear drop rate level up! You are now level {0} with +{1}% extra chance for bonus tree seed drops when using shears.",
+  "message-rareseedshearrate-level-up": "Rare seed shear drop rate level up! You are now level {0} with +{1}% extra chance for bonus rare tree seed drops when using shears.",
 
   "message-axedamage-level-up": "Axe damage level up! You are now level {0} with +{1}% axe damage.",
   "message-axedurability-level-up": "Axe durability level up! You are now level {0} with -{1}% axe durability loss rate.",
