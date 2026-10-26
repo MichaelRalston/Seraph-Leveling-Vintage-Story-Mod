@@ -1494,7 +1494,7 @@ namespace SeraphLeveling.Data.Attributes
             InstructionsKey = "seraphleveling:gui-bowdamage-instructions",
         };
 
-        public static readonly GenericCollectionUnlockedAttributeModifierDefinition Potter = new()
+        public static readonly SimpleCollectionUnlockedAttributeModifierDefinition Potter = new()
         {
             Id = "potter",
             SkillKey = "potter",
@@ -1507,7 +1507,7 @@ namespace SeraphLeveling.Data.Attributes
             Trait = new(() => Traits.TraitDefinitions.Potter),
         };
 
-        public static readonly GenericCollectionUnlockedAttributeModifierDefinition MasterCraftsman = new()
+        public static readonly SimpleCollectionUnlockedAttributeModifierDefinition MasterCraftsman = new()
         {
             Id = "masterCraftsman",
             SkillKey = "mastercraftsman",
@@ -1520,7 +1520,7 @@ namespace SeraphLeveling.Data.Attributes
             Trait = new(() => Traits.TraitDefinitions.MasterCraftsman),
         };
 
-        public static readonly SmithCollectionUnlockedAttributeModifierDefinition Smith = new()
+        public static readonly SimpleCollectionUnlockedAttributeModifierDefinition Smith = new()
         {
             Id = "smith",
             SkillKey = "smith",
