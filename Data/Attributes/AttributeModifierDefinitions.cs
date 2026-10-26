@@ -1520,7 +1520,7 @@ namespace SeraphLeveling.Data.Attributes
             Trait = new(() => Traits.TraitDefinitions.MasterCraftsman),
         };
 
-        public static readonly GenericCollectionUnlockedAttributeModifierDefinition Smith = new()
+        public static readonly SmithCollectionUnlockedAttributeModifierDefinition Smith = new()
         {
             Id = "smith",
             SkillKey = "smith",

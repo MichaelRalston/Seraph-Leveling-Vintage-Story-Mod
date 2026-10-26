@@ -208,7 +208,7 @@ namespace SeraphLeveling.Data.Attributes
 
         public override bool ShouldDisplay(EntityPlayer player, bool hasVanillaTrait)
         {
-            return player.WatchedAttributes.GetBool(UnlockedKey, false);
+            return IsVisible && player.WatchedAttributes.GetBool(UnlockedKey, false);
         }
 
         public override bool ShouldSee(EntityPlayer player)
