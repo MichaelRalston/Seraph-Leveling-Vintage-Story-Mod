@@ -1,5 +1,6 @@
 using System;
 using SeraphLeveling.Data.Attributes;
+using Vintagestory.GameContent;
 using static SeraphLeveling.Data.Attributes.AttributeModifierDefinitions;
 using static SeraphLeveling.Data.Attributes.IAttributeModifier;
 
@@ -250,6 +251,15 @@ namespace SeraphLeveling.Data.Traits
             ],
         };
 
+        public static readonly TraitDefinition Fragile = new()
+        {
+            Id = "fragile",
+            Attributes = [
+                PenaltyOffset(FragileHealthOffset, 1, FragileHealthPenalty, [
+                    new LeveledAttributeMinimumRequirement { Attribute = MiningSpeed, ThresholdPercentage = 0 },
+                ]),
+            ]
+        };
         public static readonly TraitDefinition Kind = new()
         {
             Id = "kind",
@@ -712,6 +722,654 @@ namespace SeraphLeveling.Data.Traits
             ]
         };
 
+        public static readonly TraitDefinition MountainEater = new()
+        {
+            Id = "mountaineater",
+            Attributes = [
+                Bonus(OreDropRate, 50),
+                Bonus(MiningSpeed, 100)
+            ]
+        };
 
+        public static readonly TraitDefinition Myopic = new()
+        {
+            Id = "myopic",
+            Attributes = [
+                BasicPenalty(RangedDamage, 20),
+                BasicPenalty(RangedAccuracy, 30),
+                BasicPenalty(RangedDistance, 20)
+            ]
+        };
+
+        public static readonly TraitDefinition Tough = new()
+        {
+            Id = "tough",
+            Attributes = [
+                Bonus(MeleeDamage, 15),
+                Unlock(ToughHealth, [
+                    new LeveledAttributeMinimumRequirement { Attribute = MeleeDamage, ThresholdPercentage = 15 },
+                ]),
+            ]
+        };
+
+        public static readonly TraitDefinition Farmer = new()
+        {
+            Id = "farmer",
+            Attributes = [
+                Bonus(FarmedCropDropRate, 30),
+            ]
+        };
+
+        public static readonly TraitDefinition AnimalFriend = new()
+        {
+            Id = "animalfriend",
+            Attributes = [
+                Bonus(AttributeModifierDefinitions.Furtive, 20),
+            ],
+        };
+
+        public static readonly TraitDefinition StrongShoulders = new()
+        {
+            Id = "strongshoulders",
+            Attributes = [
+                Bonus(RangedDamage, 20),
+                Bonus(RangedDistance, 20),
+            ]
+        };
+
+        public static readonly TraitDefinition Preserver = new()
+        {
+            Id = "preserver",
+            Attributes = [
+                Bonus(AttributeModifierDefinitions.Preserver, 400),
+            ]
+        };
+
+        public static readonly TraitDefinition Saddler = new()
+        {
+            Id = "saddler",
+            Attributes = [
+                Unlock(AttributeModifierDefinitions.Saddler, [
+                    new UnlockedAttributeRequirement { Attribute = SaddlerSaddle },
+                    new UnlockedAttributeRequirement { Attribute = SaddlerSaddlebag }
+                ]),
+                Unlock(SaddlerSaddle, [ new UnlockedAttributeRequirement { Attribute = SaddlerSaddle }], false),
+                Unlock(SaddlerSaddlebag, [ new UnlockedAttributeRequirement { Attribute = SaddlerSaddlebag }], false),
+            ]
+        };
+
+        public static readonly TraitDefinition GreenFingered = new()
+        {
+            Id = "greenfingered",
+            Attributes = [
+                Unlock(AttributeModifierDefinitions.GreenFingered, [
+                    new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.GreenFingered },
+                    new LeveledAttributeMinimumRequirement { Attribute = FarmedCropDropRate, ThresholdPercentage = 10 },
+                ])
+            ],
+        };
+
+        public static readonly TraitDefinition Gatherer = new()
+        {
+            Id = "gatherer",
+            Attributes = [
+                Bonus(ForageLootingBonus, 50),
+                Bonus(StingingNettleDropRate, 20),
+            ],
+        };
+
+        public static readonly TraitDefinition Backpacker = new()
+        {
+            Id = "backpacker",
+            Attributes = [
+                Unlock(AttributeModifierDefinitions.Backpacker, [
+                    new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Backpacker },
+                ])
+            ],
+        };
+
+        public static readonly TraitDefinition Frugal = new()
+        {
+            Id = "frugal",
+            Attributes = [
+                Bonus(HungerRate, 20),
+            ],
+        };
+
+        public static readonly TraitDefinition Healthy = new()
+        {
+            Id = "healthy",
+            Attributes = [
+                Unlock(HealthyHealth, [
+                    new LeveledAttributeMinimumRequirement { Attribute = HungerRate, ThresholdPercentage = 10 },
+                    new LeveledAttributeMinimumRequirement { Attribute = WalkingSpeed, ThresholdPercentage = 10 }
+                ]),
+            ]
+        };
+
+        public static readonly TraitDefinition VeganIngenuity = new()
+        {
+            Id = "veganingenuity",
+            Attributes = [
+                Unlock(AttributeModifierDefinitions.VeganIngenuity, [
+                    new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.VeganIngenuity },
+                    new LeveledAttributeMinimumRequirement { Attribute = ForageLootingBonus, ThresholdPercentage = 10 },
+                ])
+            ]
+        };
+
+        public static readonly TraitDefinition PacifistExorcist = new()
+        {
+            Id = "pacifistexorcist",
+            Attributes = [
+                BasicPenalty(MeleeDamage, 50),
+                BasicPenalty(RangedDamage, 50),
+                BasicPenalty(AnimalDropRate, 80),
+                BasicPenalty(AnimalHarvestRate, 35),
+            ],
+        };
+        
+        public static readonly TraitDefinition AldiLumberjack = new()
+        {
+            Id = "lumberjack",
+            Attributes = [
+                Bonus(WoodDropRate, 10),
+                Bonus(StickDropRate, 30),
+                Bonus(MeleeDamage, 15),
+            ]
+        };
+
+        public static readonly TraitDefinition Burner = new()
+        {
+            Id = "burner",
+            Attributes = [
+                Bonus(CharcoalDropRate, 35)
+            ]
+        };
+
+        public static readonly TraitDefinition Woodsman = new()
+        {
+            Id = "woodsman",
+            Attributes = [
+                Unlock(AttributeModifierDefinitions.Woodsman, [new LeveledAttributeMinimumRequirement{ Attribute = WoodDropRate, ThresholdPercentage = 5}])
+            ]
+        };
+
+        public static readonly TraitDefinition StrongArms = new()
+        {
+            Id = "strongarms",
+            Attributes = [
+                Bonus(MeleeDamage, 15)
+            ]
+        };
+
+        public static readonly TraitDefinition Smith = new()
+        {
+            Id = "smith",
+            Attributes = [
+                Unlock(AttributeModifierDefinitions.Smith, [
+                    new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Smith },
+                    new LeveledAttributeMinimumRequirement { Attribute = MeleeDamage, ThresholdPercentage = 5 },
+                ])
+            ],
+        };
+        public static readonly TraitDefinition Glassblower = new()
+        {
+            Id = "glassblower",
+            Attributes = [
+                Unlock(AttributeModifierDefinitions.Glassblower, [new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Glassblower }])
+            ]
+        };
+        public static readonly TraitDefinition Artisan = new()
+        {
+            Id = "artisan",
+            Attributes = [
+                Unlock(AttributeModifierDefinitions.Artisan, [new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Artisan }])
+            ]
+        };
+
+        public static readonly TraitDefinition Miner = new()
+        {
+            Id = "miner",
+            Attributes = [
+                Bonus(OreDropRate, 40),
+                Bonus(MiningSpeed, 75),
+            ]
+        };
+        
+        public static readonly TraitDefinition AldiButcher = new()
+        {
+            Id = "butcher",
+            Attributes = [
+                Bonus(AnimalDropRate, 50),
+                BasicPenalty(AnimalHarvestRate, 30)
+            ]
+        };
+
+        public static readonly TraitDefinition AldiCulinary = new()
+        {
+            Id = "culinary",
+            Attributes = [
+                Unlock(AttributeModifierDefinitions.AldiCulinary, [
+                    new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.AldiCulinary },
+                ])
+            ],
+        };
+
+        public static readonly TraitDefinition FoodSnitcher = new()
+        {
+            Id = "foodsnitcher",
+            Attributes = [
+                Bonus(HungerRate, 30)
+            ]
+        };
+
+        public static readonly TraitDefinition Heavy = new()
+        {
+            Id = "heavy",
+            Attributes = [
+                Bonus(ArmorWalkSpeed, 100)
+            ]
+        };
+
+        public static readonly TraitDefinition Booming = new()
+        {
+            Id = "booming",
+            Attributes = [
+                BasicPenalty(AttributeModifierDefinitions.Furtive, 50),
+                BasicPenalty(WalkingSpeed, 10)
+            ]
+        };
+
+        public static readonly TraitDefinition Digger = new()
+        {
+            Id = "digger",
+            Attributes = [
+                Bonus(MiningSpeed, 30),
+                Bonus(PeatDropRate, 30),
+                Bonus(ClayDropRate, 20),
+            ]
+        };
+
+        public static readonly TraitDefinition Hungry = new()
+        {
+            Id = "hungry",
+            Attributes = [
+                Penalty(HungerRate, 10, [ new LeveledAttributeMinimumRequirement { Attribute = HungerRate, ThresholdPercentage = 0 }]),
+            ]
+        };
+
+        public static readonly TraitDefinition ClumsyMiner = new()
+        {
+            Id = "clumsyminer",
+            Attributes = [
+                Penalty(OreDropRate, 10, [ new LeveledAttributeMinimumRequirement { Attribute = OreDropRate, ThresholdPercentage = 0 }])
+            ]
+        };
+
+        public static readonly TraitDefinition Versatile = new()
+        {
+            Id = "versatile",
+            Attributes = [
+                Bonus(MeleeDamage, 15),
+                Bonus(RangedDamage, 20),
+            ]
+        };
+
+        public static readonly TraitDefinition Unstoppable = new()
+        {
+            Id = "unstoppable",
+            Attributes = [
+                Bonus(MeleeDamage, 30),
+                Bonus(ArmorDurability, 20),
+                Bonus(ArmorWalkSpeed, 50),
+            ]
+        };
+
+        public static readonly TraitDefinition KeepThemNear = new()
+        {
+            Id = "keepthemnear",
+            Attributes = [
+                Penalty(RangedDamage, 80, [ new LeveledAttributeMinimumRequirement { Attribute = RangedDamage, ThresholdPercentage = 0 }]),
+            ]
+        };
+
+        public static readonly TraitDefinition HighConsumption = new()
+        {
+            Id = "highconsumption",
+            Attributes = [
+                Penalty(HungerRate, 15, [ new LeveledAttributeMinimumRequirement { Attribute = HungerRate, ThresholdPercentage = 0 }]),
+            ]
+        };
+
+        public static readonly TraitDefinition Loud = new()
+        {
+            Id = "loud",
+            Attributes = [
+                Penalty(AttributeModifierDefinitions.Furtive, 20, [ new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.Furtive, ThresholdPercentage = 0 }]),
+            ]
+        };
+
+        public static readonly TraitDefinition CarefulStrike = new()
+        {
+            Id = "carefulstrike",
+            Attributes = [
+                Bonus(StoneDropRate, 30)
+            ]
+        };
+
+        public static readonly TraitDefinition Sturdy = new()
+        {
+            Id = "sturdy",
+            Attributes = [
+                Bonus(MeleeDamage, 10),
+                Unlock(HardyHealth, [
+                    new LeveledAttributeMinimumRequirement { Attribute = MiningSpeed, ThresholdPercentage = 10 },
+                    new LeveledAttributeMinimumRequirement { Attribute = ArmorDurability, ThresholdPercentage = 10 }
+                ]),
+            ]
+        };
+
+        public static readonly TraitDefinition PreciousHands = new()
+        {
+            Id = "precioushands",
+            Attributes = [
+                Penalty(OreDropRate, 15),
+                Penalty(MiningSpeed, 50),
+            ]
+        };
+
+        public static readonly TraitDefinition KeepThemAway = new()
+        {
+            Id = "keepthemaway",
+            Attributes = [
+                Penalty(MeleeDamage, 50, [ new LeveledAttributeMinimumRequirement { Attribute = MeleeDamage, ThresholdPercentage = 0 }]),
+            ]
+        };
+
+        public static readonly TraitDefinition Dexterous = new()
+        {
+            Id = "dexterous",
+            Attributes = [
+                Bonus(DexterousJumpHeight, 50, [
+                    new LeveledAttributeMinimumRequirement { Attribute = WalkingSpeed, ThresholdPercentage = 15 },
+                ]),
+                Bonus(WalkingSpeed, 15),
+            ]
+        };
+
+        public static readonly TraitDefinition FreeAsTheWind = new()
+        {
+            Id = "freeaswind",
+            Attributes = [
+                Bonus(FreeAsTheWindJumpHeight, 100, [
+                    new LeveledAttributeMinimumRequirement { Attribute = WalkingSpeed, ThresholdPercentage = 25 },
+                ]),
+                Bonus(FreeAsTheWindFallDamageThreshold, 300, [
+                    new LeveledAttributeMinimumRequirement { Attribute = WalkingSpeed, ThresholdPercentage = 25 },
+                ]),
+                Bonus(WalkingSpeed, 25),
+            ]
+        };
+
+        public static readonly TraitDefinition GetInGetLootGetOut = new()
+        {
+            Id = "getingetlootgetout",
+            Attributes = [
+                Bonus(VesselDropRate, 30),
+                Bonus(WholeVesselRate, 30),
+            ]
+        };
+
+        public static readonly TraitDefinition HighlyEfficient = new()
+        {
+            Id = "highlyefficient",
+            Attributes = [
+                Bonus(HungerRate, 25),
+            ]
+        };
+
+        public static readonly TraitDefinition Evasive = new()
+        {
+            Id = "evasive",
+            Attributes = [
+                Bonus(AttributeModifierDefinitions.Furtive, 50),
+            ]
+        };
+
+        public static readonly TraitDefinition WeaponShy = new()
+        {
+            Id = "weaponshy",
+            Attributes = [
+                BasicPenalty(RangedDamage, 30),
+                BasicPenalty(MeleeDamage, 20),
+            ]
+        };
+
+        public static readonly TraitDefinition AldiNudist = new()
+        {
+            Id = "nudist",
+            Attributes = [
+                BasicPenalty(ArmorWalkSpeed, 200),
+                BasicPenalty(ArmorDurability, 500),
+            ]
+        };
+
+        public static readonly TraitDefinition Untrained = new()
+        {
+            Id = "untrained",
+            Attributes = [
+                BasicPenalty(ArmorWalkSpeed, 30)
+            ]
+        };
+
+        public static readonly TraitDefinition KeenEye = new()
+        {
+            Id = "keeneye",
+            Attributes = [
+                Bonus(OreDropRate, 30),
+                Bonus(GearDropRate, 20),
+            ]
+        };
+
+        public static readonly TraitDefinition NoTimeForThat = new()
+        {
+            Id = "notimeforthat",
+            Attributes = [
+                BasicPenalty(OreDropRate, 15),
+                BasicPenalty(ForageLootingBonus, 80),
+                BasicPenalty(AnimalDropRate, 75),
+            ]
+        };
+
+        public static readonly TraitDefinition Naturebound = new()
+        {
+            Id = "naturebound",
+            Attributes = [
+                Bonus(ForageLootingBonus, 10),
+                Bonus(AttributeModifierDefinitions.Furtive, 20),
+            ]
+        };
+
+        public static readonly TraitDefinition LabourOfChoice = new()
+        {
+            Id = "labourofchoice",
+            Attributes = [
+                BasicPenalty(MiningSpeed, 15),
+                BasicPenalty(VesselDropRate, 25)
+            ]
+        };
+
+        public static readonly TraitDefinition Timberborn = new()
+        {
+            Id = "timberborn",
+            Attributes = [
+                Bonus(SeedRareShearsDropRate, 1500),
+                Bonus(SeedShearsDropRate, 200),
+                Bonus(FruitTreeRate, 100),
+                Bonus(MeleeDamage, 15),
+                Bonus(StickDropRate, 30),
+                Bonus(WoodDropRate, 10),
+                Bonus(SeedDropRate, 200),
+            ]
+        };
+
+        public static readonly TraitDefinition Timberwright = new()
+        {
+            Id = "timberwright",
+            Attributes = [
+                Unlock(AttributeModifierDefinitions.Timberwright,
+                [
+                    new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Carpenter },
+                    new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Fitter },
+                    new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Millwright },
+                ])
+            ]
+        };
+
+        public static readonly TraitDefinition CokeFurnaceMaster = new()
+        {
+            Id = "cokefurnacemaster",
+            Attributes = [
+                Unlock(AttributeModifierDefinitions.CokeFurnaceMaster, [ new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.CokeFurnaceMaster }]),
+            ]
+        };
+
+        public static readonly TraitDefinition Prospector = new()
+        {
+            Id = "prospector",
+            Attributes = [
+                Unlock(AttributeModifierDefinitions.Prospector, [new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Prospector }])
+            ]
+        };
+        public static readonly TraitDefinition Threadweaver = new()
+        {
+            Id = "threadweaver",
+            Attributes = [
+                Unlock(AttributeModifierDefinitions.Threadweaver, [new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Threadweaver }, new LeveledAttributeMinimumRequirement { Attribute = WildCropDropRate, ThresholdPercentage = 5 } ])
+            ]
+        };
+        public static readonly TraitDefinition Sailwright = new()
+        {
+            Id = "sailwright",
+            Attributes = [
+                Unlock(AttributeModifierDefinitions.Sailwright, [new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Sailwright }])
+            ]
+        };
+
+        public static readonly TraitDefinition CarefulCut = new()
+        {
+            Id = "carefulcut",
+            Attributes = [
+                Bonus(GrassDropRate, 20),
+                Bonus(StingingNettleDropRate, 50)
+            ]
+        };
+
+        public static readonly TraitDefinition Entropy = new()
+        {
+            Id = "entropy",
+            Attributes = [
+                Unlock(AttributeModifierDefinitions.Entropy, [
+                    new UnlockedAttributeRequirement { Attribute = EntropyRings },
+                    new UnlockedAttributeRequirement { Attribute = EntropyClearQuartz },
+                    new UnlockedAttributeRequirement { Attribute = EntropySmokeyQuartz },
+                ]),
+                Unlock(EntropySmokeyQuartz, [ new UnlockedAttributeRequirement { Attribute = EntropySmokeyQuartz }]),
+                Unlock(EntropyRings, [ new UnlockedAttributeRequirement { Attribute = EntropyRings }]),
+                Unlock(EntropyClearQuartz, [ new UnlockedAttributeRequirement { Attribute = EntropyClearQuartz }]),
+            ]
+        };
+        public static readonly TraitDefinition Greedy = new()
+        {
+            Id = "greedy",
+            Attributes = [
+                Bonus(FlaxDrop, 30),
+                Bonus(TemporalGearDrop, 30),
+                Bonus(GearDropRate, 30),
+            ]
+        };
+        public static readonly TraitDefinition SurvivalExpert = new()
+        {
+            Id = "survivalexpert",
+            Attributes = [
+                Unlock(AttributeModifierDefinitions.SurvivalExpert, [
+                    new LeveledAttributeMinimumRequirement { Attribute = WalkingSpeed, ThresholdPercentage = 10 },
+                    new LeveledAttributeMinimumRequirement { Attribute = AttributeModifierDefinitions.Furtive, ThresholdPercentage = 10 },
+                ]),
+            ]
+        };
+
+        public static readonly TraitDefinition Druid = new()
+        {
+            Id = "druid",
+            Attributes = [
+                Unlock(AttributeModifierDefinitions.Druid, [
+                    new LeveledAttributeMinimumRequirement { Attribute = MistletoeRate, ThresholdPercentage = 5 },
+                ]),
+            ]
+        };
+        public static readonly TraitDefinition Herbalist = new()
+        {
+            Id = "herbalist",
+            Attributes = [
+                Bonus(MistletoeRate, 100),
+                Bonus(ForageLootingBonus, 25),
+                Bonus(AttributeModifierDefinitions.Furtive, 20),
+                Bonus(StingingNettleDropRate, 20),
+            ]
+        };
+
+        public static readonly TraitDefinition Handwright = new()
+        {
+            Id = "handwright",
+            Attributes = [
+                Unlock(AttributeModifierDefinitions.Handwright,
+                [
+                    new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Timberwright },
+                    new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Potter },
+                    new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Mason },
+                ])
+            ]
+        };
+        public static readonly TraitDefinition Firestarter = new()
+        {
+            Id = "firestarter",
+            Attributes = [
+                Bonus(FlaxDrop, 20),
+            ]
+        };
+
+        public static readonly TraitDefinition Millwright = new()
+        {
+            Id = "millwright",
+            Attributes = [
+                Unlock(AttributeModifierDefinitions.Millwright, [
+                    new UnlockedAttributeRequirement { Attribute = MillwrightAxle },
+                    new UnlockedAttributeRequirement { Attribute = MillwrightRotor }
+                ]),
+                Unlock(MillwrightAxle, [ new UnlockedAttributeRequirement { Attribute = MillwrightAxle }], false),
+                Unlock(MillwrightRotor, [ new UnlockedAttributeRequirement { Attribute = MillwrightRotor }], false),
+            ]
+        };
+        
+        public static readonly TraitDefinition Fitter = new()
+        {
+            Id = "fitter",
+            Attributes = [
+                Unlock(AttributeModifierDefinitions.Fitter, [new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Fitter }])
+            ]
+        };
+
+        public static readonly TraitDefinition Forester = new()
+        {
+            Id = "forester",
+            Attributes = [
+                Bonus(SeedRareShearsDropRate, 1500),
+                Bonus(SeedShearsDropRate, 200),
+                Bonus(FruitTreeRate, 100),
+                Bonus(SeedDropRate, 200),
+            ]
+        };
     }
 }

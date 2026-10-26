@@ -19,6 +19,8 @@ namespace SeraphLeveling.Data.Tools
         public static readonly ToolDefinition Knife = new("knife", EnumTool.Knife);
         public static readonly ToolDefinition Cleaver = new("cleaver", EnumTool.Knife); // Cleaver tools are defined in other mods, not the base game, so treat them like a knife here
         public static readonly ToolDefinition Shears = new("shears", EnumTool.Shears);
+
+        public static readonly IAssetLocationMatcher stoneMatcher = Or(Simple("stone-", MatcherType.PathContains), Simple("stone"), Simple("thrownstone", MatcherType.PathContains), And(Simple("stone", MatcherType.PathContains), Not(Simple("whetstone", MatcherType.PathContains))));
         public static readonly ToolDefinition MeleeWeapon = new("melee weapon", [EnumTool.Axe, EnumTool.Club, EnumTool.Halberd, EnumTool.Hammer, EnumTool.Knife, EnumTool.Mace, EnumTool.Pike, EnumTool.Polearm, EnumTool.Poleaxe, EnumTool.Scythe, EnumTool.Sickle, EnumTool.Spear, EnumTool.Staff, EnumTool.Sword, EnumTool.Warhammer])
         {
             IsRanged = false,
@@ -26,12 +28,17 @@ namespace SeraphLeveling.Data.Tools
         public static readonly ToolDefinition RangedWeapon = new("ranged weapon", [EnumTool.Bow, EnumTool.Crossbow, EnumTool.Firearm, EnumTool.Javelin, EnumTool.Sling, EnumTool.Spear])
         {
             IsRanged = true,
-            MatchOverride = Or(Simple("stone-", MatcherType.PathContains), Simple("stone"), Simple("thrownstone", MatcherType.PathContains), And(Simple("stone", MatcherType.PathContains), Not(Simple("whetstone", MatcherType.PathContains))))
+            MatchOverride = stoneMatcher,
+        };
+        public static readonly ToolDefinition AnyWeapon = new("weapon", [EnumTool.Axe, EnumTool.Club, EnumTool.Halberd, EnumTool.Hammer, EnumTool.Knife, EnumTool.Mace, EnumTool.Pike, EnumTool.Polearm, EnumTool.Poleaxe, EnumTool.Scythe, EnumTool.Sickle, EnumTool.Spear, EnumTool.Staff, EnumTool.Sword, EnumTool.Warhammer, EnumTool.Bow, EnumTool.Crossbow, EnumTool.Firearm, EnumTool.Javelin, EnumTool.Sling, EnumTool.Spear])
+        {
+            MatchOverride = stoneMatcher,
         };
         public static readonly ToolDefinition Sling = new("sling", EnumTool.Sling);
         public static readonly ToolDefinition Stone = new("stone")
         {
-            MatchOverride = Or(Simple("stone-", MatcherType.PathContains), Simple("stone"), Simple("thrownstone", MatcherType.PathContains), And(Simple("stone", MatcherType.PathContains), Not(Simple("whetstone", MatcherType.PathContains))))
+            MatchOverride = stoneMatcher,
         };
+        public static readonly ToolDefinition Saw = new("saw", EnumTool.Saw);
     }
 }

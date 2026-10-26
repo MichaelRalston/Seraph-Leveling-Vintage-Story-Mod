@@ -32,6 +32,7 @@ using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json;
 using Vintagestory.API.Datastructures;
 using SeraphLeveling.Data.Tools;
+using SeraphLeveling.Behaviors;
 
 namespace SeraphLeveling
 {
@@ -1825,22 +1826,31 @@ namespace SeraphLeveling
         public static event TriggerBlockBrokenDelegate BlockBrokenTrigger;
 
         /// <summary>
-        /// Called when a player breaks a block. Updates mining progress based on new mechanics:
-        /// - Only counts blocks broken with pickaxes
-        /// - Only counts stone (1 point) and ore (5 points) blocks
-        /// - Each pickaxe type tracks its own increment progress independently
+        /// Called when a player breaks a block.
         /// </summary>
         private void OnBlockBroken(IServerPlayer byPlayer, int oldblockId, BlockSelection blockSel)
         {
             if (byPlayer?.Entity == null) return;
+            var toolCode = byPlayer.Entity?.RightHandItemSlot?.Itemstack?.Collectible?.Code;
+            // Breaking blocks with shears is instead handled by OnMultiBlockBreaking, which cannot differentiate
+            // between the central block and its surrounding blocks. Skip here to avoid double counting that
+            // central block.
+            if (toolCode != null && (ToolDefinitions.Shears.Matches(byPlayer.Entity?.RightHandItemSlot?.Itemstack?.Collectible?.Tool) ||
+                ToolDefinitions.Axe.Matches(byPlayer.Entity?.RightHandItemSlot?.Itemstack?.Collectible?.Tool) ||
+                ToolDefinitions.Scythe.Matches(byPlayer.Entity?.RightHandItemSlot?.Itemstack?.Collectible?.Tool))) return;
 
+            ProcessBlockBroken(byPlayer, oldblockId, blockSel?.Position, toolCode);
+        }
+
+        private static void ProcessBlockBroken(IServerPlayer byPlayer, int oldblockId, BlockPos position, string toolCode)
+        {
             // Check for Forager progression (wild crops on dirt, not farmland)
-            if (IsWildCropBlock(oldblockId, blockSel?.Position))
+            if (IsWildCropBlock(oldblockId, position))
             {
                 ProcessWildCropBroken(byPlayer);
             }
 
-            if (IsFarmedCropBlock(oldblockId, blockSel?.Position))
+            if (IsFarmedCropBlock(oldblockId, position))
             {
                 ProcessFarmedCropBroken(byPlayer);
             }
@@ -1857,16 +1867,10 @@ namespace SeraphLeveling
                 ProcessCharcoalBreak(byPlayer);
             }
 
-            var toolCode = byPlayer.Entity?.RightHandItemSlot?.Itemstack?.Collectible?.Code;
             if (toolCode == null) return;
 
-            // Breaking blocks with shears is instead handled by OnMultiBlockBreaking, which cannot differentiate
-            // between the central block and its surrounding blocks. Skip here to avoid double counting that
-            // central block.
-            if (ToolDefinitions.Shears.Matches(byPlayer.Entity?.RightHandItemSlot?.Itemstack?.Collectible?.Tool) || ToolDefinitions.Axe.Matches(byPlayer.Entity?.RightHandItemSlot?.Itemstack?.Collectible?.Tool)) return;
-
             // Fire event for attributes that care about broken blocks
-            BlockBrokenTrigger?.Invoke(byPlayer, toolCode, oldblockId, blockSel?.Position);
+            BlockBrokenTrigger?.Invoke(byPlayer, toolCode, oldblockId, position);
         }
 
         /// <summary>
@@ -1880,9 +1884,7 @@ namespace SeraphLeveling
             if (toolCode == null) return;
 
             int blockId = ServerApi.World.BlockAccessor.GetBlock(position).Id;
-
-            // Fire event for attributes that care about broken blocks
-            BlockBrokenTrigger?.Invoke(serverPlayer, toolCode, blockId, position);
+            ProcessBlockBroken(serverPlayer, blockId, position, toolCode);
         }
 
         /// <summary>
@@ -2182,7 +2184,7 @@ namespace SeraphLeveling
             var characterInventory = byPlayer.InventoryManager.GetOwnInventory(invConstant);
             if (characterInventory is InventoryBase ib)
             {
-                ib.SlotModified += (slot) => { OnClothingModified(byPlayer, invKey, slot, ib[slot]); };
+                ib.SlotModified += (slot) => { OnInventoryModified(byPlayer, invKey, slot, ib[slot]); };
             }
         }
 
@@ -2447,8 +2449,6 @@ namespace SeraphLeveling
         public override void AssetsFinalize(ICoreAPI api)
         {
             base.AssetsFinalize(api);
-
-            if (api.Side != EnumAppSide.Server) return;
 
             // Add InteractionTrackingBehavior to all cooking blocks.
             // Also add the OnBaked hook to all cookable blocks (vanilla and modded) that implement IBakeableCallback.
@@ -3805,31 +3805,27 @@ namespace SeraphLeveling
             }
             else
             {
-                using (var ms = new MemoryStream(data))
+                using var ms = new MemoryStream(data);
+                using var reader = new BinaryReader(ms);
+                var bytes = Encoding.ASCII.GetBytes(MOD_LIST_HEADER);
+                bool hasProblem = false;
+                foreach (var b in bytes)
                 {
-                    using (var reader = new BinaryReader(ms))
-                    {
-                        var bytes = Encoding.ASCII.GetBytes(MOD_LIST_HEADER);
-                        bool hasProblem = false;
-                        foreach (var b in bytes)
-                        {
-                            byte bin = reader.ReadByte();
-                            hasProblem |= (bin != b);
-                        }
-                        if (hasProblem)
-                        {
-                            ServerApi.Logger.Warning($"[SeraphLeveling] Invalid mod list data format");
-                            return;
-                        }
-
-                        byte version = reader.ReadByte();
-                        if (version != 0x1)
-                        {
-                            ServerApi.Logger.Warning($"[SeraphLeveling] Unknown mod list data version");
-                        }
-                        // TODO: actually care about the contents, lol.
-                    }
+                    byte bin = reader.ReadByte();
+                    hasProblem |= (bin != b);
                 }
+                if (hasProblem)
+                {
+                    ServerApi.Logger.Warning($"[SeraphLeveling] Invalid mod list data format");
+                    return;
+                }
+
+                byte version = reader.ReadByte();
+                if (version != 0x1)
+                {
+                    ServerApi.Logger.Warning($"[SeraphLeveling] Unknown mod list data version");
+                }
+                // TODO: actually care about the contents, lol.
             }
         }
 
@@ -5842,16 +5838,14 @@ namespace SeraphLeveling
                     .Foreach(itemCode => AttributeModifierDefinitions.Clothier.AddCollectedItem(player, itemCode));
             }
         }
+        public static event TriggerItemCollectedDelegate ItemCollectedTrigger;
 
-        private void OnClothingModified(IServerPlayer player, string inventoryStr, int slotId, ItemSlot slot)
+        private void OnInventoryModified(IServerPlayer player, string inventoryStr, int slotId, ItemSlot slot)
         {
             var itemCode = slot?.Itemstack?.Collectible?.Code;
             if (itemCode != null)
             {
-                if (!AttributeModifierDefinitions.Clothier.IsUnlockedForPlayer(player))
-                {
-                    AttributeModifierDefinitions.Clothier.AddCollectedItem(player, itemCode);
-                }
+                ItemCollectedTrigger?.Invoke(player, itemCode);
                 ProcessMenderEvent(player, inventoryStr, slotId, slot);
             }
         }
@@ -7462,6 +7456,7 @@ namespace SeraphLeveling
                 });
             Gui.SeraphProgressPage.Channel = channel;
             progressPollListenerId = api.Event.RegisterGameTickListener(_ => Gui.SeraphProgressPage.PollIfShowing(), 1000);
+            api.RegisterBlockEntityBehaviorClass("InteractionTrackingBehavior", typeof(InteractionTrackingBehaviorClientStub)); // Just shoosh it.
 
 
             // Apply Harmony patches manually for better control

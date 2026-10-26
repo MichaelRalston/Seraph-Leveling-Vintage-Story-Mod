@@ -19,4 +19,8 @@ namespace SeraphLeveling.Behaviors
             lastInteractedBy = tree.GetString("lastInteractedBy", "");
         }
     }
+
+    public class InteractionTrackingBehaviorClientStub(BlockEntity blockentity) : BlockEntityBehavior(blockentity)
+    {
+    }
 }

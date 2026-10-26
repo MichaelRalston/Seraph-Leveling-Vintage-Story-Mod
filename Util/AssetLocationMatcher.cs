@@ -7,7 +7,7 @@ namespace SeraphLeveling.Util
 {
     public interface IAssetLocationMatcher
     {
-        private const string MATCH_ALL = "*";
+        public const string MATCH_ALL = "*";
 
         public enum MatcherType
         {

@@ -199,7 +199,7 @@ namespace SeraphLeveling.Tests
 
         private static void RunMiningTests(EntityPlayer player)
         {
-            int maxMining = AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits;
+            int maxMining = AttributeModifierDefinitions.MiningSpeed.GlobalMaxCredits.Value;
             var progress = AttributeModifierDefinitions.MiningSpeed.CreateProgressData();
             progress.TotalCredits = 1;
 

@@ -261,5 +261,284 @@ namespace SeraphLeveling.Data.CharacterClasses
                 TraitDefinitions.RustTouch,
             ]
         };
+
+        public static readonly CharacterClassDefinition Timberborn = new()
+        {
+            Id = "timberborn",
+            Traits = [
+                TraitDefinitions.Timberborn,
+                TraitDefinitions.Timberwright,
+                TraitDefinitions.Burner,
+                TraitDefinitions.Woodsman,
+                TraitDefinitions.Naturebound,
+                TraitDefinitions.Kind,
+                TraitDefinitions.LabourOfChoice,
+            ]
+        };
+
+        public static readonly CharacterClassDefinition Shadowstrider = new()
+        {
+            Id = "shadowstrider",
+            Traits = [
+                TraitDefinitions.FreeAsTheWind,
+                TraitDefinitions.GetInGetLootGetOut,
+                TraitDefinitions.HighlyEfficient,
+                TraitDefinitions.Evasive,
+                TraitDefinitions.WeaponShy,
+                TraitDefinitions.AldiNudist,
+            ]
+        };
+
+        public static readonly CharacterClassDefinition Deepforger = new()
+        {
+            Id = "deepforger",
+            Traits = [
+                TraitDefinitions.Smith,
+                TraitDefinitions.Miner,
+                TraitDefinitions.CokeFurnaceMaster,
+                TraitDefinitions.StrongArms,
+                TraitDefinitions.Glassblower,
+                TraitDefinitions.Prospector,
+                TraitDefinitions.Tough,
+                TraitDefinitions.Myopic,
+                TraitDefinitions.Heavyhanded
+
+            ]
+        };
+
+        public static readonly CharacterClassDefinition Earthshaper = new()
+        {
+            Id = "earthshaper",
+            Traits = [
+                TraitDefinitions.Potter,
+                TraitDefinitions.Artisan,
+                TraitDefinitions.Digger,
+                TraitDefinitions.Mason,
+                TraitDefinitions.CarefulStrike,
+                TraitDefinitions.Sturdy,
+                TraitDefinitions.Civil,
+                TraitDefinitions.Hungry,
+
+            ]
+        };
+
+        public static readonly CharacterClassDefinition Mason = new()
+        {
+            Id = "mason",
+            Traits = [
+                TraitDefinitions.Mason,
+                TraitDefinitions.CarefulStrike,
+                TraitDefinitions.Sturdy,
+                TraitDefinitions.Civil,
+                TraitDefinitions.Hungry,
+            ]
+        };
+
+        public static readonly CharacterClassDefinition Threadweaver = new()
+        {
+            Id = "threadweaver",
+            Traits = [
+                TraitDefinitions.Threadweaver,
+                TraitDefinitions.Sailwright,
+                TraitDefinitions.Clothier,
+                TraitDefinitions.CarefulCut,
+                TraitDefinitions.Mender,
+                TraitDefinitions.Precise,
+                TraitDefinitions.Frail,
+                TraitDefinitions.Untrained,
+            ]
+        };
+
+        public static readonly CharacterClassDefinition Entropic = new()
+        {
+            Id = "entropic",
+            Traits = [
+                TraitDefinitions.Entropy,
+                TraitDefinitions.Tinkerer,
+                TraitDefinitions.Technical,
+                TraitDefinitions.Precise,
+                TraitDefinitions.KeenEye,
+                TraitDefinitions.Untrained,
+                TraitDefinitions.Nervous,
+            ]
+        };
+
+        public static readonly CharacterClassDefinition Mercenary = new()
+        {
+            Id = "mercenary",
+            Traits = [
+                TraitDefinitions.Unstoppable,
+                TraitDefinitions.Greedy,
+                TraitDefinitions.Hardy,
+                TraitDefinitions.Merciless,
+                TraitDefinitions.HighConsumption,
+                TraitDefinitions.Loud,
+                TraitDefinitions.KeepThemNear,
+            ]
+        };
+
+        public static readonly CharacterClassDefinition Wildrunner = new()
+        {
+            Id = "wildrunner",
+            Traits = [
+                TraitDefinitions.Ranger,
+                TraitDefinitions.Furtive,
+                TraitDefinitions.Dexterous,
+                TraitDefinitions.Bowyer,
+                TraitDefinitions.Fragile,
+                TraitDefinitions.PreciousHands,
+                TraitDefinitions.KeepThemAway,
+                TraitDefinitions.SurvivalExpert,
+            ]
+        };
+
+        public static readonly CharacterClassDefinition Squire = new()
+        {
+            Id = "squire",
+            Traits = [
+                TraitDefinitions.Fleetfooted,
+                TraitDefinitions.Healthy,
+                TraitDefinitions.Forager,
+                TraitDefinitions.Hungry,
+                TraitDefinitions.ClumsyMiner,
+                TraitDefinitions.Versatile,
+            ]
+        };
+
+        public static readonly CharacterClassDefinition Druid = new()
+        {
+            Id = "druid",
+            Traits = [
+                TraitDefinitions.Druid,
+                TraitDefinitions.Herbalist,
+                TraitDefinitions.Fleetfooted,
+                TraitDefinitions.Focused,
+                TraitDefinitions.Kind,
+                TraitDefinitions.ClumsyMiner,
+            ]
+        };
+
+        public static readonly CharacterClassDefinition Handwright = new()
+        {
+            Id = "handwright",
+            Traits = [
+                TraitDefinitions.Handwright,
+                TraitDefinitions.StrongArms,
+                TraitDefinitions.StrongShoulders,
+                TraitDefinitions.Hungry,
+                TraitDefinitions.NoTimeForThat,
+            ]
+        };
+
+        public static readonly CharacterClassDefinition Innkeeper = new()
+        {
+            Id = "innkeeper",
+            Traits = [
+                TraitDefinitions.AldiButcher,
+                TraitDefinitions.AldiCulinary,
+                TraitDefinitions.Firestarter,
+                TraitDefinitions.FoodSnitcher,
+                TraitDefinitions.Heavy,
+                TraitDefinitions.Tough,
+                TraitDefinitions.Booming,
+                TraitDefinitions.Heavyhanded,
+                TraitDefinitions.Myopic,
+            ]
+        };
+
+        public static readonly CharacterClassDefinition Wanderer = new()
+        {
+            Id = "wanderer",
+            Traits = [
+                TraitDefinitions.Gatherer,
+                TraitDefinitions.Backpacker,
+                TraitDefinitions.Frugal,
+                TraitDefinitions.Fleetfooted,
+                TraitDefinitions.Healthy,
+                TraitDefinitions.AnimalFriend,
+                TraitDefinitions.VeganIngenuity,
+                TraitDefinitions.PacifistExorcist,
+            ]
+        };
+
+        public static readonly CharacterClassDefinition Carpenter = new()
+        {
+            Id = "carpenter",
+            Traits = [
+                TraitDefinitions.Millwright,
+                TraitDefinitions.Carpenter,
+                TraitDefinitions.Fitter,
+                TraitDefinitions.StrongArms,
+                TraitDefinitions.Civil,
+            ]
+        };
+
+        public static readonly CharacterClassDefinition Potter = new()
+        {
+            Id = "potter",
+            Traits = [
+                TraitDefinitions.Potter,
+                TraitDefinitions.Artisan,
+                TraitDefinitions.Digger,
+                TraitDefinitions.StrongArms,
+                TraitDefinitions.Civil,
+                TraitDefinitions.Hungry,
+            ]
+        };
+
+        public static readonly CharacterClassDefinition AldiBlacksmith = new()
+        {
+            Id = "blacksmith",
+            Traits = [
+                TraitDefinitions.Smith,
+                TraitDefinitions.CokeFurnaceMaster,
+                TraitDefinitions.Mender,
+                TraitDefinitions.StrongArms,
+                TraitDefinitions.Nearsighted,
+                TraitDefinitions.Kind,
+                TraitDefinitions.Glassblower
+            ]
+        };
+
+        public static readonly CharacterClassDefinition Lumberjack = new()
+        {
+            Id = "lumberjack",
+            Traits = [
+                TraitDefinitions.AldiLumberjack,
+                TraitDefinitions.Forester,
+                TraitDefinitions.Burner,
+                TraitDefinitions.Woodsman,
+                TraitDefinitions.Kind,
+            ]
+        };
+
+        public static readonly CharacterClassDefinition Farmer = new()
+        {
+            Id = "farmer",
+            Traits = [
+                TraitDefinitions.Forager,
+                TraitDefinitions.Improviser,
+                TraitDefinitions.Nervous,
+                TraitDefinitions.Claustrophobic,
+                TraitDefinitions.Farmer,
+                TraitDefinitions.AnimalFriend,
+                TraitDefinitions.StrongShoulders,
+                TraitDefinitions.Preserver,
+                TraitDefinitions.Saddler,
+                TraitDefinitions.GreenFingered,
+            ]
+        };
+
+        public static readonly CharacterClassDefinition AldiMiner = new()
+        {
+            Id = "miner",
+            Traits = [
+                TraitDefinitions.MountainEater,
+                TraitDefinitions.Prospector,
+                TraitDefinitions.Tough,
+                TraitDefinitions.Myopic,
+                TraitDefinitions.Heavyhanded
+            ]
+        };
     }
 }
