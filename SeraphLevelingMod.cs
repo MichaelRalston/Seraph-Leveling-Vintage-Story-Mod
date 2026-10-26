@@ -3805,31 +3805,27 @@ namespace SeraphLeveling
             }
             else
             {
-                using (var ms = new MemoryStream(data))
+                using var ms = new MemoryStream(data);
+                using var reader = new BinaryReader(ms);
+                var bytes = Encoding.ASCII.GetBytes(MOD_LIST_HEADER);
+                bool hasProblem = false;
+                foreach (var b in bytes)
                 {
-                    using (var reader = new BinaryReader(ms))
-                    {
-                        var bytes = Encoding.ASCII.GetBytes(MOD_LIST_HEADER);
-                        bool hasProblem = false;
-                        foreach (var b in bytes)
-                        {
-                            byte bin = reader.ReadByte();
-                            hasProblem |= (bin != b);
-                        }
-                        if (hasProblem)
-                        {
-                            ServerApi.Logger.Warning($"[SeraphLeveling] Invalid mod list data format");
-                            return;
-                        }
-
-                        byte version = reader.ReadByte();
-                        if (version != 0x1)
-                        {
-                            ServerApi.Logger.Warning($"[SeraphLeveling] Unknown mod list data version");
-                        }
-                        // TODO: actually care about the contents, lol.
-                    }
+                    byte bin = reader.ReadByte();
+                    hasProblem |= (bin != b);
                 }
+                if (hasProblem)
+                {
+                    ServerApi.Logger.Warning($"[SeraphLeveling] Invalid mod list data format");
+                    return;
+                }
+
+                byte version = reader.ReadByte();
+                if (version != 0x1)
+                {
+                    ServerApi.Logger.Warning($"[SeraphLeveling] Unknown mod list data version");
+                }
+                // TODO: actually care about the contents, lol.
             }
         }
 
