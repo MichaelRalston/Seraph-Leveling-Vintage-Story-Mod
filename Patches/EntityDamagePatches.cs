@@ -116,11 +116,9 @@ namespace SeraphLeveling.Patches
             }
 
             // Only process for players
-            var playerEntity = damagedEntity as EntityPlayer;
-            if (playerEntity == null) return;
+            if (damagedEntity is not EntityPlayer playerEntity) return;
 
-            var player = playerEntity.Player as IServerPlayer;
-            if (player == null) return;
+            if (playerEntity.Player is not IServerPlayer player) return;
 
             // Get the player's armor using character inventory
             var characterInventory = player.InventoryManager?.GetOwnInventory(GlobalConstants.characterInvClassName);
@@ -131,9 +129,11 @@ namespace SeraphLeveling.Patches
             foreach (var slot in characterInventory)
             {
                 var slotType = (slot as ItemSlotCharacter)?.Type;
-                if ((!(slotType == EnumCharacterDressType.ArmorBody || slotType == EnumCharacterDressType.ArmorHead || slotType == EnumCharacterDressType.ArmorLegs)) || slot?.Itemstack?.Collectible == null) continue;
+                if (slot?.Itemstack?.Collectible == null) continue;
+                if (!(slotType == EnumCharacterDressType.ArmorBody || slotType == EnumCharacterDressType.ArmorHead || slotType == EnumCharacterDressType.ArmorLegs)) continue;
 
                 var itemCode = slot.Itemstack.Collectible.Code;
+                if (itemCode == null) continue;
                 string armorType = SeraphLevelingModSystem.GetArmorType(itemCode);
 
                 if (armorType == null) continue; // Not armor
@@ -160,7 +160,6 @@ namespace SeraphLeveling.Patches
                 }
 
                 // Determine hit probability based on armor slot type (from item code)
-                string itemPath = itemCode.Path;
                 float hitProbability;
                 if (slotType == EnumCharacterDressType.ArmorHead)
                     hitProbability = 0.2f;
