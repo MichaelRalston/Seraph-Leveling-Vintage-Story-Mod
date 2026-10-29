@@ -290,9 +290,9 @@ namespace SeraphLeveling
             LoadedTraits = [.. traits.Select(tuple => tuple.Trait).DistinctBy(trait => trait.Id)];
 
             ModsForTraits = traits
-                .GroupBy(x => x.Trait)
+                .GroupBy(x => x.Trait.Id)
                 .ToImmutableDictionary(
-                    group => group.Key.Id,
+                    group => group.Key,
                     group => group.Select(x => x.Mod).DistinctBy(m => m.ModId).ToImmutableList()
                 );
 
