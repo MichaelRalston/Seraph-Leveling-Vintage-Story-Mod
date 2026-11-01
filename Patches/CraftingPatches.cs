@@ -138,6 +138,7 @@ namespace SeraphLeveling.Patches
                 SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Granting {playerName} credit for smithing {quantity} of {outputCode}");
                 AttributeModifierDefinitions.MasterCraftsman.AddCollectedItem(serverPlayer, outputCode);
                 AttributeModifierDefinitions.Smith.AddCollectedItem(serverPlayer, outputCode);
+                TriggerGridCrafted?.Invoke(serverPlayer, outputCode, quantity);
             }
         }
 
