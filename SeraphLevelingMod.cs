@@ -2383,7 +2383,6 @@ namespace SeraphLeveling
                     }
                     try
                     {
-
                         // Patch Collectible.DamageItem for various tool durability traits.
                         PatchItemDamage(api);
                     }
@@ -2393,8 +2392,6 @@ namespace SeraphLeveling
                     }
                     try
                     {
-
-
                         // Patch CollectibleObject.OnHeldInteractStep for Mender trait (sewing kit repairs)
                         PatchSewingKitRepairs(api);
                     }
@@ -2404,7 +2401,6 @@ namespace SeraphLeveling
                     }
                     try
                     {
-
                         // Patch BlockEntityStaticTranslocator.DoRepair for Technical trait (translocator repairs)
                         PatchTranslocatorRepairs(api);
                     }
@@ -2414,7 +2410,6 @@ namespace SeraphLeveling
                     }
                     try
                     {
-
                         // Patch BEBehaviorBed.DidSleep for sleep buff system
                         PatchBedSleeping(api);
                     }
@@ -2424,7 +2419,6 @@ namespace SeraphLeveling
                     }
                     try
                     {
-
                         // Patch Entity.Die for death penalty system
                         PatchEntityDeath(api);
                     }
@@ -2434,7 +2428,6 @@ namespace SeraphLeveling
                     }
                     try
                     {
-
                         // Patch crafting methods for recipe crafting detection
                         PatchGridCrafting(api);
                     }
@@ -2444,7 +2437,6 @@ namespace SeraphLeveling
                     }
                     try
                     {
-
                         PatchBarrelCrafting(api);
                     }
                     catch (Exception ex)
@@ -2477,7 +2469,6 @@ namespace SeraphLeveling
                     }
                     try
                     {
-
                         // Patch ItemPoultice.OnHeldInteractStop for Medic trait (poultice/bandage healing)
                         PatchPoulticeHealing(api);
                     }
@@ -2487,7 +2478,6 @@ namespace SeraphLeveling
                     }
                     try
                     {
-
                         // Patch ItemShears.breakMultiBlock for Tree Whisperer trait (leaves breaking with shears)
                         PatchShearsBreakMultiBlock(api);
                     }
@@ -2497,7 +2487,6 @@ namespace SeraphLeveling
                     }
                     try
                     {
-
                         // Patch meditation for Rustbound Magic compatibility, iff RM is loaded.
                         PatchMeditation(api);
                     }
@@ -2507,7 +2496,6 @@ namespace SeraphLeveling
                     }
                     try
                     {
-
                         // Patch Immersive Fibercraft for Weaver trait detection on loom weaving, iff IF is loaded.
                         PatchImmersiveFibercraft(api);
                     }
@@ -2517,7 +2505,6 @@ namespace SeraphLeveling
                     }
                     try
                     {
-
                         // Patch Immersive Woodworking for Carpenter trait detection on woodworking, iff IW is loaded.
                         PatchImmersiveWoodworking(api);
                     }
@@ -2527,7 +2514,6 @@ namespace SeraphLeveling
                     }
                     try
                     {
-
                         PatchCooking(api);
                     }
                     catch (Exception ex)
@@ -2536,7 +2522,6 @@ namespace SeraphLeveling
                     }
                     try
                     {
-
                         serverHarmony.PatchAll(Assembly.GetExecutingAssembly());
                     }
                     catch (Exception ex)
@@ -2614,7 +2599,7 @@ namespace SeraphLeveling
             {
                 // Get the specific implementation of the interface method
                 // Interface methods are sometimes explicitly implemented, so we check both public and private names
-                var targetMethod = type.GetMethod("OnBaked", BindingFlags.Public | BindingFlags.Instance)
+                var targetMethod = type.GetMethod("OnBaked", BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
                     ?? type.GetMethod("Vintagestory.API.Common.IBakeableCallback.OnBaked", BindingFlags.NonPublic | BindingFlags.Instance);
 
                 if (targetMethod != null)
