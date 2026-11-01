@@ -2373,48 +2373,176 @@ namespace SeraphLeveling
                     api.Logger.Notification("[SeraphLeveling] Successfully patched Entity.ReceiveDamage for damage tracking");
 
                     // Patch EntityBehaviorHarvestable.SetHarvested for Resourceful trait (animal harvesting)
-                    PatchAnimalHarvesting(api);
+                    try
+                    {
+                        PatchAnimalHarvesting(api);
+                    }
+                    catch (Exception ex)
+                    {
+                        api.Logger.Error($"[SeraphLeveling] Failed to apply server Harmony patches: {ex.Message}");
+                    }
+                    try
+                    {
 
-                    // Patch Collectible.DamageItem for various tool durability traits.
-                    PatchItemDamage(api);
+                        // Patch Collectible.DamageItem for various tool durability traits.
+                        PatchItemDamage(api);
+                    }
+                    catch (Exception ex)
+                    {
+                        api.Logger.Error($"[SeraphLeveling] Failed to apply server Harmony patches: {ex.Message}");
+                    }
+                    try
+                    {
 
-                    // Patch CollectibleObject.OnHeldInteractStep for Mender trait (sewing kit repairs)
-                    PatchSewingKitRepairs(api);
 
-                    // Patch BlockEntityStaticTranslocator.DoRepair for Technical trait (translocator repairs)
-                    PatchTranslocatorRepairs(api);
+                        // Patch CollectibleObject.OnHeldInteractStep for Mender trait (sewing kit repairs)
+                        PatchSewingKitRepairs(api);
+                    }
+                    catch (Exception ex)
+                    {
+                        api.Logger.Error($"[SeraphLeveling] Failed to apply server Harmony patches: {ex.Message}");
+                    }
+                    try
+                    {
 
-                    // Patch BEBehaviorBed.DidSleep for sleep buff system
-                    PatchBedSleeping(api);
+                        // Patch BlockEntityStaticTranslocator.DoRepair for Technical trait (translocator repairs)
+                        PatchTranslocatorRepairs(api);
+                    }
+                    catch (Exception ex)
+                    {
+                        api.Logger.Error($"[SeraphLeveling] Failed to apply server Harmony patches: {ex.Message}");
+                    }
+                    try
+                    {
 
-                    // Patch Entity.Die for death penalty system
-                    PatchEntityDeath(api);
+                        // Patch BEBehaviorBed.DidSleep for sleep buff system
+                        PatchBedSleeping(api);
+                    }
+                    catch (Exception ex)
+                    {
+                        api.Logger.Error($"[SeraphLeveling] Failed to apply server Harmony patches: {ex.Message}");
+                    }
+                    try
+                    {
 
-                    // Patch crafting methods for recipe crafting detection
-                    PatchGridCrafting(api);
-                    PatchBarrelCrafting(api);
-                    PatchClayformCrafting(api);
-                    PatchSmithingCrafting(api);
-                    PatchSmithingVoxelStrike(api);
+                        // Patch Entity.Die for death penalty system
+                        PatchEntityDeath(api);
+                    }
+                    catch (Exception ex)
+                    {
+                        api.Logger.Error($"[SeraphLeveling] Failed to apply server Harmony patches: {ex.Message}");
+                    }
+                    try
+                    {
 
-                    // Patch ItemPoultice.OnHeldInteractStop for Medic trait (poultice/bandage healing)
-                    PatchPoulticeHealing(api);
+                        // Patch crafting methods for recipe crafting detection
+                        PatchGridCrafting(api);
+                    }
+                    catch (Exception ex)
+                    {
+                        api.Logger.Error($"[SeraphLeveling] Failed to apply server Harmony patches: {ex.Message}");
+                    }
+                    try
+                    {
 
-                    // Patch ItemShears.breakMultiBlock for Tree Whisperer trait (leaves breaking with shears)
-                    PatchShearsBreakMultiBlock(api);
+                        PatchBarrelCrafting(api);
+                    }
+                    catch (Exception ex)
+                    {
+                        api.Logger.Error($"[SeraphLeveling] Failed to apply server Harmony patches: {ex.Message}");
+                    }
+                    try
+                    {
+                        PatchClayformCrafting(api);
+                    }
+                    catch (Exception ex)
+                    {
+                        api.Logger.Error($"[SeraphLeveling] Failed to apply server Harmony patches: {ex.Message}");
+                    }
+                    try
+                    {
+                        PatchSmithingCrafting(api);
+                    }
+                    catch (Exception ex)
+                    {
+                        api.Logger.Error($"[SeraphLeveling] Failed to apply server Harmony patches: {ex.Message}");
+                    }
+                    try
+                    {
+                        PatchSmithingVoxelStrike(api);
+                    }
+                    catch (Exception ex)
+                    {
+                        api.Logger.Error($"[SeraphLeveling] Failed to apply server Harmony patches: {ex.Message}");
+                    }
+                    try
+                    {
 
-                    // Patch meditation for Rustbound Magic compatibility, iff RM is loaded.
-                    PatchMeditation(api);
+                        // Patch ItemPoultice.OnHeldInteractStop for Medic trait (poultice/bandage healing)
+                        PatchPoulticeHealing(api);
+                    }
+                    catch (Exception ex)
+                    {
+                        api.Logger.Error($"[SeraphLeveling] Failed to apply server Harmony patches: {ex.Message}");
+                    }
+                    try
+                    {
 
-                    // Patch Immersive Fibercraft for Weaver trait detection on loom weaving, iff IF is loaded.
-                    PatchImmersiveFibercraft(api);
+                        // Patch ItemShears.breakMultiBlock for Tree Whisperer trait (leaves breaking with shears)
+                        PatchShearsBreakMultiBlock(api);
+                    }
+                    catch (Exception ex)
+                    {
+                        api.Logger.Error($"[SeraphLeveling] Failed to apply server Harmony patches: {ex.Message}");
+                    }
+                    try
+                    {
 
-                    // Patch Immersive Woodworking for Carpenter trait detection on woodworking, iff IW is loaded.
-                    PatchImmersiveWoodworking(api);
+                        // Patch meditation for Rustbound Magic compatibility, iff RM is loaded.
+                        PatchMeditation(api);
+                    }
+                    catch (Exception ex)
+                    {
+                        api.Logger.Error($"[SeraphLeveling] Failed to apply server Harmony patches: {ex.Message}");
+                    }
+                    try
+                    {
 
-                    PatchCooking(api);
+                        // Patch Immersive Fibercraft for Weaver trait detection on loom weaving, iff IF is loaded.
+                        PatchImmersiveFibercraft(api);
+                    }
+                    catch (Exception ex)
+                    {
+                        api.Logger.Error($"[SeraphLeveling] Failed to apply server Harmony patches: {ex.Message}");
+                    }
+                    try
+                    {
 
-                    serverHarmony.PatchAll(Assembly.GetExecutingAssembly());
+                        // Patch Immersive Woodworking for Carpenter trait detection on woodworking, iff IW is loaded.
+                        PatchImmersiveWoodworking(api);
+                    }
+                    catch (Exception ex)
+                    {
+                        api.Logger.Error($"[SeraphLeveling] Failed to apply server Harmony patches: {ex.Message}");
+                    }
+                    try
+                    {
+
+                        PatchCooking(api);
+                    }
+                    catch (Exception ex)
+                    {
+                        api.Logger.Error($"[SeraphLeveling] Failed to apply server Harmony patches: {ex.Message}");
+                    }
+                    try
+                    {
+
+                        serverHarmony.PatchAll(Assembly.GetExecutingAssembly());
+                    }
+                    catch (Exception ex)
+                    {
+                        api.Logger.Error($"[SeraphLeveling] Failed to apply server Harmony patches: {ex.Message}");
+                    }
                 }
             }
             catch (Exception ex)
