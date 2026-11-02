@@ -15,60 +15,30 @@ namespace SeraphLeveling.Patches
     {
         public static event TriggerCookingResultDelegate TriggerCookingResult;
 
-        [HarmonyPatch]
         public class Patch_Firepit_And_Other_Interaction
         {
-            [HarmonyTargetMethods]
-            static IEnumerable<MethodBase> TargetMethods()
-            {
-                yield return AccessTools.Method(typeof(Block), nameof(Block.OnBlockInteractStart));
-            }
-
-            [HarmonyPrefix]
             public static void Prefix(IWorldAccessor world, IPlayer byPlayer, BlockSelection blockSel)
             {
                 if (world.Side == EnumAppSide.Client || blockSel?.Position == null || byPlayer == null) return;
 
                 BlockEntity be = world.BlockAccessor.GetBlockEntity(blockSel.Position);
-                if (be != null)
-                {
-                    var tracker = be.GetBehavior<InteractionTrackingBehavior>();
-                    if (tracker != null)
-                    {
-                        tracker.lastInteractedBy = byPlayer.PlayerUID;
-                    }
-                }
+                be?.GetBehavior<InteractionTrackingBehavior>()?.lastInteractedBy = byPlayer.PlayerUID;
             }
         }
 
         [ThreadStatic]
         private static BlockEntity CurrentBakingContext;
 
-        [HarmonyPatch]
         public class Patch_Baking_Step
         {
-            static IEnumerable<MethodBase> TargetMethods()
-            {
-                yield return AccessTools.Method(typeof(BlockEntityOven), "IncrementallyBake");
-            }
-
-            [HarmonyPrefix]
-            public static void Prefix(BlockEntityOven __instance)
+            public static void Prefix(BlockEntity __instance)
             {
                 CurrentBakingContext = __instance;
             }
         }
 
-        [HarmonyPatch]
         public class Patch_Oven_Interaction
         {
-            [HarmonyTargetMethods]
-            static IEnumerable<MethodBase> TargetMethods()
-            {
-                yield return AccessTools.Method(typeof(BlockEntityOven), "OnInteract");
-            }
-
-            [HarmonyPrefix]
             public static void Prefix(BlockEntity __instance, IPlayer byPlayer)
             {
                 if (byPlayer == null || __instance.Api?.Side != EnumAppSide.Server) return;

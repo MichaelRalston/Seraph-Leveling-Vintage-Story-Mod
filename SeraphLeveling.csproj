@@ -13,11 +13,6 @@
       <HintPath>$(APPDATA)/vintagestory/VintagestoryAPI.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="VintagestoryLib">
-      <HintPath>$(APPDATA)\Vintagestory\VintagestoryLib.dll</HintPath>
-      <HintPath>$(APPDATA)/vintagestory/VintagestoryLib.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="VSEssentials">
       <HintPath>$(APPDATA)\Vintagestory\Mods\VSEssentials.dll</HintPath>
       <HintPath>$(APPDATA)/vintagestory/Mods/VSEssentials.dll</HintPath>

@@ -9,15 +9,13 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace SeraphLeveling.Patches
 {
-    [HarmonyPatch(typeof(ItemAxe), "OnBlockBrokenWith")]
     public class Patch_ItemAxe_OnBlockBrokenWith
     {
         // Safely look up and cache the private 'FindTree' method info
         private static readonly MethodInfo FindTreeMethod =
             typeof(ItemAxe).GetMethod("FindTree", BindingFlags.Public | BindingFlags.Instance);
 
-        [SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Harmony Runtime Patch")]
-        static void Prefix(ItemAxe __instance, IWorldAccessor world, Entity byEntity, ItemSlot itemslot, BlockSelection blockSel)
+        public static void Prefix(ItemAxe __instance, IWorldAccessor world, Entity byEntity, ItemSlot itemslot, BlockSelection blockSel)
         {
             // 1. Only track on the server side where item damage and block breaking are handled
             if (blockSel == null || world.Side != EnumAppSide.Server) return;

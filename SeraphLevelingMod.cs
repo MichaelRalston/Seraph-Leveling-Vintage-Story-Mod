@@ -2510,7 +2510,7 @@ namespace SeraphLeveling
                     }
                     catch (Exception ex)
                     {
-                        api.Logger.Error($"[SeraphLeveling] Failed to apply server Harmony patches: {ex.Message}");
+                        api.Logger.Error($"[SeraphLeveling] Failed to apply server Harmony patches for woodworking: {ex.Message}");
                     }
                     try
                     {
@@ -2518,15 +2518,23 @@ namespace SeraphLeveling
                     }
                     catch (Exception ex)
                     {
-                        api.Logger.Error($"[SeraphLeveling] Failed to apply server Harmony patches: {ex.Message}");
+                        api.Logger.Error($"[SeraphLeveling] Failed to apply server Harmony patches for cooking: {ex.Message}");
                     }
                     try
                     {
-                        serverHarmony.PatchAll(Assembly.GetExecutingAssembly());
+                        serverHarmony.Patch(AccessTools.Method(typeof(ItemAxe), "OnBlockBrokenWith"), prefix: new HarmonyMethod(AccessTools.Method(typeof(Patch_ItemAxe_OnBlockBrokenWith), nameof(Patch_ItemAxe_OnBlockBrokenWith.Prefix))));
                     }
                     catch (Exception ex)
                     {
-                        api.Logger.Error($"[SeraphLeveling] Failed to apply server Harmony patches: {ex.Message}");
+                        api.Logger.Error($"[SeraphLeveling] Failed to apply server Harmony patches for axes: {ex.Message}");
+                    }
+                    try
+                    {
+                        serverHarmony.Patch(AccessTools.Method(typeof(BlockPan), "CreateDrop"), postfix: new HarmonyMethod(AccessTools.Method(typeof(BlockPan_CreateDrop_Patch), nameof(BlockPan_CreateDrop_Patch.Postfix))));
+                    }
+                    catch (Exception ex)
+                    {
+                        api.Logger.Error($"[SeraphLeveling] Failed to apply server Harmony patches for panning: {ex.Message}");
                     }
                 }
             }
@@ -2592,22 +2600,74 @@ namespace SeraphLeveling
         private void PatchCooking(ICoreServerAPI api)
         {
             var bakingPostfix = new HarmonyMethod(AccessTools.Method(typeof(CookingPatches.Patch_CollectibleObject_OnBaked), nameof(CookingPatches.Patch_CollectibleObject_OnBaked.Postfix)));
-            var types = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(s => s.GetTypes())
-                .Where(p => typeof(IBakeableCallback).IsAssignableFrom(p) && !p.IsInterface && !p.IsAbstract);
-            foreach (var type in types)
+            var blacklistedAssemblies = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
-                // Get the specific implementation of the interface method
-                // Interface methods are sometimes explicitly implemented, so we check both public and private names
+                "VintagestoryLib",
+                "OpenTK",
+                "csogg",
+                "Cairo",
+                "System.Windows.Forms"
+            };
+
+            // Filter assemblies dynamically to capture modded types safely
+            var safeAssemblies = AppDomain.CurrentDomain.GetAssemblies()
+                .Where(a => !blacklistedAssemblies.Contains(a.GetName().Name));
+            List<Type> allAvailableTypes = new List<Type>();
+            foreach (var assembly in safeAssemblies)
+            {
+                try
+                {
+                    allAvailableTypes.AddRange(assembly.GetTypes());
+                }
+                catch (ReflectionTypeLoadException ex)
+                {
+                    if (ex.Types != null)
+                    {
+                        allAvailableTypes.AddRange(ex.Types.Where(t => t != null));
+                    }
+                }
+                catch { continue; }
+            }
+
+            // Helper function to safely evaluate type interfaces on Linux without choking on OpenTK references
+            bool IsSafeBakeable(Type t)
+            {
+                try
+                {
+                    return typeof(IBakeableCallback).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract;
+                }
+                catch (TypeLoadException)
+                {
+                    return false;
+                }
+            }
+
+            bool IsSafeCollectible(Type t)
+            {
+                try
+                {
+                    return typeof(CollectibleObject).IsAssignableFrom(t) && !t.IsInterface;
+                }
+                catch (TypeLoadException)
+                {
+                    return false;
+                }
+            }
+
+            // 1. Scan safely for IBakeableCallback implementations
+            var bakeableTypes = allAvailableTypes.Where(IsSafeBakeable);
+
+            foreach (var type in bakeableTypes)
+            {
                 var targetMethod = type.GetMethod("OnBaked", BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
                     ?? type.GetMethod("Vintagestory.API.Common.IBakeableCallback.OnBaked", BindingFlags.NonPublic | BindingFlags.Instance);
 
                 if (targetMethod != null)
                 {
-                    // Apply the patch to the concrete class method
                     serverHarmony.Patch(targetMethod, postfix: bakingPostfix);
                 }
             }
+
             Type[] smeltingParams = [
                 typeof(IWorldAccessor),
                 typeof(ISlotProvider),
@@ -2615,14 +2675,12 @@ namespace SeraphLeveling
                 typeof(ItemSlot)
             ];
             var smeltingPostfix = new HarmonyMethod(AccessTools.Method(typeof(CookingPatches.CookingSmeltPatch), nameof(CookingPatches.CookingSmeltPatch.Postfix)));
-            // serverHarmony.Patch(AccessTools.Method(typeof(CollectibleObject), "DoSmelt", smeltingParams), postfix: smeltingPostfix);
-            var collectibleTypes = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(s => s.GetTypes())
-                .Where(t => typeof(CollectibleObject).IsAssignableFrom(t) && !t.IsInterface);
+
+            // 2. Scan safely for CollectibleObject overrides
+            var collectibleTypes = allAvailableTypes.Where(IsSafeCollectible);
 
             foreach (var type in collectibleTypes)
             {
-                // Find overrides explicitly declared in the concrete class
                 var declaredMethod = type.GetMethod("DoSmelt",
                     BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly,
                     null,
@@ -2631,10 +2689,35 @@ namespace SeraphLeveling
 
                 if (declaredMethod != null)
                 {
-                    // Safely patch the specialized override
                     serverHarmony.Patch(declaredMethod, postfix: smeltingPostfix);
                 }
             }
+
+            var bakeMethod = AccessTools.Method("Vintagestory.GameContent.BlockEntityOven:IncrementallyBake");
+            if (bakeMethod != null)
+            {
+                serverHarmony.Patch(
+                    bakeMethod,
+                    prefix: new HarmonyMethod(AccessTools.Method(typeof(CookingPatches.Patch_Baking_Step), nameof(CookingPatches.Patch_Baking_Step.Prefix)))
+                );
+            }
+            else
+            {
+                api.Logger.Error("[SeraphLeveling] Failed to find IncrementallyBake method via string resolution.");
+            }
+            var ovenInteractMethod = AccessTools.Method("Vintagestory.GameContent.BlockEntityOven:OnInteract");
+            if (ovenInteractMethod != null)
+            {
+                serverHarmony.Patch(
+                    ovenInteractMethod,
+                    prefix: new HarmonyMethod(AccessTools.Method(typeof(CookingPatches.Patch_Oven_Interaction), nameof(CookingPatches.Patch_Oven_Interaction.Prefix)))
+                );
+            }
+            else
+            {
+                api.Logger.Error("[SeraphLeveling] Failed to find Oven OnInteract method via string resolution.");
+            }
+            serverHarmony.Patch(AccessTools.Method(typeof(Block), nameof(Block.OnBlockInteractStart)), prefix: new HarmonyMethod(AccessTools.Method(typeof(CookingPatches.Patch_Firepit_And_Other_Interaction), nameof(CookingPatches.Patch_Firepit_And_Other_Interaction.Prefix))));
         }
 
         private void PatchGridCrafting(ICoreServerAPI api)
