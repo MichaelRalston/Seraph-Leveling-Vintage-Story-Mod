@@ -70,7 +70,7 @@ namespace SeraphLeveling.Data.Attributes
             if (player?.Entity != null)
             {
                 var percent = GetCombinedModifierPercent(player.Entity);
-                sb.AppendLine($"  <strong>{Attribute.Name}</strong> level: {percent}% / {ThresholdPercentage}% {(percent >= ThresholdPercentage ? "<font color=\"green\"><icon path=\"icons/checkmark.svg\"></icon></font>" : "<font color=\"red\"><icon name=wpX></icon></font>")}");
+                sb.AppendLine($"  <strong>{Attribute.Name}</strong> level: {percent}% / {ThresholdPercentage}% {(percent >= ThresholdPercentage ? "<font color=\"green\"><icon path=\"icons/checkmark.svg\"></icon></font>" : "<font color=\"red\" size=\"24\"><icon path=\"icons/worldmap/x.svg\"></icon></font>")}");
             }
         }
 
