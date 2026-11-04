@@ -125,7 +125,7 @@ namespace SeraphLeveling.Data.Attributes
             // IMPORTANT: Add ID to extraTraits to unlock tuning spear etc recipes
             // The game's recipe system checks extraTraits for dynamically granted traits
             // that unlock recipes via requiresTrait (e.g., the tuning spear requires "tinkerer")
-            SeraphLevelingModSystem.UpdateExtraTraitStatic(player.Entity, Id, progress.IsUnlocked);
+            SeraphLevelingModSystem.UpdateExtraTraitStatic(player.Entity, SkillKey, progress.IsUnlocked);
         }
 
         public override void HandleLogin(IServerPlayer player)

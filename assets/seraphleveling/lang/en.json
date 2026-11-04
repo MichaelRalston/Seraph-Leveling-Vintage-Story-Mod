@@ -253,6 +253,7 @@
   "attribute-entropyquartz1-contents": "",
   "attribute-entropyquartz2-contents": "",
   "attribute-entropyrings-contents": "",
+  "attribute-artisan-contents": "<i>A trained potter is able to produce items which are <a href=\"handbooksearch://storage vessel\">works of art</a>, not merely functional items for daily use.</i>",
 
   "message-animalharvester-level-up": "Resourceful level up! You are now level {0} with +{1}% animal harvesting speed.",
   "message-armordurability-level-up": "Armor durability level up! You are now level {0} with +{1}% armor durability.",
