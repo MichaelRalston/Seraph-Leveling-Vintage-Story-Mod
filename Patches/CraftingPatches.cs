@@ -64,6 +64,7 @@ namespace SeraphLeveling.Patches
                 {
                     SeraphLevelingModSystem.ServerApi.Logger.Debug($"[SeraphLeveling] Granting {playerName} credit for crafting {quantity} compost");
                     AttributeModifierDefinitions.Propagator.AddCredits(serverPlayer, quantity);
+                    AttributeModifierDefinitions.GreenFingered.AddCredits(serverPlayer, quantity);
                 }
             }
         }

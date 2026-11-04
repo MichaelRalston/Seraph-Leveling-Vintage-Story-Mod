@@ -1910,7 +1910,7 @@ namespace SeraphLeveling.Data.Attributes
         public static readonly GenericCookingUnlockedAttributeModifierDefinition AldiCulinary = new()
         {
             Id = "aldiculinary",
-            SkillKey = "aldiculinary",
+            SkillKey = "culinary",
             PersistenceHeader = "CUL",
             Name = "Culinary",
             GlobalMaxCredits = 50,
@@ -1919,7 +1919,7 @@ namespace SeraphLeveling.Data.Attributes
             Trait = new(() => Traits.TraitDefinitions.AldiCulinary),
             CookedItemName = "Food portions",
             Verb = "Cook",
-            ResultAllowList = Simple(IAssetLocationMatcher.MATCH_ALL),
+            ResultAllowList = Simple(MATCH_ALL),
         };
 
         public static readonly ExactUnlockedStatAttributeModifierDefinition DexterousJumpHeight = new()
