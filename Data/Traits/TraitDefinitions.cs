@@ -275,7 +275,7 @@ namespace SeraphLeveling.Data.Traits
             Attributes = [
                 Unlock(AttributeModifierDefinitions.Carpenter, [
                     new UnlockedAttributeRequirement { Attribute = AttributeModifierDefinitions.Carpenter },
-                    new LeveledAttributeMinimumRequirement { Attribute = TreeChoppingSpeed, ThresholdPercentage = 10 },
+                    new LeveledAttributeMinimumRequirement { Attribute = WoodDropRate, ThresholdPercentage = 10 },
                 ])
             ],
         };
