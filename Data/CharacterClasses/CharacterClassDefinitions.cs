@@ -540,5 +540,18 @@ namespace SeraphLeveling.Data.CharacterClasses
                 TraitDefinitions.Heavyhanded
             ]
         };
+
+        public static readonly CharacterClassDefinition QuartzWizard = new()
+        {
+            Id = "quartzwizard",
+            Traits = [
+                TraitDefinitions.QuartzAttuned,
+                TraitDefinitions.CrystallineMind,
+                TraitDefinitions.PureFocus,
+                TraitDefinitions.EssenceEfficient,
+                TraitDefinitions.PhysicalFrailty,
+                TraitDefinitions.PureSoul,
+            ]
+        };
     }
 }

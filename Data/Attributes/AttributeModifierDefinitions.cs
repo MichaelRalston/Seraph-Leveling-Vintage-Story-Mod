@@ -885,6 +885,26 @@ namespace SeraphLeveling.Data.Attributes
             Trait = new(() => Traits.TraitDefinitions.Fractured),
         };
 
+        public static readonly MaxHealthUnlockedAttributeModifierDefinition PhysicalFrailtyPenalty = new()
+        {
+            Id = "physicalfrailtyhealthpenalty",
+            SkillKey = "physicalfrailtyhealth",
+            PersistenceHeader = "FRH",
+            Name = "Physical Frailty Health",
+            ModifierAmount = -4f,
+            Trait = new(() => Traits.TraitDefinitions.PhysicalFrailty),
+        };
+
+        public static readonly MaxHealthUnlockedAttributeModifierDefinition PhysicalFrailtyOffset = new()
+        {
+            Id = "physicalfrailtyhealth",
+            SkillKey = "physicalfrailtyhealth",
+            PersistenceHeader = "FRH",
+            Name = "Physical Frailty Health",
+            ModifierAmount = 4f,
+            Trait = new(() => Traits.TraitDefinitions.PhysicalFrailty),
+        };
+
         public static readonly ConcurrentDictionary<ArmorDurabilityProgressTypes, IncrementData> ArmorDurabilityIncrementData = new()
         {
             [ArmorDurabilityProgressTypes.DamageBlocked] = new IncrementData

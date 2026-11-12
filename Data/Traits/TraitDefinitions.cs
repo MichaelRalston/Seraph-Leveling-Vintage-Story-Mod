@@ -1371,5 +1371,59 @@ namespace SeraphLeveling.Data.Traits
                 Bonus(SeedDropRate, 200),
             ]
         };
+
+        public static readonly TraitDefinition QuartzAttuned = new()
+        {
+            Id = "quartzattuned",
+            Attributes = [
+                Bonus(OreDropRate, 20),
+                Bonus(WalkingSpeed, 5),
+            ]
+        };
+
+        public static readonly TraitDefinition CrystallineMind = new()
+        {
+            Id = "crystallinemind",
+            Attributes = [
+                Bonus(ArmorHealing, 15)
+            ]
+        };
+
+        public static readonly TraitDefinition PureFocus = new()
+        {
+            Id = "purefocus",
+            Attributes = [
+                Bonus(RangedDamage, 10),
+            ]
+        };
+
+        public static readonly TraitDefinition EssenceEfficient = new()
+        {
+            Id = "essenceefficient",
+            Attributes = [
+                Bonus(HungerRate, 15),
+                Bonus(WildCropDropRate, 15),
+                Bonus(ForageLootingBonus, 15),
+            ]
+        };
+
+        public static readonly TraitDefinition PhysicalFrailty = new()
+        {
+            Id = "physicalfrailty",
+            Attributes = [
+                Penalty(MeleeDamage, 25),
+                PenaltyOffset(PhysicalFrailtyOffset, 1, PhysicalFrailtyPenalty, [
+                    new LeveledAttributeMinimumRequirement { Attribute = MeleeDamage, ThresholdPercentage = 0 },
+                ]),
+            ]
+        };
+
+        public static readonly TraitDefinition PureSoul = new()
+        {
+            Id = "puresoul",
+            Attributes = [
+                Penalty(AnimalDropRate, 100)
+            ]
+        };
     }
 }

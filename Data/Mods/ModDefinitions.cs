@@ -130,6 +130,15 @@ namespace SeraphLeveling.Data.Mods
             ],
         });
 
+        public static readonly ModDefinition VSAscending = Register(new()
+        {
+            ModId = "vsascending",
+            DisplayName = "VS Ascending",
+            CharacterClasses = [
+                CharacterClassDefinitions.QuartzWizard,
+            ]
+        });
+
         private static ModDefinition Register(ModDefinition def)
         {
             All.Add(def);
