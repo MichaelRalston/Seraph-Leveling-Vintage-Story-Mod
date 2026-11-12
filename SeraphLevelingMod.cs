@@ -958,6 +958,8 @@ namespace SeraphLeveling
             api.Event.SaveGameLoaded += LoadCOProgress;
             api.Event.SaveGameLoaded += LoadSleepBuffData;
 
+            api.Event.RegisterEventBusListener(OnItemKnapped, 0.5, "onitemknapped");
+
             // Register game tick listener for walking distance tracking (every 500ms)
             api.Event.RegisterGameTickListener(OnWalkingTick, 500);
 
@@ -991,6 +993,26 @@ namespace SeraphLeveling
             api.Logger.Notification("[SeraphLeveling] Mod loaded");
         }
 
+        private void OnItemKnapped(string eventName, ref EnumHandling handling, Vintagestory.API.Datastructures.IAttribute data)
+        {
+            if (data is ITreeAttribute tree)
+            {
+                ItemStack craftedStack = tree.GetItemstack("itemstack");
+                long entityId = tree.GetLong("byentityid");
+
+                if (craftedStack != null
+                    && ServerApi.World.GetEntityById(entityId) is EntityPlayer entityPlayer
+                    && entityPlayer.Player is IServerPlayer player)
+                {
+                    craftedStack.ResolveBlockOrItem(ServerApi.World);
+
+                    if (craftedStack.Collectible?.Code != null)
+                    {
+                        CraftingPatches.TriggerGridCraftingResult(player, craftedStack.Collectible.Code, craftedStack.StackSize);
+                    }
+                }
+            }
+        }
 
         /// <summary>
         /// Handler for /trait soundvolume command.
